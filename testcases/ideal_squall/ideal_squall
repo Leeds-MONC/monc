@@ -1,0 +1,124 @@
+# Global configuration
+global_configuration=global_config
+
+# Override global component defaults
+fftsolver_enabled=.true.
+iterativesolver_enabled=.false.
+pw_advection_enabled=.true.
+tvd_advection_enabled=.true.
+simplesetup_enabled=.true.
+smagorinsky_enabled=.true.
+lower_bc_enabled=.true.
+setfluxlook_enabled=.true. #This must be set to true if running with lower_bc
+viscosity_enabled=.true.
+diffusion_enabled=.true.
+simplecloud_enabled=.true.
+coriolis_enabled=.false.
+damping_enabled=.true.
+forcing_enabled=.false. 
+randomnoise_enabled=.true.
+mean_profiles_enabled=.true. #This must be set to true if running with damping
+th_advection_enabled=.false.
+
+# Test case source code
+ideal_squall_enabled=.true.
+
+
+# Add bubble to initialisation
+initialisation_stage_ordering+=ideal_squall
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, ideal_squall,simplecloud, diverr, psrce, stepfields
+
+#Advection
+advection_flow_fields=tvd
+advection_theta_field=tvd
+advection_q_fields=tvd
+
+# Control configuration
+nn_timesteps=50000
+display_synopsis_frequency=20
+nn_consolidation=1
+termination_time=10800.
+dtm=1.1
+
+# Checkpoint configuration
+checkpoint_frequency=50
+checkpoint_file="ideal_squall.nc"
+checkpoint_unique_per_dump=.true.
+
+
+# CFL configuration
+cfl_frequency=10
+cfl_cvismax=0.2
+cfl_cvelmax=0.2
+cfl_dtmmax=5.
+cfl_dtmmin=0.001
+
+# Simple setup configuration
+thref0=304.35
+surface_pressure=100000.
+surface_reference_pressure=100000.
+x_size=1000
+y_size=2
+z_size=200
+dxx=500
+dyy=500
+zztop=24000.0
+kgd=1,41,141,200
+hgd=0.0, 2000., 12000.,24000.0
+nsmth=80
+galilean_transformation=.true. 
+fix_ugal=.true.
+ugal=17.0
+fix_vgal=.true.
+vgal=0.0
+
+
+enable_theta=.true.
+number_q_fields=2
+use_anelastic_equations=.true.
+origional_vertical_grid_setup=.true.
+passive_th=.false.
+passive_q=.false.
+backscatter=.false.
+use_viscosity_and_diffusion=.true.
+use_surface_fluxes=.false.
+
+# Initialization of fields
+l_init_pl_theta=.true.
+l_init_pl_q=.true.
+names_init_pl_q=vapour
+z_init_pl_theta=0.0, 850., 2450., 3250., 5250., 15000., 24000.
+f_init_pl_theta=304.420, 306.875, 315.954, 318.374, 321.100, 380.580, 612.107
+z_init_pl_q=0.0, 850., 2450., 3250., 5250., 15000., 24000.
+f_init_pl_q=2.066e-02, 1.866e-02, 6.356e-03, 2.992e-03, 1.637e-03, 7.065e-06, 1.664e-05
+l_init_pl_u=.false.
+l_init_pl_v=.false.
+
+l_matchthref=.true.
+  
+# Random noise
+l_rand_pl_theta=.true.
+z_rand_pl_theta=0.0, 500.0, 501.0, 24000.
+f_rand_pl_theta=0.5, 0.5, 0.0, 0.0
+
+
+# Simple cloud
+max_height_cloud=18000.
+
+
+# Damping configuration
+dmptim=0.001
+zdmp=20000.0
+hdmp=2000.0
+
+# Squall settings
+shear_factor=12.0
+shear_top=5000.
+evaporation_factor=1.0
+alpha_george=0.1
+force_width=10000.
+force_z_centre=1000.
+spinup_time=1800.
+transition_time=300.
+xdmp=0.
+gamma_george=0.0

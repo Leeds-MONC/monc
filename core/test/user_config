@@ -1,0 +1,110 @@
+# Global configuration
+global_configuration=global_config
+
+# Enable the tank setup
+tank_experiments_enabled=.true.
+
+# Override global component defaults
+fftsolver_enabled=.true.
+iterativesolver_enabled=.false.
+pw_advection_enabled=.false.
+tvd_advection_enabled=.true.
+simplesetup_enabled=.true.
+smagorinsky_enabled=.false.
+lower_bc_enabled=.false.
+setfluxlook_enabled=.false.
+viscosity_enabled=.false.
+diffusion_enabled=.false.
+simplecloud_enabled=.false.
+casim_enabled=.false.
+coriolis_enabled=.false.
+
+# Add bubble to initialisatio
+initialisation_stage_ordering+=tank_experiments
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, tank_experiments,simplecloud, casim,diverr, psrce, stepfields
+finalisation_stage_ordering+=tank_experiments
+
+# Control configuration
+nn_timesteps=1500
+nn_modeldump=50
+display_synopsis_frequency=100
+cfl_frequency=2
+nn_consolidation=1
+termination_time=1800.
+dtm=0.1
+
+# Simple setup configuration
+rhobous=1.0
+thref0=300.0
+surface_pressure=100000.
+surface_reference_pressure=100000.
+x_size=256
+y_size=128
+z_size=128
+dxx=100
+dyy=100
+zztop=6000.0
+kgd=1,128
+hgd=0.0, 6000.0
+enable_theta=.true.
+number_q_fields=5
+use_anelastic_equations=.true.
+origional_vertical_grid_setup=.true.
+passive_th=.false.
+passive_q=.false.
+backscatter=.false.
+use_viscosity_and_diffusion=.true.
+use_surface_fluxes=.true.
+use_time_varying_surface_values=.false.
+type_of_surface_boundary_conditions=0
+
+# Initial theta profile
+l_init_pl_theta=.true.
+z_init_pl_theta=0.0, 3000., 6000.
+f_init_pl_theta=300., 310., 335.
+l_init_pl_rh=.false.
+
+# bubble test case
+l_bubbles=.true.
+bubble_x_cen=0.0, 0.0, 16000., 16000.
+bubble_y_cen=0.0, 16000.0, 0., 16000.
+bubble_z_cen=500.0, 500., 500., 500.
+bubble_x_rad=500.0, 500., 500., 500.
+bubble_y_rad=500.0, 500., 500., 500.
+bubble_z_rad=500.0, 500., 500., 500.
+bubble_th_pert=1.0, 1.0, 1.0, 1.0
+bubble_edge=0.0,0.0,0.0,0.0
+bubble_lrandom=.true.
+bubble_RH=99.99,99.99, 99.99, 99.99
+tank_lmoist=.true.
+tank_lsettankRH=.true.
+tank_RH=80.0
+
+l_splittank=.false.
+l_sources=.false.
+
+# Checkpoint configuration
+checkpoint_frequency=50
+checkpoint_file="cold_rain.nc"
+checkpoint_unique_per_dump=.true.
+checkpoint_enable_write=.true.
+
+#CASIM config
+
+option=22000
+l_warm=.true.
+
+aerosol_option=0
+iopt_act=0
+process_level=0
+
+l_rain=.false.
+l_pcond=.false.
+l_psedr=.true.
+l_prevp=.true.
+
+l_tidy_conserve_E=.false.
+l_tidy_conserve_q=.false.
+
+# water loading - this should be interfaced properly
+cq=0.6, -1.,-1.,0.0,0.0

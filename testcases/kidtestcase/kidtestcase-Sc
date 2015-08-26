@@ -1,0 +1,75 @@
+# Global configuration
+global_configuration=global_config
+
+# Enable the kid setup
+kid_testcase_enabled=.true.
+
+# Override global component defaults
+buoyancy_enabled=.false.
+cfltest_enabled=.false.
+coriolis_enabled=.false.
+fftsolver_enabled=.false.
+iterativesolver_enabled=.false.
+pw_advection_enabled=.false.
+tvd_advection_enabled=.true.
+simplesetup_enabled=.true.
+smagorinsky_enabled=.false.
+lower_bc_enabled=.false.
+setfluxlook_enabled=.false.
+viscosity_enabled=.false.
+diffusion_enabled=.false.
+simplecloud_enabled=.true.
+
+# Add to initialisation
+initialisation_stage_ordering+=kid_testcase
+start_group_contents+=kid_testcase
+#finalisation_stage_ordering+=kid_testcase
+
+# Control configuration
+nn_timesteps=3000
+display_synopsis_frequency=100
+cfl_frequency=2
+nn_consolidation=1
+termination_time=3600.
+dtm=1.
+
+# Simple setup configuration
+rhobous=1.0
+thref0=300.0
+surface_pressure=100000.
+surface_reference_pressure=100000.
+x_size=40
+y_size=1
+z_size=21
+dxx=100
+dyy=100
+zztop=2000.0
+kgd=1,21
+hgd=0.0, 2000.0
+rmlmax=15.0
+enable_theta=.true.
+number_q_fields=5
+use_anelastic_equations=.true.
+origional_vertical_grid_setup=.true.
+passive_th=.false.
+passive_q=.false.
+backscatter=.false.
+use_viscosity_and_diffusion=.true.
+use_surface_fluxes=.true.
+use_time_varying_surface_values=.false.
+type_of_surface_boundary_conditions=0
+
+# Initial theta profile - this is done in the testcase code
+l_init_pl_theta=.false.
+l_init_pl_rh=.false.
+
+# Checkpoint configuration
+checkpoint_frequency=100
+checkpoint_file="kid_testcase.nc"
+checkpoint_unique_per_dump=.true.
+
+advection_flow_fields=pw
+
+# Kinematic options
+case_number=3
+

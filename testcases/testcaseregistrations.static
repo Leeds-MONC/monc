@@ -1,0 +1,4 @@
+call add_component(component_descriptions, drybl_get_descriptor())
+call add_component(component_descriptions, ideal_squall_get_descriptor())
+call add_component(component_descriptions, kidtestcase_get_descriptor())
+call add_component(component_descriptions, tank_experiments_get_descriptor())

@@ -1,0 +1,567 @@
+<data-definition name="flux_fields" frequency="{sampling_frequency}">
+	<field name="heat_flux_transport_local" type="array" data_type="double" optional=true/>
+	<field name="heat_flux_gradient_local" type="array" data_type="double" optional=true/>
+	<field name="heat_flux_dissipation_local" type="array" data_type="double" optional=true/>
+	<field name="heat_flux_buoyancy_local" type="array" data_type="double" optional=true/>
+	<field name="heat_flux_tendency_local" type="array" data_type="double" optional=true/>
+	<field name="q_flux_transport_local" type="array" data_type="double" optional=true/>
+	<field name="q_flux_gradient_local" type="array" data_type="double" optional=true/>
+	<field name="q_flux_dissipation_local" type="array" data_type="double" optional=true/>
+	<field name="q_flux_buoyancy_local" type="array" data_type="double" optional=true/>
+	<field name="q_flux_tendency_local" type="array" data_type="double" optional=true/>	
+	<field name="uw_advection_local" type="array" data_type="double" optional=true/>
+	<field name="vw_advection_local" type="array" data_type="double" optional=true/>
+	<field name="uw_viscosity_local" type="array" data_type="double" optional=true/>
+	<field name="vw_viscosity_local" type="array" data_type="double" optional=true/>
+	<field name="uw_buoyancy_local" type="array" data_type="double" optional=true/>
+	<field name="vw_buoyancy_local" type="array" data_type="double" optional=true/>
+	<field name="uw_tendency_local" type="array" data_type="double" optional=true/>
+	<field name="vw_tendency_local" type="array" data_type="double" optional=true/>
+	<field name="uw_w_local" type="array" data_type="double" optional=true/>
+	<field name="vw_w_local" type="array" data_type="double" optional=true/>
+	<field name="tu_su_local" type="array" data_type="double" optional=true/>
+	<field name="uu_advection_local" type="array" data_type="double" optional=true/>
+	<field name="uu_viscosity_local" type="array" data_type="double" optional=true/>
+	<field name="wu_u_local" type="array" data_type="double" optional=true/>
+	<field name="tv_sv_local" type="array" data_type="double" optional=true/>
+	<field name="vv_advection_local" type="array" data_type="double" optional=true/>
+	<field name="vv_viscosity_local" type="array" data_type="double" optional=true/>
+	<field name="wv_v_local" type="array" data_type="double" optional=true/>
+	<field name="tw_sw_local" type="array" data_type="double" optional=true/>
+	<field name="ww_advection_local" type="array" data_type="double" optional=true/>
+	<field name="ww_viscosity_local" type="array" data_type="double" optional=true/>
+	<field name="ww_buoyancy_local" type="array" data_type="double" optional=true/>
+	<field name="u_thetal_local" type="array" data_type="double" optional=true/>
+	<field name="us_thetal_local" type="array" data_type="double" optional=true/>
+	<field name="u_thetal_advection_local" type="array" data_type="double" optional=true/>
+	<field name="u_thetal_viscosity_diffusion_local" type="array" data_type="double" optional=true/>
+	<field name="wu_thetal_local" type="array" data_type="double" optional=true/>
+	<field name="v_thetal_local" type="array" data_type="double" optional=true/>
+	<field name="vs_thetal_local" type="array" data_type="double" optional=true/>
+	<field name="v_thetal_advection_local" type="array" data_type="double" optional=true/>
+	<field name="v_thetal_viscosity_diffusion_local" type="array" data_type="double" optional=true/>
+	<field name="wv_thetal_local" type="array" data_type="double" optional=true/>
+	<field name="w_thetal_local" type="array" data_type="double" optional=true/>
+	<field name="ws_thetal_local" type="array" data_type="double" optional=true/>
+	<field name="w_thetal_advection_local" type="array" data_type="double" optional=true/>
+	<field name="w_thetal_buoyancy_local" type="array" data_type="double" optional=true/>
+	<field name="w_thetal_viscosity_diffusion_local" type="array" data_type="double" optional=true/>
+	<field name="ww_thetal_local" type="array" data_type="double" optional=true/>
+	<field name="thetal_thetal_local" type="array" data_type="double" optional=true/>
+	<field name="sthetal_thetal_local" type="array" data_type="double" optional=true/>
+	<field name="thetal_thetal_advection_local" type="array" data_type="double" optional=true/>
+	<field name="thetal_thetal_diffusion_local" type="array" data_type="double" optional=true/>
+	<field name="wthetal_thetal_local" type="array" data_type="double" optional=true/>
+	<field name="u_mse_local" type="array" data_type="double" optional=true/>
+	<field name="us_mse_local" type="array" data_type="double" optional=true/>
+	<field name="u_mse_advection_local" type="array" data_type="double" optional=true/>
+	<field name="u_mse_viscosity_diffusion_local" type="array" data_type="double" optional=true/>
+	<field name="wu_mse_local" type="array" data_type="double" optional=true/>
+	<field name="v_mse_local" type="array" data_type="double" optional=true/>
+	<field name="vs_mse_local" type="array" data_type="double" optional=true/>
+	<field name="v_mse_advection_local" type="array" data_type="double" optional=true/>
+	<field name="v_mse_viscosity_diffusion_local" type="array" data_type="double" optional=true/>
+	<field name="wv_mse_local" type="array" data_type="double" optional=true/>
+	<field name="w_mse_local" type="array" data_type="double" optional=true/>
+	<field name="ws_mse_local" type="array" data_type="double" optional=true/>
+	<field name="w_mse_advection_local" type="array" data_type="double" optional=true/>
+	<field name="w_mse_buoyancy_local" type="array" data_type="double" optional=true/>
+	<field name="w_mse_viscosity_diffusion_local" type="array" data_type="double" optional=true/>
+	<field name="ww_mse_local" type="array" data_type="double" optional=true/>
+	<field name="mse_mse_local" type="array" data_type="double" optional=true/>
+	<field name="smse_mse_local" type="array" data_type="double" optional=true/>
+	<field name="mse_mse_advection_local" type="array" data_type="double" optional=true/>
+	<field name="mse_mse_diffusion_local" type="array" data_type="double" optional=true/>
+	<field name="wmse_mse_local" type="array" data_type="double" optional=true/>
+	<field name="us_qt_local" type="array" data_type="double" optional=true/>
+	<field name="u_qt_advection_local" type="array" data_type="double" optional=true/>
+	<field name="u_qt_viscosity_diffusion_local" type="array" data_type="double" optional=true/>
+	<field name="wu_qt_local" type="array" data_type="double" optional=true/>
+	<field name="vs_qt_local" type="array" data_type="double" optional=true/>
+	<field name="v_qt_advection_local" type="array" data_type="double" optional=true/>
+	<field name="v_qt_viscosity_diffusion_local" type="array" data_type="double" optional=true/>
+	<field name="wv_qt_local" type="array" data_type="double" optional=true/>
+	<field name="w_qt_local" type="array" data_type="double" optional=true/>
+	<field name="ws_qt_local" type="array" data_type="double" optional=true/>
+	<field name="w_qt_advection_local" type="array" data_type="double" optional=true/>
+	<field name="w_qt_buoyancy_local" type="array" data_type="double" optional=true/>
+	<field name="w_qt_viscosity_diffusion_local" type="array" data_type="double" optional=true/>
+	<field name="ww_qt_local" type="array" data_type="double" optional=true/>
+	<field name="qt_qt_local" type="array" data_type="double" optional=true/>
+	<field name="sqt_qt_local" type="array" data_type="double" optional=true/>
+	<field name="qt_qt_advection_local" type="array" data_type="double" optional=true/>
+	<field name="qt_qt_diffusion_local" type="array" data_type="double" optional=true/>
+	<field name="wqt_qt_local" type="array" data_type="double" optional=true/>
+	<field name="mflux_local" type="scalar" data_type="double" optional=true/>
+</data-definition>
+
+<data-handling>
+	<diagnostic field="heat_flux_transport"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="heat_flux_transport" equation="heat_flux_transport_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="heat_flux_transport_g" field="heat_flux_transport_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="heat_flux_gradient"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="heat_flux_gradient" equation="heat_flux_gradient_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="heat_flux_gradient_g" field="heat_flux_gradient_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="heat_flux_dissipation"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="heat_flux_dissipation" equation="heat_flux_dissipation_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="heat_flux_dissipation_g" field="heat_flux_dissipation_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="heat_flux_buoyancy"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="heat_flux_buoyancy" equation="heat_flux_buoyancy_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="heat_flux_buoyancy_g" field="heat_flux_buoyancy_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="heat_flux_tendency"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="heat_flux_tendency" equation="heat_flux_tendency_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="heat_flux_tendency_g" field="heat_flux_tendency_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="q_flux_transport"  type="array" data_type="double" size="zn,qfields" units="SI">
+		<operator name="arithmetic" result="q_flux_transport" equation="q_flux_transport_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="q_flux_transport_g" field="q_flux_transport_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="q_flux_gradient"  type="array" data_type="double" size="zn,qfields" units="SI">
+		<operator name="arithmetic" result="q_flux_gradient" equation="q_flux_gradient_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="q_flux_gradient_g" field="q_flux_gradient_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="q_flux_dissipation"  type="array" data_type="double" size="zn,qfields" units="SI">
+		<operator name="arithmetic" result="q_flux_dissipation" equation="q_flux_dissipation_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="q_flux_dissipation_g" field="q_flux_dissipation_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="q_flux_buoyancy"  type="array" data_type="double" size="zn,qfields" units="SI">
+		<operator name="arithmetic" result="q_flux_buoyancy" equation="q_flux_buoyancy_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="q_flux_buoyancy_g" field="q_flux_buoyancy_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="q_flux_tendency"  type="array" data_type="double" size="zn,qfields" units="SI">
+		<operator name="arithmetic" result="q_flux_tendency" equation="q_flux_tendency_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="q_flux_tendency_g" field="q_flux_tendency_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="uw_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="uw_advection" equation="uw_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="uw_advection_g" field="uw_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="vw_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="vw_advection" equation="vw_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="vw_advection_g" field="vw_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="uw_viscosity"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="uw_viscosity" equation="uw_viscosity_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="uw_viscosity_g" field="uw_viscosity_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="vw_viscosity"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="vw_viscosity" equation="vw_viscosity_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="vw_viscosity_g" field="vw_viscosity_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="uw_buoyancy"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="uw_buoyancy" equation="uw_buoyancy_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="uw_buoyancy_g" field="uw_buoyancy_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="vw_buoyancy"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="vw_buoyancy" equation="vw_buoyancy_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="vw_buoyancy_g" field="vw_buoyancy_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="uw_tendency"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="uw_tendency" equation="uw_tendency_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="uw_tendency_g" field="uw_tendency_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="vw_tendency"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="vw_tendency" equation="vw_tendency_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="vw_tendency_g" field="vw_tendency_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="uw_w"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="uw_w" equation="uw_w_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="uw_w_g" field="uw_w_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="vw_w"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="vw_w" equation="vw_w_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="vw_w_g" field="vw_w_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="tu_su"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="tu_su" equation="tu_su_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="tu_su_g" field="tu_su_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="uu_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="uu_advection" equation="uu_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="uu_advection_g" field="uu_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="uu_viscosity"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="uu_viscosity" equation="uu_viscosity_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="uu_viscosity_g" field="uu_viscosity_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="wu_u"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="wu_u" equation="wu_u_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="wu_u_g" field="wu_u_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="tv_sv"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="tv_sv" equation="tv_sv_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="tv_sv_g" field="tv_sv_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="vv_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="vv_advection" equation="vv_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="vv_advection_g" field="vv_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="vv_viscosity"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="vv_viscosity" equation="vv_viscosity_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="vv_viscosity_g" field="vv_viscosity_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="wv_v"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="wv_v" equation="wv_v_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="wv_v_g" field="wv_v_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="tw_sw"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="tw_sw" equation="tw_sw_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="tw_sw_g" field="tw_sw_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="ww_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="ww_advection" equation="ww_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="ww_advection_g" field="ww_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="ww_viscosity"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="ww_viscosity" equation="ww_viscosity_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="ww_viscosity_g" field="ww_viscosity_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="ww_buoyancy"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="ww_buoyancy" equation="ww_buoyancy_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="ww_buoyancy_g" field="ww_buoyancy_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="u_thetal"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="u_thetal" equation="u_thetal_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="u_thetal_g" field="u_thetal_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="us_thetal"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="us_thetal" equation="us_thetal_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="us_thetal_g" field="us_thetal_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="u_thetal_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="u_thetal_advection" equation="u_thetal_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="u_thetal_advection_g" field="u_thetal_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="u_thetal_viscosity_diffusion"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="u_thetal_viscosity_diffusion" equation="u_thetal_viscosity_diffusion_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="u_thetal_viscosity_diffusion_g" field="u_thetal_viscosity_diffusion_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="wu_thetal"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="wu_thetal" equation="wu_thetal_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="wu_thetal_g" field="wu_thetal_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="v_thetal"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="v_thetal" equation="v_thetal_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="v_thetal_g" field="v_thetal_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="vs_thetal"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="vs_thetal" equation="vs_thetal_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="vs_thetal_g" field="vs_thetal_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="v_thetal_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="v_thetal_advection" equation="v_thetal_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="v_thetal_advection_g" field="v_thetal_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="v_thetal_viscosity_diffusion"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="v_thetal_viscosity_diffusion" equation="v_thetal_viscosity_diffusion_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="v_thetal_viscosity_diffusion_g" field="v_thetal_viscosity_diffusion_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="wv_thetal"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="wv_thetal" equation="wv_thetal_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="wv_thetal_g" field="wv_thetal_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="w_thetal"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="w_thetal" equation="w_thetal_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="w_thetal_g" field="w_thetal_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="ws_thetal"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="ws_thetal" equation="ws_thetal_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="ws_thetal_g" field="ws_thetal_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="w_thetal_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="w_thetal_advection" equation="w_thetal_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="w_thetal_advection_g" field="w_thetal_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="w_thetal_buoyancy"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="w_thetal_buoyancy" equation="w_thetal_buoyancy_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="w_thetal_buoyancy_g" field="w_thetal_buoyancy_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="w_thetal_viscosity_diffusion"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="w_thetal_viscosity_diffusion" equation="w_thetal_viscosity_diffusion_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="w_thetal_viscosity_diffusion_g" field="w_thetal_viscosity_diffusion_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="ww_thetal"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="ww_thetal" equation="ww_thetal_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="ww_thetal_g" field="ww_thetal_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="thetal_thetal"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="thetal_thetal" equation="thetal_thetal_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="thetal_thetal_g" field="thetal_thetal_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="sthetal_thetal"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="sthetal_thetal" equation="sthetal_thetal_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="sthetal_thetal_g" field="sthetal_thetal_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="thetal_thetal_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="thetal_thetal_advection" equation="thetal_thetal_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="thetal_thetal_advection_g" field="thetal_thetal_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="thetal_thetal_diffusion"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="thetal_thetal_diffusion" equation="thetal_thetal_diffusion_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="thetal_thetal_diffusion_g" field="thetal_thetal_diffusion_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="wthetal_thetal"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="wthetal_thetal" equation="wthetal_thetal_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="wthetal_thetal_g" field="wthetal_thetal_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="u_mse"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="u_mse" equation="u_mse_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="u_mse_g" field="u_mse_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="us_mse"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="us_mse" equation="us_mse_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="us_mse_g" field="us_mse_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="u_mse_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="u_mse_advection" equation="u_mse_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="u_mse_advection_g" field="u_mse_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="u_mse_viscosity_diffusion"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="u_mse_viscosity_diffusion" equation="u_mse_viscosity_diffusion_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="u_mse_viscosity_diffusion_g" field="u_mse_viscosity_diffusion_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="wu_mse"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="wu_mse" equation="wu_mse_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="wu_mse_g" field="wu_mse_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="v_mse"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="v_mse" equation="v_mse_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="v_mse_g" field="v_mse_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="vs_mse"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="vs_mse" equation="vs_mse_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="vs_mse_g" field="vs_mse_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="v_mse_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="v_mse_advection" equation="v_mse_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="v_mse_advection_g" field="v_mse_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="v_mse_viscosity_diffusion"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="v_mse_viscosity_diffusion" equation="v_mse_viscosity_diffusion_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="v_mse_viscosity_diffusion_g" field="v_mse_viscosity_diffusion_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="wv_mse"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="wv_mse" equation="wv_mse_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="wv_mse_g" field="wv_mse_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="w_mse"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="w_mse" equation="w_mse_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="w_mse_g" field="w_mse_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="ws_mse"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="ws_mse" equation="ws_mse_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="ws_mse_g" field="ws_mse_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="w_mse_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="w_mse_advection" equation="w_mse_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="w_mse_advection_g" field="w_mse_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="w_mse_buoyancy"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="w_mse_buoyancy" equation="w_mse_buoyancy_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="w_mse_buoyancy_g" field="w_mse_buoyancy_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="w_mse_viscosity_diffusion"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="w_mse_viscosity_diffusion" equation="w_mse_viscosity_diffusion_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="w_mse_viscosity_diffusion_g" field="w_mse_viscosity_diffusion_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="ww_mse"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="ww_mse" equation="ww_mse_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="ww_mse_g" field="ww_mse_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="mse_mse"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="mse_mse" equation="mse_mse_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="mse_mse_g" field="mse_mse_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="smse_mse"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="smse_mse" equation="smse_mse_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="smse_mse_g" field="smse_mse_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="mse_mse_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="mse_mse_advection" equation="mse_mse_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="mse_mse_advection_g" field="mse_mse_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="mse_mse_diffusion"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="mse_mse_diffusion" equation="mse_mse_diffusion_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="mse_mse_diffusion_g" field="mse_mse_diffusion_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="wmse_mse"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="wmse_mse" equation="wmse_mse_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="wmse_mse_g" field="wmse_mse_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="us_qt"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="us_qt" equation="us_qt_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="us_qt_g" field="us_qt_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="u_qt_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="u_qt_advection" equation="u_qt_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="u_qt_advection_g" field="u_qt_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="u_qt_viscosity_diffusion"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="u_qt_viscosity_diffusion" equation="u_qt__viscosity_diffusion_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="u_qt_viscosity_diffusion_g" field="u_qt_viscosity_diffusion_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="wu_qt"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="wu_qt" equation="wu_qt_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="wu_qt_g" field="wu_qt_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="vs_qt"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="vs_qt" equation="vs_qt_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="vs_qt_g" field="vs_qt_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="v_qt_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="v_qt_advection" equation="v_qt_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="v_qt_advection_g" field="v_qt_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="v_qt_viscosity_diffusion"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="v_qt_viscosity_diffusion" equation="v_qt_viscosity_diffusion_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="v_qt_viscosity_diffusion_g" field="v_qt_viscosity_diffusion_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="wv_qt"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="wv_qt" equation="wv_qt_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="wv_qt_g" field="wv_qt_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="w_qt"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="w_qt" equation="w_qt_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="w_qt_g" field="w_qt_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="ws_qt"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="ws_qt" equation="ws_qt_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="ws_qt_g" field="ws_qt_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="w_qt_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="w_qt_advection" equation="w_qt_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="w_qt_advection_g" field="w_qt_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="w_qt_buoyancy"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="w_qt_buoyancy" equation="w_qt_buoyancy_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="w_qt_buoyancy_g" field="w_qt_buoyancy_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="w_qt_viscosity_diffusion"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="w_qt_viscosity_diffusion" equation="w_qt_viscosity_diffusion_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="w_qt_viscosity_diffusion_g" field="w_qt_viscosity_diffusion_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="ww_qt"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="ww_qt" equation="ww_qt_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="ww_qt_g" field="ww_qt_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="qt_qt"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="qt_qt" equation="qt_qt_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="qt_qt_g" field="qt_qt_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="sqt_qt"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="sqt_qt" equation="sqt_qt_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="sqt_qt_g" field="sqt_qt_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="qt_qt_advection"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="qt_qt_advection" equation="qt_qt_advection_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="qt_qt_advection_g" field="qt_qt_advection_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="qt_qt_diffusion"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="qt_qt_diffusion" equation="qt_qt_diffusion_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="qt_qt_diffusion_g" field="qt_qt_diffusion_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="wqt_qt"  type="array" data_type="double" size="zn" units="SI">
+		<operator name="arithmetic" result="wqt_qt" equation="wqt_qt_g/({x_size}*{y_size})"/>
+		<communication name="reduction" operator="sum" result="wqt_qt_g" field="wqt_qt_local" root="auto"/>
+	</diagnostic>
+</data-handling>
+
+<group name="flux_diagnostics">
+	<member name="heat_flux_transport"/>
+	<member name="heat_flux_gradient"/>
+	<member name="heat_flux_dissipation"/>
+	<member name="heat_flux_buoyancy"/>
+	<member name="heat_flux_tendency"/>
+	<member name="q_flux_transport"/>
+	<member name="q_flux_gradient"/>
+	<member name="q_flux_dissipation"/>
+	<member name="q_flux_buoyancy"/>
+	<member name="q_flux_tendency"/>
+	<member name="uw_advection"/>
+	<member name="vw_advection"/>
+	<member name="uw_viscosity"/>
+	<member name="vw_viscosity"/>
+	<member name="uw_buoyancy"/>
+	<member name="vw_buoyancy"/>
+	<member name="uw_tendency"/>
+	<member name="vw_tendency"/>
+	<member name="uw_w"/>
+	<member name="vw_w"/>
+	<member name="tu_su"/>
+	<member name="uu_advection"/>
+	<member name="uu_viscosity"/>
+	<member name="wu_u"/>
+	<member name="tv_sv"/>
+	<member name="vv_advection"/>
+	<member name="vv_viscosity"/>
+	<member name="wv_v"/>
+	<member name="tw_sw"/>
+	<member name="ww_advection"/>
+	<member name="ww_viscosity"/>
+	<member name="ww_buoyancy"/>
+	<member name="u_thetal"/>
+	<member name="us_thetal"/>
+	<member name="u_thetal_advection"/>
+	<member name="u_thetal_viscosity_diffusion"/>
+	<member name="wu_thetal"/>
+	<member name="v_thetal"/>
+	<member name="vs_thetal"/>
+	<member name="v_thetal_advection"/>
+	<member name="v_thetal_viscosity_diffusion"/>
+	<member name="wv_thetal"/>
+	<member name="w_thetal"/>
+	<member name="ws_thetal"/>
+	<member name="w_thetal_advection"/>
+	<member name="w_thetal_buoyancy"/>
+	<member name="w_thetal_viscosity_diffusion"/>
+	<member name="ww_thetal"/>
+	<member name="thetal_thetal"/>
+	<member name="sthetal_thetal"/>
+	<member name="thetal_thetal_advection"/>
+	<member name="thetal_thetal_diffusion"/>
+	<member name="wthetal_thetal"/>
+	<member name="u_mse"/>
+	<member name="us_mse"/>
+	<member name="u_mse_advection"/>
+	<member name="u_mse_viscosity_diffusion"/>
+	<member name="wu_mse"/>
+	<member name="v_mse"/>
+	<member name="vs_mse"/>
+	<member name="v_mse_advection"/>
+	<member name="v_mse_viscosity_diffusion"/>
+	<member name="wv_mse"/>
+	<member name="w_mse"/>
+	<member name="ws_mse"/>
+	<member name="w_mse_advection"/>
+	<member name="w_mse_buoyancy"/>
+	<member name="w_mse_viscosity_diffusion"/>
+	<member name="ww_mse"/>
+	<member name="mse_mse"/>
+	<member name="smse_mse"/>
+	<member name="mse_mse_advection"/>
+	<member name="mse_mse_diffusion"/>
+	<member name="wmse_mse"/>
+	<member name="us_qt"/>
+	<member name="u_qt_advection"/>
+	<member name="u_qt_viscosity_diffusion"/>
+	<member name="wu_qt"/>
+	<member name="vs_qt"/>
+	<member name="v_qt_advection"/>
+	<member name="v_qt_viscosity_diffusion"/>
+	<member name="wv_qt"/>
+	<member name="w_qt"/>
+	<member name="ws_qt"/>
+	<member name="w_qt_advection"/>
+	<member name="w_qt_buoyancy"/>
+	<member name="w_qt_viscosity_diffusion"/>
+	<member name="ww_qt"/>
+	<member name="qt_qt"/>
+	<member name="sqt_qt"/>
+	<member name="qt_qt_advection"/>
+	<member name="qt_qt_diffusion"/>
+	<member name="wqt_qt"/>
+</group>
