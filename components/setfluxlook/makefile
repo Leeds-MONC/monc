@@ -1,7 +1,7 @@
 SRCSF = src/setfluxlook.F90
 
 BUILDDIR=build
-COREDIR=../../core/build
+COREDIR=../../model_core/build
 FFLAGS=-I $(BUILDDIR) -I $(COREDIR) $(COMPILERFFLAGS) -I $(NETCDF_DIR)/include
 OBJS = $(patsubst %.F90,$(BUILDDIR)/%.o,$(SRCSF))
 

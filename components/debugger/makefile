@@ -1,7 +1,7 @@
 SRCSF = src/debugger.F90
 
 BUILDDIR=build
-COREDIR=../../core/build
+COREDIR=../../model_core/build
 FFLAGS=-I $(BUILDDIR) -I $(COREDIR) $(COMPILERFFLAGS)
 OBJS = $(patsubst %.F90,$(BUILDDIR)/%.o,$(SRCSF))
 

@@ -1,7 +1,7 @@
 SRCSF = src/fftw.F90 src/pencilfft.F90 src/fftsolver.F90
 
 BUILDDIR=build
-COREDIR=../../core/build
+COREDIR=../../model_core/build
 FFLAGS=-I $(BUILDDIR) -I $(COREDIR) -I $(FFTW_DIR)/include $(COMPILERFFLAGS)
 OBJS = $(patsubst %.F90,$(BUILDDIR)/%.o,$(SRCSF))
 

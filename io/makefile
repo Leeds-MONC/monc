@@ -1,5 +1,5 @@
 BUILDDIR=build
-MONC_CORE_BUILDDIR=../core/build
+MONC_CORE_BUILDDIR=../model_core/build
 CHECKPOINT_COMPONENT_BUILDDIR=../components/checkpointer/build
 
 DEFINES = -D_XOPEN_SOURCE=700

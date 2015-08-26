@@ -5,7 +5,7 @@ else
 .DEFAULT_GOAL :=local
 endif
 
-CORE_DIR=core
+CORE_DIR=model_core
 COMPONENTS_DIR=components
 TESTCASE_DIR=testcases
 IO_SERVER_DIR=io
@@ -65,14 +65,14 @@ export COMPILERFFLAGS
 export COMPILERRECURSIVE
 export FTN
 
-clean: clean-core clean-components clean-testcases clean-ioserver
+clean: clean-model_core clean-components clean-testcases clean-ioserver
 	rm -Rf build/*
 
 
-clean-build: clean-build-core clean-build-components clean-build-testcases clean-build-ioserver
+clean-build: clean-build-model_core clean-build-components clean-build-testcases clean-build-ioserver
 	rm -Rf build
 
-buildmonc: check-vars create-build-dirs compile-core compile-components compile-testcases $(IO_SERVER_DEPENDENCY) compile-bootstrapper
+buildmonc: check-vars create-build-dirs compile-model_core compile-components compile-testcases $(IO_SERVER_DEPENDENCY) compile-bootstrapper
 	$(FTN) -o $(EXEC_NAME) $(BUILD_DIR)/*.o $(CORE_DIR)/$(BUILD_DIR)/*.o $(COMPONENTS_DIR)/$(BUILD_DIR)/*.o $(TESTCASE_DIR)/$(BUILD_DIR)/*.o $(LFLAGS)
 
 check-vars:
@@ -83,13 +83,13 @@ check-vars:
 create-build-dirs:
 	mkdir -p $(BUILD_DIR)
 
-compile-core:	
+compile-model_core:	
 	cd $(CORE_DIR) ; $(MAKE)
 
-clean-core:
+clean-model_core:
 	cd $(CORE_DIR); $(MAKE) clean 
 
-clean-build-core:
+clean-build-model_core:
 	cd $(CORE_DIR); $(MAKE) clean-build
 
 compile-components:

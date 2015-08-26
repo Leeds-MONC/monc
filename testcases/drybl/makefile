@@ -2,7 +2,7 @@ SRCSF = src/drybl.F90
 
 BUILDDIR=build
 NETCDF_DIR?=/usr
-COREDIR=../../core/build
+COREDIR=../../model_core/build
 FFLAGS=-I $(BUILDDIR) -I $(COREDIR) -I $(NETCDF_DIR)/include $(COMPILERFFLAGS)
 OBJS = $(patsubst %.F90,$(BUILDDIR)/%.o,$(SRCSF))
 

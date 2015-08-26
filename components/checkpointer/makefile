@@ -1,7 +1,7 @@
 SRCSF = src/checkpointcommon.F90 src/readcheckpoint.F90 src/writecheckpoint.F90 src/checkpointer.F90
 
 BUILDDIR=build
-COREDIR=../../core/build
+COREDIR=../../model_core/build
 FFLAGS=-I $(BUILDDIR) -I $(COREDIR) -I $(NETCDF_DIR)/include $(COMPILERFFLAGS)
 OBJS = $(patsubst %.F90,$(BUILDDIR)/%.o,$(SRCSF))
 
