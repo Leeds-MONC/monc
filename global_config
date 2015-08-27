@@ -7,16 +7,17 @@ coriolis_enabled=.true.
 damping_enabled=.false.
 debugger_enabled=.false.
 decomposition_enabled=.true.
+diagnostics_enabled=.false.
 diffusion_enabled=.true.
 diverr_enabled=.true.
 fftsolver_enabled=.true.
+flux_budget_enabled=.false.
 forcing_enabled=.false.
 grid_manager_enabled=.true.
 halo_swapper_enabled=.true.
 iobridge_enabled=.false.
 iterativesolver_enabled=.false.
 kidreader_enabled=.false.
-kidtestcase_enabled=.false.
 lower_bc_enabled=.true.
 mean_profiles_enabled=.false.
 model_synopsis_enabled=.true.
@@ -36,11 +37,14 @@ th_advection_enabled=.false.
 tvd_advection_enabled=.true.
 viscosity_enabled=.true.
 randomnoise_enabled=.false. 
-casim_enabled=.false. 
+casim_enabled=.false.
+lwrad_exponential_enabled=.false. 
+lateral_bcs_enabled=.false.
 
 # Default disable the test case components (individual user config will enable these)
 bubble_enabled=.false.
 drybl_enabled=.false.
+kidtestcase_enabled=.false.
 
 # Component timestepping groups
 group_names= start, subgrid, dynamics, solver, pressure-terms, last
@@ -52,26 +56,28 @@ solver_group_type=entire
 pressure-terms_group_type=column
 last_group_type=entire
 
-start_group_contents=stepping_direction, halo_swapper, setfluxlook
+start_group_contents=stepping_direction, halo_swapper, lateral_bcs, setfluxlook
 subgrid_group_contents=lower_bc, smagorinsky
-dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, simplecloud, casim,diverr, psrce, stepfields
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, lwrad_exponential, simplecloud, casim,diverr, psrce, stepfields, flux_budget
+
 solver_group_contents=mean_profiles, fftsolver, iterativesolver, cfltest
 pressure-terms_group_contents=pstep, swap_smooth
-last_group_contents=checkpointer, model_synopsis, termination_check
+last_group_contents=checkpointer, model_synopsis, termination_check, iobridge
 
 # Component ordering for other stages
 
-initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, io_bridge, iterativesolver, setfluxlook, lower_bc, physicsa, psrce, pw_advection, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, simplecloud, casim,th_advection, randomnoise, forcing 
-finalisation_stage_ordering=checkpointer, diverr, fftsolver, grid_manager, halo_swapper, io_bridge, iterativesolver, physicsa, psrce, smagorinsky, tvd_advection, model_synopsis, mean_profiles, forcing, stepfields
+initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, io_bridge, iterativesolver, setfluxlook, lower_bc, physicsa, psrce, pw_advection, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, lwrad_exponential, simplecloud, casim,th_advection, randomnoise, forcing, flux_budget, lateral_bcs
+finalisation_stage_ordering=checkpointer, diverr, fftsolver, grid_manager, halo_swapper, io_bridge, iterativesolver, physicsa, psrce, smagorinsky, tvd_advection,lwrad_exponential, model_synopsis, mean_profiles, forcing, stepfields, flux_budget
 
 # Control configuration
 nn_timesteps=1
 display_synopsis_frequency=10
-nn_consolidation=2
 termination_time=1.0
 dtm=0.001
 nsmth=40
-logging_modlevel=4  #Everything level logging
+logging_modlevel=3  #INFO level logging
+check_msg_frequency=500
+msg_filename=messages
 
 # CFL configuration
 cfl_frequency=10
@@ -105,6 +111,10 @@ checkpoint_frequency=10
 checkpoint_file="monc.nc"
 checkpoint_unique_per_dump=.false.
 checkpoint_enable_write=.true.
+
+# Diagnostic flux configuration
+wmfcrit=0.0
+qlcrit=0.0
 
 # Iterative solver configuration
 tolerance=1.e-5
@@ -153,14 +163,17 @@ enable_theta=.false.
 use_time_varying_surface_values=.false.
 use_saturated_surface=.true.
 calculate_th_and_q_init=.false.
-galilean_transformation=.true.
 use_viscosity_and_diffusion=.true.
+galilean_transformation=.true.
 use_surface_fluxes=.true.
 backscatter=.false.
 type_of_surface_boundary_conditions=0
+halo_depth=2
+
+galilean_transformation=.false.
 fix_ugal=.false.
 fix_vgal=.false.
-halo_depth=2
+
 
 # Initial profiles setup
 l_init_pl_theta=.false.
@@ -211,7 +224,6 @@ betah=7.8
 gammam=19.3
 gammah=12.0
 pi=3.14159
-surface_vapour_mixing_ratio=0.0
 cp=1005.0
 rlvap=2.501e6
 r=287.0
@@ -219,10 +231,11 @@ G=9.81
 convective_limit=-0.5
 ratio_mol_wts=1.608
 rlargep=1.0e37
+surface_vapour_mixing_ratio=0.0
 
 # IO server configuration
-ioserver_configuration_file=""
-ioserver_placement_period=1
+ioserver_configuration_file="io/description.xml"
+ioserver_placement_period=3
 
 # Kid reader configuration
 kid_configuration_file=""
@@ -251,8 +264,13 @@ kid_pqv=0.0,0.0,0.0
 max_height_cloud=20000.
 
 #tank experiments
+l_bubbles=.false.
+l_splittank=.false.
+l_sources=.false.
+l_bubble_straka=.false.
 bubble_lrandom=.false.
 tank_lmoist=.false.
+l_bubble_use_t=.false.
 
 barrier_x=0.
 barrier_y=0.
@@ -264,6 +282,11 @@ front_tank_delta_rh=0.
 back_tank_delta_rh=0.
 left_tank_delta_rh=0. 
 right_tank_delta_rh=0.
+
+# Radiation settings - variables and switches for exponential radiation (LWEXP) 
+longwave_exp_decay = 85.0 # longwave rad exponential decay factor
+cltop_longwave_flux = 70.0 # cloud top longwave flux (Wm-2)
+clbase_longwave_flux = 22.0 # cloud base longwave flux (Wm-2)
 
 #CASIM switches
 
