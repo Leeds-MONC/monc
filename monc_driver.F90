@@ -1,9 +1,7 @@
 !> MONC program entry point which simply calls the main procedure in the MONC module
 !  
 program monc_driver
-#ifdef IO_SERVER
   use io_server_mod, only : io_server_run
-#endif
   use monc_mod, only : monc_core_bootstrap
   use monc_component_mod, only : component_descriptor_type
   use collections_mod, only : list_type, c_add
@@ -20,11 +18,7 @@ program monc_driver
   type(list_type) :: component_descriptions
 
   call get_compiled_components(component_descriptions)
-#ifdef IO_SERVER
-  call monc_core_bootstrap(component_descriptions, io_server_run=io_server_run)
-#else
-  call monc_core_bootstrap(component_descriptions)
-#endif
+  call monc_core_bootstrap(component_descriptions, io_server_run)
 contains
 
   subroutine get_compiled_components(component_descriptions)

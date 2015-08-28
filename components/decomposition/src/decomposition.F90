@@ -191,10 +191,7 @@ contains
          current_state%local_grid%corner_neighbours(4,1), ierr)
     
     !! TODO: hardcoded for halo depth two?
-    do i = 1, halo_depth
-    current_state%local_grid%corner_neighbours(:,i+1) = &
-         current_state%local_grid%corner_neighbours(:,1)
-    end do
+    current_state%local_grid%corner_neighbours(:,2)=current_state%local_grid%corner_neighbours(:,1)
   end subroutine apply_two_dim_neighbour_information
 
   !> Determines whether or not the planned two dimensional decomposition will fit into the

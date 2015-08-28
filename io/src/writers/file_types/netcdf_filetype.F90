@@ -16,7 +16,6 @@ module netcdf_filetype_writer_mod
        NF90_COLLECTIVE, NF90_UNLIMITED, nf90_def_var, nf90_var_par_access, nf90_def_var_fill, nf90_put_att, &
        nf90_create, nf90_put_var, nf90_def_dim, nf90_enddef, nf90_close, nf90_ebaddim, nf90_enotatt, nf90_enotvar, &
        nf90_noerr, nf90_strerror, nf90_redef, nf90_inq_varid
-  use checkpointer_common_mod, only : check_status
   use io_server_client_mod, only : ARRAY_FIELD_TYPE, SCALAR_FIELD_TYPE, DOUBLE_DATA_TYPE, INTEGER_DATA_TYPE  
   use mpi, only : MPI_INFO_NULL
   implicit none
@@ -563,4 +562,22 @@ contains
     call check_status(nf90_put_att(ncid, NF90_GLOBAL, "Previous diagnostic write at", &
          trim(conv_to_string(file_writer_information%previous_write_time))))
   end subroutine write_out_global_attributes
+
+  !> Will check a NetCDF status and write to log_log error any decoded statuses. Can be used to decode
+  !! whether a dimension or variable exists within the NetCDF data file
+  !! @param status The NetCDF status flag
+  !! @param foundFlag Whether the field has been found or not
+  subroutine check_status(status, found_flag)
+    integer, intent(in) :: status
+    logical, intent(out), optional :: found_flag
+
+    if (present(found_flag)) then
+      found_flag = status /= nf90_ebaddim .and. status /= nf90_enotatt .and. status /= nf90_enotvar
+      if (.not. found_flag) return
+    end if
+
+    if (status /= nf90_noerr) then
+      call log_log(LOG_ERROR, "NetCDF returned error code of "//trim(nf90_strerror(status)))
+    end if
+  end subroutine check_status
 end module netcdf_filetype_writer_mod

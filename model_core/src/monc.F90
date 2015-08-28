@@ -51,53 +51,64 @@ contains
   !! @param io_server_run Optional IO server entry procedure
   subroutine monc_core_bootstrap(component_descriptions, io_server_run)
     type(list_type), intent(inout) :: component_descriptions
-    procedure(io_server_run_procedure), optional :: io_server_run
+    procedure(io_server_run_procedure) :: io_server_run
 
     type(model_state_type) :: state
     integer :: ierr, myrank, size, io_server_placement_period, provided_threading
-    logical :: i_am_monc_process
+    logical :: i_am_monc_process, enable_io_server
     character(len=LONG_STRING_LENGTH) :: io_server_config_file
     character, dimension(:), allocatable :: io_server_configuration_contents
 
-#ifdef IO_SERVER
-    call mpi_init_thread(MPI_THREAD_MULTIPLE, provided_threading, ierr)
-#else
-    call mpi_init(ierr)
-#endif
+    call load_model_configuration(state%options_database)
+
+    enable_io_server=determine_if_io_server_enabled(state%options_database)
+
+    if (enable_io_server) then
+      call mpi_init_thread(MPI_THREAD_MULTIPLE, provided_threading, ierr)
+    else
+      call mpi_init(ierr)
+    end if
     
     call init_data_defn()
     ! Set up the logging with comm world PIDs initially for logging from the configuration parsing
     call mpi_comm_rank(MPI_COMM_WORLD, myrank, ierr)
     call initialise_logging(myrank)
-
-    call load_model_configuration(state%options_database)
+    
     call log_set_logging_level(options_get_integer(state%options_database, "logging_modlevel"))
 
-#ifdef IO_SERVER
-    call mpi_comm_size(MPI_COMM_WORLD, size, ierr)
-    if (size==1) call log_log(LOG_ERROR, &
-         "Run with 1 process, With IO server enabled then the minimum process size is 2 (1 for IO, 1 for MONC)")
-    call get_io_configuration(state%options_database, io_server_config_file, io_server_placement_period)
-    call split_communicator_into_monc_and_io(io_server_placement_period, state%parallel%monc_communicator, &
-         state%parallel%io_communicator, i_am_monc_process, state%parallel%corresponding_io_server_process)
-    if (.not. i_am_monc_process) then
-      if (present(io_server_run)) then
+    if (enable_io_server) then
+      call mpi_comm_size(MPI_COMM_WORLD, size, ierr)
+      if (size==1) call log_log(LOG_ERROR, &
+           "Run with 1 process, With IO server enabled then the minimum process size is 2 (1 for IO, 1 for MONC)")
+      call get_io_configuration(state%options_database, io_server_config_file, io_server_placement_period)
+      call split_communicator_into_monc_and_io(io_server_placement_period, state%parallel%monc_communicator, &
+           state%parallel%io_communicator, i_am_monc_process, state%parallel%corresponding_io_server_process)
+      if (.not. i_am_monc_process) then        
         io_server_configuration_contents=get_io_xml(io_server_config_file)
         call io_server_run(state%options_database, state%parallel%io_communicator, &
-             io_server_configuration_contents, provided_threading, size)
-      else
-        call log_log(LOG_ERROR, "IO server enabled but no IO server procedure provided")
+             io_server_configuration_contents, provided_threading, size)       
+      else  
+        call monc_run(component_descriptions, state)
       end if
-    else  
-      call monc_run(component_descriptions, state)
-    end if
-#else
+    else
       state%parallel%monc_communicator=MPI_COMM_WORLD
       call monc_run(component_descriptions, state)
-#endif
+    end if
 
     call mpi_finalize(ierr)
   end subroutine monc_core_bootstrap
+
+  !> Determines whether the IO server should be enabled or not
+  !! @param options_database The options database
+  !! @returns Whether to enable the IO server or not
+  logical function determine_if_io_server_enabled(options_database)
+    type(map_type), intent(inout) :: options_database
+
+    determine_if_io_server_enabled=options_get_logical(options_database, "enable_io_server")
+    if (determine_if_io_server_enabled) then
+      determine_if_io_server_enabled=options_get_logical(options_database, "iobridge_enabled")      
+    end if    
+  end function determine_if_io_server_enabled  
 
   !> Loads the configuration into the options database, either from a file or checkpoint
   !! @param options_database The options database

@@ -236,6 +236,7 @@ surface_vapour_mixing_ratio=0.0
 # IO server configuration
 ioserver_configuration_file="io/description.xml"
 ioserver_placement_period=3
+enable_io_server=.true.
 
 # Kid reader configuration
 kid_configuration_file=""

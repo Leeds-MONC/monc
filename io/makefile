@@ -1,12 +1,11 @@
 BUILDDIR=build
 MONC_CORE_BUILDDIR=../model_core/build
-CHECKPOINT_COMPONENT_BUILDDIR=../components/checkpointer/build
 
 DEFINES = -D_XOPEN_SOURCE=700
 PLATFORM = -D__DARWIN
 
-CFLAGS= -fPIC $(PLATFORM)
-FFLAGS= -fPIC -I $(BUILDDIR) -I $(MONC_CORE_BUILDDIR) -I $(CHECKPOINT_COMPONENT_BUILDDIR) -I $(NETCDF_DIR)/include $(COMPILERRECURSIVE) $(COMPILERFFLAGS) -DENFORCE_THREAD_SAFETY $(PLATFORM)
+CFLAGS= $(PLATFORM)
+FFLAGS= -I $(BUILDDIR) -I $(MONC_CORE_BUILDDIR) -I $(NETCDF_DIR)/include $(COMPILERRECURSIVE) $(COMPILERFFLAGS) -DENFORCE_THREAD_SAFETY $(PLATFORM)
 LFLAGS=
 
 CSOURCES := $(wildcard src/forthread/*.c)
@@ -20,7 +19,7 @@ COBJECTS := $(patsubst %.c,$(BUILDDIR)/%.o,$(CSOURCES))
 SRCS=$(SRCSF)
 OBJS=$(OBJSF)
 
-all: create-build-dirs create-forthread $(OBJS) create-shared create-static
+all: create-build-dirs create-forthread $(OBJS)
 	
 
 create-build-dirs:
@@ -32,12 +31,6 @@ create-forthread: $(COBJECTS)
 
 $(COBJECTS):  $(BUILDDIR)/%.o : %.c
 	$(CC) $(DEFINES) $(CFLAGS)  -c $< -o $(BUILDDIR)/$(notdir $@)
-
-create-shared:
-	$(FTN) -shared -Wl,-soname,libmonc_io.so -o libmonc_io.so $(BUILDDIR)/*.o
-
-create-static:
-	ar rcs libmonc_io.a $(BUILDDIR)/*.o
 
 $(OBJS) : $(BUILDDIR)/%.o : %.F90
 	$(FTN) $(OPT) $(FFLAGS) $(DBG) $< -o $(BUILDDIR)/$(notdir $@)

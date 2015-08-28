@@ -7,11 +7,7 @@ SRCSF = $(SRCS_UTIL) src/grid/grids.F90 src/grid/prognostics.F90 src/grid/stenci
 BUILDDIR=build
 IO_BUILDDIR=../io/build
 
-ifeq ($(USE_MONC_IO),1)
 FFLAGS=-I $(BUILDDIR) -I $(NETCDF_DIR)/include $(COMPILERRECURSIVE) $(COMPILERFFLAGS)
-else
-FFLAGS=-I $(BUILDDIR) -I $(NETCDF_DIR)/include $(COMPILERFFLAGS)
-endif
 
 OBJS = $(patsubst %.F90,$(BUILDDIR)/%.o,$(SRCSF))
 OBJS_SPECIAL= $(patsubst %.F90,$(BUILDDIR)/%.o,$(SRC_SPECIAL))

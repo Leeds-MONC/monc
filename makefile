@@ -19,21 +19,10 @@ FTN=ftn
 COMPILERFFLAGS=-O3
 COMPILERRECURSIVE=
 ACTIVE=-DU_ACTIVE -DV_ACTIVE -DW_ACTIVE -DUSE_MAKE
-IO_SERVER_DEPENDENCY=
 DEBUG_FLAGS=-g -fcheck=all -ffpe-trap=invalid,zero,overflow -fbacktrace -DDEBUG_MODE
 
-FFLAGS=-I $(CORE_DIR)/$(BUILD_DIR) -I $(COMPONENTS_DIR)/$(BUILD_DIR) -I $(TESTCASE_DIR)/$(BUILD_DIR)
-
-ifeq ($(USE_MONC_IO),1)
-	IO_LIBRARY=-lmonc_io -lpthread
-	ACTIVE+=-DIO_SERVER
-	IO_SERVER_DEPENDENCY=compile-ioserver
-	FFLAGS+=-I $(IO_SERVER_DIR)/$(BUILD_DIR)
-	DEBUG_FLAGS=-g -fcheck=do,array-temps,bounds,mem,pointer -DDEBUG_MODE
-endif
-
-LFLAGS=-L$(NETCDF_DIR)/lib -L./io -L misc/forthreads -L$(FFTW_DIR)/lib -L$(HDF5_DIR)/lib -lnetcdff -lnetcdf -lhdf5 -lhdf5_hl -lz -lfftw3 $(IO_LIBRARY)
-FFLAGS+=$(COMPILERFFLAGS)
+FFLAGS=-I $(CORE_DIR)/$(BUILD_DIR) -I $(COMPONENTS_DIR)/$(BUILD_DIR) -I $(TESTCASE_DIR)/$(BUILD_DIR) -I $(IO_SERVER_DIR)/$(BUILD_DIR) $(COMPILERFFLAGS)
+LFLAGS=-L$(NETCDF_DIR)/lib -L./io -L misc/forthreads -L$(FFTW_DIR)/lib -L$(HDF5_DIR)/lib -lnetcdff -lnetcdf -lhdf5 -lhdf5_hl -lz -lfftw3 -lpthread
 EXEC_NAME=monc
 
 local: FTN=mpif90
@@ -72,8 +61,8 @@ clean: clean-model_core clean-components clean-testcases clean-ioserver
 clean-build: clean-build-model_core clean-build-components clean-build-testcases clean-build-ioserver
 	rm -Rf build
 
-buildmonc: check-vars create-build-dirs compile-model_core compile-components compile-testcases $(IO_SERVER_DEPENDENCY) compile-bootstrapper
-	$(FTN) -o $(EXEC_NAME) $(BUILD_DIR)/*.o $(CORE_DIR)/$(BUILD_DIR)/*.o $(COMPONENTS_DIR)/$(BUILD_DIR)/*.o $(TESTCASE_DIR)/$(BUILD_DIR)/*.o $(LFLAGS)
+buildmonc: check-vars create-build-dirs compile-model_core compile-ioserver compile-components compile-testcases compile-bootstrapper
+	$(FTN) -o $(EXEC_NAME) $(BUILD_DIR)/*.o $(CORE_DIR)/$(BUILD_DIR)/*.o $(COMPONENTS_DIR)/$(BUILD_DIR)/*.o $(TESTCASE_DIR)/$(BUILD_DIR)/*.o $(IO_SERVER_DIR)/$(BUILD_DIR)/*.o $(LFLAGS)
 
 check-vars:
 	$(call check_defined, NETCDF_DIR, Need the path to the NetCDF installation directory as an environment variable - export this before running make)

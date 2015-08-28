@@ -7,7 +7,7 @@ module iobridge_mod
   use collections_mod, only : map_type, list_type, c_contains, c_get, c_put, c_size, c_key_at
   use state_mod, only : model_state_type
   use grids_mod, only : X_INDEX, Y_INDEX, Z_INDEX, local_grid_type
-  use optionsdatabase_mod, only : options_size
+  use optionsdatabase_mod, only : options_size, options_get_logical
   use prognostics_mod, only : prognostic_field_type
   use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, log_master_log
@@ -46,6 +46,7 @@ module iobridge_mod
 
   type(io_configuration_data_definition_type), dimension(:), allocatable :: data_definitions
   type(map_type) :: unique_field_names, sendable_fields, component_field_descriptions
+  logical :: io_server_enabled
 
   public iobridge_get_descriptor
 
@@ -66,10 +67,13 @@ contains
 
     integer :: mpi_type_data_sizing_description, mpi_type_definition_description, mpi_type_field_description, ierr
 
-#ifndef IO_SERVER
-    call log_master_log(LOG_WARN, "Enabled IO bridge but missing IO server compilation, therefore ignoring IO bridge component")
-    return
-#endif
+    if (.not. options_get_logical(current_state%options_database, "enable_io_server")) then
+      io_server_enabled=.false.
+      call log_master_log(LOG_WARN, "Enabled IO bridge but missing IO server compilation, therefore ignoring IO bridge component")
+      return
+    end if
+
+    io_server_enabled=.true.
 
     call populate_sendable_fields(current_state)
 
@@ -94,9 +98,7 @@ contains
 
     integer :: ierr, testv, i, completed_flag, command_to_send
 
-#ifndef IO_SERVER
-    return
-#endif
+    if (.not. io_server_enabled) return
 
     do i=1, size(data_definitions)
       if (mod(current_state%timestep, data_definitions(i)%frequency) == 0) then
@@ -125,9 +127,8 @@ contains
 
     integer :: ierr, i
 
-#ifndef IO_SERVER
-    return
-#endif
+    if (.not. io_server_enabled) return
+
     do i=1, size(data_definitions)
       if (data_definitions(i)%dump_requests(1) .ne. MPI_REQUEST_NULL .or. &
            data_definitions(i)%dump_requests(2) .ne. MPI_REQUEST_NULL) then
