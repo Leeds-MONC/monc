@@ -5,7 +5,7 @@ module reduction_inter_io_mod
   use datadefn_mod, only : DEFAULT_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : io_configuration_type, io_configuration_inter_communication_description
   use collections_mod, only : map_type, hashmap_type, list_type, c_get, c_add, c_put, c_size, c_remove, c_is_empty, c_contains, &
-       c_entry_at, c_free
+       c_entry_at, c_free, c_value_at, c_key_at
   use conversions_mod, only : conv_to_string, conv_to_integer, conv_to_generic
   use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_trylock, &
        forthread_mutex_unlock, forthread_mutex_destroy, forthread_rwlock_rdlock, forthread_rwlock_wrlock, &
@@ -449,18 +449,33 @@ contains
     end if
 
     if (do_read_lock) call check_thread_status(forthread_rwlock_rdlock(reduction_progress_rwlock))
-    found_entry=c_entry_at(reduction_progresses, index, key, generic)
+    generic=>c_value_at(reduction_progresses, index)
     if (do_read_lock) call check_thread_status(forthread_rwlock_unlock(reduction_progress_rwlock))
 
-    if (found_entry .and. associated(generic)) then
+    if (associated(generic)) then
+      key=c_key_at(reduction_progresses, index)
       select type(generic)
       type is (reduction_progress_type)      
         get_reduction_progress_at_index=>generic
-      end select      
+      end select
     else
       get_reduction_progress_at_index=>null()
       key=""
-    end if    
+    end if
+
+!!$    if (do_read_lock) call check_thread_status(forthread_rwlock_rdlock(reduction_progress_rwlock))
+!!$    found_entry=c_entry_at(reduction_progresses, index, key, generic)
+!!$    if (do_read_lock) call check_thread_status(forthread_rwlock_unlock(reduction_progress_rwlock))
+!!$
+!!$    if (found_entry .and. associated(generic)) then
+!!$      select type(generic)
+!!$      type is (reduction_progress_type)      
+!!$        get_reduction_progress_at_index=>generic
+!!$      end select      
+!!$    else
+!!$      get_reduction_progress_at_index=>null()
+!!$      key=""
+!!$    end if    
   end function get_reduction_progress_at_index
 
   !> Given the map of action attributes this procedure will identify the reduction operator that has been
