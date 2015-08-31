@@ -5,7 +5,7 @@ module diagnostic_federator_mod
   use configuration_parser_mod, only : io_configuration_type, io_configuration_misc_item_type, data_values_type, &
        io_configuration_field_type, get_number_field_dimensions, get_data_value_by_field_name
   use collections_mod, only : hashmap_type, hashset_type, map_type, list_type, c_get, c_size, c_put, c_contains, c_is_empty, &
-       c_add, c_remove, c_value_at, c_key_at
+       c_add, c_remove, c_value_at, c_key_at, c_free
   use conversions_mod, only : conv_to_generic, conv_to_string, conv_to_real, conv_to_integer, generic_to_double_real
   use reduction_inter_io_mod, only : init_reduction_inter_io, check_reduction_inter_io_for_completion, &
        finalise_reduction_inter_io, perform_inter_io_reduction, get_reduction_operator
@@ -37,7 +37,7 @@ module diagnostic_federator_mod
 
   !< A wrapper type containing all the diagnostics for MONC source processes at a specific timestep
   type all_diagnostics_at_timestep_type
-     integer :: communication_corresponding_activities_rwlock
+     integer :: communication_corresponding_activities_rwlock, completed_diagnostics_rwlock
      type(list_type) :: diagnostic_entries
      type(hashset_type) :: completed_diagnostics
      type(hashmap_type) :: communication_corresponding_activities
@@ -74,12 +74,13 @@ module diagnostic_federator_mod
   integer, volatile :: timestep_entries_rwlock, all_diagnostics_per_timestep_rwlock
 
  public initialise_diagnostic_federator, finalise_diagnostic_federator, check_diagnostic_federator_for_completion, &
-      pass_fields_to_diagnostics_federator
+      pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available
 contains  
 
   !> Initialises the diagnostics action and sets up the diagnostics master definitions
   !! @param io_configuration The IO server configuration
-  subroutine initialise_diagnostic_federator(io_configuration)
+  !! @returns The map of diagnostic fields to the frequency (in timesteps) of generation
+  type(hashmap_type) function initialise_diagnostic_federator(io_configuration)
     type(io_configuration_type), intent(inout) :: io_configuration
 
     call initialise_operators()
@@ -89,8 +90,8 @@ contains
     call init_broadcast_inter_io(io_configuration)
     call init_allreduction_inter_io(io_configuration)
     call init_global_callback_inter_io(io_configuration)
-    call define_diagnostics(io_configuration)
-  end subroutine initialise_diagnostic_federator
+    call define_diagnostics(io_configuration, initialise_diagnostic_federator)
+  end function initialise_diagnostic_federator
   
   !> Checks whether the diagnostics federator has completed or not, this is really checking all the underlying operations
   !! and communications to ensure that the data has been sent all the way through
@@ -121,6 +122,46 @@ contains
     call check_thread_status(forthread_rwlock_destroy(all_diagnostics_per_timestep_rwlock))
     call finalise_operators()   
   end subroutine finalise_diagnostic_federator
+
+  !> Determines the diagnostics fields that are available based upon the input MONC fields on registration
+  !! that will be sent from MONC to the IO server
+  !! @param monc_field_names Set of field names that are made available from MONC to the IO server
+  !! @returns The set of available diagnostics
+  type(hashset_type) function determine_diagnostics_fields_available(monc_field_names)
+    type(hashset_type), intent(inout) :: monc_field_names
+
+    integer :: i, j, k, num_activities, num_fields
+    type(diagnostics_activity_type) :: specific_activity
+    type(hashset_type) :: result_names_for_activities
+    character(len=STRING_LENGTH) :: specific_field_name
+    logical :: diagnostic_provided
+
+    do i=1, size(diagnostic_definitions)
+      diagnostic_provided=.true.
+      num_activities=c_size(diagnostic_definitions(i)%activities)
+      do j=1, num_activities
+        specific_activity=get_activity_at_index(diagnostic_definitions(i)%activities, j)
+        call c_add(result_names_for_activities, specific_activity%result_name)
+      end do
+      do j=1, num_activities
+        specific_activity=get_activity_at_index(diagnostic_definitions(i)%activities, j)
+        num_fields=c_size(specific_activity%required_fields)
+        do k=1, num_fields
+          specific_field_name=conv_to_string(c_get(specific_activity%required_fields, k), .false., STRING_LENGTH)          
+          if (.not. c_contains(result_names_for_activities, specific_field_name) .and. &
+               .not. c_contains(monc_field_names, specific_field_name)) then            
+            diagnostic_provided=.false.
+            exit
+          end if          
+        end do
+        if (.not. diagnostic_provided) exit
+      end do
+      if (diagnostic_provided) then
+        call c_add(determine_diagnostics_fields_available, diagnostic_definitions(i)%diagnostic_name)
+      end if
+      call c_free(result_names_for_activities)
+    end do    
+  end function determine_diagnostics_fields_available  
 
   !> Entry point into the diagnostics federator this runs the diagnostics, executing the defined rules based upon the input
   !! data
@@ -166,7 +207,7 @@ contains
     type(diagnostics_activity_type), pointer :: activity
     type(list_type) :: activities_to_remove
     character(len=STRING_LENGTH) :: field_name
-    logical :: updated_entry
+    logical :: updated_entry, entry_in_completed_diagnostics
     type(data_values_type) :: value_to_send
 
     updated_entry=.true.
@@ -176,7 +217,11 @@ contains
       updated_entry=.false.      
       num_diags=size(diagnostic_definitions)
       do j=1, num_diags
-        if (.not. c_contains(diagnostics_by_timestep%completed_diagnostics, diagnostic_definitions(j)%diagnostic_name)) then
+        call check_thread_status(forthread_rwlock_rdlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
+        entry_in_completed_diagnostics=c_contains(diagnostics_by_timestep%completed_diagnostics, &
+             diagnostic_definitions(j)%diagnostic_name)
+        call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
+        if (.not. entry_in_completed_diagnostics) then
           entries=c_size(diagnostic_definitions(j)%activities)
           do i=1, entries
             if (.not. c_contains(timestep_entry%completed_activities, trim(diagnostic_definitions(j)%diagnostic_name)//"#"//&
@@ -298,6 +343,7 @@ contains
     type(diagnostics_at_timestep_type), pointer :: timestep_entry
     type(all_diagnostics_at_timestep_type), intent(inout) :: diagnostics_by_timestep
 
+    logical :: entry_in_completed_diagnostics
     type(diagnostics_activity_type), pointer :: activity
     class(*), pointer :: generic
     
@@ -314,7 +360,11 @@ contains
     call check_thread_status(forthread_rwlock_unlock(timestep_entry%completed_fields_rwlock))
 
     do i=1, size(diagnostic_definitions)
-      if (.not. c_contains(diagnostics_by_timestep%completed_diagnostics, diagnostic_definitions(i)%diagnostic_name)) then
+      call check_thread_status(forthread_rwlock_rdlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
+      entry_in_completed_diagnostics=c_contains(diagnostics_by_timestep%completed_diagnostics, &
+           diagnostic_definitions(i)%diagnostic_name)
+      call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
+      if (.not. entry_in_completed_diagnostics) then
         if (activity%result_name == diagnostic_definitions(i)%diagnostic_name) then
           call handle_diagnostic_calculation_completed(io_configuration, i, timestep_entry, diagnostics_by_timestep)
         end if
@@ -339,13 +389,24 @@ contains
     diagnostics_value_entry=>get_data_value_by_field_name(timestep_entry%completed_fields, &
          trim(diagnostic_definitions(diagnostic_index)%diagnostic_name))
     call check_thread_status(forthread_rwlock_unlock(timestep_entry%completed_fields_rwlock))
+    call check_thread_status(forthread_rwlock_rdlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
     if (.not. c_contains(diagnostics_by_timestep%completed_diagnostics, &
          diagnostic_definitions(diagnostic_index)%diagnostic_name)) then
-      call c_add(diagnostics_by_timestep%completed_diagnostics, diagnostic_definitions(diagnostic_index)%diagnostic_name)
-      call provide_field_to_writer_federator(io_configuration, diagnostic_definitions(diagnostic_index)%diagnostic_name, &
-           diagnostics_value_entry%values, timestep_entry%timestep, timestep_entry%time, &
-           diagnostic_definitions(diagnostic_index)%generation_timestep_frequency)
-      if (allocated(diagnostics_value_entry%values)) deallocate(diagnostics_value_entry%values)
+      call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
+      call check_thread_status(forthread_rwlock_wrlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
+      if (.not. c_contains(diagnostics_by_timestep%completed_diagnostics, &
+           diagnostic_definitions(diagnostic_index)%diagnostic_name)) then
+        call c_add(diagnostics_by_timestep%completed_diagnostics, diagnostic_definitions(diagnostic_index)%diagnostic_name)
+        call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
+        call provide_field_to_writer_federator(io_configuration, diagnostic_definitions(diagnostic_index)%diagnostic_name, &
+             diagnostics_value_entry%values, timestep_entry%timestep, timestep_entry%time, &
+             diagnostic_definitions(diagnostic_index)%generation_timestep_frequency)
+        if (allocated(diagnostics_value_entry%values)) deallocate(diagnostics_value_entry%values)
+      else
+        call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
+      end if
+    else
+      call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
     end if
   end subroutine handle_diagnostic_calculation_completed  
 
@@ -423,13 +484,18 @@ contains
     character, dimension(:), allocatable :: data_dump
     type(all_diagnostics_at_timestep_type), intent(inout) :: diagnostics_by_timestep
 
+    logical :: completed_diagnostics_entry
     integer :: i, j, num_diags, entries
     type(diagnostics_activity_type), pointer :: activity
     character(len=STRING_LENGTH) :: communication_field_name
     
     num_diags=size(diagnostic_definitions)
     do j=1, num_diags
-      if (.not. c_contains(diagnostics_by_timestep%completed_diagnostics, diagnostic_definitions(j)%diagnostic_name)) then
+      call check_thread_status(forthread_rwlock_rdlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
+      completed_diagnostics_entry=c_contains(diagnostics_by_timestep%completed_diagnostics, &
+           diagnostic_definitions(j)%diagnostic_name)
+      call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
+      if (.not. completed_diagnostics_entry) then
         entries=c_size(diagnostic_definitions(j)%activities)
         do i=1, entries
           if (.not. c_contains(timestep_entry%completed_activities, trim(diagnostic_definitions(j)%diagnostic_name)//"#"//&
@@ -688,6 +754,7 @@ contains
         allocate(find_or_add_diagnostics_by_timestep)
         call check_thread_status(forthread_rwlock_init(&
              find_or_add_diagnostics_by_timestep%communication_corresponding_activities_rwlock, -1))
+        call check_thread_status(forthread_rwlock_init(find_or_add_diagnostics_by_timestep%completed_diagnostics_rwlock, -1))
         generic=>find_or_add_diagnostics_by_timestep
         call c_put(all_diagnostics_at_timestep, conv_to_string(timestep), generic)
       end if
@@ -768,8 +835,10 @@ contains
   !> Based upon the IO configuration this will define the diagnostics structure. It is done once at initialisation and then this
   !! same information is used for execution at each data arrival point.
   !! @param io_configuration The IO server configuration
-  subroutine define_diagnostics(io_configuration)
+  !! @param diagnostic_generation_frequency Map of diagnostic name to the frequency (in timesteps) of generation
+  subroutine define_diagnostics(io_configuration, diagnostic_generation_frequency)
     type(io_configuration_type), intent(inout) :: io_configuration
+    type(hashmap_type), intent(out) :: diagnostic_generation_frequency
 
     integer :: i, j, entries, action_entities, activity_freq
     type(io_configuration_misc_item_type), pointer :: misc_action
@@ -828,6 +897,8 @@ contains
             call c_add(diagnostic_definitions(i)%activities, generic)
           end do
         end if
+        call c_put(diagnostic_generation_frequency, diagnostic_definitions(i)%diagnostic_name, &
+             conv_to_generic(diagnostic_definitions(i)%generation_timestep_frequency, .true.))
       end do
     end if
   end subroutine define_diagnostics

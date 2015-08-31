@@ -25,7 +25,8 @@ module netcdf_filetype_writer_mod
 #endif
 
   type netcdf_diagnostics_timeseries_type
-     integer :: netcdf_dim_id, netcdf_var_id
+     integer :: netcdf_dim_id, netcdf_var_id, num_entries
+     real :: last_write_point
      logical :: variable_written
   end type netcdf_diagnostics_timeseries_type  
 
@@ -59,9 +60,10 @@ contains
   !! @param file_writer_information The writer entry that is being written
   !! @param timestep The write timestep
   !! @param time The write time
-  subroutine define_netcdf_file(io_configuration, file_writer_information, timestep, time)
+  subroutine define_netcdf_file(io_configuration, file_writer_information, timestep, time, time_points)
     type(io_configuration_type), intent(inout) :: io_configuration
     type(writer_type), intent(inout), target :: file_writer_information
+    type(map_type), intent(inout) :: time_points
     integer :: timestep
     real :: time
     
@@ -91,7 +93,7 @@ contains
         end if
         call write_out_global_attributes(ncdf_writer_state%ncid, file_writer_information, timestep, time)
         call define_dimensions(ncdf_writer_state, io_configuration%dimension_sizing)
-        call define_time_series_dimensions(ncdf_writer_state, file_writer_information, time)
+        call define_time_series_dimensions(ncdf_writer_state, file_writer_information, time, time_points)
         call define_variables(ncdf_writer_state, file_writer_information)
         call check_status(nf90_enddef(ncdf_writer_state%ncid))
         call check_thread_status(forthread_mutex_unlock(ncdf_writer_state%mutex))
@@ -185,18 +187,18 @@ contains
     type(data_values_type), pointer :: data_value
     type(netcdf_diagnostics_timeseries_type), pointer :: timeseries_diag
 
-    timeseries_diag=>get_specific_timeseries_dimension(file_state, field_to_write_information%output_frequency)
-    if (.not. timeseries_diag%variable_written) &
-         allocate(timeseries_time_to_write(field_to_write_information%max_timeseries_points_per_dump))
+    timeseries_diag=>get_specific_timeseries_dimension(file_state, field_to_write_information%output_frequency, &
+         field_to_write_information%timestep_frequency)
+    if (.not. timeseries_diag%variable_written) allocate(timeseries_time_to_write(timeseries_diag%num_entries))
 
-    allocate(items_to_remove(field_to_write_information%max_timeseries_points_per_dump))
+    allocate(items_to_remove(timeseries_diag%num_entries))
     included_num=1
     field_id=conv_to_integer(c_get(file_state%variable_to_id, get_field_key(field_to_write_information)), .false.)
     entries=c_size(field_to_write_information%values_to_write)
     do i=1, entries
       value_to_test=conv_to_real(c_key_at(field_to_write_information%values_to_write, i))
       if (value_to_test .le. time .and. value_to_test .gt. field_to_write_information%previous_write_time) then
-        if (included_num .le. field_to_write_information%max_timeseries_points_per_dump) then
+        if (included_num .le. timeseries_diag%num_entries) then
           if (allocated(timeseries_time_to_write)) timeseries_time_to_write(included_num)=value_to_test
           generic=>c_get(field_to_write_information%values_to_write, c_key_at(field_to_write_information%values_to_write, i))
           select type(generic)
@@ -225,13 +227,18 @@ contains
           deallocate(multi_monc_entries)
         else
           call log_log(LOG_WARN, "Omitted time entry of field '"//trim(field_to_write_information%field_name)//&
-               "' as past predetermined dimension at time "//conv_to_string(value_to_test))
+               "' as past dimension length at time "//conv_to_string(value_to_test))
         end if
       end if
     end do
+    if (included_num-1 .ne. timeseries_diag%num_entries) then
+      call log_log(LOG_WARN, "Miss match of time entries for field '"//trim(field_to_write_information%field_name)//&
+           "', included entries="//trim(conv_to_string(included_num-1))//" but expected entries="//&
+           trim(conv_to_string(timeseries_diag%num_entries)))
+    end if
     if (allocated(timeseries_time_to_write)) then
       call check_status(nf90_put_var(file_state%ncid, timeseries_diag%netcdf_var_id, &
-           timeseries_time_to_write, count=(/ included_num-1 /)))
+           timeseries_time_to_write, count=(/ timeseries_diag%num_entries /)))
       timeseries_diag%variable_written=.true.
     end if
     if (included_num .gt. 1) then
@@ -264,14 +271,14 @@ contains
     character(len=STRING_LENGTH), dimension(:), allocatable :: items_to_remove
     type(netcdf_diagnostics_timeseries_type), pointer :: timeseries_diag
 
-    timeseries_diag=>get_specific_timeseries_dimension(file_state, field_to_write_information%output_frequency)
+    timeseries_diag=>get_specific_timeseries_dimension(file_state, field_to_write_information%output_frequency, &
+         field_to_write_information%timestep_frequency)
 
     next_entry_index=1
     included_num=1
     array_size=1
 
-    if (.not. timeseries_diag%variable_written) &
-         allocate(timeseries_time_to_write(field_to_write_information%max_timeseries_points_per_dump))
+    if (.not. timeseries_diag%variable_written) allocate(timeseries_time_to_write(timeseries_diag%num_entries))
 
     allocate(count_to_write(field_to_write_information%dimensions+1))
     if (field_to_write_information%dimensions .gt. 0) then
@@ -280,8 +287,8 @@ contains
         count_to_write(i)=field_to_write_information%actual_dim_size(i)
       end do
     end if
-    allocate(values_to_write(array_size*field_to_write_information%max_timeseries_points_per_dump))
-    allocate(items_to_remove(field_to_write_information%max_timeseries_points_per_dump))
+    allocate(values_to_write(array_size*timeseries_diag%num_entries))
+    allocate(items_to_remove(timeseries_diag%num_entries))
     entries=c_size(field_to_write_information%values_to_write)
     do i=1, entries
       value_to_test=conv_to_real(c_key_at(field_to_write_information%values_to_write, i))
@@ -298,17 +305,22 @@ contains
           included_num=included_num+1
         else
           call log_log(LOG_WARN, "Omitted time entry of field '"//trim(field_to_write_information%field_name)//&
-               "' as past predetermined dimension.")
+               "' as past time dimension length")
         end if
       end if
     end do
     count_to_write(size(count_to_write))=included_num-1
     field_id=conv_to_integer(c_get(file_state%variable_to_id, get_field_key(field_to_write_information)), .false.)
+    if (included_num-1 .ne. timeseries_diag%num_entries) then
+      call log_log(LOG_WARN, "Miss match of time entries for field '"//trim(field_to_write_information%field_name)//&
+           "', included entries="//trim(conv_to_string(included_num-1))//" but expected entries="//&
+           trim(conv_to_string(timeseries_diag%num_entries)))
+    end if
     call check_thread_status(forthread_mutex_lock(file_state%mutex))
     call check_status(nf90_put_var(file_state%ncid, field_id, values_to_write, count=count_to_write))
     if (allocated(timeseries_time_to_write)) then
       call check_status(nf90_put_var(file_state%ncid, timeseries_diag%netcdf_var_id, &
-           timeseries_time_to_write, count=(/ included_num-1 /)))
+           timeseries_time_to_write, count=(/ timeseries_diag%num_entries /)))
       timeseries_diag%variable_written=.true.
     end if    
     call check_thread_status(forthread_mutex_unlock(file_state%mutex))
@@ -327,10 +339,11 @@ contains
   !! @param file_state The state of the NetCDF file
   !! @param file_writer_information Writer information
   !! @param time The model write time
-  subroutine define_time_series_dimensions(file_state, file_writer_information, time)
+  subroutine define_time_series_dimensions(file_state, file_writer_information, time, time_points)
     type(netcdf_diagnostics_type), intent(inout) :: file_state
     type(writer_type), intent(inout) :: file_writer_information
     real, intent(in) :: time
+    type(map_type), intent(inout) :: time_points
 
     integer :: i
     character(len=STRING_LENGTH) :: dim_key
@@ -338,17 +351,53 @@ contains
     class(*), pointer :: generic
 
     do i=1, size(file_writer_information%contents)
-      dim_key="time_series_"//trim(conv_to_string(file_writer_information%contents(i)%output_frequency))
+      dim_key="time_series_"//trim(conv_to_string(file_writer_information%contents(i)%timestep_frequency))//"_"//&
+           trim(conv_to_string(file_writer_information%contents(i)%output_frequency))
       if (.not. c_contains(file_state%timeseries_dimension, dim_key)) then
         allocate(timeseries_diag)
         timeseries_diag%variable_written=.false.
-        call check_status(nf90_def_dim(file_state%ncid, dim_key, &
-             file_writer_information%contents(i)%max_timeseries_points_per_dump, timeseries_diag%netcdf_dim_id))
+        timeseries_diag%num_entries=get_number_timeseries_entries(time_points, &
+             file_writer_information%contents(i)%previous_tracked_write_point, &
+             file_writer_information%contents(i)%output_frequency, file_writer_information%contents(i)%timestep_frequency, &
+             timeseries_diag%last_write_point)
+        call check_status(nf90_def_dim(file_state%ncid, dim_key, timeseries_diag%num_entries, timeseries_diag%netcdf_dim_id))        
         generic=>timeseries_diag
         call c_put(file_state%timeseries_dimension, dim_key, generic)
       end if
+      file_writer_information%contents(i)%previous_tracked_write_point=timeseries_diag%last_write_point
     end do
   end subroutine define_time_series_dimensions
+
+  !> Retrieves the number of timeseries entries for a specific frequency and previous write time. This is based on
+  !! the range of time points that are provided to the call
+  !! @param time_points The list of times that data has been sent over that is applicable to this write
+  !! @param previous_write_time When the field was previously written
+  !! @param frequency The frequency of outputs of the field
+  integer function get_number_timeseries_entries(time_points, previous_write_time, output_frequency, timestep_frequency, &
+       last_write_entry)
+    type(map_type), intent(inout) :: time_points
+    real, intent(in) :: output_frequency, previous_write_time
+    integer, intent(in) :: timestep_frequency
+    real, intent(out) :: last_write_entry
+
+    integer :: i, entries, ts
+    real :: tp_entry, write_point
+
+    get_number_timeseries_entries=0
+    write_point=previous_write_time
+    entries=c_size(time_points)
+    do i=1, entries
+      ts=conv_to_integer(c_key_at(time_points, i))
+      if (mod(ts, timestep_frequency) == 0) then
+        tp_entry=conv_to_real(c_value_at(time_points, i), .false.)
+        if (tp_entry .ge. write_point+output_frequency) then
+          get_number_timeseries_entries=get_number_timeseries_entries+1
+          write_point=tp_entry
+          last_write_entry=tp_entry
+        end if
+      end if
+    end do
+  end function get_number_timeseries_entries
 
   !> Defines all variables in the file writer state
   !! @param file_state The NetCDF file state
@@ -376,6 +425,7 @@ contains
     end do
 
     do i=1, size(file_writer_information%contents)
+      if (.not. file_writer_information%contents(i)%enabled) cycle
       if (file_writer_information%contents(i)%data_type == DOUBLE_DATA_TYPE) then
         data_type=NF90_DOUBLE
       else if (file_writer_information%contents(i)%data_type == INTEGER_DATA_TYPE) then
@@ -421,7 +471,9 @@ contains
 
     type(netcdf_diagnostics_timeseries_type), pointer :: timeseries_diag
 
-    timeseries_diag=>get_specific_timeseries_dimension(file_state, file_writer_information%contents(field_index)%output_frequency)
+    timeseries_diag=>get_specific_timeseries_dimension(file_state, &
+         file_writer_information%contents(field_index)%output_frequency, &
+         file_writer_information%contents(field_index)%timestep_frequency)
     if (associated(timeseries_diag)) then
       retrieve_time_series_dimension_id_for_field=timeseries_diag%netcdf_dim_id
     else
@@ -430,15 +482,22 @@ contains
     end if
   end function retrieve_time_series_dimension_id_for_field
 
-  function get_specific_timeseries_dimension(file_state, output_frequency)
+  !> Given the file state and the output frequency of a field will retrive the appropriate time series dimension entry
+  !! that corresponds to this or null if none can be found
+  !! @param file_state The NetCDF file state that is being written
+  !! @param output_frequency Time frequency of writes
+  !! @param timestep_frequency The timestep frequency of data arrival/generation
+  !! @returns The corresponding time series dimension entry or null if none is found
+  function get_specific_timeseries_dimension(file_state, output_frequency, timestep_frequency)
     type(netcdf_diagnostics_type), intent(inout) :: file_state
     real, intent(in) :: output_frequency
+    integer, intent(in) :: timestep_frequency
     type(netcdf_diagnostics_timeseries_type), pointer :: get_specific_timeseries_dimension
 
     character(len=STRING_LENGTH) :: dim_key
     class(*), pointer :: generic
 
-    dim_key="time_series_"//trim(conv_to_string(output_frequency))
+    dim_key="time_series_"//trim(conv_to_string(timestep_frequency))//"_"// trim(conv_to_string(output_frequency))
     generic=>c_get(file_state%timeseries_dimension, dim_key)
 
     if (associated(generic)) then

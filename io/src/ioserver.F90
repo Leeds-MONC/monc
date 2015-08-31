@@ -10,16 +10,18 @@ module io_server_mod
   use mpi_communication_mod, only : build_mpi_datatype, data_receive, test_for_command, register_command_receive, &
        cancel_requests, free_mpi_type, get_number_io_servers, get_my_io_rank, test_for_inter_io
   use diagnostic_federator_mod, only : initialise_diagnostic_federator, finalise_diagnostic_federator, &
-       check_diagnostic_federator_for_completion, pass_fields_to_diagnostics_federator
-  use writer_federator_mod, only : initialise_writer_federator, finalise_writer_federator, check_writer_for_trigger
+       check_diagnostic_federator_for_completion, pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available
+  use writer_federator_mod, only : initialise_writer_federator, finalise_writer_federator, check_writer_for_trigger, &
+       inform_writer_federator_fields_present, inform_writer_federator_time_point
   use writer_field_manager_mod, only : initialise_writer_field_manager, finalise_writer_field_manager, &
        provide_monc_data_to_writer_federator
-  use collections_mod, only : map_type, c_get, c_put, c_is_empty, c_remove, c_add, c_size, c_value_at
+  use collections_mod, only : hashset_type, hashmap_type, map_type, c_get, c_put, c_is_empty, c_remove, c_add, &
+       c_size, c_value_at, c_free
   use conversions_mod, only : conv_to_integer, conv_to_generic, conv_to_string
   use io_server_client_mod, only : REGISTER_COMMAND, DEREGISTER_COMMAND, INTER_IO_COMMUNICATION, DATA_COMMAND_START, DATA_TAG, &
-       LOCAL_SIZES_KEY, LOCAL_START_POINTS_KEY, LOCAL_END_POINTS_KEY, data_sizing_description_type, definition_description_type, &
-       field_description_type, build_mpi_type_data_sizing_description, get_data_description_from_name, &
-       build_mpi_type_field_description, build_mpi_type_definition_description
+       LOCAL_SIZES_KEY, LOCAL_START_POINTS_KEY, LOCAL_END_POINTS_KEY, SCALAR_FIELD_TYPE, data_sizing_description_type, &
+       definition_description_type, field_description_type, build_mpi_type_data_sizing_description, &
+       get_data_description_from_name, build_mpi_type_field_description, build_mpi_type_definition_description
   use forthread_mod, only : forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_tryrdlock, &
        forthread_rwlock_unlock, forthread_rwlock_init, forthread_rwlock_destroy, forthread_mutex_init, forthread_mutex_lock, &
        forthread_mutex_unlock, forthread_cond_wait, forthread_cond_signal, forthread_cond_init
@@ -38,7 +40,8 @@ module io_server_mod
        mpi_type_definition_description, & !< The MPI data type for data descriptions sent to MONCs
        mpi_type_field_description !< The MPI data type for field descriptions sent to MONCs
   type(io_configuration_type), volatile, save :: io_configuration !< Internal representation of the IO configuration
-  logical :: contine_poll_messages !< Whether to continue waiting command messages from any MONC processes
+  logical :: contine_poll_messages, & !< Whether to continue waiting command messages from any MONC processes
+       initialised_present_data
   logical, volatile :: contine_poll_interio_messages, already_registered_finishing_call
   type(field_description_type), dimension(:), allocatable :: registree_field_descriptions
   type(definition_description_type), dimension(:), allocatable :: registree_definition_descriptions
@@ -62,11 +65,13 @@ contains
     integer :: recv_type, i, command, source, ierr
     character, dimension(:), allocatable :: data_buffer
     logical :: message_waiting
+    type(hashmap_type) :: diagnostic_generation_frequency
 
     call configuration_parse(options_database, io_xml_configuration, io_configuration)
     deallocate(io_xml_configuration)
     call threadpool_init(io_configuration, provided_threading)
     call check_thread_status(forthread_rwlock_init(monc_registration_lock, -1))
+    initialised_present_data=.false.
     contine_poll_messages=.true.
     contine_poll_interio_messages=.true.
     already_registered_finishing_call=.false.
@@ -77,8 +82,9 @@ contains
     call initialise_logging(io_configuration%my_io_rank)
     registree_definition_descriptions=build_definition_description_type_from_configuration(io_configuration)
     registree_field_descriptions=build_field_description_type_from_configuration(io_configuration)
-    call initialise_diagnostic_federator(io_configuration)
-    call initialise_writer_federator(io_configuration)
+    diagnostic_generation_frequency=initialise_diagnostic_federator(io_configuration)
+    call initialise_writer_federator(io_configuration, diagnostic_generation_frequency)
+    call c_free(diagnostic_generation_frequency)
     call initialise_writer_field_manager(io_configuration)
 
     mpi_type_data_sizing_description=build_mpi_type_data_sizing_description()
@@ -280,6 +286,7 @@ contains
          io_configuration%registered_moncs(monc_location)%definition_names(data_set))
 
     if (matched_datadefn_index .gt. 0) then
+      call inform_writer_federator_time_point(io_configuration, source, data_set, data_buffer)
       call pass_fields_to_diagnostics_federator(io_configuration, source, data_set, data_buffer)
       call provide_monc_data_to_writer_federator(io_configuration, source, data_set, data_buffer)
       call check_writer_for_trigger(io_configuration, source, data_set, data_buffer)
@@ -374,14 +381,14 @@ contains
     integer :: created_mpi_type, data_size, recv_count, i
     class(*), pointer :: generic
     logical :: data_defn_found
-
+    
     recv_count=data_receive(mpi_type_data_sizing_description, io_configuration%number_of_distinct_data_fields+3, &
          source, description_data=data_description)
 
     call handle_monc_dimension_information(data_description, monc_defn)
     do i=1, io_configuration%number_of_data_definitions
       created_mpi_type=build_mpi_datatype(io_configuration%data_definitions(i), data_description, data_size, &
-           monc_defn%field_start_locations(i), monc_defn%field_end_locations(i), monc_defn%dimensions(i))
+           monc_defn%field_start_locations(i), monc_defn%field_end_locations(i), monc_defn%dimensions(i))            
 
       generic=>conv_to_generic(created_mpi_type, .true.)
       call c_put(monc_defn%registered_monc_types, conv_to_string(i), generic)
@@ -390,7 +397,43 @@ contains
 
       monc_defn%definition_names(i)=io_configuration%data_definitions(i)%name
     end do
+    if (.not. initialised_present_data) then
+      initialised_present_data=.true.
+      call register_present_field_names_to_federators(data_description, recv_count)
+    end if
   end subroutine init_data_definition
+
+  !> Registers with the writer federator the set of fields (prognostic and diagnostic) that are available, this is based on
+  !! the array/optional fields present from MONC and the non-optional scalars. This is quite an expensive operation, so only
+  !! done once
+  !! @param data_description Array of data descriptions from MONC
+  !! @param recv_count Number of data descriptions
+  subroutine register_present_field_names_to_federators(data_description, recv_count)
+    type(data_sizing_description_type), dimension(:), intent(in) :: data_description
+    integer, intent(in) :: recv_count
+
+    type(hashset_type) :: present_field_names, diagnostics_field_names
+    integer :: i, j
+
+    do i=1, recv_count
+      call c_add(present_field_names, data_description(i)%field_name)
+    end do
+    do i=1, io_configuration%number_of_data_definitions
+      do j=1, io_configuration%data_definitions(i)%number_of_data_fields
+        if (io_configuration%data_definitions(i)%fields(j)%field_type == SCALAR_FIELD_TYPE .and. .not. &
+             io_configuration%data_definitions(i)%fields(j)%optional) then
+          call c_add(present_field_names, io_configuration%data_definitions(i)%fields(j)%name)
+        end if        
+      end do      
+    end do
+    call c_add(present_field_names, "time")
+    call c_add(present_field_names, "timestep")
+    call inform_writer_federator_fields_present(present_field_names)
+    diagnostics_field_names=determine_diagnostics_fields_available(present_field_names)
+    call inform_writer_federator_fields_present(diagnostics_field_names)
+    call c_free(present_field_names)
+    call c_free(diagnostics_field_names)
+  end subroutine register_present_field_names_to_federators  
 
   !> Handles the provided local MONC dimension and data layout information
   !! @param data_description The data descriptions sent over from MONC
