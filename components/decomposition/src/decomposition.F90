@@ -239,14 +239,6 @@ contains
          merge(1, 0, dim_my_rank .lt. dimension_extra)
     current_state%local_grid%size(dim)=(current_state%local_grid%end(dim) - current_state%local_grid%start(dim)) + 1
     current_state%parallel%my_coords(dim) = dim_my_rank
-
-    ! call log_log(LOG_DEBUG, "PID "//trim(conv_to_string(current_state%parallel%my_rank))//" start="//&
-    !      trim(conv_to_string(    current_state%local_grid%start(dim)))//&
-    !      " end="//trim(conv_to_string(current_state%local_grid%end(dim)))//" dim_my_rank=my_coords="//&
-    !      trim(conv_to_string(dim_my_rank))//&
-    !      " dimension_extra="//trim(conv_to_string(dimension_extra))//" size="//&
-    !      trim(conv_to_string( current_state%local_grid%size(dim)))//" dim="//&
-    !      trim(conv_to_string(dim)))
   end subroutine apply_dimension_bounds
 
   !> Applys Z dimension information. As we always decompose into columns then Z is never
@@ -286,7 +278,7 @@ contains
     current_state%local_grid%active = current_state%global_grid%active
     current_state%local_grid%dimensions = current_state%global_grid%dimensions
     current_state%parallel%neighbour_comm = current_state%parallel%monc_communicator
-    call apply_z_dimension_information(current_state)
+    call apply_z_dimension_information(current_state)         
 
     if (x_size .gt. y_size) then
       ! Decompose in X
@@ -311,8 +303,10 @@ contains
       current_state%local_grid%neighbours(X_INDEX,3:4) = merge(current_state%parallel%my_rank+1, 0, &
            current_state%parallel%my_rank .lt. current_state%parallel%processes-1)
       current_state%parallel%wrapped_around(X_INDEX, 2)=current_state%local_grid%neighbours(X_INDEX,3)==0
-      current_state%local_grid%corner_neighbours(1:2,:)=current_state%local_grid%neighbours(X_INDEX,1)
-      current_state%local_grid%corner_neighbours(3:4,:)=current_state%local_grid%neighbours(X_INDEX,3)
+      current_state%local_grid%corner_neighbours(1,:)=current_state%local_grid%neighbours(X_INDEX,1)
+      current_state%local_grid%corner_neighbours(3,:)=current_state%local_grid%neighbours(X_INDEX,1)
+      current_state%local_grid%corner_neighbours(2,:)=current_state%local_grid%neighbours(X_INDEX,3)
+      current_state%local_grid%corner_neighbours(4,:)=current_state%local_grid%neighbours(X_INDEX,3)
       current_state%parallel%wrapped_around(Y_INDEX, :)=.true.
     else 
       ! Decompose in Y
@@ -336,10 +330,8 @@ contains
       current_state%local_grid%neighbours(Y_INDEX,3:4) = merge(current_state%parallel%my_rank+1, 0, &
            current_state%parallel%my_rank .lt. current_state%parallel%processes-1)
       current_state%parallel%wrapped_around(Y_INDEX, 2)=current_state%local_grid%neighbours(Y_INDEX,3)==0
-      current_state%local_grid%corner_neighbours(1,:)=current_state%local_grid%neighbours(Y_INDEX,1)
-      current_state%local_grid%corner_neighbours(3,:)=current_state%local_grid%neighbours(Y_INDEX,1)
-      current_state%local_grid%corner_neighbours(2,:)=current_state%local_grid%neighbours(Y_INDEX,3)
-      current_state%local_grid%corner_neighbours(4,:)=current_state%local_grid%neighbours(Y_INDEX,3)
+      current_state%local_grid%corner_neighbours(1:2,:)=current_state%local_grid%neighbours(Y_INDEX,1)
+      current_state%local_grid%corner_neighbours(3:4,:)=current_state%local_grid%neighbours(Y_INDEX,3)
       current_state%parallel%wrapped_around(X_INDEX, :)=.true.
     end if
 
