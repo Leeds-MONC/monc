@@ -23,7 +23,7 @@ module reduction_inter_io_mod
 
   !< The types of reduction operator that are supported
   integer, parameter :: MEAN=1, MIN=2, MAX=3, SUM=4
-  integer, parameter :: MY_INTER_IO_TAG=1
+  integer, parameter :: MY_INTER_IO_TAG=1, PERFORM_CLEAN_EVERY=200
   character(len=*), parameter :: MY_INTER_IO_NAME="reductioninterio"
 
   type reduction_progress_type
@@ -34,7 +34,8 @@ module reduction_inter_io_mod
      procedure(handle_completion), pointer, nopass :: completion_procedure
   end type reduction_progress_type  
 
-  integer, volatile :: reduction_progress_rwlock, inter_io_description_mutex, clean_progress_mutex
+  integer, volatile :: reduction_progress_rwlock, inter_io_description_mutex, clean_progress_mutex, &
+       reduction_count_mutex, previous_clean_reduction_count, reduction_count
   type(hashmap_type), volatile :: reduction_progresses
   logical, volatile :: initialised=.false.
 
@@ -49,9 +50,12 @@ contains
 
     if (.not. initialised) then
       initialised=.true.
+      previous_clean_reduction_count=0
+      reduction_count=0
       call check_thread_status(forthread_rwlock_init(reduction_progress_rwlock, -1))
       call check_thread_status(forthread_mutex_init(inter_io_description_mutex, -1))
       call check_thread_status(forthread_mutex_init(clean_progress_mutex, -1))
+      call check_thread_status(forthread_mutex_init(reduction_count_mutex, -1))
       call register_inter_io_communication(io_configuration, MY_INTER_IO_TAG, handle_recv_data_from_io_server, MY_INTER_IO_NAME)
     end if
   end subroutine init_reduction_inter_io  
@@ -106,6 +110,7 @@ contains
       call check_thread_status(forthread_rwlock_destroy(reduction_progress_rwlock))
       call check_thread_status(forthread_mutex_destroy(inter_io_description_mutex))
       call check_thread_status(forthread_mutex_destroy(clean_progress_mutex))
+      call check_thread_status(forthread_mutex_destroy(reduction_count_mutex))
       initialised=.false.
     end if
   end subroutine finalise_reduction_inter_io
@@ -130,8 +135,8 @@ contains
     integer :: i
     type(reduction_progress_type), pointer :: reduction_progress
     logical :: collective_values_new
-    
-    !call check_and_clean_progress(io_configuration%my_io_rank)
+        
+    call clean_progress(io_configuration%my_io_rank)
     reduction_progress=>find_or_add_reduction_progress(timestep, reduction_op, root, reduction_field_name, completion_procedure)
     
     call check_thread_status(forthread_mutex_lock(reduction_progress%mutex))
@@ -149,6 +154,22 @@ contains
     end if    
   end subroutine perform_inter_io_reduction
 
+  subroutine clean_progress(myrank)
+    integer, intent(in) :: myrank
+
+    logical :: cc_dummy
+
+    call check_thread_status(forthread_mutex_lock(reduction_count_mutex))  
+    reduction_count=reduction_count+1
+    if (previous_clean_reduction_count + PERFORM_CLEAN_EVERY .lt. reduction_count) then      
+      previous_clean_reduction_count=reduction_count
+      call check_thread_status(forthread_mutex_unlock(reduction_count_mutex))        
+      cc_dummy=check_and_clean_progress(myrank)
+    else
+      call check_thread_status(forthread_mutex_unlock(reduction_count_mutex))      
+    end if
+  end subroutine clean_progress
+
   !> Checks all the reduction progresses and will remove any that have completed. This is designed to be
   !! called from an IO server other than 0 (the master IO server) and it checks if the outstanding async
   !! send handle has completed. Checking on the master IO server or checking any progress that is not currently
@@ -160,6 +181,7 @@ contains
     type(list_type) :: entries_to_remove
     type(reduction_progress_type), pointer :: specific_reduction_progress
     character(len=STRING_LENGTH) :: entry_key
+    class(*), pointer :: generic
     logical :: destroy_lock
 
     check_and_clean_progress=.true.
@@ -195,7 +217,9 @@ contains
         call check_thread_status(forthread_rwlock_wrlock(reduction_progress_rwlock))
         do i=1, num_to_remove
           entry_key=conv_to_string(c_get(entries_to_remove, i), .false., STRING_LENGTH)
-          call c_remove(reduction_progresses, trim(entry_key))
+          generic=>c_get(reduction_progresses, entry_key)
+          call c_remove(reduction_progresses, entry_key)
+          deallocate(generic)
         end do
         call check_thread_status(forthread_rwlock_unlock(reduction_progress_rwlock))
       end if
@@ -410,13 +434,17 @@ contains
   subroutine remove_reduction_progress(reduction_progress)
     type(reduction_progress_type), intent(in) :: reduction_progress
         
-    type(reduction_progress_type), pointer :: found_progress
+    class(*), pointer :: generic
     integer :: progress_location
+    character(len=STRING_LENGTH) :: specific_key
 
+    specific_key=generate_reduction_key(reduction_progress%field_name, reduction_progress%timestep,&
+         reduction_progress%reduction_operator)
     call check_thread_status(forthread_rwlock_wrlock(reduction_progress_rwlock))
-    call c_remove(reduction_progresses, generate_reduction_key(reduction_progress%field_name, reduction_progress%timestep,&
-         reduction_progress%reduction_operator))
+    generic=>c_get(reduction_progresses, specific_key)
+    call c_remove(reduction_progresses, specific_key)
     call check_thread_status(forthread_rwlock_unlock(reduction_progress_rwlock))
+    if (associated(generic)) deallocate(generic)
   end subroutine remove_reduction_progress
 
   !> Generates the lookup key that is used for the map storage of reduction progresses
@@ -461,21 +489,7 @@ contains
     else
       get_reduction_progress_at_index=>null()
       key=""
-    end if
-
-!!$    if (do_read_lock) call check_thread_status(forthread_rwlock_rdlock(reduction_progress_rwlock))
-!!$    found_entry=c_entry_at(reduction_progresses, index, key, generic)
-!!$    if (do_read_lock) call check_thread_status(forthread_rwlock_unlock(reduction_progress_rwlock))
-!!$
-!!$    if (found_entry .and. associated(generic)) then
-!!$      select type(generic)
-!!$      type is (reduction_progress_type)      
-!!$        get_reduction_progress_at_index=>generic
-!!$      end select      
-!!$    else
-!!$      get_reduction_progress_at_index=>null()
-!!$      key=""
-!!$    end if    
+    end if 
   end function get_reduction_progress_at_index
 
   !> Given the map of action attributes this procedure will identify the reduction operator that has been

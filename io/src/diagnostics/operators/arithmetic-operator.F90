@@ -61,11 +61,13 @@ contains
   !! @param field_values The field values
   !! @param action_attributes Attributes associated with the running of this operator
   !! @returns The resulting value
-  function perform_arithmetic_operator(io_configuration, field_values, action_attributes)
+  subroutine perform_arithmetic_operator(io_configuration, field_values, action_attributes, source_monc_location, &
+       source_monc, operator_result_values)
     type(io_configuration_type), intent(inout) :: io_configuration
     type(hashmap_type), intent(inout) :: field_values
     type(map_type), intent(inout) :: action_attributes
-    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: perform_arithmetic_operator
+    integer, intent(in) :: source_monc_location, source_monc
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable, intent(inout) :: operator_result_values
 
     character(len=STRING_LENGTH) :: equation
     type(arithmetic_cache_item), pointer :: cached_equation
@@ -77,9 +79,9 @@ contains
       cached_equation%execution_tree=>build_equation_tree(io_configuration, equation)
     end if
     data_size=get_size_of_data_being_operated_on(cached_equation, field_values)
-    allocate(perform_arithmetic_operator(data_size))
-    perform_arithmetic_operator=execute_equation_tree(cached_equation%execution_tree, field_values, data_size)
-  end function perform_arithmetic_operator
+    allocate(operator_result_values(data_size))
+    operator_result_values=execute_equation_tree(cached_equation%execution_tree, field_values, data_size)
+  end subroutine perform_arithmetic_operator
 
   !> Retrieves the number of data elements that this will operate on. It will produce a log error if any variable lengths are
   !! inconsistent
@@ -258,6 +260,7 @@ contains
 
   !> Retrieves the list of fields needed by this operator for a specific configuration
   !! @param action_attributes The attributes which configure the operator
+  !! @returns A list of required fields before the operator can run
   type(list_type) function arithmetic_operator_get_required_fields(action_attributes)
     type(map_type), intent(inout) :: action_attributes
 

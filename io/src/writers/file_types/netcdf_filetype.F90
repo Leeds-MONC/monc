@@ -18,6 +18,7 @@ module netcdf_filetype_writer_mod
        nf90_noerr, nf90_strerror, nf90_redef, nf90_inq_varid
   use io_server_client_mod, only : ARRAY_FIELD_TYPE, SCALAR_FIELD_TYPE, DOUBLE_DATA_TYPE, INTEGER_DATA_TYPE  
   use mpi, only : MPI_INFO_NULL
+  use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
   implicit none
 
 #ifndef TEST_MODE
@@ -164,6 +165,52 @@ contains
     end if
   end subroutine write_variable 
 
+  !> Translates a dimension name to its numeric corresponding identifier
+  !! @param dim_name The name of the dimension to look up
+  !! @param is_auto_dimension Optional parameter determining whether dimension is auto or not
+  !! @returns Corresponding identifier
+  integer function get_dimension_identifier(dim_name, is_auto_dimension)
+    character(len=*), intent(in) :: dim_name
+    logical, intent(out), optional :: is_auto_dimension
+
+    integer :: dash_idx
+    logical :: is_modified_size
+
+    dash_idx=index(dim_name, "_")
+    dash_idx=dash_idx-1
+    is_modified_size=dash_idx .ne. -1
+    if (.not. is_modified_size) dash_idx=len_trim(dim_name)
+
+    if (dim_name(:dash_idx) .eq. "z" .or. dim_name(:dash_idx) .eq. "zn") then
+      get_dimension_identifier=Z_INDEX
+    else if (dim_name(:dash_idx) .eq. "y") then
+      get_dimension_identifier=Y_INDEX
+    else if (dim_name(:dash_idx) .eq. "x") then
+      get_dimension_identifier=X_INDEX
+    else
+      get_dimension_identifier=-1
+    end if
+
+    if (present(is_auto_dimension)) is_auto_dimension=is_modified_size
+  end function get_dimension_identifier
+
+  !> Retrieves the original size of a specific dimension (which is auto)
+  !! @param dim_name The auto dimension (full) name
+  !! @param dimension_store The map of dimensions we are looking up
+  !! @returns The original size of this auto dimension
+  integer function get_dimension_original_size(dim_name, dimension_store)
+    character(len=*), intent(in) :: dim_name
+    type(map_type), intent(inout) :: dimension_store
+
+    integer :: dash_idx
+
+    dash_idx=index(dim_name, "_")
+    dash_idx=dash_idx-1
+    if (dash_idx .eq. -1) dash_idx=len_trim(dim_name)
+
+    get_dimension_original_size=conv_to_integer(c_get(dimension_store, dim_name(:dash_idx)), .false.)
+  end function get_dimension_original_size  
+
   !> Writes collective variables, where we are working with the values from multiple MONCs and storing these in their own
   !! specific relative location in the diagnostics file. 
   !! @param field_to_write_information The field that is going to be written
@@ -178,10 +225,11 @@ contains
     type(netcdf_diagnostics_type), intent(inout) :: file_state
 
     real :: value_to_test
-    integer :: i, j, entries, included_num, monc_entries, source, field_id, start(4), count(4), monc_location
+    integer :: i, j, k, entries, included_num, monc_entries, source, field_id, start(field_to_write_information%dimensions+1), &
+         count(field_to_write_information%dimensions+1), monc_location, dim_identifier, auto_period, dim_start
     class(*), pointer :: generic
     type(write_field_collective_values_type), pointer :: multi_monc_entries
-
+    logical :: is_auto_dimension
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: timeseries_time_to_write
     character(len=STRING_LENGTH), dimension(:), allocatable :: items_to_remove
     type(data_values_type), pointer :: data_value
@@ -211,10 +259,30 @@ contains
             data_value=>get_data_value_by_field_name(multi_monc_entries%monc_values, conv_to_string(source))           
             generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
             monc_location=conv_to_integer(generic, .false.)
-            start(1:3) = io_configuration%registered_moncs(monc_location)%local_dim_starts
-            count(1:3) = io_configuration%registered_moncs(monc_location)%local_dim_sizes
-            start(4) = included_num
-            count(4) = 1
+            do k=1, field_to_write_information%dimensions
+              dim_identifier=get_dimension_identifier(field_to_write_information%dim_size_defns(k), is_auto_dimension)
+              if (dim_identifier .gt. -1) then
+                start(k)=io_configuration%registered_moncs(monc_location)%local_dim_starts(dim_identifier)
+                count(k)=io_configuration%registered_moncs(monc_location)%local_dim_sizes(dim_identifier)
+                if (is_auto_dimension) then              
+                  auto_period=ceiling(real(get_dimension_original_size(field_to_write_information%dim_size_defns(k), &
+                       io_configuration%dimension_sizing))/field_to_write_information%actual_dim_size(k))
+                  start(k)=(start(k)/auto_period)+1
+                  if (io_configuration%registered_moncs(monc_location)%local_dim_starts(dim_identifier)==1) then
+                    dim_start=1
+                  else
+                    dim_start=auto_period - &
+                         mod(io_configuration%registered_moncs(monc_location)%local_dim_starts(dim_identifier)-2, auto_period)
+                  end if
+                  count(k)=ceiling(real(io_configuration%registered_moncs(monc_location)%local_dim_sizes(dim_identifier) - &
+                       (dim_start-1))/auto_period)
+                end if
+              else
+                call log_log(LOG_ERROR, "Can not locate dimension "//trim(field_to_write_information%dim_size_defns(k)))
+              end if
+            end do
+            start(field_to_write_information%dimensions+1) = included_num
+            count(field_to_write_information%dimensions+1) = 1
             call check_thread_status(forthread_mutex_lock(file_state%mutex))
             call check_status(nf90_put_var(file_state%ncid, field_id, data_value%values, start=start, count=count))
             call check_thread_status(forthread_mutex_unlock(file_state%mutex))

@@ -45,7 +45,7 @@ module configuration_parser_mod
   type io_configuration_field_type
      character(len=STRING_LENGTH) :: name, dim_size_defns(4), units
      integer :: field_type, data_type, dimensions
-     logical :: optional
+     logical :: optional, collective
   end type io_configuration_field_type
 
   !> Configuration of a specific data definition
@@ -70,6 +70,7 @@ module configuration_parser_mod
   type io_configuration_diagnostic_field_type
      character(len=STRING_LENGTH) :: name, dim_size_defns(4), units
      integer :: field_type, data_type, dimensions
+     logical :: collective
      type(list_type) :: members
   end type io_configuration_diagnostic_field_type
 
@@ -81,7 +82,6 @@ module configuration_parser_mod
   type io_configuration_file_writer_facet_type
      integer :: facet_type, time_manipulation_type
      real :: output_time_frequency
-     logical :: collective_write
      character(len=STRING_LENGTH) :: facet_name     
   end type io_configuration_file_writer_facet_type  
 
@@ -132,7 +132,8 @@ module configuration_parser_mod
        io_configuration_misc_item_type, io_configuration_inter_communication_description, &
        extend_registered_moncs_array, retrieve_data_definition, retrieve_monc_definition, extend_inter_io_comm_array, &
        build_definition_description_type_from_configuration, build_field_description_type_from_configuration, &
-       get_number_field_dimensions, get_data_value_by_field_name
+       get_number_field_dimensions, get_data_value_by_field_name, get_monc_location, get_diagnostic_field_configuration, &
+       get_prognostic_field_configuration
 contains
 
   !> This will parse an XML string into the IO configuration
@@ -421,14 +422,6 @@ contains
        call log_log(LOG_ERROR, "Inclusion to file writer requires time manipulation")
      end if
 
-     field_index=get_field_index_from_name(attribute_names, "collective")
-     if (field_index .gt. 0) then
-       building_config%file_writers(current_building_file_writer)%contents(number_of_contents)%collective_write=&
-            retrieve_string_value(attribute_values(field_index), STRING_DATA_TYPE) .eq. "true"
-     else
-       building_config%file_writers(current_building_file_writer)%contents(number_of_contents)%collective_write=.false.
-     end if
-
      building_config%file_writers(current_building_file_writer)%contents(number_of_contents)%facet_type=0
      field_index=get_field_index_from_name(attribute_names, "group")
      if (field_index .gt. 0) then
@@ -540,8 +533,16 @@ contains
         else
           call log_log(LOG_ERROR, "A diagnostic of field type array requires sizing a definition")
         end if
+        field_index=get_field_index_from_name(attribute_names, "collective")
+        if (field_index .ne. 0) then
+          building_config%diagnostics(current_building_diagnostic)%collective=&
+               retrieve_string_value(attribute_values(field_index), STRING_DATA_TYPE) == "true" 
+        else
+          building_config%diagnostics(current_building_diagnostic)%collective=.false.
+        end if
       else
         building_config%diagnostics(current_building_diagnostic)%dimensions=0
+        building_config%diagnostics(current_building_diagnostic)%collective=.false.
       end if
     end if
   end subroutine define_diagnostic
@@ -622,6 +623,16 @@ contains
                process_sizing_definition(sizing_defn_str, &
                building_config%data_definitions(current_building_definition)%fields(current_building_field)%dim_size_defns)
         end if
+
+        field_index=get_field_index_from_name(attribute_names, "collective")
+        if (field_index .ne. 0) then
+          building_config%data_definitions(current_building_definition)%fields(current_building_field)%collective=&
+               retrieve_string_value(attribute_values(field_index), STRING_DATA_TYPE) == "true" 
+        else
+          building_config%data_definitions(current_building_definition)%fields(current_building_field)%collective=.false.
+        end if
+      else
+        building_config%data_definitions(current_building_definition)%fields(current_building_field)%collective=.false.
       end if
 
       field_index=get_field_index_from_name(attribute_names, "units")
@@ -678,8 +689,7 @@ contains
     if (field_data_type_str == "string") get_field_datatype_from_attribute=STRING_DATA_TYPE
     if (field_data_type_str == "float") get_field_datatype_from_attribute=FLOAT_DATA_TYPE
     if (field_data_type_str == "double") get_field_datatype_from_attribute=DOUBLE_DATA_TYPE
-  end function get_field_datatype_from_attribute
-  
+  end function get_field_datatype_from_attribute  
 
   !> Replaces specific characters in a string and returns a new string with this replaced by nothing (i.e. removed)
   !! @param original_string The original string the process
@@ -695,13 +705,13 @@ contains
     string_len=len(original_string)
     new_string=""
     do while (current_index .lt. string_len)
-      occurance=index(original_string(current_index:), """")
+      occurance=index(original_string(current_index:), to_replace)
       if (occurance .eq. 0) then
         occurance=len(original_string)
       else
         occurance=occurance+current_index
       end if      
-      new_string=trim(new_string)//trim(original_string(current_index:occurance-2))
+      new_string=trim(new_string)//trim(original_string(current_index:occurance-len(to_replace)-1))
       current_index=current_index+occurance+len(to_replace)-2
     end do
   end subroutine replace_characters_in_string
@@ -1006,5 +1016,68 @@ contains
     else
       get_data_value_from_map_by_field_name=>null()
     end if
-  end function get_data_value_from_map_by_field_name  
+  end function get_data_value_from_map_by_field_name
+
+  !> A helper function to get the location of a MONC's configuration in the IO data structure
+  !! @param source Source index of the MONC process
+  !! @returns Index that that MONC corresponds to
+  integer function get_monc_location(io_configuration, source)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    integer, intent(in) :: source
+
+    class(*), pointer :: generic
+
+    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
+    get_monc_location=conv_to_integer(generic, .false.)
+  end function get_monc_location
+
+  !> Retrieves the diagnostics field configuration corresponding to a specific field name and returns whether one was found or not
+  !! @param io_configuration The current IO server configuration
+  !! @param field_name The name of the diagnostics field we are searching for
+  !! @param diagnostic_config The found diagnostics is written into here if located
+  !! @returns Whether a corresponding diagnostics field was found or not
+  logical function get_diagnostic_field_configuration(io_configuration, field_name, diagnostic_config)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    character(len=*), intent(in) :: field_name
+    type(io_configuration_diagnostic_field_type), intent(out) :: diagnostic_config
+
+    integer :: i
+
+    do i=1, size(io_configuration%diagnostics)
+      if (io_configuration%diagnostics(i)%name == field_name) then
+        diagnostic_config=io_configuration%diagnostics(i)
+        get_diagnostic_field_configuration=.true.
+        return
+      end if
+    end do
+    get_diagnostic_field_configuration=.false.
+  end function get_diagnostic_field_configuration
+
+  !> Retrieves the prognostic field configuration corresponding to a specific field name and returns whether one was found or not
+  !! @param io_configuration The current IO server configuration
+  !! @param field_name The name of the prognostics field we are searching for
+  !! @param prognostic_config The found prognostic is written into here if located
+  !! @returns Whether a corresponding prognostic field was found or not
+  logical function get_prognostic_field_configuration(io_configuration, field_name, &
+       prognostic_config, prognostic_containing_data_defn)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    character(len=*), intent(in) :: field_name
+    type(io_configuration_field_type), intent(out) :: prognostic_config
+    type(io_configuration_data_definition_type), intent(out), optional :: prognostic_containing_data_defn
+
+    integer :: i, j
+    do i=1, io_configuration%number_of_data_definitions
+      do j=1, io_configuration%data_definitions(i)%number_of_data_fields
+        if (io_configuration%data_definitions(i)%fields(j)%name == field_name) then
+          prognostic_config=io_configuration%data_definitions(i)%fields(j)
+          if (present(prognostic_containing_data_defn)) then
+            prognostic_containing_data_defn=io_configuration%data_definitions(i)
+          end if
+          get_prognostic_field_configuration=.true.
+          return
+        end if
+      end do
+    end do
+    get_prognostic_field_configuration=.false.
+  end function get_prognostic_field_configuration
 end module configuration_parser_mod

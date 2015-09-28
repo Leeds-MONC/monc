@@ -3,10 +3,11 @@
 module broadcast_inter_io_mod
   use datadefn_mod, only : DEFAULT_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : io_configuration_type, io_configuration_inter_communication_description
-  use collections_mod, only : hashmap_type, c_get, c_put, c_size, c_value_at
-  use conversions_mod, only : conv_to_string, conv_to_integer
-  use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_unlock, forthread_mutex_destroy, &
-       forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_unlock, forthread_rwlock_init, forthread_rwlock_destroy
+  use collections_mod, only : hashmap_type, list_type, c_key_at, c_add, c_remove, c_free, c_get, c_put, c_size, c_value_at
+  use conversions_mod, only : conv_to_string, conv_to_integer, conv_to_generic
+  use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_trylock, forthread_mutex_unlock, &
+       forthread_mutex_destroy, forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_unlock, &
+       forthread_rwlock_init, forthread_rwlock_destroy
   use threadpool_mod, only : check_thread_status, threadpool_start_thread
   use threadpool_mod, only : check_thread_status
   use inter_io_specifics_mod, only : handle_completion, register_inter_io_communication, find_inter_io_from_name, &
@@ -18,7 +19,7 @@ module broadcast_inter_io_mod
   private
 #endif
 
-  integer, parameter :: MY_INTER_IO_TAG=2
+  integer, parameter :: MY_INTER_IO_TAG=2, PERFORM_CLEAN_EVERY=2
   character(len=*), parameter :: MY_INTER_IO_NAME="bcastinterio"
 
   !< Type keeping track of broadcast statuses
@@ -32,7 +33,8 @@ module broadcast_inter_io_mod
   end type inter_io_broadcast
 
   type(hashmap_type), volatile :: broadcast_statuses
-  integer, volatile :: broadcast_statuses_rwlock, inter_io_description_mutex
+  integer, volatile :: broadcast_statuses_rwlock, inter_io_description_mutex, clean_progress_mutex, &
+       bcast_count_mutex, bcast_clean_reduction_count, bcast_count
   logical, volatile :: initialised=.false.
 
   public init_broadcast_inter_io, perform_inter_io_broadcast, finalise_broadcast_inter_io, check_broadcast_inter_io_for_completion
@@ -45,8 +47,12 @@ contains
 
     if (.not. initialised) then
       initialised=.true.
+      bcast_count=0
+      bcast_clean_reduction_count=0
       call check_thread_status(forthread_rwlock_init(broadcast_statuses_rwlock, -1))
       call check_thread_status(forthread_mutex_init(inter_io_description_mutex, -1))
+      call check_thread_status(forthread_mutex_init(clean_progress_mutex, -1))
+      call check_thread_status(forthread_mutex_init(bcast_count_mutex, -1))
       call register_inter_io_communication(io_configuration, MY_INTER_IO_TAG, handle_recv_data_from_io_server, MY_INTER_IO_NAME)
     end if
   end subroutine init_broadcast_inter_io
@@ -73,6 +79,8 @@ contains
       end if
       call check_thread_status(forthread_rwlock_destroy(broadcast_statuses_rwlock))
       call check_thread_status(forthread_mutex_destroy(inter_io_description_mutex))
+      call check_thread_status(forthread_mutex_destroy(clean_progress_mutex))
+      call check_thread_status(forthread_mutex_destroy(bcast_count_mutex))
       initialised=.false.
     end if
   end subroutine finalise_broadcast_inter_io
@@ -154,8 +162,9 @@ contains
     type(inter_io_broadcast), pointer :: broadcast_item
     integer :: inter_io_comm_index, i, ierr
 
+    call clean_broadcast_progress_if_needed()
     inter_io_comm_index=find_inter_io_from_name(io_configuration, MY_INTER_IO_NAME)
-    broadcast_item=>find_or_add_broadcast_item(field_name, timestep, completion_procedure)
+    broadcast_item=>find_or_add_broadcast_item(field_name, timestep, completion_procedure)    
     
     call check_thread_status(forthread_mutex_lock(broadcast_item%mutex))
     if (io_configuration%my_io_rank == root .and. .not. broadcast_item%handled) then
@@ -183,7 +192,78 @@ contains
       end if
     end if
     call check_thread_status(forthread_mutex_unlock(broadcast_item%mutex))
-  end subroutine perform_inter_io_broadcast 
+  end subroutine perform_inter_io_broadcast
+
+  !> Calls out to do a broadcast progress clean if needed (i.e. every n steps.)
+  subroutine clean_broadcast_progress_if_needed()
+    call check_thread_status(forthread_mutex_lock(bcast_count_mutex))
+    bcast_count=bcast_count+1
+    if (bcast_clean_reduction_count + PERFORM_CLEAN_EVERY .lt. bcast_count) then
+      bcast_clean_reduction_count=bcast_count
+      call check_thread_status(forthread_mutex_unlock(bcast_count_mutex))   
+      call clean_broadcast_progress()
+    else
+      call check_thread_status(forthread_mutex_unlock(bcast_count_mutex))   
+    end if
+  end subroutine clean_broadcast_progress_if_needed  
+
+  !> Performs a clean of the broadcast progresses that no longer need to be stored
+  subroutine clean_broadcast_progress()
+    type(inter_io_broadcast), pointer :: specific_broadcast_item_at_index
+    integer :: completion_flag, ierr, entries, num_to_remove, i, have_lock
+    character(len=STRING_LENGTH) :: entry_key
+    type(list_type) :: entries_to_remove
+    logical :: destroy_lock
+    class(*), pointer :: generic
+
+    have_lock=forthread_mutex_trylock(clean_progress_mutex)
+    if (have_lock==0) then
+      call check_thread_status(forthread_rwlock_rdlock(broadcast_statuses_rwlock))
+      entries=c_size(broadcast_statuses)
+      do i=1, entries
+        destroy_lock=.false.
+        specific_broadcast_item_at_index=>get_broadcast_item_at_index(i, .false.)
+        call check_thread_status(forthread_mutex_lock(specific_broadcast_item_at_index%mutex))
+        if (allocated(specific_broadcast_item_at_index%send_requests)) then
+          call mpi_testall(size(specific_broadcast_item_at_index%send_requests), specific_broadcast_item_at_index%send_requests, &
+               completion_flag, MPI_STATUSES_IGNORE, ierr)
+          if (completion_flag == 1) then
+            deallocate(specific_broadcast_item_at_index%send_requests)
+            if (allocated(specific_broadcast_item_at_index%send_buffer)) deallocate(specific_broadcast_item_at_index%send_buffer)
+            entry_key=c_key_at(broadcast_statuses, i)
+            call c_add(entries_to_remove, conv_to_generic(entry_key, .true.))
+            destroy_lock=.true.
+          end if
+        else
+          if (specific_broadcast_item_at_index%handled) then
+            if (allocated(specific_broadcast_item_at_index%cached_values)) then
+              deallocate(specific_broadcast_item_at_index%cached_values)
+            end if
+            entry_key=c_key_at(broadcast_statuses, i)
+            call c_add(entries_to_remove, conv_to_generic(entry_key, .true.))
+            destroy_lock=.true.
+          end if
+        end if
+        call check_thread_status(forthread_mutex_unlock(specific_broadcast_item_at_index%mutex))
+        if (destroy_lock) call check_thread_status(forthread_mutex_destroy(specific_broadcast_item_at_index%mutex))
+      end do      
+      call check_thread_status(forthread_rwlock_unlock(broadcast_statuses_rwlock))
+
+      num_to_remove=c_size(entries_to_remove)
+      if (num_to_remove .gt. 0) then
+        call check_thread_status(forthread_rwlock_wrlock(broadcast_statuses_rwlock))
+        do i=1, num_to_remove
+          entry_key=conv_to_string(c_get(entries_to_remove, i), .false., STRING_LENGTH)
+          generic=>c_get(broadcast_statuses, entry_key)
+          call c_remove(broadcast_statuses, entry_key)
+          deallocate(generic)
+        end do
+        call check_thread_status(forthread_rwlock_unlock(broadcast_statuses_rwlock))
+      end if
+      call c_free(entries_to_remove)
+      call check_thread_status(forthread_mutex_unlock(clean_progress_mutex))
+    end if    
+  end subroutine clean_broadcast_progress  
 
   !> Locates and returns or adds and returns a specific broadcast item representing a timestep and field
   !! @param field_name The field name this represents

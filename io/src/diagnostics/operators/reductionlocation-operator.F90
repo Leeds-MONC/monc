@@ -2,7 +2,7 @@ module reductionlocation_operator_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : io_configuration_type, data_values_type, get_data_value_by_field_name
   use data_utils_mod, only : get_action_attribute_string
-  use collections_mod, only : hashmap_type, list_type, map_type, hashmap_type, c_get, c_add
+  use collections_mod, only : hashmap_type, list_type, map_type, c_get, c_add
   use conversions_mod, only : conv_to_generic, generic_to_double_real
   implicit none
 
@@ -13,11 +13,13 @@ module reductionlocation_operator_mod
   public perform_reductionlocation_operator, reductionlocation_operator_get_required_fields
 contains
 
-  function perform_reductionlocation_operator(io_configuration, field_values, action_attributes)
+  subroutine perform_reductionlocation_operator(io_configuration, field_values, action_attributes, source_monc_location, &
+       source_monc, operator_result_values)
     type(io_configuration_type), intent(inout) :: io_configuration
     type(hashmap_type), intent(inout) :: field_values
     type(map_type), intent(inout) :: action_attributes
-    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: perform_reductionlocation_operator
+    integer, intent(in) :: source_monc_location, source_monc
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable, intent(inout) :: operator_result_values
 
     character(len=STRING_LENGTH) :: location_local, val, val_local
     type(data_values_type), pointer :: val_local_values, val_values, location_local_values
@@ -29,15 +31,15 @@ contains
     val_values=>get_data_value_by_field_name(field_values, val)
     location_local_values=>get_data_value_by_field_name(field_values, location_local)
 
-    allocate(perform_reductionlocation_operator(size(location_local_values%values)))
+    allocate(operator_result_values(size(location_local_values%values)))
     do i=1, size(val_local_values%values)
       if (val_local_values%values(i) .eq. val_values%values(i)) then
-        perform_reductionlocation_operator(i)=location_local_values%values(i)
+        operator_result_values(i)=location_local_values%values(i)
       else
-        perform_reductionlocation_operator(i)=-1.0_DEFAULT_PRECISION
+        operator_result_values(i)=-1.0_DEFAULT_PRECISION
       end if
     end do
-  end function perform_reductionlocation_operator
+  end subroutine perform_reductionlocation_operator
 
   type(list_type) function reductionlocation_operator_get_required_fields(action_attributes)
     type(map_type), intent(inout) :: action_attributes

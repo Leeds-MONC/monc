@@ -4,8 +4,8 @@
 !! installed callback hooks for that stage in order.
 module registry_mod
   use datadefn_mod, only : STRING_LENGTH
-  use collections_mod, only : list_type, map_type, c_size, c_value_at, c_key_at, c_get, c_remove, c_put, c_is_empty, c_contains, &
-       c_add, c_free
+  use collections_mod, only : list_type, hashmap_type, map_type, c_size, c_value_at, c_key_at, c_get, c_remove, c_put, &
+       c_is_empty, c_contains, c_add, c_free
   use monc_component_mod, only : component_descriptor_type, component_field_value_type, component_field_information_type, &
        FINALISATION_PRIORITY_INDEX, INIT_PRIORITY_INDEX, TIMESTEP_PRIORITY_INDEX
   use conversions_mod, only : conv_to_generic, conv_to_string, conv_to_integer
@@ -48,7 +48,8 @@ module registry_mod
                     finalisation_callbacks,&   !< Callback hooks for the finalisation stage
                     component_descriptions,&   !< Copies of component descriptors
                     group_descriptors,&        !< Group descriptors for each group, name->descriptor     
-                    component_groups, init_orderings, finalisation_orderings, field_procedure_retrievals, field_procedure_sizings
+                    component_groups, init_orderings, finalisation_orderings
+  type(hashmap_type), save :: field_procedure_retrievals, field_procedure_sizings
 
   type(map_type), dimension(:), allocatable :: timestep_callbacks !< Callback hooks for the timestep stage
 

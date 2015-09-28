@@ -4,7 +4,7 @@ module writer_federator_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : TIME_AVERAGED_TYPE, INSTANTANEOUS_TYPE, GROUP_TYPE, FIELD_TYPE, io_configuration_type, &
        io_configuration_field_type, io_configuration_diagnostic_field_type, io_configuration_data_definition_type, &
-       data_values_type, get_data_value_by_field_name
+       data_values_type, get_data_value_by_field_name, get_diagnostic_field_configuration, get_prognostic_field_configuration
   use instantaneous_time_manipulation_mod, only : init_instantaneous_manipulation, finalise_instantaneous_manipulation, &
        perform_instantaneous_time_manipulation
   use timeaveraged_time_manipulation_mod, only : init_time_averaged_manipulation, finalise_time_averaged_manipulation, &
@@ -717,20 +717,12 @@ contains
     writer_entries(writer_entry_index)%contents(my_facet_index)%output_frequency=&
          io_configuration%file_writers(writer_entry_index)%contents(io_config_facet_index)%output_time_frequency
     writer_entries(writer_entry_index)%contents(my_facet_index)%previous_write_time=0.0
-    writer_entries(writer_entry_index)%contents(my_facet_index)%previous_tracked_write_point=0.0
-    writer_entries(writer_entry_index)%contents(my_facet_index)%max_timeseries_points_per_dump=ceiling(&
-         writer_entries(writer_entry_index)%write_time_frequency/&
-         writer_entries(writer_entry_index)%contents(my_facet_index)%output_frequency)
+    writer_entries(writer_entry_index)%contents(my_facet_index)%previous_tracked_write_point=0.0   
     writer_entries(writer_entry_index)%contents(my_facet_index)%duplicate_field_name=.false.
     writer_entries(writer_entry_index)%contents(my_facet_index)%pending_to_write=.false.
     writer_entries(writer_entry_index)%contents(my_facet_index)%enabled=.false.
 
-    writer_entries(writer_entry_index)%contents(my_facet_index)%collective_write=&
-         io_configuration%file_writers(writer_entry_index)%contents(io_config_facet_index)%collective_write
     if (get_diagnostic_field_configuration(io_configuration, field_name, diagnostic_field_configuration)) then
-      if (writer_entries(writer_entry_index)%contents(my_facet_index)%collective_write) then
-        call log_log(LOG_ERROR, "Can only do collective MONC diagnostic writing with direct data fields from MONC")
-      end if
       writer_entries(writer_entry_index)%contents(my_facet_index)%timestep_frequency=&
            conv_to_integer(c_get(diagnostic_generation_frequency, field_name), .false.)
       writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions=diagnostic_field_configuration%dimensions
@@ -738,6 +730,7 @@ contains
       writer_entries(writer_entry_index)%contents(my_facet_index)%field_type=diagnostic_field_configuration%field_type
       writer_entries(writer_entry_index)%contents(my_facet_index)%dim_size_defns=diagnostic_field_configuration%dim_size_defns
       writer_entries(writer_entry_index)%contents(my_facet_index)%units=diagnostic_field_configuration%units
+      writer_entries(writer_entry_index)%contents(my_facet_index)%collective_write=diagnostic_field_configuration%collective
     else
       if (get_prognostic_field_configuration(io_configuration, field_name, &
            prognostic_field_configuration, prognostic_containing_data_defn)) then
@@ -746,6 +739,7 @@ contains
         writer_entries(writer_entry_index)%contents(my_facet_index)%field_type=prognostic_field_configuration%field_type
         writer_entries(writer_entry_index)%contents(my_facet_index)%units=prognostic_field_configuration%units
         writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions=prognostic_field_configuration%dimensions
+        writer_entries(writer_entry_index)%contents(my_facet_index)%collective_write=prognostic_field_configuration%collective
         if (prognostic_field_configuration%field_type == ARRAY_FIELD_TYPE) then
           if (prognostic_field_configuration%dimensions .gt. 0) then
             writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions=prognostic_field_configuration%dimensions
@@ -768,54 +762,6 @@ contains
     end if    
     call check_thread_status(forthread_mutex_init(writer_entries(writer_entry_index)%contents(my_facet_index)%values_mutex, -1))
   end subroutine add_specific_field_to_writer_entry
-
-  !> Retrieves the diagnostics field configuration corresponding to a specific field name and returns whether one was found or not
-  !! @param io_configuration The current IO server configuration
-  !! @param field_name The name of the diagnostics field we are searching for
-  !! @param diagnostic_config The found diagnostics is written into here if located
-  !! @returns Whether a corresponding diagnostics field was found or not
-  logical function get_diagnostic_field_configuration(io_configuration, field_name, diagnostic_config)
-    type(io_configuration_type), intent(inout) :: io_configuration
-    character(len=*), intent(in) :: field_name
-    type(io_configuration_diagnostic_field_type), intent(out) :: diagnostic_config
-
-    integer :: i
-
-    do i=1, size(io_configuration%diagnostics)
-      if (io_configuration%diagnostics(i)%name == field_name) then
-        diagnostic_config=io_configuration%diagnostics(i)
-        get_diagnostic_field_configuration=.true.
-        return
-      end if
-    end do
-    get_diagnostic_field_configuration=.false.
-  end function get_diagnostic_field_configuration
-
-  !> Retrieves the prognostic field configuration corresponding to a specific field name and returns whether one was found or not
-  !! @param io_configuration The current IO server configuration
-  !! @param field_name The name of the prognostics field we are searching for
-  !! @param prognostic_config The found prognostic is written into here if located
-  !! @returns Whether a corresponding prognostic field was found or not
-  logical function get_prognostic_field_configuration(io_configuration, field_name, &
-       prognostic_config, prognostic_containing_data_defn)
-    type(io_configuration_type), intent(inout) :: io_configuration
-    character(len=*), intent(in) :: field_name
-    type(io_configuration_field_type), intent(out) :: prognostic_config
-    type(io_configuration_data_definition_type), intent(out) :: prognostic_containing_data_defn
-
-    integer :: i, j
-    do i=1, io_configuration%number_of_data_definitions
-      do j=1, io_configuration%data_definitions(i)%number_of_data_fields
-        if (io_configuration%data_definitions(i)%fields(j)%name == field_name) then
-          prognostic_config=io_configuration%data_definitions(i)%fields(j)
-          prognostic_containing_data_defn=io_configuration%data_definitions(i)
-          get_prognostic_field_configuration=.true.
-          return
-        end if
-      end do
-    end do
-    get_prognostic_field_configuration=.false.
-  end function get_prognostic_field_configuration
 
   !> Marks duplicate field names in a writer entry as duplicates so that the NetCDF layer can then deal with this by issuing
   !! unique names

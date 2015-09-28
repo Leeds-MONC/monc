@@ -6,7 +6,7 @@ module io_server_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : DATA_SIZE_STRIDE, io_configuration_type, io_configuration_data_definition_type, &
        io_configuration_registered_monc_type, configuration_parse, extend_registered_moncs_array, retrieve_data_definition, &
-       build_definition_description_type_from_configuration, build_field_description_type_from_configuration
+       build_definition_description_type_from_configuration, build_field_description_type_from_configuration, get_monc_location
   use mpi_communication_mod, only : build_mpi_datatype, data_receive, test_for_command, register_command_receive, &
        cancel_requests, free_mpi_type, get_number_io_servers, get_my_io_rank, test_for_inter_io
   use diagnostic_federator_mod, only : initialise_diagnostic_federator, finalise_diagnostic_federator, &
@@ -180,18 +180,6 @@ contains
     end if    
   end subroutine handle_command_message
 
-  !> A helper function to get the location of a MONC's configuration in the IO data structure
-  !! @param source Source index of the MONC process
-  !! @returns Index that that MONC corresponds to
-  integer function get_monc_location(source)
-    integer, intent(in) :: source
-
-    class(*), pointer :: generic
-
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    get_monc_location=conv_to_integer(generic, .false.)
-  end function get_monc_location
-
   !> Handles inter IO server communications
   !! @param arguments The thread based arguments, this is the index of the inter IO server description
   subroutine handle_inter_io_communication_command(arguments, data_buffer)
@@ -237,7 +225,7 @@ contains
     integer :: monc_location, source
 
     source=arguments(1)
-    monc_location=get_monc_location(source)
+    monc_location=get_monc_location(io_configuration, source)
     call check_thread_status(forthread_mutex_lock(io_configuration%registered_moncs(monc_location)%active_mutex))
     do while (io_configuration%registered_moncs(monc_location)%active_threads .gt. 0)
       call check_thread_status(forthread_cond_wait(io_configuration%registered_moncs(monc_location)%deactivate_condition_variable,&
@@ -265,7 +253,7 @@ contains
 
     source=arguments(1)
     data_set=arguments(2)
-    monc_location=get_monc_location(source) 
+    monc_location=get_monc_location(io_configuration, source) 
 
     call check_thread_status(forthread_rwlock_rdlock(monc_registration_lock))
 

@@ -4,7 +4,7 @@
 !! stability work to handle ill formatted XML and error checking.
 module sax_xml_parser_mod
   use datadefn_mod, only : STRING_LENGTH
-  use logging_mod, only : LOG_WARN, log_log
+  use logging_mod, only : LOG_WARN, LOG_ERROR, log_log
   implicit none
 
 #ifndef TEST_MODE
@@ -102,15 +102,15 @@ contains
         new_start_posn=get_attribute(raw_contents(name_end_index+1:end_index), attribute_start_posn, attribute_names, &
              attribute_values, i)
         attribute_start_posn=new_start_posn
-      end do      
+      end do
       call start_element_callback(tag_name, number_attributes, attribute_names, attribute_values)
       deallocate(attribute_names, attribute_values)
       if (raw_contents(end_index-1:end_index) .eq. "/>") call end_element_callback(tag_name)
     end if
   end subroutine process_individual_tag
 
-  !> Retrieves the "next" attribute from the XML tag and returns the position after this attribute to search from next. This contains
-  !! some additional complexities to deal with a number of different formatted tags
+  !> Retrieves the "next" attribute from the XML tag and returns the position after this attribute to search from next. 
+  !! This contains some additional complexities to deal with a number of different formatted tags
   !! @param contents The XML string
   !! @param start_index The index to start from when getting the next attribute
   !! @param attribute_names Collection of attribute names that the extraced name is appended to
@@ -121,7 +121,7 @@ contains
     integer, intent(in) :: start_index, attribute_index
     character(len=*), dimension(:), allocatable, intent(inout) :: attribute_names, attribute_values
 
-    integer :: equals_posn, end_oftag_absolute, equals_absolute, open_quote, close_quote, begin_index
+    integer :: equals_posn, end_oftag_absolute, equals_absolute, open_quote, close_quote, begin_index, space_point
 
     close_quote=0
     equals_posn=index(contents(start_index:), "=")
@@ -139,9 +139,11 @@ contains
       if (open_quote .ne. 0) close_quote=index(contents(equals_absolute+open_quote:), """")
 
       if (close_quote == 0) then
-        ! No quote therefore must be quoteless and at the end of the tag
+        ! No quote therefore must be quoteless and check for whitespace, also check for termination tag and use whichever is closed
+        space_point=index(contents(equals_absolute+open_quote:), " ")        
         close_quote=index(contents(equals_absolute+open_quote:), "/>")-1
-        if (close_quote==0) close_quote=index(contents(equals_absolute+open_quote:), ">")
+        if (close_quote .lt. 0) close_quote=index(contents(equals_absolute+open_quote:), ">")-1
+        if (space_point .ne. 0 .and. space_point .lt. close_quote) close_quote=space_point
       else
         if (open_quote .gt. 2) then
           ! Deals with matching over to the next tag as no quotes around this value
@@ -155,6 +157,9 @@ contains
 
       attribute_names(attribute_index)=trim(adjustl(contents(begin_index:equals_absolute-1)))
       attribute_values(attribute_index)=trim(adjustl(contents(equals_absolute+1:end_oftag_absolute-1)))
+      if (len_trim(attribute_names(attribute_index)) == 0 .or. len_trim(attribute_values(attribute_index)) == 0) then
+        call log_log(LOG_ERROR, "Empty IO server XML configuration name or value")
+      end if
       get_attribute=end_oftag_absolute
     else
       get_attribute=0

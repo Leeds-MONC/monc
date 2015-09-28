@@ -5,7 +5,7 @@ module flux_budget_mod
   use conversions_mod, only : conv_to_generic, conv_to_logical
   use monc_component_mod, only : COMPONENT_ARRAY_FIELD_TYPE, COMPONENT_DOUBLE_DATA_TYPE, component_descriptor_type, &
        component_field_value_type, component_field_information_type
-  use optionsdatabase_mod, only : options_get_real
+  use optionsdatabase_mod, only : options_get_real, options_get_integer
   use registry_mod, only : get_component_field_value, get_component_field_information, is_component_field_available
   use grids_mod, only : local_grid_type, global_grid_type, X_INDEX, Y_INDEX, Z_INDEX
   use state_mod, only : model_state_type
@@ -32,6 +32,11 @@ module flux_budget_mod
   real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: q_flux_values, q_gradient, q_diff, q_buoyancy, q_tendency
   type(hashmap_type) :: heat_flux_fields, q_flux_fields, uw_vw_fields, prognostic_budget_fields, thetal_fields, mse_fields, &
        qt_fields, scalar_fields
+
+  logical :: some_theta_flux_diagnostics_enabled, some_q_flux_diagnostics_enabled, some_uw_vw_diagnostics_enabled, &
+       some_prognostic_budget_diagnostics_enabled, some_thetal_diagnostics_enabled, some_mse_diagnostics_enabled, &
+       some_qt_diagnostics_enabled
+  integer :: diagnostic_generation_frequency
 
   public flux_budget_get_descriptor
 contains
@@ -102,6 +107,7 @@ contains
     call initialise_mse_diagnostics(current_state)
     call initialise_qt_diagnostics(current_state)
     call initialise_scalar_diagnostics(current_state)
+    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
   end subroutine initialisation_callback
 
   !> Timestep call back, this will deduce the diagnostics for the current (non halo) column
@@ -109,25 +115,27 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
     
-    if (current_state%first_timestep_column) then
-      call clear_theta_fluxes()
-      call clear_q_fluxes()
-      call clear_uw_vw()
-      call clear_prognostic_budgets()
-      call clear_thetal()
-      call clear_mse()
-      call clear_qt()
-      call clear_scalars()
-    end if    
-    if (.not. current_state%halo_column) then
-      call compute_theta_flux_for_column(current_state)
-      call compute_q_flux_for_column(current_state)
-      call compute_uw_vw_for_column(current_state)
-      call compute_prognostic_budgets_for_column(current_state)
-      call compute_thetal_for_column(current_state)
-      call compute_mse_for_column(current_state)
-      call compute_qt_for_column(current_state)
-      call compute_scalars_for_column(current_state)
+    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
+      if (current_state%first_timestep_column) then
+        if (some_theta_flux_diagnostics_enabled) call clear_theta_fluxes()
+        if (some_q_flux_diagnostics_enabled) call clear_q_fluxes()
+        if (some_uw_vw_diagnostics_enabled) call clear_uw_vw()
+        if (some_prognostic_budget_diagnostics_enabled) call clear_prognostic_budgets()
+        if (some_thetal_diagnostics_enabled) call clear_thetal()
+        if (some_mse_diagnostics_enabled) call clear_mse()
+        if (some_qt_diagnostics_enabled) call clear_qt()
+        call clear_scalars()
+      end if
+      if (.not. current_state%halo_column) then
+        if (some_theta_flux_diagnostics_enabled) call compute_theta_flux_for_column(current_state)
+        if (some_q_flux_diagnostics_enabled) call compute_q_flux_for_column(current_state)
+        if (some_uw_vw_diagnostics_enabled) call compute_uw_vw_for_column(current_state)
+        if (some_prognostic_budget_diagnostics_enabled) call compute_prognostic_budgets_for_column(current_state)
+        if (some_thetal_diagnostics_enabled) call compute_thetal_for_column(current_state)
+        if (some_mse_diagnostics_enabled) call compute_mse_for_column(current_state)
+        if (some_qt_diagnostics_enabled) call compute_qt_for_column(current_state)
+        call compute_scalars_for_column(current_state)
+      end if
     end if
   end subroutine timestep_callback
 
@@ -412,6 +420,8 @@ contains
          is_component_field_available("th_diffusion") .and. us_qt_enabled
     wu_qt_enabled=current_state%w%active .and. us_qt_enabled
 
+    some_qt_diagnostics_enabled=us_qt_enabled
+
     if (us_qt_enabled) then
       call set_published_field_enabled_state(qt_fields, "us_qt_local", .true.) 
       allocate(us_qt(column_size))
@@ -435,6 +445,8 @@ contains
     v_qt_viscosity_diffusion_enabled=is_component_field_available("v_viscosity") .and. &
          is_component_field_available("th_diffusion") .and. vs_qt_enabled
     wv_qt_enabled=current_state%w%active .and. vs_qt_enabled
+
+    some_qt_diagnostics_enabled=some_qt_diagnostics_enabled .or. vs_qt_enabled
 
     if (vs_qt_enabled) then
       call set_published_field_enabled_state(qt_fields, "vs_qt_local", .true.) 
@@ -461,6 +473,8 @@ contains
          is_component_field_available("th_diffusion") .and. w_qt_enabled
     w_qt_buoyancy_enabled=current_state%th%active .and. is_component_field_available("w_buoyancy")
     ww_qt_enabled=w_qt_enabled
+
+    some_qt_diagnostics_enabled=some_qt_diagnostics_enabled .or. w_qt_enabled
 
     if (w_qt_enabled) then
       call set_published_field_enabled_state(qt_fields, "w_qt_local", .true.) 
@@ -492,6 +506,8 @@ contains
     qt_qt_advection_enabled=is_component_field_available("qt_advection") .and. qt_qt_enabled
     qt_qt_diffusion_enabled=is_component_field_available("qt_diffusion") .and. qt_qt_enabled
     wqt_qt_enabled=current_state%w%active .and. qt_qt_enabled
+
+    some_qt_diagnostics_enabled=some_qt_diagnostics_enabled .or. qt_qt_enabled
 
     if (qt_qt_enabled) then
       call set_published_field_enabled_state(qt_fields, "qt_qt_local", .true.) 
@@ -539,6 +555,8 @@ contains
          is_component_field_available("th_diffusion") .and. u_mse_enabled
     wu_mse_enabled=current_state%w%active .and. u_mse_enabled
 
+    some_mse_diagnostics_enabled=u_mse_enabled
+
     if (u_mse_enabled) then
       call set_published_field_enabled_state(mse_fields, "u_mse_local", .true.) 
       allocate(u_mse(column_size))
@@ -567,6 +585,8 @@ contains
     v_mse_viscosity_diffusion_enabled=is_component_field_available("v_viscosity") .and. &
          is_component_field_available("th_diffusion") .and. v_mse_enabled
     wv_mse_enabled=current_state%w%active .and. v_mse_enabled
+
+    some_mse_diagnostics_enabled=some_mse_diagnostics_enabled .or. v_mse_enabled
 
     if (v_mse_enabled) then
       call set_published_field_enabled_state(mse_fields, "v_mse_local", .true.) 
@@ -598,6 +618,8 @@ contains
     w_mse_buoyancy_enabled=current_state%th%active .and. is_component_field_available("w_buoyancy")
     ww_mse_enabled=w_mse_enabled
 
+    some_mse_diagnostics_enabled=some_mse_diagnostics_enabled .or. w_mse_enabled
+
     if (w_mse_enabled) then
       call set_published_field_enabled_state(mse_fields, "w_mse_local", .true.) 
       allocate(w_mse(column_size))
@@ -628,6 +650,8 @@ contains
     mse_mse_advection_enabled=is_component_field_available("mse_advection") .and. mse_mse_enabled
     mse_mse_diffusion_enabled=is_component_field_available("mse_diffusion") .and. mse_mse_enabled
     wmse_mse_enabled=current_state%w%active .and. mse_mse_enabled
+
+    some_mse_diagnostics_enabled=some_mse_diagnostics_enabled .or. mse_mse_enabled
 
     if (mse_mse_enabled) then
       call set_published_field_enabled_state(mse_fields, "mse_mse_local", .true.) 
@@ -674,6 +698,8 @@ contains
          is_component_field_available("th_diffusion") .and. u_thetal_enabled
     wu_thetal_enabled=current_state%w%active .and. u_thetal_enabled
 
+    some_thetal_diagnostics_enabled=u_thetal_enabled
+
     if (u_thetal_enabled) then
       call set_published_field_enabled_state(thetal_fields, "u_thetal_local", .true.) 
       allocate(u_thetal(column_size))
@@ -702,6 +728,8 @@ contains
     v_thetal_viscosity_diffusion_enabled=is_component_field_available("v_viscosity") .and. &
          is_component_field_available("th_diffusion") .and. v_thetal_enabled
     wv_thetal_enabled=current_state%w%active .and. v_thetal_enabled
+
+    some_thetal_diagnostics_enabled=some_thetal_diagnostics_enabled .or. v_thetal_enabled
 
     if (v_thetal_enabled) then
       call set_published_field_enabled_state(thetal_fields, "v_thetal_local", .true.) 
@@ -733,6 +761,8 @@ contains
     w_thetal_buoyancy_enabled=current_state%th%active .and. is_component_field_available("w_buoyancy")
     ww_thetal_enabled=w_thetal_enabled
 
+    some_thetal_diagnostics_enabled=some_thetal_diagnostics_enabled .or. w_thetal_enabled
+
     if (w_thetal_enabled) then
       call set_published_field_enabled_state(thetal_fields, "w_thetal_local", .true.) 
       allocate(w_thetal(column_size))
@@ -763,6 +793,8 @@ contains
     thetal_thetal_advection_enabled=is_component_field_available("th_advection") .and. thetal_thetal_enabled
     thetal_thetal_diffusion_enabled=is_component_field_available("th_diffusion") .and. thetal_thetal_enabled
     wthetal_thetal_enabled=current_state%w%active .and. thetal_thetal_enabled
+
+    some_thetal_diagnostics_enabled=some_thetal_diagnostics_enabled .or. thetal_thetal_enabled
 
     if (thetal_thetal_enabled) then
       call set_published_field_enabled_state(thetal_fields, "thetal_thetal_local", .true.) 
@@ -807,6 +839,8 @@ contains
     ww_advection_enabled=is_component_field_available("w_advection") .and. current_state%w%active
     ww_viscosity_enabled=is_component_field_available("w_viscosity") .and. current_state%w%active
     ww_buoyancy_enabled=is_component_field_available("w_buoyancy") .and. current_state%w%active
+
+    some_prognostic_budget_diagnostics_enabled=tu_su_enabled .or. tv_sv_enabled .or. tw_sw_enabled
 
     column_size=current_state%local_grid%size(Z_INDEX)
     
@@ -885,6 +919,10 @@ contains
     uw_w_term_enabled=current_state%w%active .and. current_state%u%active
     vw_w_term_enabled=current_state%w%active .and. current_state%v%active
 
+    some_uw_vw_diagnostics_enabled=uw_buoyancy_term_enabled .or. vw_buoyancy_term_enabled .or. uw_w_term_enabled .or. &
+         vw_w_term_enabled .or. uw_advection_term_enabled .or. vw_advection_term_enabled .or. uw_viscosity_term_enabled .or. &
+         vw_viscosity_term_enabled
+
     column_size=current_state%local_grid%size(Z_INDEX)
 
     if (uw_advection_term_enabled) then
@@ -944,6 +982,8 @@ contains
     q_diff_enabled=is_component_field_available("q_diffusion") .and. is_component_field_available("w_viscosity") &
          .and. current_state%w%active .and. current_state%number_q_fields .gt. 0
     q_buoyancy_enabled=is_component_field_available("w_buoyancy") .and. current_state%number_q_fields .gt. 0
+
+    some_q_flux_diagnostics_enabled=q_flux_term_enabled .or. q_buoyancy_enabled
                     
     if (q_flux_term_enabled) then
       call set_published_field_enabled_state(q_flux_fields, "q_flux_transport_local", .true.)
@@ -981,6 +1021,8 @@ contains
     th_diff_enabled=is_component_field_available("th_diffusion") .and. is_component_field_available("w_viscosity") &
          .and. current_state%w%active .and. current_state%th%active
     th_buoyancy_enabled=is_component_field_available("w_buoyancy") .and. current_state%th%active
+
+    some_theta_flux_diagnostics_enabled=th_flux_term_enabled .or. th_buoyancy_enabled
 
     if (th_flux_term_enabled) then
       call set_published_field_enabled_state(heat_flux_fields, "heat_flux_transport_local", .true.)

@@ -148,6 +148,13 @@ contains
     get_datatype_of_field=0
   end function get_datatype_of_field
 
+  !> Provides a field to the write federator with no source (a none collective diagnostic)
+  !! @param io_configuration The IO server configuration
+  !! @param field_name The field name
+  !! @param field_values The fields values
+  !! @param timestep The corresponding model timestep
+  !! @param time Corresponding MONC model time
+  !! @param frequency Configured sampling frequency
   subroutine provide_field_to_writer_federator_nosrc(io_configuration, field_name, field_values, timestep, time, frequency)
     type(io_configuration_type), intent(inout) :: io_configuration
     character(len=*), intent(in) :: field_name
@@ -158,6 +165,14 @@ contains
     call provide_field_to_writer_federator_src(io_configuration, field_name, field_values, timestep, time, frequency, -1)
   end subroutine provide_field_to_writer_federator_nosrc
       
+  !> Provides a field to the write federator (a collective diagnostic or prognostic)
+  !! @param io_configuration The IO server configuration
+  !! @param field_name The field name
+  !! @param field_values The fields values
+  !! @param timestep The corresponding model timestep
+  !! @param time Corresponding MONC model time
+  !! @param frequency Configured sampling frequency
+  !! @param source The MONC source ID
   subroutine provide_field_to_writer_federator_src(io_configuration, field_name, field_values, timestep, time, frequency, source)
     type(io_configuration_type), intent(inout) :: io_configuration
     character(len=*), intent(in) :: field_name
@@ -181,6 +196,10 @@ contains
     call check_thread_status(forthread_mutex_unlock(field_ordering%access_mutex))
   end subroutine provide_field_to_writer_federator_src
 
+  !> Processes queued up items for a specific field's ordering. This will send any available fields to the write federator
+  !! with a guaranteed ordering and clean up the memory associated with them
+  !! @param io_configuration The IO server configuration
+  !! @param field_ordering The field ordering status associated with this field
   subroutine process_queued_items(io_configuration, field_ordering)
     type(io_configuration_type), intent(inout) :: io_configuration
     type(field_ordering_type), intent(inout) :: field_ordering
@@ -205,6 +224,10 @@ contains
     end do
   end subroutine process_queued_items
 
+  !> Retrieves a specific field ordering value at the corresponding timestep or null if none is found
+  !! @param collection The map of timesteps to field ordering values that we are looking up
+  !! @param timestep The timestep to look up
+  !! @returns The corresponding field ordering or null if none is found
   function get_field_ordering_value_at_timestep(collection, timestep)
     type(hashmap_type), intent(inout) :: collection
     integer, intent(in) :: timestep
@@ -223,6 +246,15 @@ contains
     end if    
   end function get_field_ordering_value_at_timestep  
 
+  !> Generates the field value container which is then filled in with appropriate values and added into the overall field ordering
+  !! data structure
+  !! @param field_name The field name
+  !! @param field_values The fields values
+  !! @param timestep The corresponding MONC model timestep
+  !! @param time The corresponding MONC model time
+  !! @param frequency Configured sampling frequency
+  !! @param source MONC source pid
+  !! @returns A value container which can be added into the field ordering data structure
   function generate_value_container(field_name, field_values, timestep, time, frequency, source)
     character(len=*), intent(in) :: field_name
     integer, intent(in) :: timestep, frequency, source
@@ -238,6 +270,11 @@ contains
     allocate(generate_value_container%field_values(size(field_values)), source=field_values)
   end function generate_value_container  
 
+  !> Retrieves or adds ordering for a specific field (and MONC source)
+  !! @param field_name The field name
+  !! @param frequency The sampling frequency of this field
+  !! @param source MONC source PID
+  !! @returns Either the existing or a newly created field ordering
   function get_or_add_field_ordering(field_name, frequency, source)
     character(len=*), intent(in) :: field_name
     integer, intent(in) :: frequency, source
@@ -268,6 +305,10 @@ contains
     end if
   end function get_or_add_field_ordering
   
+  !> Retrieves a field ordering based upon the name or null if none can be found
+  !! @param field_name The name of the field to look up
+  !! @param do_lock Whether to issue a read lock or not
+  !! @returns The corresponding field ordering data structure or null if none is found
   function get_field_ordering(field_name, do_lock)
     character(len=*), intent(in) :: field_name
     logical, intent(in) :: do_lock
