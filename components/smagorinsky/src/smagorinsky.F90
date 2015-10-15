@@ -45,8 +45,11 @@ contains
     end if    
     if (.not. is_component_enabled(current_state%options_database, "viscosity")) then
       call log_master_log(LOG_ERROR, "Smagorinsky requires the viscosity component to be enabled")
-    end if    
-
+    end if
+    if (.not. current_state%use_viscosity_and_diffusion) then 
+       call log_master_log(LOG_ERROR, "Smagorinsky requires use_viscosity_and_diffusion=.true. or monc will fail")
+    endif
+    
     eps=0.01_DEFAULT_PRECISION
     repsh=0.5_DEFAULT_PRECISION/eps
     thcona=ratio_mol_wts*current_state%thref0

@@ -464,7 +464,6 @@ contains
     integer :: k
 
     do k=2,local_grid%size(Z_INDEX)-1
-      source_field%data(k, y_source_index, x_source_index)=0.0_DEFAULT_PRECISION
 #ifdef V_ACTIVE
       source_field%data(k, y_source_index, x_source_index)=source_field%data(k, y_source_index, x_source_index)+&
            (v%data(k, y_flow_index-1, x_flow_index)* flux_y_previous(k) - v%data(k, y_flow_index, x_flow_index)*flux_y(k))*&

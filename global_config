@@ -3,6 +3,7 @@
 buoyancy_enabled=.true.
 cfltest_enabled=.true.
 checkpointer_enabled=.true.
+clearsourceterms_enabled=.true.
 coriolis_enabled=.true.
 damping_enabled=.false.
 debugger_enabled=.false.
@@ -25,6 +26,7 @@ physicsa_enabled=.false.
 psrce_enabled=.true.
 pstep_enabled=.true.
 pw_advection_enabled=.true.
+set_consistent_lowbc_enabled=.true.
 setfluxlook_enabled=.true.
 simplecloud_enabled=.false. 
 simplesetup_enabled=.false.
@@ -56,9 +58,9 @@ solver_group_type=entire
 pressure-terms_group_type=column
 last_group_type=entire
 
-start_group_contents=stepping_direction, halo_swapper, lateral_bcs, setfluxlook
+start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral_bcs, setfluxlook
 subgrid_group_contents=lower_bc, smagorinsky
-dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, lwrad_exponential, simplecloud, casim,diverr, psrce, stepfields, flux_budget
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, lwrad_exponential, simplecloud, casim,diverr, psrce, stepfields, flux_budget
 
 solver_group_contents=mean_profiles, fftsolver, iterativesolver, cfltest
 pressure-terms_group_contents=pstep, swap_smooth

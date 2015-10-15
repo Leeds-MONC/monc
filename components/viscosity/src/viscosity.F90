@@ -88,13 +88,7 @@ contains
 
     z_size=current_state%global_grid%size(Z_INDEX)
     allocate(u_viscosity(z_size), v_viscosity(z_size), w_viscosity(z_size))
-    
-    !AH - move allocation of vis_coefficient from lowerbc to here    
-    z_size=current_state%local_grid%size(Z_INDEX) + current_state%local_grid%halo_size(Z_INDEX) * 2
-    y_size=current_state%local_grid%size(Y_INDEX) + current_state%local_grid%halo_size(Y_INDEX) * 2
-    x_size=current_state%local_grid%size(X_INDEX) + current_state%local_grid%halo_size(X_INDEX) * 2
-    allocate(current_state%vis_coefficient%data(z_size, y_size, x_size))
-
+   
   end subroutine initialisation_callback
 
   subroutine finalisation_callback(current_state)

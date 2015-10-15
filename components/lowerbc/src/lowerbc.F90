@@ -1,7 +1,8 @@
 !>  This sets the lower boundary conditions for theta and the q variables
 module lowerbc_mod
   use monc_component_mod, only : component_descriptor_type
-  use state_mod, only : FORWARD_STEPPING, PRESCRIBED_SURFACE_FLUXES, model_state_type
+  use state_mod, only : FORWARD_STEPPING, PRESCRIBED_SURFACE_FLUXES, PRESCRIBED_SURFACE_VALUES, &
+   model_state_type
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX, vertical_grid_configuration_type
   use datadefn_mod, only : DEFAULT_PRECISION
   use prognostics_mod, only : prognostic_field_type
@@ -50,23 +51,9 @@ contains
          1.0_DEFAULT_PRECISION/(current_state%global_grid%configuration%horizontal%dy*&
          current_state%global_grid%configuration%horizontal%dy)
     
-    if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_FLUXES) then
-       ! AH - all variables below are only required when PRESCRIBED_SURFACE_VALUES are used. 
-       !      Zeroing them here to avoid uninitialised values
-       tstrcona=0.0
-       bhbc=0.0
-       rhmbc=0.0
-       ddbc=0.0
-       ddbc_x4=0.0
-       r2ddbc=0.0
-       eecon=0.0
-       rcmbc=0.0
-       tstrconb=0.0
-       x4con=0.0
-       xx0con=0.0
-       y2con=0.0
-       yy0con=0.0
-    else
+    if ( current_state%use_surface_boundary_conditions .and.  &
+         current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_VALUES) then
+      ! variables below are only required when PRESCRIBED_SURFACE_VALUES are used. 
        tstrcona=von_karman_constant/alphah*current_state%global_grid%configuration%vertical%zlogth
        bhbc=alphah*current_state%global_grid%configuration%vertical%zlogth
        rhmbc=betah*(current_state%global_grid%configuration%vertical%zn(2)+z0-z0th)/&
@@ -82,11 +69,26 @@ contains
        xx0con=gammam*z0
        y2con=gammah*(current_state%global_grid%configuration%vertical%zn(2)+z0)
        yy0con=gammah*z0th
+    else
+       tstrcona=0.0
+       bhbc=0.0
+       rhmbc=0.0
+       ddbc=0.0
+       ddbc_x4=0.0
+       r2ddbc=0.0
+       eecon=0.0
+       rcmbc=0.0
+       tstrconb=0.0
+       x4con=0.0
+       xx0con=0.0
+       y2con=0.0
+       yy0con=0.0
     endif 
-       
-
+    
     ! Determine vapour index
-    iqv = q_indices_add('vapour', 'lowerbc')
+    if (.not. current_state%passive_q) then 
+       iqv = q_indices_add('vapour', 'lowerbc')
+    endif
 
   end subroutine initialisation_callback
 
@@ -99,6 +101,11 @@ contains
     y_size=current_state%local_grid%size(Y_INDEX) + current_state%local_grid%halo_size(Y_INDEX) * 2
     x_size=current_state%local_grid%size(X_INDEX) + current_state%local_grid%halo_size(X_INDEX) * 2
 
+    ! Allocate vis and diff here as they required irespective of whether surface conditions
+    ! are used or not (see subroutine simple_boundary_values in this module)
+    allocate(current_state%vis_coefficient%data(z_size, y_size, x_size), &
+         current_state%diff_coefficient%data(z_size, y_size, x_size))
+    
     allocate(current_state%dis%data(z_size, y_size, x_size), &
          current_state%dis_th%data(z_size, y_size, x_size), current_state%disq(current_state%number_q_fields))
 
@@ -391,16 +398,15 @@ contains
     real(kind=DEFAULT_PRECISION) :: dthv_surf, ustr, thvstr
     integer :: convergence_status, n
 
-    if (.not. current_state%passive_q) then ! i.e. q is active 
-        ! Assuming no liquid water at level 2
-        dthv_surf=zth%data(2, current_y_index, current_x_index) + current_state%global_grid%configuration%vertical%thref(2)&
-             *(1.0_DEFAULT_PRECISION + current_state%cq(current_state%water_vapour_mixing_ratio_index)*&
-             zq(current_state%water_vapour_mixing_ratio_index)%data(2,current_y_index,current_x_index)) - &
-             current_state%theta_virtual_surf
-        !print *, dthv_surf
-    else                                                                           
+    if (current_state%passive_q) then ! i.e. q is not active 
+      ! Assuming no liquid water at level 2
       dthv_surf = zth%data(2, current_y_index, current_x_index) + &
-           current_state%global_grid%configuration%vertical%thref(2) - current_state%theta_virtual_surf
+         current_state%global_grid%configuration%vertical%thref(2) - current_state%theta_virtual_surf
+    else   
+      dthv_surf=zth%data(2, current_y_index, current_x_index) + current_state%global_grid%configuration%vertical%thref(2)&
+         *(1.0_DEFAULT_PRECISION + current_state%cq(current_state%water_vapour_mixing_ratio_index)*&
+         zq(current_state%water_vapour_mixing_ratio_index)%data(2,current_y_index,current_x_index)) - &
+         current_state%theta_virtual_surf                                                                        
     end if
     convergence_status = mostbc(current_state, horizontal_velocity_at_k2, dthv_surf,&
          current_state%global_grid%configuration%vertical%zn(2), ustr, thvstr)
@@ -426,18 +432,6 @@ contains
                2.0_DEFAULT_PRECISION*current_state%surface_vapour_mixing_ratio-&
                q(current_state%water_vapour_mixing_ratio_index)%data(2,current_y_index,current_x_index)
        endif
-      !do n=1, current_state%number_q_fields
-      !    zq(n)%data(1, current_y_index, current_x_index)=zq(n)%data(2, current_y_index, current_x_index)
-      !    q(n)%data(1, current_y_index, current_x_index)=q(n)%data(2, current_y_index, current_x_index)
-      !end do
-      !if (.not. current_state%passive_q) then
-      !    zq(current_state%water_vapour_mixing_ratio_index)%data(1,current_y_index,current_x_index)=&
-      !         2.0_DEFAULT_PRECISION*surface_vapour_mixing_ratio-&
-      !         zq(current_state%water_vapour_mixing_ratio_index)%data(2,current_y_index,current_x_index)
-      !    q(current_state%water_vapour_mixing_ratio_index)%data(1,current_y_index,current_x_index)=&
-      !         2.0_DEFAULT_PRECISION*surface_vapour_mixing_ratio-&
-      !         q(current_state%water_vapour_mixing_ratio_index)%data(2,current_y_index,current_x_index)
-      !end if
     end if    
   end subroutine compute_using_fixed_surface_temperature  
 

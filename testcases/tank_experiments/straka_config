@@ -28,7 +28,7 @@ tank_experiments_enabled=.true.
 
 # Add bubble to initialisation
 initialisation_stage_ordering+=tank_experiments
-dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, tank_experiments,simplecloud, diverr, psrce, stepfields
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, tank_experiments,simplecloud, diverr, psrce, stepfields
 
 
 # IO server configuration 

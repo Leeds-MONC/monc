@@ -67,7 +67,6 @@ contains
 
     do n=1,current_state%number_q_fields
       do k=2,current_state%local_grid%size(Z_INDEX)-1
-        current_state%sq(n)%data(k, current_y_index, current_x_index)=0.0_DEFAULT_PRECISION
 #ifdef U_ACTIVE
         current_state%sq(n)%data(k, current_y_index, current_x_index)=&
              current_state%sq(n)%data(k, current_y_index, current_x_index)+current_state%global_grid%configuration%horizontal%cx*&
@@ -99,7 +98,6 @@ contains
 
       if (l_toplevel)then
       k=current_state%local_grid%size(Z_INDEX)
-      current_state%sq(n)%data(k, current_y_index, current_x_index)=0.0_DEFAULT_PRECISION
 #ifdef U_ACTIVE
       current_state%sq(n)%data(k, current_y_index, current_x_index)=&
            current_state%sq(n)%data(k, current_y_index, current_x_index)+current_state%global_grid%configuration%horizontal%cx*&
@@ -139,7 +137,6 @@ contains
 
     if (current_state%th%active) then
       do k=2,current_state%local_grid%size(Z_INDEX)-1
-        current_state%sth%data(k, current_y_index, current_x_index)=0.0_DEFAULT_PRECISION
 #ifdef U_ACTIVE
         current_state%sth%data(k, current_y_index, current_x_index)=current_state%sth%data(k, current_y_index, current_x_index)+&
              current_state%global_grid%configuration%horizontal%cx*&
@@ -169,7 +166,6 @@ contains
 
       if (l_toplevel)then
         k=current_state%local_grid%size(Z_INDEX)
-        current_state%sth%data(k, current_y_index, current_x_index)=0.0_DEFAULT_PRECISION
 #ifdef U_ACTIVE
         current_state%sth%data(k, current_y_index, current_x_index)=current_state%sth%data(k, current_y_index, current_x_index)+&
              current_state%global_grid%configuration%horizontal%cx*&

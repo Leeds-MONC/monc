@@ -26,7 +26,7 @@ ideal_squall_enabled=.true.
 
 # Add bubble to initialisation
 initialisation_stage_ordering+=ideal_squall
-dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, ideal_squall,simplecloud, diverr, psrce, stepfields
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, ideal_squall,simplecloud, diverr, psrce, stepfields
 
 #Advection
 advection_flow_fields=tvd
