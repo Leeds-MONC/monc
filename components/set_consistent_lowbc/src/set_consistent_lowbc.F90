@@ -50,7 +50,9 @@ contains
 
     call set_flow_lowbc(current_state, current_x_index, current_y_index)
     call set_th_lowbc(current_state, current_x_index, current_y_index)
-    call set_q_lowbc(current_state, current_x_index, current_y_index)
+    if (current_state%number_q_fields .gt. 0) then
+       call set_q_lowbc(current_state, current_x_index, current_y_index)
+    endif
   end subroutine timestep_callback
 
   subroutine set_flow_lowbc(current_state, current_x_index, current_y_index)
