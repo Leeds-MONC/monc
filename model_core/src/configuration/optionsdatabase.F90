@@ -119,7 +119,7 @@ module optionsdatabase_mod
     integer :: num_elements, i, start, end
 
     num_elements=options_get_array_size(options_database, key)
-    if (num_elements .gt. 0) then
+    if (num_elements .gt. 0 .and. options_has_key(options_database, trim(key)//"a_size")) then
       if (present(from)) then
         start=from
       else
@@ -184,7 +184,7 @@ module optionsdatabase_mod
     integer :: num_elements, i, start, end
 
     num_elements=options_get_array_size(options_database, key)
-    if (num_elements .gt. 0) then
+    if (num_elements .gt. 0 .and. options_has_key(options_database, trim(key)//"a_size")) then
       if (present(from)) then
         start=from
       else
@@ -249,7 +249,7 @@ module optionsdatabase_mod
     integer :: num_elements, i, start, end
 
     num_elements=options_get_array_size(options_database, key)
-    if (num_elements .gt. 0) then
+    if (num_elements .gt. 0 .and. options_has_key(options_database, trim(key)//"a_size")) then
       if (present(from)) then
         start=from
       else
@@ -314,7 +314,7 @@ module optionsdatabase_mod
     integer :: num_elements, i, start, end
 
     num_elements=options_get_array_size(options_database, key)
-    if (num_elements .gt. 0) then
+    if (num_elements .gt. 0 .and. options_has_key(options_database, trim(key)//"a_size")) then
       if (present(from)) then
         start=from
       else
@@ -353,9 +353,11 @@ module optionsdatabase_mod
 
     if (options_has_key(options_database, trim(key)//"a_size")) then
       options_get_array_size=options_get_integer(options_database, trim(key)//"a_size")
-      return
-    end if
-    options_get_array_size=0
+    else if (options_has_key(options_database, trim(key))) then
+      options_get_array_size=1
+    else
+      options_get_array_size=0
+    end if    
   end function options_get_array_size
 
   !> Loads in the command line arguments and stores them in the options database

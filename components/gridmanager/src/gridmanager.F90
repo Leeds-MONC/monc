@@ -4,7 +4,7 @@ module gridmanager_mod
   use monc_component_mod, only : component_descriptor_type
   use state_mod, only : model_state_type
   use optionsdatabase_mod, only : options_get_integer, options_get_logical, options_get_real, &
-     options_get_logical_array, options_get_real_array, options_get_string_array 
+     options_get_logical_array, options_get_real_array, options_get_string_array, options_get_array_size
   use grids_mod, only : vertical_grid_configuration_type, X_INDEX, Y_INDEX, Z_INDEX
   use logging_mod, only : LOG_INFO, LOG_ERROR, log_master_log, log_log
   use conversions_mod, only : conv_to_string
@@ -167,20 +167,17 @@ contains
     integer :: i,j,n ! loop counters
     integer :: iq  ! temporary q varible index
 
-    integer, parameter :: MAXQIN=10, MAXZIN=10
-    integer, parameter :: UNSET_REAL=-999.0
+    real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: f_init_pl_q       ! Initial node values for q variables
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_init_pl_q      ! Initial node height values for q variables
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_init_pl_theta  ! Initial node values for theta variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_init_pl_theta  ! Initial node height values for theta variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_init_pl_u      ! Initial node values for u variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_init_pl_u      ! Initial node height values for u variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_init_pl_v      ! Initial node values for v variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_init_pl_v      ! Initial node height values for v variable
 
-    real(kind=DEFAULT_PRECISION) :: f_init_pl_q(MAXZIN,MAXQIN)=UNSET_REAL   ! Initial node values for q variables
-    real(kind=DEFAULT_PRECISION) :: z_init_pl_q(MAXZIN)=UNSET_REAL     ! Initial node height values for q variables
-    real(kind=DEFAULT_PRECISION) :: f_init_pl_theta(MAXZIN)=UNSET_REAL ! Initial node values for theta variable
-    real(kind=DEFAULT_PRECISION) :: z_init_pl_theta(MAXZIN)=UNSET_REAL ! Initial node height values for theta variable
-    real(kind=DEFAULT_PRECISION) :: f_init_pl_u(MAXZIN)=UNSET_REAL     ! Initial node values for u variable
-    real(kind=DEFAULT_PRECISION) :: z_init_pl_u(MAXZIN)=UNSET_REAL     ! Initial node height values for u variable
-    real(kind=DEFAULT_PRECISION) :: f_init_pl_v(MAXZIN)=UNSET_REAL     ! Initial node values for v variable
-    real(kind=DEFAULT_PRECISION) :: z_init_pl_v(MAXZIN)=UNSET_REAL     ! Initial node height values for v variable
-
-    real(kind=DEFAULT_PRECISION) :: f_thref(MAXZIN)=UNSET_REAL     ! Initial node values for thref
-    real(kind=DEFAULT_PRECISION) :: z_thref(MAXZIN)=UNSET_REAL     ! Initial node height values for thref
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_thref   ! Initial node values for thref
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_thref   ! Initial node height values for thref
 
     logical :: l_init_pl_u     ! if .true. then initialize u field
     logical :: l_init_pl_v     ! if .true. then initialize v field
@@ -189,14 +186,12 @@ contains
     logical :: l_thref         ! if .true. then initialize thref profile (overrides thref0)
     logical :: l_matchthref    ! if .true. then initialize thref to be the same as theta_init
 
-    character(len=STRING_LENGTH) :: names_init_pl_q(MAXQIN)='unset'  ! names of q variables to initialize
+    character(len=STRING_LENGTH), dimension(:), allocatable :: names_init_pl_q ! names of q variables to initialize
     
     real(kind=DEFAULT_PRECISION), allocatable :: f_init_pl_q_tmp(:) !temporary 1D storage of initial q field
     real(kind=DEFAULT_PRECISION), allocatable :: zgrid(:)  ! z grid to use in interpolation
 
     real(kind=DEFAULT_PRECISION) :: zztop ! top of the domain
-
-    integer :: number_in ! Number of entries input into array
 
     allocate(zgrid(current_state%local_grid%local_domain_end_index(Z_INDEX)))
     
@@ -210,7 +205,10 @@ contains
 
     l_init_pl_theta=options_get_logical(current_state%options_database, "l_init_pl_theta")
     l_init_pl_q=options_get_logical(current_state%options_database, "l_init_pl_q")
-    if (l_init_pl_q)call options_get_string_array(current_state%options_database, "names_init_pl_q", names_init_pl_q)
+    if (l_init_pl_q) then
+      allocate(names_init_pl_q(options_get_array_size(current_state%options_database, "names_init_pl_q")))
+      call options_get_string_array(current_state%options_database, "names_init_pl_q", names_init_pl_q)
+    end if
     l_init_pl_u=options_get_logical(current_state%options_database, "l_init_pl_u")
     l_init_pl_v=options_get_logical(current_state%options_database, "l_init_pl_v")
 
@@ -219,31 +217,28 @@ contains
 
     if (l_thref)then
       if (.not. l_matchthref)then
+        allocate(z_thref(options_get_array_size(current_state%options_database, "z_thref")), &
+             f_thref(options_get_array_size(current_state%options_database, "f_thref")))
         call options_get_real_array(current_state%options_database, "z_thref", z_thref)
         call options_get_real_array(current_state%options_database, "f_thref", f_thref)
-        do i=1,size(z_init_pl_theta)
-          if (z_thref(i) == UNSET_REAL) exit 
-        end do
-        number_in=i-1
-        call check_top(zztop, z_thref(number_in), 'z_thref')
+        call check_top(zztop, z_thref(size(z_thref)), 'z_thref')
         zgrid=current_state%global_grid%configuration%vertical%zn(:)
-        call piecewise_linear_1d(z_thref(1:number_in), f_thref(1:number_in), zgrid, &
+        call piecewise_linear_1d(z_thref(1:size(z_thref)), f_thref(1:size(f_thref)), zgrid, &
            current_state%global_grid%configuration%vertical%thref)
+        deallocate(z_thref, f_thref)
       end if
     else
       current_state%global_grid%configuration%vertical%thref(:)=current_state%thref0
     end if
 
     if (l_init_pl_theta)then
+      allocate(z_init_pl_theta(options_get_array_size(current_state%options_database, "z_init_pl_theta")), &
+             f_init_pl_theta(options_get_array_size(current_state%options_database, "f_init_pl_theta")))
       call options_get_real_array(current_state%options_database, "z_init_pl_theta", z_init_pl_theta)
       call options_get_real_array(current_state%options_database, "f_init_pl_theta", f_init_pl_theta)
-      do i=1,size(z_init_pl_theta)
-        if (z_init_pl_theta(i) == UNSET_REAL) exit 
-      end do
-      number_in=i-1
-      call check_top(zztop, z_init_pl_theta(number_in), 'z_init_pl_theta')
+      call check_top(zztop, z_init_pl_theta(size(z_init_pl_theta)), 'z_init_pl_theta')
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
-      call piecewise_linear_1d(z_init_pl_theta(1:number_in), f_init_pl_theta(1:number_in), zgrid, &
+      call piecewise_linear_1d(z_init_pl_theta(1:size(z_init_pl_theta)), f_init_pl_theta(1:size(f_init_pl_theta)), zgrid, &
          current_state%global_grid%configuration%vertical%theta_init)
       if (l_matchthref) &
          current_state%global_grid%configuration%vertical%thref = current_state%global_grid%configuration%vertical%theta_init
@@ -253,61 +248,55 @@ contains
              current_state%global_grid%configuration%vertical%thref(:) 
         end do
       end do
+      deallocate(z_init_pl_theta, f_init_pl_theta)
     end if
 
     if (l_init_pl_u)then
+      allocate(z_init_pl_u(options_get_array_size(current_state%options_database, "z_init_pl_u")), &
+             f_init_pl_u(options_get_array_size(current_state%options_database, "f_init_pl_u")))
       call options_get_real_array(current_state%options_database, "z_init_pl_u", z_init_pl_u)
       call options_get_real_array(current_state%options_database, "f_init_pl_u", f_init_pl_u)
-      do i=1,size(z_init_pl_u)
-        if (z_init_pl_u(i) == UNSET_REAL) exit 
-      end do
-      number_in=i-1
-      call check_top(zztop, z_init_pl_u(number_in), 'z_init_pl_u')
+      call check_top(zztop, z_init_pl_u(size(z_init_pl_u)), 'z_init_pl_u')
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
-      call piecewise_linear_1d(z_init_pl_u(1:number_in), f_init_pl_u(1:number_in), &
+      call piecewise_linear_1d(z_init_pl_u(1:size(z_init_pl_u)), f_init_pl_u(1:size(f_init_pl_u)), &
          zgrid, current_state%global_grid%configuration%vertical%u_init)
       do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
         do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
           current_state%u%data(:,j,i) = current_state%global_grid%configuration%vertical%u_init(:)
         end do
       end do
+      deallocate(z_init_pl_u, f_init_pl_u)
     end if
 
     if (l_init_pl_v)then
+      allocate(z_init_pl_v(options_get_array_size(current_state%options_database, "z_init_pl_v")), &
+             f_init_pl_v(options_get_array_size(current_state%options_database, "f_init_pl_v")))
       call options_get_real_array(current_state%options_database, "z_init_pl_v", z_init_pl_v)
       call options_get_real_array(current_state%options_database, "f_init_pl_v", f_init_pl_v)
-      do i=1,size(z_init_pl_v)
-        if (z_init_pl_v(i) == UNSET_REAL) exit 
-      end do
-      number_in=i-1
-      call check_top(zztop, z_init_pl_v(number_in), 'z_init_pl_v')
+      call check_top(zztop, z_init_pl_v(size(z_init_pl_v)), 'z_init_pl_v')
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
-      call piecewise_linear_1d(z_init_pl_v(1:number_in), f_init_pl_v(1:number_in), &
+      call piecewise_linear_1d(z_init_pl_v(1:size(z_init_pl_v)), f_init_pl_v(1:size(f_init_pl_v)), &
          zgrid, current_state%global_grid%configuration%vertical%v_init)
       do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
         do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
           current_state%v%data(:,j,i) = current_state%global_grid%configuration%vertical%v_init(:)
         end do
       end do
+      deallocate(z_init_pl_v, f_init_pl_v)
     end if
 
-
     if (l_init_pl_q)then
-      do i=1,size(names_init_pl_q)
-        if (trim(names_init_pl_q(i)) == trim('unset')) exit 
-      end do
-      nq_init=i-1
+      nq_init=size(names_init_pl_q)
+      allocate(z_init_pl_q(options_get_array_size(current_state%options_database, "z_init_pl_q")))
       call options_get_real_array(current_state%options_database, "z_init_pl_q", z_init_pl_q)
-      do i=1,size(z_init_pl_q)
-        if (z_init_pl_q(i) == UNSET_REAL) exit 
-      end do
-      nzq=i-1
+      nzq=size(z_init_pl_q)
       call check_top(zztop, z_init_pl_q(nzq), 'z_init_pl_q')
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
       allocate(f_init_pl_q_tmp(nq_init*nzq))
       call options_get_real_array(current_state%options_database, "f_init_pl_q", f_init_pl_q_tmp)
+      allocate(f_init_pl_q(nzq, nq_init))
       f_init_pl_q(1:nzq, 1:nq_init)=reshape(f_init_pl_q_tmp, (/nzq, nq_init/))
-      do n=1,nq_init
+      do n=1, nq_init
         iq=q_indices_add(trim(names_init_pl_q(n)), 'piecewise_initialization')
         call piecewise_linear_1d(z_init_pl_q(1:nzq), f_init_pl_q(1:nzq,n), zgrid, &
            current_state%global_grid%configuration%vertical%q_init(:,iq))
@@ -317,11 +306,9 @@ contains
           end do
         end do
       end do
-      deallocate(f_init_pl_q_tmp)
+      deallocate(f_init_pl_q_tmp, z_init_pl_q, f_init_pl_q, names_init_pl_q)
     end if
-
-    deallocate(zgrid)
-      
+    deallocate(zgrid)      
   end subroutine calculate_initial_profiles
 
   !> Calculates the mixing length for the neutral case

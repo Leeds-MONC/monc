@@ -5,7 +5,7 @@ module forcing_mod
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
   use state_mod, only : model_state_type
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
-  use optionsdatabase_mod, only : options_get_integer, options_get_logical, options_get_real, &
+  use optionsdatabase_mod, only : options_get_integer, options_get_logical, options_get_real, options_get_array_size, &
      options_get_logical_array, options_get_real_array, options_get_string_array, options_get_string
   use interpolation_mod, only: piecewise_linear_1d
   use q_indices_mod, only: q_indices_add
@@ -19,9 +19,6 @@ module forcing_mod
 #ifndef TEST_MODE
   private
 #endif
-
-  integer, parameter :: MAXQIN=10, MAXZIN=10
-  integer, parameter :: UNSET_REAL=-999.0
 
   integer, parameter :: DIVERGENCE=0 ! Input for subsidence forcing is a divergence profile
   integer, parameter :: SUBSIDENCE=1 ! Input for subsidence forcing is the subsidence velocity profile
@@ -63,7 +60,7 @@ module forcing_mod
   logical :: l_subs_local_theta ! if .true. then subsidence applied locally (i.e. not with mean fields) to theta field
   logical :: l_subs_local_q     ! if .true. then subsidence applied locally (i.e. not with mean fields) to q fields
 
-  character(len=STRING_LENGTH) :: names_force_pl_q(MAXZIN)='unset'  ! names of q variables to force
+  character(len=STRING_LENGTH), dimension(:), allocatable :: names_force_pl_q  ! names of q variables to force
 
   public forcing_get_descriptor
 
@@ -230,27 +227,25 @@ contains
     integer :: iq       ! temporary q varible index
  
     ! Input arrays for subsidence profile
-    real(kind=DEFAULT_PRECISION) :: f_subs_pl(MAXZIN)=UNSET_REAL   ! subsidence node for q variables
-    real(kind=DEFAULT_PRECISION) :: z_subs_pl(MAXZIN)=UNSET_REAL     ! subsidence node height values for q variables
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_subs_pl  ! subsidence node for q variables
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_subs_pl  ! subsidence node height values for q variables
 
     ! Input arrays for time-independent forcing
-    real(kind=DEFAULT_PRECISION) :: f_force_pl_q(MAXZIN,MAXQIN)=UNSET_REAL ! Forcing values for q variables
-    real(kind=DEFAULT_PRECISION) :: z_force_pl_q(MAXZIN)       =UNSET_REAL ! Forcing height values for q variables
-    real(kind=DEFAULT_PRECISION) :: f_force_pl_theta(MAXZIN)   =UNSET_REAL ! Forcing values for theta variable
-    real(kind=DEFAULT_PRECISION) :: z_force_pl_theta(MAXZIN)   =UNSET_REAL ! Forcing height values for theta variable
-    real(kind=DEFAULT_PRECISION) :: f_force_pl_u(MAXZIN)       =UNSET_REAL ! Forcing values for u variable
-    real(kind=DEFAULT_PRECISION) :: z_force_pl_u(MAXZIN)       =UNSET_REAL ! Forcing height values for u variable
-    real(kind=DEFAULT_PRECISION) :: f_force_pl_v(MAXZIN)       =UNSET_REAL ! Forcing values for v variable
-    real(kind=DEFAULT_PRECISION) :: z_force_pl_v(MAXZIN)       =UNSET_REAL ! Forcing height values for v variabl
+    real(kind=DEFAULT_PRECISION), dimension(:, :), allocatable :: f_force_pl_q   ! Forcing values for q variables
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_force_pl_q      ! Forcing height values for q variables
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_force_pl_theta  ! Forcing values for theta variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_force_pl_theta  ! Forcing height values for theta variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_force_pl_u      ! Forcing values for u variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_force_pl_u      ! Forcing height values for u variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_force_pl_v      ! Forcing values for v variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_force_pl_v      ! Forcing height values for v variabl
 
     integer :: subsidence_input_type=DIVERGENCE  ! Determines if we're reading in a subsidence velocity or divergence
     
     real(kind=DEFAULT_PRECISION), allocatable :: f_force_pl_q_tmp(:) !temporary 1D storage of forcing for q fields
-    real(kind=DEFAULT_PRECISION), allocatable :: zgrid(:)            ! z grid to use in interpolation
-    
-    integer :: number_in
+    real(kind=DEFAULT_PRECISION), allocatable :: zgrid(:)            ! z grid to use in interpolation   
 
-    character(len=STRING_LENGTH) :: units_q_force(MAXQIN)='unset'  ! units of q variable forcing
+    character(len=STRING_LENGTH), dimension(:), allocatable :: units_q_force  ! units of q variable forcing
     character(len=STRING_LENGTH) :: units_theta_force='unset'  ! units of theta variable forcing
     character(len=STRING_LENGTH) :: units_u_force='unset'  ! units of theta variable forcing
     character(len=STRING_LENGTH) :: units_v_force='unset'  ! units of theta variable forcing
@@ -290,20 +285,19 @@ contains
     end if
 
     if (l_subs_pl_theta .or. l_subs_pl_q)then
+      allocate(z_subs_pl(options_get_array_size(current_state%options_database, "z_subs_pl")), &
+           f_subs_pl(options_get_array_size(current_state%options_database, "f_subs_pl")))
       call options_get_real_array(current_state%options_database, "z_subs_pl", z_subs_pl)
-      call options_get_real_array(current_state%options_database, "f_subs_pl", f_subs_pl)
-      do i=1,size(z_subs_pl)
-        if (z_subs_pl(i) == UNSET_REAL) exit 
-      end do
-      number_in=i-1
+      call options_get_real_array(current_state%options_database, "f_subs_pl", f_subs_pl)      
       ! Get profiles
       zgrid=current_state%global_grid%configuration%vertical%z(:)
-      call piecewise_linear_1d(z_subs_pl(1:number_in), f_subs_pl(1:number_in), zgrid, &
+      call piecewise_linear_1d(z_subs_pl(1:size(z_subs_pl)), f_subs_pl(1:size(f_subs_pl)), zgrid, &
          current_state%global_grid%configuration%vertical%w_subs)
-      if (subsidence_input_type==DIVERGENCE)then
+      if (subsidence_input_type==DIVERGENCE) then
         current_state%global_grid%configuration%vertical%w_subs(:) = &
            -1.0*current_state%global_grid%configuration%vertical%w_subs(:)*zgrid(:)
       end if
+      deallocate(z_subs_pl, f_subs_pl)
     end if
 
     ! Time independent large-scale forcing (proxy for e.g. advection/radiation)
@@ -318,20 +312,20 @@ contains
     l_constant_forcing_q=options_get_logical(current_state%options_database, "l_constant_forcing_q")
     l_constant_forcing_u=options_get_logical(current_state%options_database, "l_constant_forcing_u")
     l_constant_forcing_v=options_get_logical(current_state%options_database, "l_constant_forcing_v")
-    if (l_constant_forcing_q)then
+
+    if (l_constant_forcing_q) then
+      allocate(names_force_pl_q(options_get_array_size(current_state%options_database, "names_constant_forcing_q")))
       call options_get_string_array(current_state%options_database, "names_constant_forcing_q", names_force_pl_q)
     end if
     
     if (l_constant_forcing_theta)then
+      allocate(z_force_pl_theta(options_get_array_size(current_state%options_database, "z_force_pl_theta")), &
+           f_force_pl_theta(options_get_array_size(current_state%options_database, "f_force_pl_theta")))
       call options_get_real_array(current_state%options_database, "z_force_pl_theta", z_force_pl_theta)
       call options_get_real_array(current_state%options_database, "f_force_pl_theta", f_force_pl_theta)
-      do i=1,size(z_force_pl_theta)
-        if (z_force_pl_theta(i) == UNSET_REAL) exit 
-      end do
-      number_in=i-1
       ! Get profiles
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
-      call piecewise_linear_1d(z_force_pl_theta(1:number_in), f_force_pl_theta(1:number_in), zgrid, &
+      call piecewise_linear_1d(z_force_pl_theta(1:size(z_force_pl_theta)), f_force_pl_theta(1:size(f_force_pl_theta)), zgrid, &
          current_state%global_grid%configuration%vertical%theta_force)
 
       ! Unit conversions...
@@ -348,19 +342,18 @@ contains
            current_state%global_grid%configuration%vertical%theta_force(:)/seconds_in_a_day
       case default !(k_per_second)
       end select
+      deallocate(z_force_pl_theta, f_force_pl_theta)
     end if
                                                            
 #ifdef U_ACTIVE
     if (l_constant_forcing_u)then
+      allocate(z_force_pl_u(options_get_array_size(current_state%options_database, "z_force_pl_u")), &
+           f_force_pl_u(options_get_array_size(current_state%options_database, "f_force_pl_u")))
       call options_get_real_array(current_state%options_database, "z_force_pl_u", z_force_pl_u)
       call options_get_real_array(current_state%options_database, "f_force_pl_u", f_force_pl_u)
-      do i=1,size(z_force_pl_u)
-        if (z_force_pl_u(i) == UNSET_REAL) exit 
-      end do
-      number_in=i-1
       ! Get profiles
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
-      call piecewise_linear_1d(z_force_pl_u(1:number_in), f_force_pl_u(1:number_in), zgrid, &
+      call piecewise_linear_1d(z_force_pl_u(1:size(z_force_pl_u)), f_force_pl_u(1:size(f_force_pl_u)), zgrid, &
          current_state%global_grid%configuration%vertical%u_force)
 
       ! Unit conversions...
@@ -371,20 +364,19 @@ contains
            current_state%global_grid%configuration%vertical%u_force(:)/seconds_in_a_day
       case default  !(m_per_second_per_second)
       end select
+      deallocate(z_force_pl_u, f_force_pl_u)
     end if
 #endif
                                                            
 #ifdef V_ACTIVE
     if (l_constant_forcing_v)then
+      allocate(z_force_pl_v(options_get_array_size(current_state%options_database, "z_force_pl_v")), &
+           f_force_pl_v(options_get_array_size(current_state%options_database, "f_force_pl_v")))
       call options_get_real_array(current_state%options_database, "z_force_pl_v", z_force_pl_v)
       call options_get_real_array(current_state%options_database, "f_force_pl_v", f_force_pl_v)
-      do i=1,size(z_force_pl_v)
-        if (z_force_pl_v(i) == UNSET_REAL) exit 
-      end do
-      number_in=i-1
       ! Get profiles
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
-      call piecewise_linear_1d(z_force_pl_v(1:number_in), f_force_pl_v(1:number_in), zgrid, &
+      call piecewise_linear_1d(z_force_pl_v(1:size(z_force_pl_v)), f_force_pl_v(1:size(f_force_pl_v)), zgrid, &
          current_state%global_grid%configuration%vertical%u_force)
 
       ! Unit conversions...
@@ -395,27 +387,24 @@ contains
            current_state%global_grid%configuration%vertical%v_force(:)/seconds_in_a_day
       case default !(m_per_second_per_second)
       end select
+      deallocate(z_force_pl_v, f_force_pl_v)
     end if 
 #endif   
         
-    if (l_constant_forcing_q)then
-      do i=1,size(names_force_pl_q)
-        if (trim(names_force_pl_q(i)) == trim('unset')) exit 
-      end do
-      nq_force=i-1
+    if (l_constant_forcing_q) then
+      nq_force=size(names_force_pl_q)
+      allocate(z_force_pl_q(options_get_array_size(current_state%options_database, "z_force_pl_q")))
       call options_get_real_array(current_state%options_database, "z_force_pl_q", z_force_pl_q)
-      do i=1,size(z_force_pl_q)
-        if (z_force_pl_q(i) == UNSET_REAL) exit 
-      end do
-      nzq=i-1
+      nzq=size(z_force_pl_q)
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
       allocate(f_force_pl_q_tmp(nq_force*nzq))
       call options_get_real_array(current_state%options_database, "f_force_pl_q", f_force_pl_q_tmp)
+      allocate(f_force_pl_q(nzq, nq_force))
       f_force_pl_q(1:nzq, 1:nq_force)=reshape(f_force_pl_q_tmp, (/nzq, nq_force/))
 
-
+      allocate(units_q_force(options_get_array_size(current_state%options_database, "units_q_force")))
       call options_get_string_array(current_state%options_database, "units_q_force", units_q_force)
-      do n=1,nq_force
+      do n=1, nq_force
         iq=q_indices_add(trim(names_force_pl_q(n)), 'forcing:time-independent')
         call piecewise_linear_1d(z_force_pl_q(1:nzq), f_force_pl_q(1:nzq,n), zgrid, &
            current_state%global_grid%configuration%vertical%q_force(:,iq))
@@ -436,11 +425,9 @@ contains
         case default !(kg_per_kg_per_second)
         end select
       end do
-      deallocate(f_force_pl_q_tmp)  
+      deallocate(f_force_pl_q_tmp, units_q_force, f_force_pl_q, z_force_pl_q)  
     end if
-
     deallocate(zgrid)
-
   end subroutine init_callBack
 
   !> Called for each data column and will determine the forcing values in x and y which are then applied to the field
