@@ -61,15 +61,23 @@ contains
     
     if (current_state%use_viscosity_and_diffusion .and. &
         current_state%use_surface_boundary_conditions) then 
+#ifdef U_ACTIVE
         current_state%su%data(1, current_y_index, current_x_index)= &
                -current_state%su%data(2, current_y_index, current_x_index)
+#endif
+#ifdef V_ACTIVE
         current_state%sv%data(1, current_y_index, current_x_index)= &
                -current_state%sv%data(2, current_y_index, current_x_index)   
+#endif
     else 
+#ifdef U_ACTIVE
        current_state%su%data(1, current_y_index, current_x_index)= &               
                 current_state%su%data(2, current_y_index, current_x_index)
+#endif
+#ifdef V_ACTIVE
        current_state%sv%data(1, current_y_index, current_x_index)= &
                 current_state%sv%data(2, current_y_index, current_x_index)
+#endif
     endif
 
   end subroutine set_flow_lowbc
