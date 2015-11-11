@@ -57,8 +57,6 @@ contains
 
   subroutine initialisation_callback(current_state)
     type(model_state_type), intent(inout), target :: current_state
-
-    integer :: i, n
     
     current_state%lookup_table_entries=LOOKUP_ENTRIES
     call read_configuration(current_state)
@@ -241,8 +239,6 @@ contains
   subroutine set_flux(current_state)
     type(model_state_type), intent(inout), target :: current_state
 
-    integer i, n                ! Loop counters
-
     real(kind=DEFAULT_PRECISION) :: surface_temp   ! Surface temperature
 
     if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_FLUXES) then  ! Prescribed surface fluxes
@@ -410,7 +406,6 @@ contains
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable, intent(inout) :: surface_sensible_heat_flux
 
     integer :: status, variable_id
-    integer :: ndims_in, nvars_in, ngatts_in, unlimdimid_in
 
     ! Do some checking on the variable contents so that we can deal with different 
     ! variable names or missing variables

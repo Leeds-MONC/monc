@@ -5,7 +5,10 @@
 !! The core of all collections is currently a doubly linked list, this is abstracted to allow for the
 !! internal structure of collections to change without requiring any user code modifications.
 module collections_mod
-  use datadefn_mod, only : STRING_LENGTH
+  use datadefn_mod, only : STRING_LENGTH, DEFAULT_PRECISION
+  use conversions_mod, only : conv_to_generic, generic_to_double_real, conv_to_integer, conv_to_string, conv_to_logical, &
+       conv_single_real_to_double, conv_to_real
+  use logging_mod, only : LOG_ERROR, log_log
   implicit none
 
 #ifndef TEST_MODE
@@ -22,10 +25,12 @@ module collections_mod
           prev=>null() !< The next nodes in the doubly linked list
      !> Pointer to the generic data which is held by this node
      class(*), pointer :: data => null()
+     logical :: memory_allocation_automatic
   end type listnode_type
 
   !> \private Private map key-value pair data structure
   type mapnode_type
+     logical :: memory_allocation_automatic
      !> String key
      character(len=STRING_LENGTH) :: key
      !> Pointer to the generic data which is held by this key-value pair
@@ -36,7 +41,18 @@ module collections_mod
   type setnode_type
      !> String key
      character(len=STRING_LENGTH) :: key
-  end type setnode_type  
+  end type setnode_type
+
+  type, public :: mapentry_type
+     character(len=STRING_LENGTH) :: key
+     class(*), pointer :: value => null()
+  end type mapentry_type  
+
+  type, public :: iterator_type
+     type(listnode_type), pointer :: next_item
+     type(list_type), dimension(:), pointer :: hash_structure
+     integer :: hash_ptr
+  end type iterator_type
 
   !> List data structure which implements a doubly linked list. This list will preserve its order
   !!
@@ -77,55 +93,206 @@ module collections_mod
   !! require more storage than a map and unlike a map does not preserve ordering
   type, public :: hashmap_type
      !> Underlying list data structure used to implement the map
-     type(list_type), allocatable, dimension(:), private :: map_ds
+     type(list_type), pointer, dimension(:), private :: map_ds => null()
      integer, private :: size=0
   end type hashmap_type
 
   !> Hashset structure which will store unique strings. The hashing aspect means that lookup is very fast but it does
   !! add extra memory overhead and the order is non-deterministic
   type, public :: hashset_type
-     type(list_type), allocatable, dimension(:), private :: set_ds
+     type(list_type), pointer, dimension(:), private :: set_ds => null()
      integer, private :: size=0
   end type hashset_type  
 
-  !> Pushes an element onto the stack or queue
+  !> Pushes a generic element onto the stack or queue
   !!
   !! This has a time complexity of O(1)
   !! @param collection The specific stack or queue involved
   !! @param data Pointer to the generic data to push onto the collection
-  interface c_push
-     module procedure stack_push, queue_push
-  end interface c_push
+  !! @param memory_allocation_automatic Whether the collections API should manage the freeing of memory
+  interface c_push_generic
+     module procedure stack_push_generic, queue_push_generic
+  end interface c_push_generic
 
-  !> Pops an element off the stack or queue
+  !> Pushes an integer element onto the stack or queue
+  !!
+  !! This has a time complexity of O(1)
+  !! @param collection The specific stack or queue involved
+  !! @param data Integer data to push onto the collection
+  interface c_push_integer
+     module procedure stack_push_int, queue_push_int
+  end interface c_push_integer
+
+  !> Pushes a string element onto the stack or queue
+  !!
+  !! This has a time complexity of O(1)
+  !! @param collection The specific stack or queue involved
+  !! @param data String data to push onto the collection
+  interface c_push_string
+     module procedure stack_push_string, queue_push_string
+  end interface c_push_string
+
+  !> Pushes a double precision real element onto the stack or queue
+  !!
+  !! This has a time complexity of O(1)
+  !! @param collection The specific stack or queue involved
+  !! @param data Double precision real data to push onto the collection
+  interface c_push_real
+     module procedure stack_push_real, queue_push_real
+  end interface c_push_real
+
+  !> Pushes a logical element onto the stack or queue
+  !!
+  !! This has a time complexity of O(1)
+  !! @param collection The specific stack or queue involved
+  !! @param data Logical data to push onto the collection
+  interface c_push_logical
+     module procedure stack_push_logical, queue_push_logical
+  end interface c_push_logical
+
+  !> Pops a generic element off the stack or queue
   !!
   !! This has a time complexity of O(1)
   !! @param collection The specific stack or queue involved
   !! @returns Pointer to the generic data element which has been popped off the collection
-  interface c_pop
-     module procedure stack_pop, queue_pop
-  end interface c_pop
+  interface c_pop_generic
+     module procedure stack_pop_generic, queue_pop_generic
+  end interface c_pop_generic
 
-  !> Adds an element to the end of the list
+  !> Pops an integer element off the stack or queue
+  !!
+  !! This has a time complexity of O(1)
+  !! @param collection The specific stack or queue involved
+  !! @returns Integer element which has been popped off the collection or raises and error if none is found
+  interface c_pop_integer
+     module procedure stack_pop_int, queue_pop_int
+  end interface c_pop_integer
+
+  !> Pops a string off the stack or queue
+  !!
+  !! This has a time complexity of O(1)
+  !! @param collection The specific stack or queue involved
+  !! @returns String which has been popped off the collection or raises and error if none is found
+  interface c_pop_string
+     module procedure stack_pop_string, queue_pop_string
+  end interface c_pop_string
+
+  !> Pops a double precision real element off the stack or queue
+  !!
+  !! This has a time complexity of O(1)
+  !! @param collection The specific stack or queue involved
+  !! @returns Double precision real element which has been popped off the collection or raises and error if none is found
+  interface c_pop_real
+     module procedure stack_pop_real, queue_pop_real
+  end interface c_pop_real
+
+  !> Pops a logical element off the stack or queue
+  !!
+  !! This has a time complexity of O(1)
+  !! @param collection The specific stack or queue involved
+  !! @returns Logical element which has been popped off the collection or raises and error if none is found
+  interface c_pop_logical
+     module procedure stack_pop_logical, queue_pop_logical
+  end interface c_pop_logical
+
+  !> Adds a generic element to the end of the list
   !!
   !! This has a time complexity of O(1)
   !! @param collection The specific list involved
   !! @param data Pointer to the raw generic data to add
-  interface c_add
-     module procedure list_add, hashset_add
-  end interface c_add
+  !! @param memory_allocation_automatic Whether the collections API should manage the freeing of memory
+  interface c_add_generic
+     module procedure list_add_generic
+  end interface c_add_generic
 
-  !> Inserts an element into the list or places at the end if the index > list size
+  !> Adds an integer element to the end of the list
+  !!
+  !! This has a time complexity of O(1)
+  !! @param collection The specific list involved
+  !! @param data Integer data to add
+  interface c_add_integer
+     module procedure list_add_int
+  end interface c_add_integer
+
+  !> Adds a string to the end of the list
+  !!
+  !! This has a time complexity of O(1)
+  !! @param collection The specific list involved
+  !! @param data String data to add
+  interface c_add_string
+     module procedure list_add_string, hashset_add
+  end interface c_add_string
+
+  !> Adds a double precision real element to the end of the list
+  !!
+  !! This has a time complexity of O(1)
+  !! @param collection The specific list involved
+  !! @param data Double precision real data to add
+  interface c_add_real
+     module procedure list_add_real
+  end interface c_add_real
+
+  !> Adds a logical element to the end of the list
+  !!
+  !! This has a time complexity of O(1)
+  !! @param collection The specific list involved
+  !! @param data Logical data to add
+  interface c_add_logical
+     module procedure list_add_logical
+  end interface c_add_logical
+
+  !> Inserts a generic element into the list or places at the end if the index > list size
   !!
   !! This has a time complexity of O(n)
   !! @param collection The specific list involved
   !! @param data Pointer to the generic data to insert
   !! @param index The list index to insert to
-  interface c_insert
-     module procedure list_insert
-  end interface c_insert
+  !! @param memory_allocation_automatic Whether the collections API should manage the freeing of memory
+  interface c_insert_generic
+     module procedure list_insert_generic
+  end interface c_insert_generic
 
-  !> Puts a specific key-value pair into the map.
+  !> Inserts an integer element into the list or places at the end if the index > list size
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific list involved
+  !! @param data Integer data to insert
+  !! @param index The list index to insert to
+  interface c_insert_integer
+     module procedure list_insert_int
+  end interface c_insert_integer
+
+  !> Inserts a string into the list or places at the end if the index > list size
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific list involved
+  !! @param data String data to insert
+  !! @param index The list index to insert to
+  interface c_insert_string
+     module procedure list_insert_string
+  end interface c_insert_string
+
+  !> Inserts a double precision real element into the list or places at the end if the index > list size
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific list involved
+  !! @param data Double precision real data to insert
+  !! @param index The list index to insert to
+  interface c_insert_real
+     module procedure list_insert_real
+  end interface c_insert_real
+
+  !> Inserts a logical element into the list or places at the end if the index > list size
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific list involved
+  !! @param data Logical data to insert
+  !! @param index The list index to insert to
+  interface c_insert_logical
+     module procedure list_insert_logical
+  end interface c_insert_logical
+
+  !> Puts a generic key-value pair into the map.
   !!
   !! If the key is not already held in the map then
   !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
@@ -134,19 +301,115 @@ module collections_mod
   !! @param collection The specific map involved
   !! @param key The key to place in the map
   !! @param value Pointer to the generic data value to place in the map
-  interface c_put
-     module procedure map_put, hashmap_put
-  end interface c_put
+  !! @param memory_allocation_automatic Whether the collections API should manage the freeing of memory
+  interface c_put_generic
+     module procedure map_put_generic, hashmap_put_generic
+  end interface c_put_generic
 
-  !> Gets a specific element out of the list, stack, queue or map with the corresponding key
+  !> Puts an integer key-value pair into the map.
+  !!
+  !! If the key is not already held in the map then
+  !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
+  !! hold this updated value (keys must be unique)
+  !! This has a time complexity of O(n) due to key look up
+  !! @param collection The specific map involved
+  !! @param key The key to place in the map
+  !! @param value Integer data value to place in the map
+  interface c_put_integer
+     module procedure map_put_int, hashmap_put_int
+  end interface c_put_integer
+
+  !> Puts a string key-value pair into the map.
+  !!
+  !! If the key is not already held in the map then
+  !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
+  !! hold this updated value (keys must be unique)
+  !! This has a time complexity of O(n) due to key look up
+  !! @param collection The specific map involved
+  !! @param key The key to place in the map
+  !! @param value String data value to place in the map
+  interface c_put_string
+     module procedure map_put_string, hashmap_put_string
+  end interface c_put_string
+
+  !> Puts a double precision real key-value pair into the map.
+  !!
+  !! If the key is not already held in the map then
+  !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
+  !! hold this updated value (keys must be unique)
+  !! This has a time complexity of O(n) due to key look up
+  !! @param collection The specific map involved
+  !! @param key The key to place in the map
+  !! @param value Double precision real data value to place in the map
+  interface c_put_real
+     module procedure map_put_real, hashmap_put_real
+  end interface c_put_real
+
+  !> Puts a logical key-value pair into the map.
+  !!
+  !! If the key is not already held in the map then
+  !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
+  !! hold this updated value (keys must be unique)
+  !! This has a time complexity of O(n) due to key look up
+  !! @param collection The specific map involved
+  !! @param key The key to place in the map
+  !! @param value Logical data value to place in the map
+  interface c_put_logical
+     module procedure map_put_logical, hashmap_put_logical
+  end interface c_put_logical
+
+  !> Gets a specific generic element out of the list, stack, queue or map with the corresponding key
   !!
   !! This has a time complexity of O(n)
   !! @param collection The specific list, stack, queue or map involved
   !! @param key String look up key
   !! @returns Generic pointer to the value associated with the key or null if none exists
-  interface c_get
-     module procedure list_get, stack_get, queue_get, map_get, hashmap_get, hashset_get
-  end interface c_get
+  interface c_get_generic
+     module procedure list_get_generic, stack_get_generic, queue_get_generic, map_get_generic, hashmap_get_generic, &
+          mapentry_get_generic
+  end interface c_get_generic
+
+  !> Gets a specific integer element out of the list, stack, queue or map with the corresponding key
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific list, stack, queue or map involved
+  !! @param key String look up key
+  !! @returns Integer value associated with the key or raises an error if none exists
+  interface c_get_integer
+     module procedure list_get_int, stack_get_int, queue_get_int, map_get_int, hashmap_get_int, mapentry_get_int
+  end interface c_get_integer
+
+  !> Gets a specific string element out of the list, stack, queue or map with the corresponding key
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific list, stack, queue or map involved
+  !! @param key String look up key
+  !! @returns String value associated with the key or raises an error if none exists
+  interface c_get_string
+     module procedure list_get_string, stack_get_string, queue_get_string, map_get_string, hashmap_get_string, &
+          hashset_get_string, mapentry_get_string
+  end interface c_get_string
+
+  !> Gets a specific double precision real element out of the list, stack, queue or map with the corresponding key
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific list, stack, queue or map involved
+  !! @param key String look up key
+  !! @returns Double precision real value associated with the key or raises an error if none exists
+  interface c_get_real
+     module procedure list_get_real, stack_get_real, queue_get_real, map_get_real, hashmap_get_real, mapentry_get_real
+  end interface c_get_real
+
+  !> Gets a specific logical element out of the list, stack, queue or map with the corresponding key
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific list, stack, queue or map involved
+  !! @param key String look up key
+  !! @returns Logical value associated with the key or raises an error if none exists
+  interface c_get_logical
+     module procedure list_get_logical, stack_get_logical, queue_get_logical, map_get_logical, &
+          hashmap_get_logical, mapentry_get_logical
+  end interface c_get_logical
 
   !> Removes a specific element from the list or map
   !!
@@ -195,15 +458,55 @@ module collections_mod
      module procedure map_key_at, hashmap_key_at
   end interface c_key_at
 
-  !> Retrieves the value held at the specific map index or null if index > map elements
+  !> Retrieves the generic value held at the specific map index or null if index > map elements
   !!
   !! This has a time complexity of O(n)
   !! @param collection The specific map involved
   !! @param index The index to get value from
   !! @returns Generic pointer to the value
-  interface c_value_at
-     module procedure map_value_at, hashmap_value_at
-  end interface c_value_at
+  interface c_generic_at
+     module procedure map_generic_at, hashmap_generic_at
+  end interface c_generic_at
+
+  !> Retrieves the integer value held at the specific map index or null if index > map elements
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific map involved
+  !! @param index The index to get value from
+  !! @returns Integer value or raises an error if none is found
+  interface c_integer_at
+     module procedure map_integer_at, hashmap_integer_at
+  end interface c_integer_at
+
+  !> Retrieves the string value held at the specific map index or null if index > map elements
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific map involved
+  !! @param index The index to get value from
+  !! @returns String value or raises an error if none is found
+  interface c_string_at
+     module procedure map_string_at, hashmap_string_at
+  end interface c_string_at
+
+  !> Retrieves the double precision real value held at the specific map index or null if index > map elements
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific map involved
+  !! @param index The index to get value from
+  !! @returns Double precision real value or raises an error if none is found
+  interface c_real_at
+     module procedure map_real_at, hashmap_real_at
+  end interface c_real_at
+
+  !> Retrieves the logical value held at the specific map index or null if index > map elements
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific map involved
+  !! @param index The index to get value from
+  !! @returns Logical value or raises an error if none is found
+  interface c_logical_at
+     module procedure map_logical_at, hashmap_logical_at
+  end interface c_logical_at
 
   !> Retrieves a map entry at a specific index or null if index > map elements. This is more efficient than calling
   !! key at and then value at (or get with the key) as only requires one search for both the key and value
@@ -213,9 +516,57 @@ module collections_mod
   !! @param index The index to get value from
   !! @param key The associated key
   !! @param value Generic pointer to corresponding value
-  interface c_entry_at
-     module procedure map_entry_at, hashmap_entry_at
-  end interface c_entry_at  
+  interface c_generic_entry_at
+     module procedure map_generic_entry_at, hashmap_generic_entry_at
+  end interface c_generic_entry_at
+
+  !> Retrieves a map entry at a specific index. This is more efficient than calling
+  !! key at and then value at (or get with the key) as only requires one search for both the key and value
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific map involved
+  !! @param index The index to get value from
+  !! @param key The associated key
+  !! @param value Integer value or raises an error if none is found
+  interface c_integer_entry_at
+     module procedure map_integer_entry_at, hashmap_integer_entry_at
+  end interface c_integer_entry_at
+
+  !> Retrieves a map entry at a specific index. This is more efficient than calling
+  !! key at and then value at (or get with the key) as only requires one search for both the key and value
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific map involved
+  !! @param index The index to get value from
+  !! @param key The associated key
+  !! @param value String value or raises an error if none is found
+  interface c_string_entry_at
+     module procedure map_string_entry_at, hashmap_string_entry_at
+  end interface c_string_entry_at
+
+  !> Retrieves a map entry at a specific index. This is more efficient than calling
+  !! key at and then value at (or get with the key) as only requires one search for both the key and value
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific map involved
+  !! @param index The index to get value from
+  !! @param key The associated key
+  !! @param value Double precision real value or raises an error if none is found
+  interface c_real_entry_at
+     module procedure map_real_entry_at, hashmap_real_entry_at
+  end interface c_real_entry_at
+
+  !> Retrieves a map entry at a specific index. This is more efficient than calling
+  !! key at and then value at (or get with the key) as only requires one search for both the key and value
+  !!
+  !! This has a time complexity of O(n)
+  !! @param collection The specific map involved
+  !! @param index The index to get value from
+  !! @param key The associated key
+  !! @param value Logical value or raises an error if none is found
+  interface c_logical_entry_at
+     module procedure map_logical_entry_at, hashmap_logical_entry_at
+  end interface c_logical_entry_at
 
   !> Frees up all the allocatable, heap, memory associated with a list, stack, queue or map.
   !!
@@ -227,11 +578,59 @@ module collections_mod
      module procedure list_free, stack_free, queue_free, map_free, hashmap_free, hashset_free
   end interface c_free
 
-  ! Explicit public interfaces and data items
-  public c_push, c_pop, c_add, c_insert, c_put, c_get, c_remove, c_size, c_is_empty, c_contains, &
-       c_key_at, c_value_at, c_entry_at, c_free
+  interface c_get_iterator
+     module procedure list_get_iterator, map_get_iterator, hashmap_get_iterator, hashset_get_iterator, stack_get_iterator, &
+          queue_get_iterator
+  end interface c_get_iterator  
 
+  interface c_has_next
+     module procedure iteratior_has_next
+  end interface c_has_next
+  
+  interface c_next_integer
+     module procedure iterator_get_next_integer
+  end interface c_next_integer
+
+  interface c_next_string
+     module procedure iterator_get_next_string
+  end interface c_next_string
+
+  interface c_next_real
+     module procedure iterator_get_next_real
+  end interface c_next_real
+
+  interface c_next_logical
+     module procedure iterator_get_next_logical
+  end interface c_next_logical
+
+  interface c_next_mapentry
+     module procedure iterator_get_next_mapentry
+  end interface c_next_mapentry
+
+  interface c_next_generic
+     module procedure iterator_get_next_generic
+  end interface c_next_generic
+
+  ! Explicit public interfaces and data items
+  public c_push_generic, c_push_integer, c_push_string, c_push_real, c_push_logical, c_pop_generic, c_pop_integer, c_pop_real, &
+       c_pop_string, c_pop_logical, c_add_generic, c_add_integer, c_add_string, c_add_real, c_add_logical, c_insert_generic, &
+       c_insert_integer, c_insert_string, c_insert_real, c_insert_logical, c_put_generic, c_put_integer, c_put_string, &
+       c_put_real, c_put_logical, c_get_generic, c_get_integer, c_get_string, c_get_real, c_get_logical, c_remove, c_size, &
+       c_is_empty, c_contains, c_key_at, c_generic_at, c_integer_at, c_string_at, c_real_at, c_logical_at, c_generic_entry_at, &
+       c_integer_entry_at, c_string_entry_at, c_real_entry_at, c_logical_entry_at, c_free, c_get_iterator, c_has_next, &
+       c_next_integer, c_next_string, c_next_real, c_next_logical, c_next_mapentry, c_next_generic
 contains
+
+  !> Retrieves an iterator representation of the map, ready to access the first element
+  !! @param specificmap Specific collection to base this iterator on
+  !! @returns The iterator ready to access the first element
+  type(iterator_type) function map_get_iterator(specificmap)
+    type(map_type), intent(inout) :: specificmap
+
+    map_get_iterator%next_item=>specificmap%map_ds%head
+    map_get_iterator%hash_structure=>null()
+    map_get_iterator%hash_ptr=0
+  end function map_get_iterator 
 
   !> Puts a specific key-value pair into the map.
   !!
@@ -241,11 +640,93 @@ contains
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific map involved
   !! @param key The key to place in the map
+  !! @param data Integer value to place in the map
+  subroutine map_put_int(specificmap, key, int_data)
+    type(map_type), intent(inout) :: specificmap
+    integer, intent(in) :: int_data
+    character(len=*), intent(in) :: key
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(int_data, .true.)
+    call map_put_generic(specificmap, key, generic, .true.)
+  end subroutine map_put_int
+
+  !> Puts a specific key-value pair into the map.
+  !!
+  !! If the key is not already held in the map then
+  !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
+  !! hold this updated value (keys must be unique)
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param key The key to place in the map
+  !! @param data String value to place in the map
+  subroutine map_put_string(specificmap, key, str_data)
+    type(map_type), intent(inout) :: specificmap
+    character(len=STRING_LENGTH), intent(in) :: str_data
+    character(len=*), intent(in) :: key
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(str_data, .true.)
+    call map_put_generic(specificmap, key, generic, .true.)
+  end subroutine map_put_string
+  
+  !> Puts a specific key-value pair into the map.
+  !!
+  !! If the key is not already held in the map then
+  !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
+  !! hold this updated value (keys must be unique)
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param key The key to place in the map
+  !! @param data Double precision real value to place in the map
+  subroutine map_put_real(specificmap, key, real_data)
+    type(map_type), intent(inout) :: specificmap
+    real(kind=DEFAULT_PRECISION), intent(in) :: real_data
+    character(len=*), intent(in) :: key
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(real_data, .true.)
+    call map_put_generic(specificmap, key, generic, .true.)
+  end subroutine map_put_real
+
+  !> Puts a specific key-value pair into the map.
+  !!
+  !! If the key is not already held in the map then
+  !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
+  !! hold this updated value (keys must be unique)
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param key The key to place in the map
+  !! @param data Logical value to place in the map
+  subroutine map_put_logical(specificmap, key, logical_data)
+    type(map_type), intent(inout) :: specificmap
+    logical, intent(in) :: logical_data
+    character(len=*), intent(in) :: key
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(logical_data, .true.)
+    call map_put_generic(specificmap, key, generic, .true.)
+  end subroutine map_put_logical
+  
+  !> Puts a specific key-value pair into the map.
+  !!
+  !! If the key is not already held in the map then
+  !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
+  !! hold this updated value (keys must be unique)
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param key The key to place in the map
   !! @param data Pointer to the generic data value to place in the map
-  subroutine map_put(specificmap, key, data)
+  !! @param memory_allocation_automatic Whether the collections API should manage the freeing of memory
+  subroutine map_put_generic(specificmap, key, data, memory_allocation_automatic)
     type(map_type), intent(inout) :: specificmap
     class(*), pointer, intent(in) :: data
     character(len=*), intent(in) :: key
+    logical, intent(in) :: memory_allocation_automatic
 
     class(*), pointer :: raw_map_node, generic_map_node
     type(mapnode_type), pointer :: newmapnode
@@ -262,13 +743,14 @@ contains
       allocate(newmapnode)
       newmapnode%value => data
       newmapnode%key = key
+      newmapnode%memory_allocation_automatic=memory_allocation_automatic
       ! Clone and deallocate the newmapnode - this keeps GNU happy with passing the correct pointer and Cray
       ! doesn't link the generic pointer just pointing to the data structure hence we clone it
       allocate(generic_map_node, source=newmapnode)
       deallocate(newmapnode)
-      call list_add(specificmap%map_ds, generic_map_node)
+      call list_add_generic(specificmap%map_ds, generic_map_node, .false.)
     end if
-  end subroutine map_put
+  end subroutine map_put_generic
 
   !> Determines whether or not a map contains a specific key
   !!
@@ -302,7 +784,7 @@ contains
 
     the_map_size = map_size(specificmap)
     if (i .le. the_map_size) then
-      raw_map_node => list_get(specificmap%map_ds, i)
+      raw_map_node=>list_get_generic(specificmap%map_ds, i)
       if (associated(raw_map_node)) then
         select type(raw_map_node)
         type is(mapnode_type)
@@ -314,32 +796,198 @@ contains
     map_key_at=""
   end function map_key_at
 
-  !> Retrieves the value held at the specific map index or null if index > map elements
+  !> Retrieves the integer value held at the specific map index
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param i Index to get value from
+  !! @returns Integer value or raises an error if none is found
+  function map_integer_at(specificmap, i)
+    type(map_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    integer :: map_integer_at
+
+    class(*), pointer :: generic
+
+    generic=>map_generic_at(specificmap, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find integer at "//trim(conv_to_string(i)))
+    map_integer_at=conv_to_integer(generic, .false.)
+  end function map_integer_at
+
+  !> Retrieves the string value held at the specific map index
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param i Index to get value from
+  !! @returns String value or raises an error if none is found
+  function map_string_at(specificmap, i)
+    type(map_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    character(len=STRING_LENGTH) :: map_string_at
+
+    class(*), pointer :: generic
+
+    generic=>map_generic_at(specificmap, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find string at "//trim(conv_to_string(i)))
+    map_string_at=conv_to_string(generic, .false., STRING_LENGTH)
+  end function map_string_at
+
+  !> Retrieves the real value held at the specific map index. Converts between precision and int
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param i Index to get value from
+  !! @returns Double precision real value or raises an error if none is found
+  function map_real_at(specificmap, i)
+    type(map_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    real(kind=DEFAULT_PRECISION) :: map_real_at
+
+    class(*), pointer :: generic
+
+    generic=>map_generic_at(specificmap, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find real at "//trim(conv_to_string(i)))
+    select type(vr=>generic)
+    type is (real(kind=DEFAULT_PRECISION))
+      map_real_at=vr
+    type is (real)
+      map_real_at=conv_single_real_to_double(vr)
+    type is (integer)  
+      map_real_at=conv_single_real_to_double(conv_to_real(vr))
+    end select
+  end function map_real_at
+
+  !> Retrieves the logical value held at the specific map index
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param i Index to get value from
+  !! @returns Logical value or raises an error if none is found
+  function map_logical_at(specificmap, i)
+    type(map_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    logical :: map_logical_at
+
+    class(*), pointer :: generic
+
+    generic=>map_generic_at(specificmap, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find logical at "//trim(conv_to_string(i)))
+    map_logical_at=conv_to_logical(generic, .false.)
+  end function map_logical_at
+
+  !> Retrieves the generic value held at the specific map index or null if index > map elements
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific map involved
   !! @param i Index to get value from
   !! @returns Pointer to the generic value
-  function map_value_at(specificmap, i)
+  function map_generic_at(specificmap, i)
     type(map_type), intent(inout) :: specificmap
     integer, intent(in) :: i
 
-    class(*), pointer :: raw_map_node, map_value_at
+    class(*), pointer :: raw_map_node, map_generic_at
     integer :: the_map_size
 
     the_map_size = map_size(specificmap)
     if (i .le. the_map_size) then
-      raw_map_node => list_get(specificmap%map_ds, i)
+      raw_map_node=>list_get_generic(specificmap%map_ds, i)
       if (associated(raw_map_node)) then
         select type(raw_map_node)
         type is (mapnode_type)
-          map_value_at => raw_map_node%value
+          map_generic_at => raw_map_node%value
         end select
         return
       end if
     end if
-    map_value_at=>null()
-  end function map_value_at
+    map_generic_at=>null()
+  end function map_generic_at
+
+  !> Retrieves the entry at a specific map index or null if index > map elements
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param i Index to get value from
+  !! @param key The associated key
+  !! @param value Integer value or raises an error if none is found
+  logical function map_integer_entry_at(specificmap, i, key, int_val)
+    type(map_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    character(len=*), intent(out) :: key
+    integer, intent(out) :: int_val
+
+    class(*), pointer :: generic
+
+    map_integer_entry_at=map_generic_entry_at(specificmap, i, key, generic)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find integer entry with key '"//trim(key)//"'")
+    int_val=conv_to_integer(generic, .false.)
+  end function map_integer_entry_at
+
+  !> Retrieves the entry at a specific map index or null if index > map elements
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param i Index to get value from
+  !! @param key The associated key
+  !! @param value String value or raises an error if none is found
+  logical function map_string_entry_at(specificmap, i, key, str_val)
+    type(map_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    character(len=*), intent(out) :: key
+    character(len=STRING_LENGTH), intent(out) :: str_val
+
+    class(*), pointer :: generic
+
+    map_string_entry_at=map_generic_entry_at(specificmap, i, key, generic)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find string entry with key '"//trim(key)//"'")
+    str_val=conv_to_string(generic, .false., STRING_LENGTH)
+  end function map_string_entry_at
+
+  !> Retrieves the entry at a specific map index or null if index > map elements. This converts precision and from ints
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param i Index to get value from
+  !! @param key The associated key
+  !! @param value Real value or raises an error if none is found
+  logical function map_real_entry_at(specificmap, i, key, real_val)
+    type(map_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    character(len=*), intent(out) :: key
+    real(kind=DEFAULT_PRECISION), intent(out) :: real_val
+
+    class(*), pointer :: generic
+
+    map_real_entry_at=map_generic_entry_at(specificmap, i, key, generic)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find real entry with key '"//trim(key)//"'")
+    select type(vr=>generic)
+    type is (real(kind=DEFAULT_PRECISION))
+      real_val=vr
+    type is (real)
+      real_val=conv_single_real_to_double(vr)
+    type is (integer)  
+      real_val=conv_single_real_to_double(conv_to_real(vr))
+    end select
+  end function map_real_entry_at
+
+  !> Retrieves the entry at a specific map index or null if index > map elements
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param i Index to get value from
+  !! @param key The associated key
+  !! @param value Logical value or raises an error if none is found
+  logical function map_logical_entry_at(specificmap, i, key, logical_val)
+    type(map_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    character(len=*), intent(out) :: key
+    logical, intent(out) :: logical_val
+
+    class(*), pointer :: generic
+
+    map_logical_entry_at=map_generic_entry_at(specificmap, i, key, generic)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find logical entry with key '"//trim(key)//"'")
+    logical_val=conv_to_logical(generic, .false.)
+  end function map_logical_entry_at  
 
   !> Retrieves the entry at a specific map index or null if index > map elements
   !!
@@ -348,7 +996,7 @@ contains
   !! @param i Index to get value from
   !! @param key The associated key
   !! @param value Generic pointer to corresponding value
-  logical function map_entry_at(specificmap, i, key, val)
+  logical function map_generic_entry_at(specificmap, i, key, val)
     type(map_type), intent(inout) :: specificmap
     integer, intent(in) :: i
     character(len=*), intent(out) :: key
@@ -359,20 +1007,20 @@ contains
 
     the_map_size = map_size(specificmap)
     if (i .le. the_map_size) then
-      raw_map_node => list_get(specificmap%map_ds, i)
+      raw_map_node=>list_get_generic(specificmap%map_ds, i)
       if (associated(raw_map_node)) then
         select type(raw_map_node)
         type is (mapnode_type)
           val=>raw_map_node%value
           key=raw_map_node%key          
         end select
-        map_entry_at=.true.
+        map_generic_entry_at=.true.
         return
       end if
     end if
     val=>null()
-    map_entry_at=.false.
-  end function map_entry_at
+    map_generic_entry_at=.false.
+  end function map_generic_entry_at
 
   !> Removes a specific key-value pair from the map
   !!
@@ -386,10 +1034,17 @@ contains
     integer :: key_location
     class(*), pointer :: raw_map_node
 
-    raw_map_node => map_getnode(specificmap, key, key_location)
+    raw_map_node=>map_getnode(specificmap, key, key_location)
 
     if (key_location .gt. 0) then
-      call list_remove(specificmap%map_ds, key_location)
+      select type (raw_map_node)
+      type is (mapnode_type)
+        if (raw_map_node%memory_allocation_automatic) then
+          if (associated(raw_map_node%value)) deallocate(raw_map_node%value)
+        end if
+        deallocate(raw_map_node)
+      end select
+      call list_remove(specificmap%map_ds, key_location)      
     end if
   end subroutine map_remove
 
@@ -398,22 +1053,101 @@ contains
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific map involved
   !! @param key Look up key
-  !! @returns Pointer to the generic value associated with the key or null if none exists
-  function map_get(specificmap, key)
+  !! @returns Integer value associated with the key or raises an error if none is found
+  function map_get_int(specificmap, key)
     type(map_type), intent(inout) :: specificmap
     character(len=*), intent(in) :: key
-    class(*), pointer :: map_get, raw_map_node
+    integer :: map_get_int
+
+    class(*), pointer :: generic
+
+    generic=>map_get_generic(specificmap, key)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find integer entry with key '"//trim(key)//"'")
+    map_get_int=conv_to_integer(generic, .false.)
+  end function map_get_int
+
+  !> Gets a specific element out of the map with the corresponding key
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param key Look up key
+  !! @returns String value associated with the key or raises an error if none is found
+  function map_get_string(specificmap, key)
+    type(map_type), intent(inout) :: specificmap
+    character(len=*), intent(in) :: key
+    character(len=STRING_LENGTH) :: map_get_string
+
+    class(*), pointer :: generic
+
+    generic=>map_get_generic(specificmap, key)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find string entry with key '"//trim(key)//"'")
+    map_get_string=conv_to_string(generic, .false., STRING_LENGTH)
+  end function map_get_string
+
+  !> Gets a specific element out of the map with the corresponding key. This converts between precision and from ints
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param key Look up key
+  !! @returns Real value associated with the key or raises an error if none is found
+  function map_get_real(specificmap, key)
+    type(map_type), intent(inout) :: specificmap
+    character(len=*), intent(in) :: key
+    real(kind=DEFAULT_PRECISION) :: map_get_real
+
+    class(*), pointer :: generic
+
+    generic=>map_get_generic(specificmap, key)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find real entry with key '"//trim(key)//"'")
+    select type(vr=>generic)
+    type is (real(kind=DEFAULT_PRECISION))
+      map_get_real=vr
+    type is (real)
+      map_get_real=conv_single_real_to_double(vr)
+    type is (integer)  
+      map_get_real=conv_single_real_to_double(conv_to_real(vr))
+    end select
+  end function map_get_real
+
+  !> Gets a specific element out of the map with the corresponding key
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param key Look up key
+  !! @returns Logical value associated with the key or raises an error if none is found
+  function map_get_logical(specificmap, key)
+    type(map_type), intent(inout) :: specificmap
+    character(len=*), intent(in) :: key
+    logical :: map_get_logical
+
+    class(*), pointer :: generic
+
+    generic=>map_get_generic(specificmap, key)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find logical entry with key '"//trim(key)//"'")
+    map_get_logical=conv_to_logical(generic, .false.)
+  end function map_get_logical
+
+  !> Gets a specific element out of the map with the corresponding key
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param key Look up key
+  !! @returns Pointer to the generic value associated with the key or null if none exists
+  function map_get_generic(specificmap, key)
+    type(map_type), intent(inout) :: specificmap
+    character(len=*), intent(in) :: key
+    class(*), pointer :: map_get_generic, raw_map_node
 
     raw_map_node=>map_getnode(specificmap, key)
     if (associated(raw_map_node)) then
       select type (raw_map_node)
       type is (mapnode_type)
-        map_get => raw_map_node%value
+        map_get_generic => raw_map_node%value
       end select
       return
     end if
-    map_get => null()
-  end function map_get
+    map_get_generic => null()
+  end function map_get_generic
 
   !> This gets the map node that the key represents (rather than the specific value)
   !!
@@ -493,6 +1227,12 @@ contains
       previousnode=>node
       node=>node%next
       if (associated(previousnode%data)) then
+        select type (n=>previousnode%data)
+        type is (mapnode_type)
+          if (n%memory_allocation_automatic) then
+            if (associated(n%value)) deallocate(n%value)
+          end if
+        end select
         deallocate(previousnode%data) ! Free the mapnode data structure
       end if
       deallocate(previousnode)
@@ -503,6 +1243,108 @@ contains
     specificmap%map_ds%size=0
   end subroutine map_free
 
+  !> Retrieves an iterator representation of the hashmap, ready to access the first element
+  !! @param specificmap Specific collection to base this iterator on
+  !! @returns The iterator ready to access the first element
+  type(iterator_type) function hashmap_get_iterator(specificmap)
+    type(hashmap_type), intent(inout) :: specificmap
+
+    integer :: i
+
+    hashmap_get_iterator%next_item=>null()
+    if (associated(specificmap%map_ds)) then
+      hashmap_get_iterator%hash_structure=>specificmap%map_ds
+
+      do i=1, size(specificmap%map_ds)
+        if (specificmap%map_ds(i)%size .gt. 0) then
+          hashmap_get_iterator%next_item=>specificmap%map_ds(i)%head
+          exit
+        end if
+      end do
+      hashmap_get_iterator%hash_ptr=i+1
+    end if
+  end function hashmap_get_iterator 
+
+  !> Puts a specific key-value pair into the hashmap.
+  !!
+  !! If the key is not already held in the hashmap then
+  !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
+  !! hold this updated value (keys must be unique). This uses a hashing function for performance
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param key The key to place in the map
+  !! @param data Integer data value to place in the map
+  subroutine hashmap_put_int(specificmap, key, int_data)
+    type(hashmap_type), intent(inout) :: specificmap
+    integer, intent(in) :: int_data
+    character(len=*), intent(in) :: key
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(int_data, .true.)
+    call hashmap_put_generic(specificmap, key, generic, .true.)
+  end subroutine hashmap_put_int
+
+  !> Puts a specific key-value pair into the hashmap.
+  !!
+  !! If the key is not already held in the hashmap then
+  !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
+  !! hold this updated value (keys must be unique). This uses a hashing function for performance
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param key The key to place in the map
+  !! @param data String data value to place in the map
+  subroutine hashmap_put_string(specificmap, key, str_data)
+    type(hashmap_type), intent(inout) :: specificmap
+    character(len=STRING_LENGTH), intent(in) :: str_data
+    character(len=*), intent(in) :: key
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(str_data, .true.)
+    call hashmap_put_generic(specificmap, key, generic, .true.)
+  end subroutine hashmap_put_string
+
+  !> Puts a specific key-value pair into the hashmap.
+  !!
+  !! If the key is not already held in the hashmap then
+  !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
+  !! hold this updated value (keys must be unique). This uses a hashing function for performance
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param key The key to place in the map
+  !! @param data Double precision real data value to place in the map
+  subroutine hashmap_put_real(specificmap, key, real_data)
+    type(hashmap_type), intent(inout) :: specificmap
+    real(kind=DEFAULT_PRECISION), intent(in) :: real_data
+    character(len=*), intent(in) :: key
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(real_data, .true.)
+    call hashmap_put_generic(specificmap, key, generic, .true.)
+  end subroutine hashmap_put_real
+
+  !> Puts a specific key-value pair into the hashmap.
+  !!
+  !! If the key is not already held in the hashmap then
+  !! the key-value pair will be added, otherwise the existing key-value pair will be modified to
+  !! hold this updated value (keys must be unique). This uses a hashing function for performance
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param key The key to place in the map
+  !! @param data Logical data value to place in the map
+  subroutine hashmap_put_logical(specificmap, key, logical_data)
+    type(hashmap_type), intent(inout) :: specificmap
+    logical, intent(in) :: logical_data
+    character(len=*), intent(in) :: key
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(logical_data, .true.)
+    call hashmap_put_generic(specificmap, key, generic, .true.)
+  end subroutine hashmap_put_logical
+
   !> Puts a specific key-value pair into the hashmap.
   !!
   !! If the key is not already held in the hashmap then
@@ -512,15 +1354,17 @@ contains
   !! @param specificmap The specific map involved
   !! @param key The key to place in the map
   !! @param data Pointer to the generic data value to place in the map
-  subroutine hashmap_put(specificmap, key, data)
+  !! @param memory_allocation_automatic Whether the collections API should manage the freeing of memory
+  subroutine hashmap_put_generic(specificmap, key, data, memory_allocation_automatic)
     type(hashmap_type), intent(inout) :: specificmap
     class(*), pointer, intent(in) :: data
     character(len=*), intent(in) :: key
+    logical, intent(in) :: memory_allocation_automatic
 
     class(*), pointer :: raw_map_node, generic_map_node
     type(mapnode_type), pointer :: newmapnode
 
-    if (.not. allocated(specificmap%map_ds)) allocate(specificmap%map_ds(hash_size))
+    if (.not. associated(specificmap%map_ds)) allocate(specificmap%map_ds(hash_size))
 
     ! Test to see if key already exists in the map
     raw_map_node=>hashmap_getnode(specificmap, key)
@@ -534,14 +1378,15 @@ contains
       allocate(newmapnode)
       newmapnode%value=>data
       newmapnode%key=key
+      newmapnode%memory_allocation_automatic=memory_allocation_automatic
       ! Clone and deallocate the newmapnode - this keeps GNU happy with passing the correct pointer and Cray
       ! doesn't link the generic pointer just pointing to the data structure hence we clone it
       allocate(generic_map_node, source=newmapnode)
       deallocate(newmapnode)
-      call list_add(specificmap%map_ds(get_hashkey(key)), generic_map_node)
+      call list_add_generic(specificmap%map_ds(get_hashkey(key)), generic_map_node, .false.)
       specificmap%size=specificmap%size+1
     end if
-  end subroutine hashmap_put
+  end subroutine hashmap_put_generic
 
   !> Determines whether or not a hashmap contains a specific key
   !!
@@ -584,6 +1429,89 @@ contains
     end if
   end function hashmap_key_at
 
+  !> Retrieves the value held at the specific hashmap index. Note
+  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific hashmap involved
+  !! @param i Index to get value from
+  !! @returns Integer value or raises an error if none is found
+  function hashmap_integer_at(specificmap, i)
+    type(hashmap_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    integer :: hashmap_integer_at
+
+    class(*), pointer :: generic
+
+    generic=>hashmap_generic_at(specificmap, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find integer at "//trim(conv_to_string(i)))
+    hashmap_integer_at=conv_to_integer(generic, .false.)
+  end function hashmap_integer_at
+
+  !> Retrieves the value held at the specific hashmap index. Note
+  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific hashmap involved
+  !! @param i Index to get value from
+  !! @returns String value or raises an error if none is found
+  function hashmap_string_at(specificmap, i)
+    type(hashmap_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    character(len=STRING_LENGTH) :: hashmap_string_at
+
+    class(*), pointer :: generic
+
+    generic=>hashmap_generic_at(specificmap, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find string at "//trim(conv_to_string(i)))
+    hashmap_string_at=conv_to_string(generic, .false., STRING_LENGTH)
+  end function hashmap_string_at
+
+  !> Retrieves the value held at the specific hashmap index. Converts between precision and from int. Note
+  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific hashmap involved
+  !! @param i Index to get value from
+  !! @returns Double precision real value or raises an error if none is found
+  function hashmap_real_at(specificmap, i)
+    type(hashmap_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    integer :: hashmap_real_at
+
+    class(*), pointer :: generic
+
+    generic=>hashmap_generic_at(specificmap, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find real at "//trim(conv_to_string(i)))
+    select type(vr=>generic)
+    type is (real(kind=DEFAULT_PRECISION))
+      hashmap_real_at=vr
+    type is (real)
+      hashmap_real_at=conv_single_real_to_double(vr)
+    type is (integer)  
+      hashmap_real_at=conv_single_real_to_double(conv_to_real(vr))
+    end select
+  end function hashmap_real_at
+
+  !> Retrieves the value held at the specific hashmap index. Note
+  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific hashmap involved
+  !! @param i Index to get value from
+  !! @returns Logical value or raises an error if none is found
+  function hashmap_logical_at(specificmap, i)
+    type(hashmap_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    logical :: hashmap_logical_at
+
+    class(*), pointer :: generic
+
+    generic=>hashmap_generic_at(specificmap, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find logical at "//trim(conv_to_string(i)))
+    hashmap_logical_at=conv_to_logical(generic, .false.)
+  end function hashmap_logical_at
+
   !> Retrieves the value held at the specific hashmap index or null if index > map elements. Note
   !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
   !!
@@ -591,23 +1519,110 @@ contains
   !! @param specificmap The specific hashmap involved
   !! @param i Index to get value from
   !! @returns Pointer to the generic value
-  function hashmap_value_at(specificmap, i)
+  function hashmap_generic_at(specificmap, i)
     type(hashmap_type), intent(inout) :: specificmap
     integer, intent(in) :: i
 
-    class(*), pointer :: raw_map_node, hashmap_value_at    
+    class(*), pointer :: raw_map_node, hashmap_generic_at    
 
     raw_map_node=>hashmap_getnode_atindex(specificmap, i)
     if (associated(raw_map_node)) then
       select type(raw_map_node)
       type is (mapnode_type)
-        hashmap_value_at=>raw_map_node%value
+        hashmap_generic_at=>raw_map_node%value
       end select
       return
     else
-      hashmap_value_at=>null()
+      hashmap_generic_at=>null()
     end if
-  end function hashmap_value_at
+  end function hashmap_generic_at
+
+  !> Retrieves the entry at a specific map index
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param i Index to get value from
+  !! @param key The associated key
+  !! @param value Integer value or raises an error if none is found
+  logical function hashmap_integer_entry_at(specificmap, i, key, int_val)
+    type(hashmap_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    character(len=*), intent(out) :: key
+    integer, intent(out) :: int_val
+
+    class(*), pointer :: generic
+
+    hashmap_integer_entry_at=hashmap_generic_entry_at(specificmap, i, key, generic)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find integer entry with key '"//trim(key)//"'")
+    int_val=conv_to_integer(generic, .false.)
+  end function hashmap_integer_entry_at
+
+  !> Retrieves the entry at a specific map index
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param i Index to get value from
+  !! @param key The associated key
+  !! @param value String value or raises an error if none is found
+  logical function hashmap_string_entry_at(specificmap, i, key, str_val)
+    type(hashmap_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    character(len=*), intent(out) :: key
+    character(len=STRING_LENGTH), intent(out) :: str_val
+
+    class(*), pointer :: generic
+
+    hashmap_string_entry_at=hashmap_generic_entry_at(specificmap, i, key, generic)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find string entry with key '"//trim(key)//"'")
+    str_val=conv_to_string(generic, .false., STRING_LENGTH)
+  end function hashmap_string_entry_at
+
+  !> Retrieves the entry at a specific map index. This converts between precision and from int
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param i Index to get value from
+  !! @param key The associated key
+  !! @param value Double precision realvalue or raises an error if none is found
+  logical function hashmap_real_entry_at(specificmap, i, key, real_val)
+    type(hashmap_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    character(len=*), intent(out) :: key
+    real(kind=DEFAULT_PRECISION), intent(out) :: real_val
+
+    class(*), pointer :: generic
+
+    hashmap_real_entry_at=hashmap_generic_entry_at(specificmap, i, key, generic)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find real entry with key '"//trim(key)//"'")
+    select type(vr=>generic)
+    type is (real(kind=DEFAULT_PRECISION))
+      real_val=vr
+    type is (real)
+      real_val=conv_single_real_to_double(vr)
+    type is (integer)  
+      real_val=conv_single_real_to_double(conv_to_real(vr))
+    end select
+  end function hashmap_real_entry_at
+
+  !> Retrieves the entry at a specific map index
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific map involved
+  !! @param i Index to get value from
+  !! @param key The associated key
+  !! @param value Logical value or raises an error if none is found
+  logical function hashmap_logical_entry_at(specificmap, i, key, logical_val)
+    type(hashmap_type), intent(inout) :: specificmap
+    integer, intent(in) :: i
+    character(len=*), intent(out) :: key
+    logical, intent(out) :: logical_val
+
+    class(*), pointer :: generic
+
+    hashmap_logical_entry_at=hashmap_generic_entry_at(specificmap, i, key, generic)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find logical entry with key '"//trim(key)//"'")
+    logical_val=conv_to_logical(generic, .false.)
+  end function hashmap_logical_entry_at  
 
   !> Retrieves the entry at a specific map index or null if index > map elements
   !!
@@ -616,14 +1631,13 @@ contains
   !! @param i Index to get value from
   !! @param key The associated key
   !! @param value Generic pointer to corresponding value
-  logical function hashmap_entry_at(specificmap, i, key, val)
+  logical function hashmap_generic_entry_at(specificmap, i, key, val)
     type(hashmap_type), intent(inout) :: specificmap
     integer, intent(in) :: i
     character(len=*), intent(out) :: key
     class(*), pointer, intent(out) :: val
 
     class(*), pointer :: raw_map_node
-    integer :: the_map_size
 
     raw_map_node => hashmap_getnode_atindex(specificmap, i)
     if (associated(raw_map_node)) then
@@ -632,12 +1646,12 @@ contains
         val=>raw_map_node%value
         key=raw_map_node%key          
       end select
-      hashmap_entry_at=.true.
+      hashmap_generic_entry_at=.true.
       return
     end if
     val=>null()
-    hashmap_entry_at=.false.
-  end function hashmap_entry_at
+    hashmap_generic_entry_at=.false.
+  end function hashmap_generic_entry_at
 
   !> Removes a specific key-value pair from the hashmap
   !!
@@ -652,9 +1666,16 @@ contains
     class(*), pointer :: raw_map_node
 
     raw_map_node=>hashmap_getnode(specificmap, key, key_location)
-
+    
     if (key_location .gt. 0) then
-      call list_remove(specificmap%map_ds(get_hashkey(key)), key_location)
+      select type (raw_map_node)
+      type is (mapnode_type)
+        if (raw_map_node%memory_allocation_automatic) then
+          if (associated(raw_map_node%value)) deallocate(raw_map_node%value)
+        end if
+        deallocate(raw_map_node)
+      end select
+      call list_remove(specificmap%map_ds(get_hashkey(key)), key_location)      
       specificmap%size=specificmap%size-1
     end if
   end subroutine hashmap_remove
@@ -664,22 +1685,101 @@ contains
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved
   !! @param key Look up key
-  !! @returns Pointer to the generic value associated with the key or null if none exists
-  function hashmap_get(specificmap, key)
+  !! @returns Integer value associated with the key or raises an error if none is found
+  function hashmap_get_int(specificmap, key)
     type(hashmap_type), intent(inout) :: specificmap
     character(len=*), intent(in) :: key
-    class(*), pointer :: hashmap_get, raw_map_node
+    integer :: hashmap_get_int
+
+    class(*), pointer :: generic
+
+    generic=>hashmap_get_generic(specificmap, key)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find integer entry with key '"//trim(key)//"'")
+    hashmap_get_int=conv_to_integer(generic, .false.)
+  end function hashmap_get_int
+
+  !> Gets a specific element out of the hashmap with the corresponding key
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific hashmap involved
+  !! @param key Look up key
+  !! @returns String value associated with the key or raises an error if none is found
+  function hashmap_get_string(specificmap, key)
+    type(hashmap_type), intent(inout) :: specificmap
+    character(len=*), intent(in) :: key
+    character(len=STRING_LENGTH) :: hashmap_get_string
+
+    class(*), pointer :: generic
+
+    generic=>hashmap_get_generic(specificmap, key)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find string entry with key '"//trim(key)//"'")
+    hashmap_get_string=conv_to_string(generic, .false., STRING_LENGTH)
+  end function hashmap_get_string
+
+  !> Gets a specific element out of the hashmap with the corresponding key. Converts between precision and from int
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific hashmap involved
+  !! @param key Look up key
+  !! @returns Double precision real value associated with the key or raises an error if none is found
+  function hashmap_get_real(specificmap, key)
+    type(hashmap_type), intent(inout) :: specificmap
+    character(len=*), intent(in) :: key
+    real(kind=DEFAULT_PRECISION) :: hashmap_get_real
+
+    class(*), pointer :: generic
+
+    generic=>hashmap_get_generic(specificmap, key)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find real entry with key '"//trim(key)//"'")
+    select type(vr=>generic)
+    type is (real(kind=DEFAULT_PRECISION))
+      hashmap_get_real=vr
+    type is (real)
+      hashmap_get_real=conv_single_real_to_double(vr)
+    type is (integer)  
+      hashmap_get_real=conv_single_real_to_double(conv_to_real(vr))
+    end select
+  end function hashmap_get_real
+
+  !> Gets a specific element out of the hashmap with the corresponding key
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific hashmap involved
+  !! @param key Look up key
+  !! @returns Logical value associated with the key or raises an error if none is found
+  function hashmap_get_logical(specificmap, key)
+    type(hashmap_type), intent(inout) :: specificmap
+    character(len=*), intent(in) :: key
+    logical :: hashmap_get_logical
+
+    class(*), pointer :: generic
+
+    generic=>hashmap_get_generic(specificmap, key)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not find logical entry with key '"//trim(key)//"'")
+    hashmap_get_logical=conv_to_logical(generic, .false.)
+  end function hashmap_get_logical
+
+  !> Gets a specific element out of the hashmap with the corresponding key
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificmap The specific hashmap involved
+  !! @param key Look up key
+  !! @returns Pointer to the generic value associated with the key or null if none exists
+  function hashmap_get_generic(specificmap, key)
+    type(hashmap_type), intent(inout) :: specificmap
+    character(len=*), intent(in) :: key
+    class(*), pointer :: hashmap_get_generic, raw_map_node
 
     raw_map_node=>hashmap_getnode(specificmap, key)
     if (associated(raw_map_node)) then
       select type (raw_map_node)
       type is (mapnode_type)
-        hashmap_get=>raw_map_node%value
+        hashmap_get_generic=>raw_map_node%value
       end select
       return
     end if
-    hashmap_get=>null()
-  end function hashmap_get
+    hashmap_get_generic=>null()
+  end function hashmap_get_generic
 
   !> This gets the hashmap node that the key represents (rather than the specific value)
   !!
@@ -701,7 +1801,7 @@ contains
     hashmap_getnode=>null()
     if (present(key_location)) key_location=0
 
-    if (.not. allocated(specificmap%map_ds)) return
+    if (.not. associated(specificmap%map_ds)) return
 
     hash=get_hashkey(key)
     
@@ -733,19 +1833,19 @@ contains
   function hashmap_getnode_atindex(specificmap, index)
     type(hashmap_type), intent(inout) :: specificmap
     integer, intent(in) :: index
-    class(*), pointer :: raw_data, hashmap_getnode_atindex
+    class(*), pointer :: hashmap_getnode_atindex
 
     integer :: i, current_size, prev
 
     hashmap_getnode_atindex=>null()
-    if (.not. allocated(specificmap%map_ds) .or. index .gt. specificmap%size) return
+    if (.not. associated(specificmap%map_ds) .or. index .gt. specificmap%size) return
 
     current_size=0
     prev=0
     do i=1, hash_size
       current_size=current_size+list_size(specificmap%map_ds(i))
       if (current_size .ge. index) then
-        hashmap_getnode_atindex=>list_get(specificmap%map_ds(i), index-prev)        
+        hashmap_getnode_atindex=>list_get_generic(specificmap%map_ds(i), index-prev)        
         return
       end if
       prev=current_size
@@ -760,8 +1860,6 @@ contains
   integer function hashmap_size(specificmap)
     type(hashmap_type), intent(inout) :: specificmap
 
-    integer :: i, hash_size
-
     hashmap_size=specificmap%size
   end function hashmap_size
 
@@ -772,8 +1870,6 @@ contains
   !! @returns Whether the map is empty
   logical function hashmap_is_empty(specificmap)
     type(hashmap_type), intent(inout) :: specificmap
-
-    integer :: i
 
     hashmap_is_empty=(specificmap%size == 0)
   end function hashmap_is_empty
@@ -790,7 +1886,7 @@ contains
     type(listnode_type), pointer :: node, previousnode
     integer :: i
 
-    if (allocated(specificmap%map_ds)) then
+    if (associated(specificmap%map_ds)) then
       do i=1, hash_size
         node=>specificmap%map_ds(i)%head
         previousnode=>null()
@@ -799,6 +1895,12 @@ contains
           previousnode=>node
           node=>node%next
           if (associated(previousnode%data)) then
+            select type (n=>previousnode%data)
+            type is (mapnode_type)
+              if (n%memory_allocation_automatic) then
+                if (associated(n%value)) deallocate(n%value)
+              end if
+            end select
             deallocate(previousnode%data) ! Free the mapnode data structure
           end if
           deallocate(previousnode)
@@ -812,6 +1914,28 @@ contains
       deallocate(specificmap%map_ds)
     end if
   end subroutine hashmap_free
+
+  !> Retrieves an iterator representation of the hashset, ready to access the first element
+  !! @param specificset Specific collection to base this iterator on
+  !! @returns The iterator ready to access the first element
+  type(iterator_type) function hashset_get_iterator(specificset)
+    type(hashset_type), intent(inout) :: specificset
+
+    integer :: i
+
+    hashset_get_iterator%next_item=>null()
+    if (associated(specificset%set_ds)) then
+      hashset_get_iterator%hash_structure=>specificset%set_ds
+
+      do i=1, size(specificset%set_ds)
+        if (specificset%set_ds(i)%size .gt. 0) then
+          hashset_get_iterator%next_item=>specificset%set_ds(i)%head
+          exit
+        end if
+      end do
+      hashset_get_iterator%hash_ptr=i+1
+    end if
+  end function hashset_get_iterator 
 
   !> Adds a string to the hashset which stores unique strings, therefore if the string already exists then this is
   !! ignored
@@ -827,7 +1951,7 @@ contains
     type(setnode_type), pointer :: newsetnode
     integer :: hash, location
 
-    if (.not. allocated(specificset%set_ds)) allocate(specificset%set_ds(hash_size))
+    if (.not. associated(specificset%set_ds)) allocate(specificset%set_ds(hash_size))
 
     call hashset_getlocation(specificset, key, hash, location)
 
@@ -838,7 +1962,7 @@ contains
       ! doesn't link the generic pointer just pointing to the data structure hence we clone it
       allocate(generic, source=newsetnode)
       deallocate(newsetnode)
-      call list_add(specificset%set_ds(hash), generic)
+      call list_add_generic(specificset%set_ds(hash), generic, .true.)
       specificset%size=specificset%size+1
     end if
   end subroutine hashset_add
@@ -896,7 +2020,7 @@ contains
     hash=0
     key_location=0
 
-    if (.not. allocated(specificset%set_ds)) return
+    if (.not. associated(specificset%set_ds)) return
 
     hash=get_hashkey(key)
     
@@ -936,33 +2060,35 @@ contains
   !! @param specificset The specific set involved
   !! @param i Index to look up
   !! @returns The corresponding key at this location or empty string if none is found
-  character(len=STRING_LENGTH) function hashset_get(specificset, index)
+  character(len=STRING_LENGTH) function hashset_get_string(specificset, index)
     type(hashset_type), intent(inout) :: specificset
     integer, intent(in) :: index
     class(*), pointer :: generic
 
     integer :: i, current_size, prev
 
-    hashset_get=""
-    if (.not. allocated(specificset%set_ds) .or. index .gt. specificset%size) return
+    hashset_get_string=""
+    if (.not. associated(specificset%set_ds) .or. index .gt. specificset%size) return
 
     current_size=0
     prev=0
     do i=1, hash_size
       current_size=current_size+list_size(specificset%set_ds(i))
       if (current_size .ge. index) then
-        generic=>list_get(specificset%set_ds(i), index-prev)        
+        generic=>list_get_generic(specificset%set_ds(i), index-prev)        
         if (associated(generic)) then
           select type (generic)
           type is (setnode_type)
-            hashset_get=generic%key
+            hashset_get_string=generic%key
           end select
           return
+        else
+          call log_log(LOG_ERROR, "Can not find hashset entry at index "//trim(conv_to_string(index)))
         end if
       end if
       prev=current_size
     end do
-  end function hashset_get
+  end function hashset_get_string
 
   !> Frees up all the allocatable, heap, memory associated with a specific set.
   !!
@@ -976,7 +2102,7 @@ contains
     type(listnode_type), pointer :: node, previousnode
     integer :: i
 
-    if (allocated(specificset%set_ds)) then
+    if (associated(specificset%set_ds)) then
       do i=1, hash_size
         node=>specificset%set_ds(i)%head
         previousnode=>null()
@@ -984,7 +2110,7 @@ contains
         do while(associated(node))
           previousnode=>node
           node=>node%next
-          if (associated(previousnode%data)) then
+          if (associated(previousnode%data)) then            
             deallocate(previousnode%data) ! Free the mapnode data structure
           end if
           deallocate(previousnode)
@@ -1026,30 +2152,253 @@ contains
     get_hashkey=abs(mod(get_hashkey, hash_size))+1
   end function get_hashkey
 
+  !> Retrieves an iterator representation of the stack, ready to access the first element
+  !! @param specificstack Specific collection to base this iterator on
+  !! @returns The iterator ready to access the first element
+  type(iterator_type) function stack_get_iterator(specificstack)
+    type(stack_type), intent(inout) :: specificstack
+
+    stack_get_iterator%next_item=>specificstack%stack_ds%head
+    stack_get_iterator%hash_structure=>null()
+    stack_get_iterator%hash_ptr=0
+  end function stack_get_iterator 
+
+  !> Pushes an element onto the stack (LIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificstack The specific stack involved
+  !! @param data Integer data to push onto the stack
+  subroutine stack_push_int(specificstack, int_data)
+    type(stack_type), intent(inout) :: specificstack
+    integer, intent(in) :: int_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(int_data, .true.)
+    call stack_push_generic(specificstack, generic, .true.)
+  end subroutine stack_push_int
+
+  !> Pushes an element onto the stack (LIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificstack The specific stack involved
+  !! @param data String data to push onto the stack
+  subroutine stack_push_string(specificstack, str_data)
+    type(stack_type), intent(inout) :: specificstack
+    character(len=STRING_LENGTH), intent(in) :: str_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(str_data, .true.)
+    call stack_push_generic(specificstack, generic, .true.)
+  end subroutine stack_push_string
+
+  !> Pushes an element onto the stack (LIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificstack The specific stack involved
+  !! @param data Double precision real data to push onto the stack
+  subroutine stack_push_real(specificstack, real_data)
+    type(stack_type), intent(inout) :: specificstack
+    real(kind=DEFAULT_PRECISION), intent(in) :: real_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(real_data, .true.)
+    call stack_push_generic(specificstack, generic, .true.)
+  end subroutine stack_push_real
+
+  !> Pushes an element onto the stack (LIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificstack The specific stack involved
+  !! @param data Logical data to push onto the stack
+  subroutine stack_push_logical(specificstack, logical_data)
+    type(stack_type), intent(inout) :: specificstack
+    logical, intent(in) :: logical_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(logical_data, .true.)
+    call stack_push_generic(specificstack, generic, .true.)
+  end subroutine stack_push_logical
+
   !> Pushes an element onto the stack (LIFO)
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificstack The specific stack involved
   !! @param data Pointer to the generic data to push onto the stack
-  subroutine stack_push(specificstack, data)
+  !! @param memory_allocation_automatic Whether the collections API should manage the freeing of memory
+  subroutine stack_push_generic(specificstack, data, memory_allocation_automatic)
     type(stack_type), intent(inout) :: specificstack
     class(*), pointer, intent(in) :: data
+    logical, intent(in) :: memory_allocation_automatic
 
-    call list_insert(specificstack%stack_ds, data, 1)
-  end subroutine stack_push
+    call list_insert_generic(specificstack%stack_ds, data, 1, memory_allocation_automatic)
+  end subroutine stack_push_generic
+
+  !> Pops an element off the stack (LIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificstack The specific stack involved
+  !! @returns Integer data of the last element added to the stack or raises an error if none is found
+  function stack_pop_int(specificstack)
+    type(stack_type), intent(inout) :: specificstack
+    integer :: stack_pop_int
+
+    class(*), pointer :: generic
+
+    generic=>stack_pop_generic(specificstack)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not pop integer from stack")
+    stack_pop_int=conv_to_integer(generic, .false.)
+  end function stack_pop_int
+
+  !> Pops an element off the stack (LIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificstack The specific stack involved
+  !! @returns String data of the last element added to the stack or raises an error if none is found
+  function stack_pop_string(specificstack)
+    type(stack_type), intent(inout) :: specificstack
+    character(len=STRING_LENGTH) :: stack_pop_string
+
+    class(*), pointer :: generic
+
+    generic=>stack_pop_generic(specificstack)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not pop string from stack")
+    stack_pop_string=conv_to_string(generic, .false., STRING_LENGTH)
+  end function stack_pop_string
+
+  !> Pops an element off the stack (LIFO). Converts between precision and from int.
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificstack The specific stack involved
+  !! @returns Double precision real data of the last element added to the stack or raises an error if none is found
+  function stack_pop_real(specificstack)
+    type(stack_type), intent(inout) :: specificstack
+    real(kind=DEFAULT_PRECISION) :: stack_pop_real
+
+    class(*), pointer :: generic
+
+    generic=>stack_pop_generic(specificstack)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not pop real from stack")
+    select type(vr=>generic)
+    type is (real(kind=DEFAULT_PRECISION))
+      stack_pop_real=vr
+    type is (real)
+      stack_pop_real=conv_single_real_to_double(vr)
+    type is (integer)  
+      stack_pop_real=conv_single_real_to_double(conv_to_real(vr))
+    end select
+  end function stack_pop_real
+
+  !> Pops an element off the stack (LIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificstack The specific stack involved
+  !! @returns Logical data of the last element added to the stack or raises an error if none is found
+  function stack_pop_logical(specificstack)
+    type(stack_type), intent(inout) :: specificstack
+    logical :: stack_pop_logical
+
+    class(*), pointer :: generic
+
+    generic=>stack_pop_generic(specificstack)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not pop logical from stack")
+    stack_pop_logical=conv_to_logical(generic, .false.)
+  end function stack_pop_logical  
 
   !> Pops an element off the stack (LIFO)
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificstack The specific stack involved
   !! @returns Pointer to the generic data of the last element added to the stack
-  function stack_pop(specificstack)
+  function stack_pop_generic(specificstack)
     type(stack_type), intent(inout) :: specificstack
-    class(*), pointer :: stack_pop
+    class(*), pointer :: stack_pop_generic
 
-    stack_pop => stack_get(specificstack, 1)
+    stack_pop_generic=>stack_get_generic(specificstack, 1)
     call list_remove(specificstack%stack_ds, 1)
-  end function stack_pop
+  end function stack_pop_generic
+
+  !> Gets a specific element from the stack at index specified
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificstack The specific stack involved
+  !! @param i The index to retrieve the element at
+  !! @returns Integer data or raises an error if none is found
+  function stack_get_int(specificstack, i)
+    type(stack_type), intent(inout) :: specificstack
+    integer, intent(in) :: i
+    integer :: stack_get_int
+
+    class(*), pointer :: generic
+
+    generic=>stack_get_generic(specificstack, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get integer from stack at index "//trim(conv_to_string(i)))
+    stack_get_int=conv_to_integer(generic, .false.)
+  end function stack_get_int
+
+  !> Gets a specific element from the stack at index specified
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificstack The specific stack involved
+  !! @param i The index to retrieve the element at
+  !! @returns String data or raises an error if none is found
+  function stack_get_string(specificstack, i)
+    type(stack_type), intent(inout) :: specificstack
+    integer, intent(in) :: i
+    character(len=STRING_LENGTH) :: stack_get_string
+
+    class(*), pointer :: generic
+
+    generic=>stack_get_generic(specificstack, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get string from stack at index "//trim(conv_to_string(i)))
+    stack_get_string=conv_to_string(generic, .false., STRING_LENGTH)
+  end function stack_get_string
+
+  !> Gets a specific element from the stack at index specified. Converts between precision and from int.
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificstack The specific stack involved
+  !! @param i The index to retrieve the element at
+  !! @returns Double precision real data or raises an error if none is found
+  function stack_get_real(specificstack, i)
+    type(stack_type), intent(inout) :: specificstack
+    integer, intent(in) :: i
+    real(kind=DEFAULT_PRECISION) :: stack_get_real
+
+    class(*), pointer :: generic
+
+    generic=>stack_get_generic(specificstack, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get real from stack at index "//trim(conv_to_string(i)))
+    select type(vr=>generic)
+    type is (real(kind=DEFAULT_PRECISION))
+      stack_get_real=vr
+    type is (real)
+      stack_get_real=conv_single_real_to_double(vr)
+    type is (integer)  
+      stack_get_real=conv_single_real_to_double(conv_to_real(vr))
+    end select
+  end function stack_get_real
+
+  !> Gets a specific element from the stack at index specified
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificstack The specific stack involved
+  !! @param i The index to retrieve the element at
+  !! @returns Logical data or raises an error if none is found
+  function stack_get_logical(specificstack, i)
+    type(stack_type), intent(inout) :: specificstack
+    integer, intent(in) :: i
+    logical :: stack_get_logical
+
+    class(*), pointer :: generic
+
+    generic=>stack_get_generic(specificstack, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get logical from stack at index "//trim(conv_to_string(i)))
+    stack_get_logical=conv_to_logical(generic, .false.)
+  end function stack_get_logical
 
   !> Gets a specific element from the stack at index specified or null if the index > stack size
   !!
@@ -1057,13 +2406,13 @@ contains
   !! @param specificstack The specific stack involved
   !! @param i The index to retrieve the element at
   !! @returns Pointer to the generic data
-  function stack_get(specificstack, i)
+  function stack_get_generic(specificstack, i)
     type(stack_type), intent(inout) :: specificstack
-    class(*), pointer :: stack_get
     integer, intent(in) :: i
+    class(*), pointer :: stack_get_generic
 
-    stack_get => list_get(specificstack%stack_ds, i)
-  end function stack_get
+    stack_get_generic=>list_get_generic(specificstack%stack_ds, i)
+  end function stack_get_generic
 
   !> Returns the number of elements held on the stack
   !!
@@ -1099,30 +2448,253 @@ contains
     call list_free(specificstack%stack_ds)
   end subroutine stack_free
 
+  !> Retrieves an iterator representation of the queue, ready to access the first element
+  !! @param specificqueue Specific collection to base this iterator on
+  !! @returns The iterator ready to access the first element
+  type(iterator_type) function queue_get_iterator(specificqueue)
+    type(queue_type), intent(inout) :: specificqueue
+
+    queue_get_iterator%next_item=>specificqueue%queue_ds%head
+    queue_get_iterator%hash_structure=>null()
+    queue_get_iterator%hash_ptr=0
+  end function queue_get_iterator 
+
+  !> Adds an element to the end of the queue (FIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificqueue The specific queue involved
+  !! @param data Integer data to add to the queue
+  subroutine queue_push_int(specificqueue, int_data)
+    type(queue_type), intent(inout) :: specificqueue
+    integer, intent(in) :: int_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(int_data, .true.)
+    call queue_push_generic(specificqueue, generic, .true.)
+  end subroutine queue_push_int
+
+  !> Adds an element to the end of the queue (FIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificqueue The specific queue involved
+  !! @param data String data to add to the queue
+  subroutine queue_push_string(specificqueue, str_data)
+    type(queue_type), intent(inout) :: specificqueue
+    character(len=STRING_LENGTH), intent(in) :: str_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(str_data, .true.)
+    call queue_push_generic(specificqueue, generic, .true.)
+  end subroutine queue_push_string
+
+  !> Adds an element to the end of the queue (FIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificqueue The specific queue involved
+  !! @param data Double precision real data to add to the queue
+  subroutine queue_push_real(specificqueue, real_data)
+    type(queue_type), intent(inout) :: specificqueue
+    real(kind=DEFAULT_PRECISION), intent(in) :: real_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(real_data, .true.)
+    call queue_push_generic(specificqueue, generic, .true.)
+  end subroutine queue_push_real
+
+  !> Adds an element to the end of the queue (FIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificqueue The specific queue involved
+  !! @param data Logical data to add to the queue
+  subroutine queue_push_logical(specificqueue, logical_data)
+    type(queue_type), intent(inout) :: specificqueue
+    logical, intent(in) :: logical_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(logical_data, .true.)
+    call queue_push_generic(specificqueue, generic, .true.)
+  end subroutine queue_push_logical
+
   !> Adds an element to the end of the queue (FIFO)
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificqueue The specific queue involved
   !! @param data Pointer to the generic data to add to the queue
-  subroutine queue_push(specificqueue, data)
+  !! @param memory_allocation_automatic Whether the collections API should manage the freeing of memory
+  subroutine queue_push_generic(specificqueue, data, memory_allocation_automatic)
     type(queue_type), intent(inout) :: specificqueue
     class(*), pointer, intent(in) :: data
+    logical, intent(in) :: memory_allocation_automatic
 
-    call list_add(specificqueue%queue_ds, data)
-  end subroutine queue_push
+    call list_add_generic(specificqueue%queue_ds, data, memory_allocation_automatic)
+  end subroutine queue_push_generic
+
+  !> Pops the queue element off the head of the queue (FIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificqueue The specific queue involved
+  !! @returns Integer element at head of the queue or raises an error if there is none
+  function queue_pop_int(specificqueue)
+    type(queue_type), intent(inout) :: specificqueue
+    integer :: queue_pop_int
+
+    class(*), pointer :: generic
+
+    generic=>queue_pop_generic(specificqueue)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not pop integer from queue")
+    queue_pop_int=conv_to_integer(generic, .false.)
+  end function queue_pop_int
+
+  !> Pops the queue element off the head of the queue (FIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificqueue The specific queue involved
+  !! @returns String element at head of the queue or raises an error if there is none
+  function queue_pop_string(specificqueue)
+    type(queue_type), intent(inout) :: specificqueue
+    character(len=STRING_LENGTH) :: queue_pop_string
+
+    class(*), pointer :: generic
+
+    generic=>queue_pop_generic(specificqueue)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not pop string from queue")
+    queue_pop_string=conv_to_string(generic, .false., STRING_LENGTH)
+  end function queue_pop_string
+
+  !> Pops the queue element off the head of the queue (FIFO). Converts between precision and from int.
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificqueue The specific queue involved
+  !! @returns Double precision real element at head of the queue or raises an error if there is none
+  function queue_pop_real(specificqueue)
+    type(queue_type), intent(inout) :: specificqueue
+    real(kind=DEFAULT_PRECISION) :: queue_pop_real
+
+    class(*), pointer :: generic
+
+    generic=>queue_pop_generic(specificqueue)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not pop real from queue")
+    select type(vr=>generic)
+    type is (real(kind=DEFAULT_PRECISION))
+      queue_pop_real=vr
+    type is (real)
+      queue_pop_real=conv_single_real_to_double(vr)
+    type is (integer)  
+      queue_pop_real=conv_single_real_to_double(conv_to_real(vr))
+    end select
+  end function queue_pop_real
+
+  !> Pops the queue element off the head of the queue (FIFO)
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificqueue The specific queue involved
+  !! @returns Logical element at head of the queue or raises an error if there is none
+  function queue_pop_logical(specificqueue)
+    type(queue_type), intent(inout) :: specificqueue
+    logical :: queue_pop_logical
+
+    class(*), pointer :: generic
+
+    generic=>queue_pop_generic(specificqueue)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not pop logical from queue")
+    queue_pop_logical=conv_to_logical(generic, .false.)
+  end function queue_pop_logical
 
   !> Pops the queue element off the head of the queue (FIFO)
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificqueue The specific queue involved
   !! @returns Pointer to the generic element at head of the queue or null if none
-  function queue_pop(specificqueue)
+  function queue_pop_generic(specificqueue)
     type(queue_type), intent(inout) :: specificqueue
-    class(*), pointer :: queue_pop
+    class(*), pointer :: queue_pop_generic
 
-    queue_pop => queue_get(specificqueue, 1)
+    queue_pop_generic=>queue_get_generic(specificqueue, 1)
     call list_remove(specificqueue%queue_ds, 1)
-  end function queue_pop
+  end function queue_pop_generic
+
+  !> Returns a specific queue element at an index
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificqueue The specific queue involved
+  !! @param i The index to look up
+  !! @returns Integer element at i or raises an error if none is found
+  function queue_get_int(specificqueue, i)
+    type(queue_type), intent(inout) :: specificqueue
+    integer, intent(in) :: i
+    integer :: queue_get_int
+
+    class(*), pointer :: generic
+
+    generic=>queue_get_generic(specificqueue, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get integer from queue at index "//trim(conv_to_string(i)))
+    queue_get_int=conv_to_integer(generic, .false.)
+  end function queue_get_int
+
+  !> Returns a specific queue element at an index
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificqueue The specific queue involved
+  !! @param i The index to look up
+  !! @returns String element at i or raises an error if none is found
+  function queue_get_string(specificqueue, i)
+    type(queue_type), intent(inout) :: specificqueue
+    integer, intent(in) :: i
+    character(len=STRING_LENGTH) :: queue_get_string
+
+    class(*), pointer :: generic
+
+    generic=>queue_get_generic(specificqueue, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get string from queue at index "//trim(conv_to_string(i)))
+    queue_get_string=conv_to_string(generic, .false., STRING_LENGTH)
+  end function queue_get_string
+
+  !> Returns a specific queue element at an index. Converts between precision and from int.
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificqueue The specific queue involved
+  !! @param i The index to look up
+  !! @returns Double precision real element at i or raises an error if none is found
+  function queue_get_real(specificqueue, i)
+    type(queue_type), intent(inout) :: specificqueue
+    integer, intent(in) :: i
+    real(kind=DEFAULT_PRECISION) :: queue_get_real
+
+    class(*), pointer :: generic
+
+    generic=>queue_get_generic(specificqueue, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get real from queue at index "//trim(conv_to_string(i)))
+    select type(vr=>generic)
+    type is (real(kind=DEFAULT_PRECISION))
+      queue_get_real=vr
+    type is (real)
+      queue_get_real=conv_single_real_to_double(vr)
+    type is (integer)  
+      queue_get_real=conv_single_real_to_double(conv_to_real(vr))
+    end select
+  end function queue_get_real
+
+  !> Returns a specific queue element at an index
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificqueue The specific queue involved
+  !! @param i The index to look up
+  !! @returns Logical element at i or raises an error if none is found
+  function queue_get_logical(specificqueue, i)
+    type(queue_type), intent(inout) :: specificqueue
+    integer, intent(in) :: i
+    logical :: queue_get_logical
+
+    class(*), pointer :: generic
+
+    generic=>queue_get_generic(specificqueue, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get logical from queue at index "//trim(conv_to_string(i)))
+    queue_get_logical=conv_to_logical(generic, .false.)
+  end function queue_get_logical
 
   !> Returns a specific queue element at an index or null if index > queue size
   !!
@@ -1130,13 +2702,13 @@ contains
   !! @param specificqueue The specific queue involved
   !! @param i The index to look up
   !! @returns Pointer to the generic queue element at i or null if the index does not exist
-  function queue_get(specificqueue, i)
+  function queue_get_generic(specificqueue, i)
     type(queue_type), intent(inout) :: specificqueue
     integer, intent(in) :: i
-    class(*), pointer :: queue_get
+    class(*), pointer :: queue_get_generic
 
-    queue_get => list_get(specificqueue%queue_ds, i)
-  end function queue_get
+    queue_get_generic=>list_get_generic(specificqueue%queue_ds, i)
+  end function queue_get_generic
 
   !> Returns the number of elements held in a queue
   !!
@@ -1172,16 +2744,95 @@ contains
     call list_free(specificqueue%queue_ds)
   end subroutine queue_free
 
+  !> Retrieves an iterator representation of the list, ready to access the first element
+  !! @param specificlist Specific collection to base this iterator on
+  !! @returns The iterator ready to access the first element
+  type(iterator_type) function list_get_iterator(specificlist)
+    type(list_type), intent(inout) :: specificlist
+
+    list_get_iterator%next_item=>specificlist%head
+    list_get_iterator%hash_structure=>null()
+    list_get_iterator%hash_ptr=0
+  end function list_get_iterator    
+
+  !> Inserts an element into the list or places at the end if the index > list size
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificlist The specific list involved
+  !! @param data Integer data to insert
+  !! @param i The list index to insert to
+  subroutine list_insert_int(specificlist, int_data, i)
+    type(list_type), intent(inout) :: specificlist
+    integer, intent(in) :: i, int_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(int_data, .true.)
+    call list_insert_generic(specificlist, generic, i, .true.)
+  end subroutine list_insert_int
+
+  !> Inserts an element into the list or places at the end if the index > list size
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificlist The specific list involved
+  !! @param data String data to insert
+  !! @param i The list index to insert to
+  subroutine list_insert_string(specificlist, str_data, i)
+    type(list_type), intent(inout) :: specificlist
+    integer, intent(in) :: i
+    character(len=STRING_LENGTH), intent(in) :: str_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(str_data, .true.)
+    call list_insert_generic(specificlist, generic, i, .true.)
+  end subroutine list_insert_string
+
+  !> Inserts an element into the list or places at the end if the index > list size
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificlist The specific list involved
+  !! @param data Double precision real data to insert
+  !! @param i The list index to insert to
+  subroutine list_insert_real(specificlist, real_data, i)
+    type(list_type), intent(inout) :: specificlist
+    integer, intent(in) :: i
+    real(kind=DEFAULT_PRECISION), intent(in) :: real_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(real_data, .true.)
+    call list_insert_generic(specificlist, generic, i, .true.)
+  end subroutine list_insert_real
+
+  !> Inserts an element into the list or places at the end if the index > list size
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificlist The specific list involved
+  !! @param data Logical data to insert
+  !! @param i The list index to insert to
+  subroutine list_insert_logical(specificlist, logical_data, i)
+    type(list_type), intent(inout) :: specificlist
+    integer, intent(in) :: i
+    logical, intent(in) :: logical_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(logical_data, .true.)
+    call list_insert_generic(specificlist, generic, i, .true.)
+  end subroutine list_insert_logical
+
   !> Inserts an element into the list or places at the end if the index > list size
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificlist The specific list involved
   !! @param data Pointer to the generic data to insert
   !! @param i The list index to insert to
-  subroutine list_insert(specificlist, data, i)
+  subroutine list_insert_generic(specificlist, data, i, memory_allocation_automatic)
     type(list_type), intent(inout) :: specificlist
     integer, intent(in) :: i
     class(*), pointer, intent(in) :: data
+    logical, intent(in) :: memory_allocation_automatic
 
     integer ::j
     type(listnode_type), pointer :: newnode, node
@@ -1200,6 +2851,7 @@ contains
         ! Insert node
         newnode%next => node
         newnode%prev => node%prev
+        newnode%memory_allocation_automatic=memory_allocation_automatic
         if (associated(node%prev)) node%prev%next=>newnode
         node%prev => newnode
         if (associated(node, target=specificlist%head)) specificlist%head=>newnode
@@ -1221,16 +2873,78 @@ contains
       specificlist%tail => newnode
     end if
     specificlist%size=specificlist%size+1
-  end subroutine list_insert
+  end subroutine list_insert_generic
+
+  !> Adds an element to the end of the list
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificlist The specific list involved
+  !! @param data Integer data to add
+  subroutine list_add_int(specificlist, int_data)
+    type(list_type), intent(inout) :: specificlist
+    integer, intent(in) :: int_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(int_data, .true.)
+    call list_add_generic(specificlist, generic, .true.)
+  end subroutine list_add_int
+
+  !> Adds an element to the end of the list
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificlist The specific list involved
+  !! @param data String data to add
+  subroutine list_add_string(specificlist, str_data)
+    type(list_type), intent(inout) :: specificlist
+    character(len=STRING_LENGTH), intent(in) :: str_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(str_data, .true.)
+    call list_add_generic(specificlist, generic, .true.)
+  end subroutine list_add_string
+
+  !> Adds an element to the end of the list
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificlist The specific list involved
+  !! @param data Double precision real data to add
+  subroutine list_add_real(specificlist, real_data)
+    type(list_type), intent(inout) :: specificlist
+    real(kind=DEFAULT_PRECISION), intent(in) :: real_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(real_data, .true.)
+    call list_add_generic(specificlist, generic, .true.)
+  end subroutine list_add_real
+
+  !> Adds an element to the end of the list
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificlist The specific list involved
+  !! @param data Logical data to add
+  subroutine list_add_logical(specificlist, logical_data)
+    type(list_type), intent(inout) :: specificlist
+    logical, intent(in) :: logical_data
+
+    class(*), pointer :: generic
+
+    generic=>conv_to_generic(logical_data, .true.)
+    call list_add_generic(specificlist, generic, .true.)
+  end subroutine list_add_logical
 
   !> Adds an element to the end of the list
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificlist The specific list involved
   !! @param data Pointer to the generic data to add
-  subroutine list_add(specificlist, data)
+  !! @param memory_allocation_automatic Whether the collections API should manage the freeing of memory
+  subroutine list_add_generic(specificlist, data, memory_allocation_automatic)
     type(list_type), intent(inout) :: specificlist
     class(*), pointer, intent(in) :: data
+    logical, intent(in) :: memory_allocation_automatic
 
     type(listnode_type), pointer :: newnode
 
@@ -1238,6 +2952,7 @@ contains
     newnode%data => data
 
     newnode%prev=>specificlist%tail
+    newnode%memory_allocation_automatic=memory_allocation_automatic
     if (associated(specificlist%tail)) then
       specificlist%tail%next => newnode
     end if
@@ -1248,7 +2963,7 @@ contains
     end if
 
     specificlist%size=specificlist%size+1
-  end subroutine list_add
+  end subroutine list_add_generic
 
   !> Removes an element from the list at a specific index
   !!
@@ -1274,6 +2989,9 @@ contains
         if (associated(node%next)) node%next%prev => node%prev
         if (associated(node, target=specificlist%head)) specificlist%head => node%next
         if (associated(node, target=specificlist%tail)) specificlist%tail => node%prev
+        if (node%memory_allocation_automatic) then
+          if (associated(node%data)) deallocate(node%data)
+        end if
         deallocate(node)
         specificlist%size = specificlist%size - 1
       end if
@@ -1291,23 +3009,102 @@ contains
     list_is_empty = specificlist%size == 0
   end function list_is_empty
 
+  !> Retrieves the element at index i from the list
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificlist The specific list involved
+  !! @param i Index to look up
+  !! @returns Integer data in the list or raises an error if none is found
+  function list_get_int(specificlist, i)
+    type(list_type), intent(inout) :: specificlist
+    integer, intent(in) :: i
+    integer :: list_get_int
+
+    class(*), pointer :: generic
+
+    generic=>list_get_generic(specificlist, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get integer from list at index "//trim(conv_to_string(i)))
+    list_get_int=conv_to_integer(generic, .false.)
+  end function list_get_int
+
+  !> Retrieves the element at index i from the list
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificlist The specific list involved
+  !! @param i Index to look up
+  !! @returns String data in the list or raises an error if none is found
+  function list_get_string(specificlist, i)
+    type(list_type), intent(inout) :: specificlist
+    integer, intent(in) :: i
+    character(len=STRING_LENGTH) :: list_get_string
+
+    class(*), pointer :: generic
+
+    generic=>list_get_generic(specificlist, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get string from list at index "//trim(conv_to_string(i)))
+    list_get_string=conv_to_string(generic, .false., STRING_LENGTH)
+  end function list_get_string
+
+  !> Retrieves the element at index i from the list. Converts between precision and from int.
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificlist The specific list involved
+  !! @param i Index to look up
+  !! @returns Double precision real data in the list or raises an error if none is found
+  function list_get_real(specificlist, i)
+    type(list_type), intent(inout) :: specificlist
+    integer, intent(in) :: i
+    real(kind=DEFAULT_PRECISION) :: list_get_real
+
+    class(*), pointer :: generic
+
+    generic=>list_get_generic(specificlist, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get real from list at index "//trim(conv_to_string(i)))
+    select type(vr=>generic)
+    type is (real(kind=DEFAULT_PRECISION))
+      list_get_real=vr
+    type is (real)
+      list_get_real=conv_single_real_to_double(vr)
+    type is (integer)  
+      list_get_real=conv_single_real_to_double(conv_to_real(vr))
+    end select
+  end function list_get_real
+
+  !> Retrieves the element at index i from the list
+  !!
+  !! Do not call directly from external module, this is called via the appropriate interface
+  !! @param specificlist The specific list involved
+  !! @param i Index to look up
+  !! @returns Logical data in the list or raises an error if none is found
+  function list_get_logical(specificlist, i)
+    type(list_type), intent(inout) :: specificlist
+    integer, intent(in) :: i
+    logical :: list_get_logical
+
+    class(*), pointer :: generic
+
+    generic=>list_get_generic(specificlist, i)
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get logical from list at index "//trim(conv_to_string(i)))
+    list_get_logical=conv_to_logical(generic, .false.)
+  end function list_get_logical
+
   !> Retrieves the element at index i from the list or null if index < list size
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificlist The specific list involved
   !! @param i Index to look up
   !! @returns Pointer to the generic data in the list
-  function list_get(specificlist, i)
-    class(*), pointer :: list_get
+  function list_get_generic(specificlist, i)
     type(list_type), intent(inout) :: specificlist
     integer, intent(in) :: i
+    class(*), pointer :: list_get_generic
 
     integer :: j
     type(listnode_type), pointer :: node
 
     j=1
     if (specificlist%size .lt. i) then
-      list_get => null()
+      list_get_generic => null()
       return
     end if
     node => specificlist%head
@@ -1315,8 +3112,8 @@ contains
       node => node%next
       j=j+1
     end do
-    list_get => node%data
-  end function list_get
+    list_get_generic => node%data
+  end function list_get_generic
 
   !> Frees up all the allocatable, heap, memory associated with a specific list.
   !!
@@ -1335,6 +3132,9 @@ contains
     do while(associated(node))
       previousnode=>node
       node=>node%next
+      if (previousnode%memory_allocation_automatic) then
+        if (associated(previousnode%data)) deallocate(previousnode%data)
+      end if      
       deallocate(previousnode)
     end do
 
@@ -1353,4 +3153,209 @@ contains
 
     list_size = specificlist%size
   end function list_size
+
+  !> Deduces whether an iterator has a next entry or not
+  !! @param iterator The iterator to test upon
+  !! @returns Whether there is a next entry to access
+  logical function iteratior_has_next(iterator)
+    type(iterator_type), intent(inout) :: iterator
+
+    iteratior_has_next=associated(iterator%next_item)
+  end function iteratior_has_next
+
+  !> Returns the next integer referenced by the iterator and advanced it,  or an error if it has reached the end of iteration
+  !! @param iterator The iterator of which to access and advance the next element
+  !! @returns The next integer
+  integer function iterator_get_next_integer(iterator)
+    type(iterator_type), intent(inout) :: iterator
+
+    class(*), pointer :: generic
+
+    generic=>iterator_get_next_generic(iterator)
+    if (associated(generic)) then
+      iterator_get_next_integer=conv_to_integer(generic, .false.)
+    else
+      call log_log(LOG_ERROR, "Can not get next integer in iterator as iterator has reached end of collection")
+    end if
+  end function iterator_get_next_integer
+  
+  !> Returns the next string referenced by the iterator and advanced it,  or an error if it has reached the end of iteration
+  !! @param iterator The iterator of which to access and advance the next element
+  !! @returns The next string
+  character(len=STRING_LENGTH) function iterator_get_next_string(iterator)
+    type(iterator_type), intent(inout) :: iterator
+
+    class(*), pointer :: generic
+
+    generic=>iterator_get_next_generic(iterator)
+    if (associated(generic)) then
+      select type(generic)
+        type is (setnode_type)
+          iterator_get_next_string=generic%key
+        class default
+          iterator_get_next_string=conv_to_string(generic, .false., STRING_LENGTH)
+      end select      
+    else
+      call log_log(LOG_ERROR, "Can not get next string in iterator as iterator has reached end of collection")
+    end if
+  end function iterator_get_next_string
+
+  !> Returns the next real (double precision) referenced by the iterator and advanced it,  
+  !! or an error if it has reached the end of iteration
+  !! @param iterator The iterator of which to access and advance the next element
+  !! @returns The next double precision real, conversion between single and integers is done automatically
+  real(kind=DEFAULT_PRECISION) function iterator_get_next_real(iterator)
+    type(iterator_type), intent(inout) :: iterator
+
+    class(*), pointer :: generic
+
+    generic=>iterator_get_next_generic(iterator)
+    if (associated(generic)) then
+      select type(vr=>generic)
+      type is (real(kind=DEFAULT_PRECISION))
+        iterator_get_next_real=vr
+      type is (real)
+        iterator_get_next_real=conv_single_real_to_double(vr)
+      type is (integer)  
+        iterator_get_next_real=conv_single_real_to_double(conv_to_real(vr))
+      end select
+    else
+      call log_log(LOG_ERROR, "Can not get next real in iterator as iterator has reached end of collection")
+    end if
+  end function iterator_get_next_real
+
+  !> Returns the next logical referenced by the iterator and advanced it,  or an error if it has reached the end of iteration
+  !! @param iterator The iterator of which to access and advance the next element
+  !! @returns The next logical
+  logical function iterator_get_next_logical(iterator)
+    type(iterator_type), intent(inout) :: iterator
+
+    class(*), pointer :: generic
+
+    generic=>iterator_get_next_generic(iterator)
+    if (associated(generic)) then
+      iterator_get_next_logical=conv_to_logical(generic, .false.)
+    else
+      call log_log(LOG_ERROR, "Can not get next logical in iterator as iterator has reached end of collection")
+    end if
+  end function iterator_get_next_logical
+
+  !> Returns the next mapentry referenced by the iterator and advanced it,  or an error if it has reached the end of iteration
+  !! or the next item was not a mapentry
+  !! @param iterator The iterator of which to access and advance the next element
+  !! @returns The next map entry
+  function iterator_get_next_mapentry(iterator)
+    type(iterator_type), intent(inout) :: iterator
+    type(mapentry_type) :: iterator_get_next_mapentry
+
+    class(*), pointer :: generic
+
+    generic=>iterator_get_next_generic(iterator)
+    if (associated(generic)) then
+      select type(generic)
+        type is (mapnode_type)
+          iterator_get_next_mapentry%key=generic%key
+          iterator_get_next_mapentry%value=>generic%value
+        class default
+          call log_log(LOG_ERROR, "Next item in iterator is not a map entry")
+      end select
+    else
+      call log_log(LOG_ERROR, "Can not get next map entry in iterator as iterator has reached end of collection")
+    end if
+  end function iterator_get_next_mapentry  
+  
+  !> Returns the next generic referenced by the iterator and advanced it, or null if it has reached the end of iteration
+  !! @param iterator The iterator of which to access and advance the next element
+  !! @returns The next generic or null if none is found
+  function iterator_get_next_generic(iterator)
+    type(iterator_type), intent(inout) :: iterator
+    class(*), pointer :: iterator_get_next_generic
+
+    integer :: i
+    
+    if (associated(iterator%next_item)) then
+      iterator_get_next_generic=>iterator%next_item%data
+      iterator%next_item=>iterator%next_item%next
+      if (.not. associated(iterator%next_item) .and. associated(iterator%hash_structure) .and. &
+           iterator%hash_ptr .le. size(iterator%hash_structure)) then
+        do i=iterator%hash_ptr, size(iterator%hash_structure)
+          if (iterator%hash_structure(i)%size .gt. 0) then
+            iterator%next_item=>iterator%hash_structure(i)%head
+            exit
+          end if          
+        end do
+        iterator%hash_ptr=i+1
+      end if      
+    else
+      iterator_get_next_generic=>null()
+    end if
+  end function iterator_get_next_generic
+
+  !> Retrieves the integer value from a map entry
+  !! @param mapentry_item The map entry to retrieve the integer value from
+  function mapentry_get_int(mapentry_item)
+    type(mapentry_type), intent(in) :: mapentry_item    
+    integer :: mapentry_get_int
+
+    class(*), pointer :: generic
+
+    generic=>mapentry_item%value
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get integer from map entry")
+    mapentry_get_int=conv_to_integer(generic, .false.)
+  end function mapentry_get_int
+
+  !> Retrieves the string value from a map entry
+  !! @param mapentry_item The map entry to retrieve the string value from
+  function mapentry_get_string(mapentry_item)
+    type(mapentry_type), intent(in) :: mapentry_item
+    character(len=STRING_LENGTH) :: mapentry_get_string
+
+    class(*), pointer :: generic
+
+    generic=>mapentry_item%value
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get string from map entry")
+    mapentry_get_string=conv_to_string(generic, .false., STRING_LENGTH)
+  end function mapentry_get_string
+
+  !> Retrieves the double precision real value from a map entry
+  !! @param mapentry_item The map entry to retrieve the double precision real value from (auto converts from single/ints)
+  function mapentry_get_real(mapentry_item)
+    type(mapentry_type), intent(in) :: mapentry_item
+    real(kind=DEFAULT_PRECISION) :: mapentry_get_real
+
+    class(*), pointer :: generic
+
+    generic=>mapentry_item%value
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get real from map entry")
+    select type(vr=>generic)
+    type is (real(kind=DEFAULT_PRECISION))
+      mapentry_get_real=vr
+    type is (real)
+      mapentry_get_real=conv_single_real_to_double(vr)
+    type is (integer)  
+      mapentry_get_real=conv_single_real_to_double(conv_to_real(vr))
+    end select
+  end function mapentry_get_real
+
+  !> Retrieves the logical value from a map entry
+  !! @param mapentry_item The map entry to retrieve the logical value from
+  function mapentry_get_logical(mapentry_item)
+    type(mapentry_type), intent(in) :: mapentry_item
+    logical :: mapentry_get_logical
+
+    class(*), pointer :: generic
+
+    generic=>mapentry_item%value
+    if (.not. associated(generic)) call log_log(LOG_ERROR, "Can not get logical from map entry")
+    mapentry_get_logical=conv_to_logical(generic, .false.)
+  end function mapentry_get_logical
+
+  !> Retrieves the generic value from a map entry
+  !! @param mapentry_item The map entry to retrieve the generic value from
+  function mapentry_get_generic(mapentry_item)
+    type(mapentry_type), intent(in) :: mapentry_item
+    class(*), pointer :: mapentry_get_generic
+    
+    mapentry_get_generic=>mapentry_item%value
+  end function mapentry_get_generic  
 end module collections_mod

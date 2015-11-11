@@ -15,7 +15,7 @@ module simplesetup_mod
 #endif
 
   integer :: x_size, y_size, z_size, dxx, dyy
-  real :: zztop
+  real(kind=DEFAULT_PRECISION) :: zztop
   logical :: enable_theta=.false.
   public simplesetup_get_descriptor
 contains
@@ -162,8 +162,6 @@ contains
 
   subroutine read_configuration(current_state)
     type(model_state_type), intent(inout), target :: current_state
-
-    integer :: type_of_surface_boundary_conditions=PRESCRIBED_SURFACE_FLUXES
 
     current_state%rhobous=options_get_real(current_state%options_database, "rhobous")
     current_state%thref0=options_get_real(current_state%options_database, "thref0")

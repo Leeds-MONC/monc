@@ -1,6 +1,6 @@
 !> The model state which represents the current state of a run
 module state_mod
-  use collections_mod, only : map_type
+  use collections_mod, only : hashmap_type
   use grids_mod, only : global_grid_type, local_grid_type
   use prognostics_mod, only : prognostic_field_type
   use communication_types_mod, only : halo_communication_type
@@ -40,7 +40,7 @@ module state_mod
     logical :: use_viscosity_and_diffusion=.true., &
        use_surface_boundary_conditions=.true., backscatter=.true.
 
-    type(map_type) :: options_database
+    type(hashmap_type) :: options_database
     type(global_grid_type) :: global_grid
     type(local_grid_type) :: local_grid
     type(parallel_state_type) :: parallel

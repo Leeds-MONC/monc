@@ -3,8 +3,10 @@
 module broadcast_inter_io_mod
   use datadefn_mod, only : DEFAULT_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : io_configuration_type, io_configuration_inter_communication_description
-  use collections_mod, only : hashmap_type, list_type, c_key_at, c_add, c_remove, c_free, c_get, c_put, c_size, c_value_at
-  use conversions_mod, only : conv_to_string, conv_to_integer, conv_to_generic
+  use collections_mod, only : hashmap_type, list_type, iterator_type, mapentry_type, c_add_string, c_remove, c_free, &
+       c_get_generic, c_get_string, c_put_generic, c_generic_at, c_get_iterator, c_has_next, c_next_mapentry, c_next_string, &
+       c_is_empty
+  use conversions_mod, only : conv_to_string
   use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_trylock, forthread_mutex_unlock, &
        forthread_mutex_destroy, forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_unlock, &
        forthread_rwlock_init, forthread_rwlock_destroy
@@ -19,7 +21,7 @@ module broadcast_inter_io_mod
   private
 #endif
 
-  integer, parameter :: MY_INTER_IO_TAG=2, PERFORM_CLEAN_EVERY=2
+  integer, parameter :: MY_INTER_IO_TAG=2, PERFORM_CLEAN_EVERY=200
   character(len=*), parameter :: MY_INTER_IO_NAME="bcastinterio"
 
   !< Type keeping track of broadcast statuses
@@ -59,14 +61,16 @@ contains
 
   !> Finalises the broadcast inter IO functionality
   subroutine finalise_broadcast_inter_io()
-    integer :: i, entries, ierr
+    integer :: ierr
     type(inter_io_broadcast), pointer :: broadcast_item
+    type(iterator_type) :: iterator
 
     if (initialised) then
-      entries=c_size(broadcast_statuses)
-      if (entries .gt. 0) then
-        do i=1, entries
-          broadcast_item=>get_broadcast_item_at_index(i, .true.)
+      call check_thread_status(forthread_rwlock_rdlock(broadcast_statuses_rwlock))
+      if (.not. c_is_empty(broadcast_statuses)) then
+        iterator=c_get_iterator(broadcast_statuses)
+        do while (c_has_next(iterator))
+          broadcast_item=>retrieve_broadcast_item(c_next_mapentry(iterator))
           call check_thread_status(forthread_mutex_lock(broadcast_item%mutex))
           if (allocated(broadcast_item%send_requests)) then
             call mpi_waitall(size(broadcast_item%send_requests), broadcast_item%send_requests, MPI_STATUSES_IGNORE, ierr)
@@ -77,6 +81,7 @@ contains
           call check_thread_status(forthread_mutex_destroy(broadcast_item%mutex))
         end do
       end if
+      call check_thread_status(forthread_rwlock_unlock(broadcast_statuses_rwlock))
       call check_thread_status(forthread_rwlock_destroy(broadcast_statuses_rwlock))
       call check_thread_status(forthread_mutex_destroy(inter_io_description_mutex))
       call check_thread_status(forthread_mutex_destroy(clean_progress_mutex))
@@ -92,20 +97,22 @@ contains
     type(io_configuration_type), intent(inout) :: io_configuration
 
     type(inter_io_broadcast), pointer :: broadcast_item
-    integer :: i, entries
+    type(iterator_type) :: iterator
 
-    entries=c_size(broadcast_statuses)
-    if (entries .gt. 0) then
-      do i=1, entries
-        broadcast_item=>get_broadcast_item_at_index(i, .true.)
+    check_broadcast_inter_io_for_completion=.true.
+    call check_thread_status(forthread_rwlock_rdlock(broadcast_statuses_rwlock))
+    if (.not. c_is_empty(broadcast_statuses)) then
+      iterator=c_get_iterator(broadcast_statuses)
+      do while (c_has_next(iterator))
+        broadcast_item=>retrieve_broadcast_item(c_next_mapentry(iterator))
         if (.not. broadcast_item%handled) then
           check_broadcast_inter_io_for_completion=.false.
-          return
-        end if        
+          exit
+        end if
       end do
     end if
-    check_broadcast_inter_io_for_completion=.true.
-  end function check_broadcast_inter_io_for_completion  
+    call check_thread_status(forthread_rwlock_unlock(broadcast_statuses_rwlock))
+  end function check_broadcast_inter_io_for_completion
 
   !> Handles receiving data from another IO server and processing this. If the request has already been registered (with a 
   !! callback) then this simply calls out. Otherwise it has to cache the data and awaits a thread calling the broadcast
@@ -210,19 +217,22 @@ contains
   !> Performs a clean of the broadcast progresses that no longer need to be stored
   subroutine clean_broadcast_progress()
     type(inter_io_broadcast), pointer :: specific_broadcast_item_at_index
-    integer :: completion_flag, ierr, entries, num_to_remove, i, have_lock
+    integer :: completion_flag, ierr, num_to_remove, have_lock
     character(len=STRING_LENGTH) :: entry_key
     type(list_type) :: entries_to_remove
     logical :: destroy_lock
+    type(iterator_type) :: iterator
+    type(mapentry_type) :: mapentry
     class(*), pointer :: generic
 
     have_lock=forthread_mutex_trylock(clean_progress_mutex)
     if (have_lock==0) then
       call check_thread_status(forthread_rwlock_rdlock(broadcast_statuses_rwlock))
-      entries=c_size(broadcast_statuses)
-      do i=1, entries
+      iterator=c_get_iterator(broadcast_statuses)
+      do while (c_has_next(iterator))
         destroy_lock=.false.
-        specific_broadcast_item_at_index=>get_broadcast_item_at_index(i, .false.)
+        mapentry=c_next_mapentry(iterator)
+        specific_broadcast_item_at_index=>retrieve_broadcast_item(mapentry)
         call check_thread_status(forthread_mutex_lock(specific_broadcast_item_at_index%mutex))
         if (allocated(specific_broadcast_item_at_index%send_requests)) then
           call mpi_testall(size(specific_broadcast_item_at_index%send_requests), specific_broadcast_item_at_index%send_requests, &
@@ -230,8 +240,7 @@ contains
           if (completion_flag == 1) then
             deallocate(specific_broadcast_item_at_index%send_requests)
             if (allocated(specific_broadcast_item_at_index%send_buffer)) deallocate(specific_broadcast_item_at_index%send_buffer)
-            entry_key=c_key_at(broadcast_statuses, i)
-            call c_add(entries_to_remove, conv_to_generic(entry_key, .true.))
+            call c_add_string(entries_to_remove, mapentry%key)
             destroy_lock=.true.
           end if
         else
@@ -239,8 +248,7 @@ contains
             if (allocated(specific_broadcast_item_at_index%cached_values)) then
               deallocate(specific_broadcast_item_at_index%cached_values)
             end if
-            entry_key=c_key_at(broadcast_statuses, i)
-            call c_add(entries_to_remove, conv_to_generic(entry_key, .true.))
+            call c_add_string(entries_to_remove, mapentry%key)
             destroy_lock=.true.
           end if
         end if
@@ -249,12 +257,12 @@ contains
       end do      
       call check_thread_status(forthread_rwlock_unlock(broadcast_statuses_rwlock))
 
-      num_to_remove=c_size(entries_to_remove)
-      if (num_to_remove .gt. 0) then
+      if (.not. c_is_empty(entries_to_remove)) then
         call check_thread_status(forthread_rwlock_wrlock(broadcast_statuses_rwlock))
-        do i=1, num_to_remove
-          entry_key=conv_to_string(c_get(entries_to_remove, i), .false., STRING_LENGTH)
-          generic=>c_get(broadcast_statuses, entry_key)
+        iterator=c_get_iterator(entries_to_remove)
+        do while (c_has_next(iterator))
+          entry_key=c_next_string(iterator)
+          generic=>c_get_generic(broadcast_statuses, entry_key)
           call c_remove(broadcast_statuses, entry_key)
           deallocate(generic)
         end do
@@ -292,7 +300,7 @@ contains
         find_or_add_broadcast_item%handled=.false.
         call check_thread_status(forthread_mutex_init(find_or_add_broadcast_item%mutex, -1))
         generic=>find_or_add_broadcast_item
-        call c_put(broadcast_statuses, trim(field_name)//"#"//conv_to_string(timestep), generic)
+        call c_put_generic(broadcast_statuses, trim(field_name)//"#"//conv_to_string(timestep), generic, .false.)
       end if
       call check_thread_status(forthread_rwlock_unlock(broadcast_statuses_rwlock))
     end if
@@ -312,7 +320,7 @@ contains
     class(*), pointer :: generic
 
     if (do_read_lock) call check_thread_status(forthread_rwlock_rdlock(broadcast_statuses_rwlock))
-    generic=>c_get(broadcast_statuses, trim(field_name)//"#"//conv_to_string(timestep))
+    generic=>c_get_generic(broadcast_statuses, trim(field_name)//"#"//conv_to_string(timestep))
     if (do_read_lock) call check_thread_status(forthread_rwlock_unlock(broadcast_statuses_rwlock))
 
     if (associated(generic)) then
@@ -325,29 +333,24 @@ contains
     end if    
   end function find_broadcast_item
 
-  !> Locates a broadcast item at a specific index or null if none exists
-  !! @param index The index to look up
-  !! @param do_read_lock Whether to issue a read lock or not
-  !! @returns The broadcast status at this index or null if none exists
-  function get_broadcast_item_at_index(index, do_read_lock)   
-    integer, intent(in) :: index
-    logical, intent(in) :: do_read_lock
-    type(inter_io_broadcast), pointer :: get_broadcast_item_at_index
+  !> Locates a broadcast item within a mapentry or null if none exists
+  !! @param mapentry The map entry to use for this retrieval
+  !! @returns The broadcast status or null if none exists
+  function retrieve_broadcast_item(mapentry)   
+    type(mapentry_type), intent(in) :: mapentry
+    type(inter_io_broadcast), pointer :: retrieve_broadcast_item
 
     class(*), pointer :: generic
 
-
-    if (do_read_lock) call check_thread_status(forthread_rwlock_rdlock(broadcast_statuses_rwlock))
-    generic=>c_value_at(broadcast_statuses, index)
-    if (do_read_lock) call check_thread_status(forthread_rwlock_unlock(broadcast_statuses_rwlock))
+    generic=>c_get_generic(mapentry)
 
     if (associated(generic)) then
       select type(generic)
         type is (inter_io_broadcast)
-          get_broadcast_item_at_index=>generic
+          retrieve_broadcast_item=>generic
       end select
     else
-      get_broadcast_item_at_index=>null()
+      retrieve_broadcast_item=>null()
     end if    
-  end function get_broadcast_item_at_index
+  end function retrieve_broadcast_item
 end module broadcast_inter_io_mod

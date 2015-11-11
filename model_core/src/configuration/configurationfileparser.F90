@@ -2,9 +2,9 @@
 !! then be interogated by components in the model
 module configuration_file_parser_mod
   use datadefn_mod, only : STRING_LENGTH
-  use collections_mod, only : map_type
+  use collections_mod, only : hashmap_type
   use conversions_mod, only : conv_to_logical, conv_to_integer, conv_to_real, &
-       conv_is_logical, conv_is_integer, conv_is_real
+       conv_is_logical, conv_is_integer, conv_is_real, conv_single_real_to_double
   use optionsdatabase_mod, only : options_add, options_get_string, options_has_key, &
        options_get_array_size, options_remove_key
   use logging_mod, only : LOG_ERROR, log_master_log
@@ -25,7 +25,7 @@ contains
   !! @param user_configuration_file Filename of the initial (user) configuration file to open
   !!        and process
   subroutine parse_configuration_file(options_database, user_configuration_file)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     character(*), intent(in) :: user_configuration_file
 
     call process_configuration_file(options_database, user_configuration_file, .true., &
@@ -40,14 +40,14 @@ contains
   !! @param file_id The ID to use in the open call
   recursive subroutine process_configuration_file(options_database, filename, is_user_file,&
        file_id)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     character(*), intent(in) :: filename
     integer, intent(in) :: file_id
     logical, intent(in) :: is_user_file
 
-    integer :: file_status, equals_posn, comma_posn
-    logical :: continue_parsing, found_global, mode
-    character(len=1000) :: raw_line, config_key, config_value
+    integer :: file_status
+    logical :: continue_parsing, found_global
+    character(len=1000) :: raw_line
 
     found_global=.false.
     continue_parsing=.true.
@@ -81,7 +81,7 @@ contains
   !! @param found_global Whether or not we have found the global configuration file
   recursive subroutine process_configuration_line(options_database, raw_line, is_user_file, &
        found_global)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     character(*), intent(in) :: raw_line
     logical, intent(in) :: is_user_file
     logical, intent(inout) :: found_global
@@ -114,7 +114,7 @@ contains
   !! @param options_database The options database
   !! @returns Whether the global configuration file was processed
   logical function parse_global_configuration_if_available(options_database)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
 
     if (options_has_key(options_database, "global_configuration")) then
       parse_global_configuration_if_available=.true.
@@ -173,7 +173,7 @@ contains
   !! @param config_value The configuration value to set
   !! @param mode Whether this is replace or additive
   subroutine handle_array_element_set(options_database, config_key, config_value, mode)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     character(*), intent(in) :: config_key, config_value
     integer, intent(in) :: mode
 
@@ -197,7 +197,7 @@ contains
   integer function get_key_array_index(config_key)
     character(*), intent(in) :: config_key
 
-    integer :: index, open_brace_index, close_brace_index
+    integer :: open_brace_index, close_brace_index
 
     open_brace_index=scan(config_key,"(")
     close_brace_index=scan(config_key,")")
@@ -236,7 +236,7 @@ contains
   !! @param config_value The values each separated by comma
   !! @mode The mode to use for storage, 1=insert, 2=additive
   subroutine process_configuration_array(options_database, config_key, config_value, mode)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     character(*), intent(in) :: config_key, config_value
     integer, intent(in) :: mode
 
@@ -278,7 +278,7 @@ contains
   !! @param config_value The configuration value
   !! @param array_index The index in the array to insert the element into
   subroutine store_configuration(options_database, config_key, config_value, array_index)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     character(*), intent(in) :: config_key, config_value
     integer, intent(in), optional :: array_index
 
@@ -314,10 +314,9 @@ contains
     else if (conv_is_real(parsed_value)) then
       if (present(array_index)) then
         call options_add(options_database, trim(config_key), &
-             conv_to_real(trim(parsed_value)), array_index=array_index)
+             conv_single_real_to_double(conv_to_real(trim(parsed_value))), array_index=array_index)
       else
-        call options_add(options_database, trim(config_key), &
-             conv_to_real(trim(parsed_value)))
+        call options_add(options_database, trim(config_key), conv_single_real_to_double(conv_to_real(trim(parsed_value))))
       end if
     else
       if (present(array_index)) then

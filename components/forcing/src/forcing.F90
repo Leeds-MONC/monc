@@ -220,10 +220,9 @@ contains
   subroutine init_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    integer :: nq_subs  ! The number of q fields apply subsidence term to
     integer :: nq_force ! The number of q fields apply large-scale time-independent forcing
     integer :: nzq      ! The number of input levels for subsidence/divergence profile
-    integer :: i,j,k,n  ! loop counters
+    integer :: i,n  ! loop counters
     integer :: iq       ! temporary q varible index
  
     ! Input arrays for subsidence profile
@@ -575,7 +574,6 @@ contains
 
     integer :: k
     real(kind=DEFAULT_PRECISION) :: dtm_scale
-    real(kind=DEFAULT_PRECISION) :: delta
 
     if (constant_forcing_type_theta==TENDENCY)then
       dtm_scale=current_state%dtm
@@ -606,8 +604,6 @@ contains
 
     integer :: n, k
     real(kind=DEFAULT_PRECISION) :: dtm_scale
-    real(kind=DEFAULT_PRECISION) :: delta
-
 
     do n=1,current_state%number_q_fields
       if (current_state%l_forceq(n))then
@@ -641,7 +637,6 @@ contains
 
     integer :: k
     real(kind=DEFAULT_PRECISION) :: dtm_scale
-    real(kind=DEFAULT_PRECISION) :: delta
 
     if (constant_forcing_type_u==TENDENCY)then
       dtm_scale=current_state%dtm
@@ -671,7 +666,6 @@ contains
 
     integer :: k
     real(kind=DEFAULT_PRECISION) :: dtm_scale
-    real(kind=DEFAULT_PRECISION) :: delta
 
     if (constant_forcing_type_v==TENDENCY)then
       dtm_scale=current_state%dtm

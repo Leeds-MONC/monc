@@ -3,13 +3,14 @@
 module configuration_parser_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use sax_xml_parser_mod, only : xml_parse
-  use conversions_mod, only : conv_to_string, conv_to_generic, conv_to_integer, conv_to_real
-  use collections_mod, only : hashmap_type, hashset_type, map_type, list_type, c_put, c_get, c_add, c_free, c_size
+  use conversions_mod, only : conv_to_string, conv_to_integer, conv_to_real
+  use collections_mod, only : hashmap_type, hashset_type, map_type, list_type, mapentry_type, c_get_generic, c_get_integer, &
+       c_free, c_size, c_put_integer, c_put_string, c_add_generic, c_add_string
   use conversions_mod, only : conv_to_integer
   use logging_mod, only : LOG_WARN, LOG_ERROR, log_log
   use optionsdatabase_mod, only : options_has_key, options_get_logical, options_get_integer, options_get_string, options_get_real
   use io_server_client_mod, only : ARRAY_FIELD_TYPE, SCALAR_FIELD_TYPE, MAP_FIELD_TYPE, INTEGER_DATA_TYPE, BOOLEAN_DATA_TYPE, &
-       STRING_DATA_TYPE, FLOAT_DATA_TYPE, DOUBLE_DATA_TYPE, definition_description_type, field_description_type       
+       STRING_DATA_TYPE, FLOAT_DATA_TYPE, DOUBLE_DATA_TYPE, definition_description_type, field_description_type
   implicit none
 
 #ifndef TEST_MODE
@@ -96,14 +97,18 @@ module configuration_parser_mod
   type io_configuration_type
      integer :: number_of_data_definitions, number_of_diagnostics, io_communicator, number_of_moncs, &
           number_of_io_servers, my_io_rank, active_moncs, number_inter_io_communications, number_of_threads, number_of_groups, &
-          number_of_writers, number_of_distinct_data_fields, number_of_global_moncs
+          number_of_writers, number_of_distinct_data_fields, number_of_global_moncs, general_info_mutex
      type(io_configuration_data_definition_type), dimension(:), allocatable :: data_definitions
      type(io_configuration_diagnostic_field_type), dimension(:), allocatable :: diagnostics
      type(io_configuration_group_type), dimension(:), allocatable :: groups
      type(io_configuration_file_writer_type), dimension(:), allocatable :: file_writers
      type(io_configuration_registered_monc_type), dimension(:), allocatable :: registered_moncs
      type(io_configuration_inter_communication_description), dimension(:), allocatable :: inter_io_communications
-     type(map_type) :: monc_to_index, dimension_sizing, options_database
+     type(map_type) :: monc_to_index, dimension_sizing
+     type(hashmap_type) :: options_database
+     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: zn_field
+     type(list_type) :: q_field_names
+     logical :: general_info_set
   end type io_configuration_type
 
   abstract interface
@@ -121,7 +126,7 @@ module configuration_parser_mod
        current_trigger_index, current_building_group, current_building_file_writer
   type(io_configuration_type), save :: building_config !< IO configuration that is build built up from XML parsing
 
-  type(map_type) :: options_database
+  type(hashmap_type) :: options_database
   type(hashset_type) :: data_field_names
 
   public EQ_OPERATOR_TYPE, LT_OPERATOR_TYPE, GT_OPERATOR_TYPE, LTE_OPERATOR_TYPE, GTE_OPERATOR_TYPE, ADD_OPERATOR_TYPE, &
@@ -132,19 +137,17 @@ module configuration_parser_mod
        io_configuration_misc_item_type, io_configuration_inter_communication_description, &
        extend_registered_moncs_array, retrieve_data_definition, retrieve_monc_definition, extend_inter_io_comm_array, &
        build_definition_description_type_from_configuration, build_field_description_type_from_configuration, &
-       get_number_field_dimensions, get_data_value_by_field_name, get_monc_location, get_diagnostic_field_configuration, &
-       get_prognostic_field_configuration
+       get_number_field_dimensions, get_data_value_by_field_name, get_data_value_from_map_entry, get_monc_location, &
+       get_diagnostic_field_configuration, get_prognostic_field_configuration
 contains
 
   !> This will parse an XML string into the IO configuration
   !! @param raw_configuration The raw (unparsed) XML string to process
   !! @param parsed_configuration Configuration determining the layout and handling of data
   subroutine configuration_parse(provided_options_database, raw_configuration, parsed_configuration)
-    type(map_type), intent(inout) :: provided_options_database
+    type(hashmap_type), intent(inout) :: provided_options_database
     character, dimension(:), intent(in) :: raw_configuration
     type(io_configuration_type), intent(out) :: parsed_configuration
-
-    integer :: i
 
     options_database=provided_options_database
 
@@ -178,23 +181,22 @@ contains
     allocate(building_config%registered_moncs(MONC_SIZE_STRIDE))
     parsed_configuration=building_config
     parsed_configuration%number_inter_io_communications=0
+    parsed_configuration%general_info_set=.false.    
     call c_free(data_field_names)
   end subroutine configuration_parse
 
   subroutine add_in_dimensions(provided_options_database)
-    type(map_type), intent(inout) :: provided_options_database
+    type(hashmap_type), intent(inout) :: provided_options_database
 
     integer :: dim_size
 
-    dim_size=options_get_integer(provided_options_database, "x_size")
-    call c_put(building_config%dimension_sizing, "x", conv_to_generic(dim_size, .true.))
-    dim_size=options_get_integer(provided_options_database, "y_size")
-    call c_put(building_config%dimension_sizing, "y", conv_to_generic(dim_size, .true.))
+    call c_put_integer(building_config%dimension_sizing, "x", options_get_integer(provided_options_database, "x_size"))
+    call c_put_integer(building_config%dimension_sizing, "y", options_get_integer(provided_options_database, "y_size"))
     dim_size=options_get_integer(provided_options_database, "z_size")
-    call c_put(building_config%dimension_sizing, "z", conv_to_generic(dim_size, .true.))
-    call c_put(building_config%dimension_sizing, "zn", conv_to_generic(dim_size, .true.))
-    dim_size=options_get_integer(provided_options_database, "number_q_fields")    
-    call c_put(building_config%dimension_sizing, "qfields", conv_to_generic(dim_size, .true.))
+    call c_put_integer(building_config%dimension_sizing, "z", dim_size)
+    call c_put_integer(building_config%dimension_sizing, "zn", dim_size)
+    call c_put_integer(building_config%dimension_sizing, "qfields", &
+         options_get_integer(provided_options_database, "number_q_fields"))
   end subroutine add_in_dimensions  
   
   !> XML element start (opening) call back. This handles most of the configuration parsing
@@ -209,41 +211,41 @@ contains
 
     if (inside_data_definition) then
       if (element_name == "field") then
-        call process_xml_into_field_description(element_name, number_of_attributes, attribute_names, attribute_values)
+        call process_xml_into_field_description(attribute_names, attribute_values)
       end if
     else if (inside_handling_definition) then
       if (inside_diagnostic_config) then
-        call add_misc_member_to_diagnostic(element_name, number_of_attributes, attribute_names, attribute_values)
+        call add_misc_member_to_diagnostic(element_name, attribute_names, attribute_values)
       else
         if (element_name == "diagnostic") then
-          call define_diagnostic(element_name, number_of_attributes, attribute_names, attribute_values)
+          call define_diagnostic(attribute_names, attribute_values)
           inside_diagnostic_config=.true.        
         end if
       end if
     else if (inside_server_config) then
       if (element_name == "thread_pool") then
-        call handle_thread_pool_configuration(number_of_attributes, attribute_names, attribute_values)
+        call handle_thread_pool_configuration(attribute_names, attribute_values)
       end if
     else if (inside_group_config) then
-      call add_diagnostic_field_to_group(element_name, number_of_attributes, attribute_names, attribute_values)
+      call add_diagnostic_field_to_group(element_name, attribute_names, attribute_values)
     else if (inside_generic_writing) then
       if (inside_specific_file_writing) then
         if (element_name == "include") then
-          call add_include_to_file_writer(element_name, number_of_attributes, attribute_names, attribute_values)
+          call add_include_to_file_writer(attribute_names, attribute_values)
         end if
       else if (element_name == "file") then
         inside_specific_file_writing=.true.
-        call define_file_writer(element_name, number_of_attributes, attribute_names, attribute_values)
+        call define_file_writer(attribute_names, attribute_values)
       end if
     else if (element_name == "data-writing") then
       inside_generic_writing=.true.
     else if (element_name == "data-definition") then
       inside_data_definition=.true.
-      call handle_new_data_definition(number_of_attributes, attribute_names, attribute_values)
+      call handle_new_data_definition(attribute_names, attribute_values)
     else if (element_name == "data-handling") then
       inside_handling_definition=.true.
     else if (element_name == "group") then
-      call define_group(element_name, number_of_attributes, attribute_names, attribute_values)
+      call define_group(attribute_names, attribute_values)
       inside_group_config=.true.
     else if (element_name == "server-configuration") then
       inside_server_config=.true.
@@ -284,9 +286,8 @@ contains
     end if    
   end subroutine end_element_callback
 
-  subroutine handle_thread_pool_configuration(number_of_attributes, attribute_names, attribute_values)
+  subroutine handle_thread_pool_configuration(attribute_names, attribute_values)
     character(len=*), dimension(:), intent(in) :: attribute_names, attribute_values
-    integer, intent(in) :: number_of_attributes
 
     integer :: number_index
 
@@ -301,9 +302,8 @@ contains
   !! @param number_of_attributes Number of XML attributes associated with this element
   !! @param attribute_names Each attribute name (same location as attribute value)
   !! @param attribute_values Each attribute value (same location as attribute name)
-  subroutine handle_new_data_definition(number_of_attributes, attribute_names, attribute_values)
+  subroutine handle_new_data_definition(attribute_names, attribute_values)
     character(len=*), dimension(:), intent(in) :: attribute_names, attribute_values
-    integer, intent(in) :: number_of_attributes
 
     integer :: name_index, frequency_index
 
@@ -335,39 +335,36 @@ contains
     current_building_field=3
   end subroutine handle_new_data_definition
 
-  subroutine add_misc_member_to_diagnostic(element_name, number_of_attributes, attribute_names, attribute_values)
+  subroutine add_misc_member_to_diagnostic(element_name, attribute_names, attribute_values)
     character(len=*), intent(in) :: element_name       
     character(len=*), dimension(:), intent(in) :: attribute_names, attribute_values
-    integer, intent(in) :: number_of_attributes
 
     type(io_configuration_misc_item_type), pointer :: misc_member
     class(*), pointer :: generic
-    integer :: i, name_index
+    integer :: i
 
     allocate(misc_member)
 
     misc_member%type=retrieve_string_value(element_name, STRING_DATA_TYPE)
     do i=1, size(attribute_names)
-      generic=>conv_to_generic(retrieve_string_value(attribute_values(i), STRING_DATA_TYPE), .true.)
-      call c_put(misc_member%embellishments, retrieve_string_value(attribute_names(i), STRING_DATA_TYPE), generic)
+      call c_put_string(misc_member%embellishments, retrieve_string_value(attribute_names(i), STRING_DATA_TYPE), &
+           retrieve_string_value(attribute_values(i), STRING_DATA_TYPE))
     end do
     generic=>misc_member
-    call c_add(building_config%diagnostics(current_building_diagnostic)%members, generic)
+    call c_add_generic(building_config%diagnostics(current_building_diagnostic)%members, generic, .false.)
   end subroutine add_misc_member_to_diagnostic
 
-  subroutine add_diagnostic_field_to_group(element_name, number_of_attributes, attribute_names, attribute_values)
+  subroutine add_diagnostic_field_to_group(element_name, attribute_names, attribute_values)
     character(len=*), intent(in) :: element_name       
     character(len=*), dimension(:), intent(in) :: attribute_names, attribute_values
-    integer, intent(in) :: number_of_attributes
 
     integer :: field_index
-    class(*), pointer :: generic
 
     if (element_name == "member") then
       field_index=get_field_index_from_name(attribute_names, "name")
       if (field_index .gt. 0) then
-        generic=>conv_to_generic(retrieve_string_value(attribute_values(field_index), STRING_DATA_TYPE), .true.)
-        call c_add(building_config%groups(current_building_group)%members, generic)
+        call c_add_string(building_config%groups(current_building_group)%members, &
+             retrieve_string_value(attribute_values(field_index), STRING_DATA_TYPE))
       else
         call log_log(LOG_ERROR, "A diagnostics group member requires a name")
       end if
@@ -376,10 +373,8 @@ contains
     end if
   end subroutine add_diagnostic_field_to_group  
 
-  subroutine define_group(element_name, number_of_attributes, attribute_names, attribute_values)
-    character(len=*), intent(in) :: element_name       
+  subroutine define_group(attribute_names, attribute_values)      
     character(len=*), dimension(:), intent(in) :: attribute_names, attribute_values
-    integer, intent(in) :: number_of_attributes
    
     integer :: field_index
 
@@ -393,10 +388,8 @@ contains
     end if
   end subroutine define_group
 
-  subroutine add_include_to_file_writer(element_name, number_of_attributes, attribute_names, attribute_values)
-    character(len=*), intent(in) :: element_name       
+  subroutine add_include_to_file_writer(attribute_names, attribute_values)
     character(len=*), dimension(:), intent(in) :: attribute_names, attribute_values
-    integer, intent(in) :: number_of_attributes
 
      character(len=STRING_LENGTH) :: time_manip
      integer :: field_index, number_of_contents
@@ -454,10 +447,8 @@ contains
           building_config%file_writers(current_building_file_writer)%number_of_contents+1
   end subroutine add_include_to_file_writer  
 
-  subroutine define_file_writer(element_name, number_of_attributes, attribute_names, attribute_values)
-    character(len=*), intent(in) :: element_name       
+  subroutine define_file_writer(attribute_names, attribute_values)     
     character(len=*), dimension(:), intent(in) :: attribute_names, attribute_values
-    integer, intent(in) :: number_of_attributes
 
     integer :: field_index
 
@@ -488,12 +479,10 @@ contains
   !! @param number_of_attributes Number of XML attributes associated with this element
   !! @param attribute_names Each attribute name (same location as attribute value)
   !! @param attribute_values Each attribute value (same location as attribute name)
-  subroutine define_diagnostic(element_name, number_of_attributes, attribute_names, attribute_values)
-    character(len=*), intent(in) :: element_name       
+  subroutine define_diagnostic(attribute_names, attribute_values)   
     character(len=*), dimension(:), intent(in) :: attribute_names, attribute_values
-    integer, intent(in) :: number_of_attributes
    
-    integer :: field_index, type_field_index, data_field_index, comma_index, sizing_index, cp
+    integer :: field_index, type_field_index, data_field_index
     character(len=STRING_LENGTH) :: field_type_str, field_data_type_str, size_definitions
 
     if (current_building_diagnostic .gt. size(building_config%diagnostics)) call extend_diagnostics_array()
@@ -579,10 +568,8 @@ contains
   !! @param number_of_attributes Number of XML attributes associated with this element
   !! @param attribute_names Each attribute name (same location as attribute value)
   !! @param attribute_values Each attribute value (same location as attribute name)
-  subroutine process_xml_into_field_description(element_name, number_of_attributes, attribute_names, attribute_values)
-    character(len=*), intent(in) :: element_name       
+  subroutine process_xml_into_field_description(attribute_names, attribute_values)    
     character(len=*), dimension(:), intent(in) :: attribute_names, attribute_values
-    integer, intent(in) :: number_of_attributes
 
     character(len=STRING_LENGTH) :: field_type_str, field_data_type_str, sizing_defn_str
     integer :: name_field_index, type_field_index, data_field_index, field_index, optional_field_index, idx
@@ -601,7 +588,7 @@ contains
       building_config%data_definitions(current_building_definition)%fields(current_building_field)%name=&
            retrieve_string_value(attribute_values(name_field_index), STRING_DATA_TYPE)
 
-      call c_add(data_field_names, &
+      call c_add_string(data_field_names, &
            building_config%data_definitions(current_building_definition)%fields(current_building_field)%name)
 
       field_type_str=retrieve_string_value(attribute_values(type_field_index), STRING_DATA_TYPE)
@@ -886,7 +873,7 @@ contains
     class(*), pointer :: generic
     integer :: location
 
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
+    generic=>c_get_generic(io_configuration%monc_to_index, conv_to_string(source))
     if (associated(generic)) then
       location=conv_to_integer(generic, .false.)
       monc_defn=io_configuration%registered_moncs(location)
@@ -969,13 +956,9 @@ contains
     integer, intent(in) :: source, data_id
 
     integer :: monc_location
-    class(*), pointer :: generic
 
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    monc_location=conv_to_integer(generic, .false.)
-
-    generic=>c_get(io_configuration%registered_moncs(monc_location)%dimensions(data_id), field_name)
-    get_number_field_dimensions=conv_to_integer(generic, .false.)
+    monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
+    get_number_field_dimensions=c_get_integer(io_configuration%registered_moncs(monc_location)%dimensions(data_id), field_name)
   end function get_number_field_dimensions
 
   !> Retrieves the data value (wrapper) by field name or null if no entry was found in the provided collection
@@ -989,7 +972,7 @@ contains
 
     class(*), pointer :: generic
 
-    generic=>c_get(collection, field_name)
+    generic=>c_get_generic(collection, field_name)
     if (associated(generic)) then
       select type(generic)
         type is (data_values_type)
@@ -1000,23 +983,47 @@ contains
     end if
   end function get_data_value_from_hashmap_by_field_name  
 
-    function get_data_value_from_map_by_field_name(collection, field_name)
+  !> Retrieves the data value (wrapper) by field name or null if no entry was found in the provided collection
+  !! @param collection A map to search for this data value in
+  !! @param field_name The field name to search for
+  !! @returns The corresponding data value or null if none is found
+  function get_data_value_from_map_by_field_name(collection, field_name)
     type(map_type), intent(inout) :: collection
     character(len=*), intent(in) :: field_name
     type(data_values_type), pointer :: get_data_value_from_map_by_field_name
 
     class(*), pointer :: generic
 
-    generic=>c_get(collection, field_name)
+    generic=>c_get_generic(collection, field_name)
     if (associated(generic)) then
       select type(generic)
-        type is (data_values_type)
-          get_data_value_from_map_by_field_name=>generic
+      type is (data_values_type)
+        get_data_value_from_map_by_field_name=>generic
       end select
     else
       get_data_value_from_map_by_field_name=>null()
     end if
   end function get_data_value_from_map_by_field_name
+
+  !> Retrieves the data value (wrapper) by field name or null if no entry was found in the provided map entry
+  !! @param map_entry A map entry to convert into data wrapper
+  !! @returns The corresponding data value or null if none is found
+  function get_data_value_from_map_entry(map_entry)
+    type(mapentry_type), intent(in) :: map_entry
+    type(data_values_type), pointer :: get_data_value_from_map_entry
+
+    class(*), pointer :: generic
+
+    generic=>c_get_generic(map_entry)
+    if (associated(generic)) then
+      select type(generic)
+      type is (data_values_type)
+        get_data_value_from_map_entry=>generic
+      end select
+    else
+      get_data_value_from_map_entry=>null()
+    end if
+  end function get_data_value_from_map_entry
 
   !> A helper function to get the location of a MONC's configuration in the IO data structure
   !! @param source Source index of the MONC process
@@ -1025,10 +1032,7 @@ contains
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source
 
-    class(*), pointer :: generic
-
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    get_monc_location=conv_to_integer(generic, .false.)
+    get_monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
   end function get_monc_location
 
   !> Retrieves the diagnostics field configuration corresponding to a specific field name and returns whether one was found or not

@@ -12,12 +12,13 @@ module io_server_mod
   use diagnostic_federator_mod, only : initialise_diagnostic_federator, finalise_diagnostic_federator, &
        check_diagnostic_federator_for_completion, pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available
   use writer_federator_mod, only : initialise_writer_federator, finalise_writer_federator, check_writer_for_trigger, &
-       inform_writer_federator_fields_present, inform_writer_federator_time_point
+       inform_writer_federator_fields_present, inform_writer_federator_time_point, provide_q_field_names_to_writer_federator
   use writer_field_manager_mod, only : initialise_writer_field_manager, finalise_writer_field_manager, &
        provide_monc_data_to_writer_federator
-  use collections_mod, only : hashset_type, hashmap_type, map_type, c_get, c_put, c_is_empty, c_remove, c_add, &
-       c_size, c_value_at, c_free
-  use conversions_mod, only : conv_to_integer, conv_to_generic, conv_to_string
+  use collections_mod, only : hashset_type, hashmap_type, map_type, iterator_type, c_get_integer, c_put_integer, c_is_empty, &
+       c_remove, c_add_string, c_integer_at, c_free, c_get_iterator, c_has_next, c_next_mapentry
+  use conversions_mod, only : conv_to_string
+  use string_utils_mod, only : replace_character
   use io_server_client_mod, only : REGISTER_COMMAND, DEREGISTER_COMMAND, INTER_IO_COMMUNICATION, DATA_COMMAND_START, DATA_TAG, &
        LOCAL_SIZES_KEY, LOCAL_START_POINTS_KEY, LOCAL_END_POINTS_KEY, SCALAR_FIELD_TYPE, data_sizing_description_type, &
        definition_description_type, field_description_type, build_mpi_type_data_sizing_description, &
@@ -29,7 +30,7 @@ module io_server_mod
        threadpool_deactivate, threadpool_is_idle
   use global_callback_inter_io_mod, only : perform_global_callback
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, initialise_logging
-  use mpi, only : MPI_COMM_WORLD, MPI_STATUSES_IGNORE
+  use mpi, only : MPI_COMM_WORLD, MPI_STATUSES_IGNORE, MPI_BYTE
   implicit none
 
 #ifndef TEST_MODE
@@ -58,19 +59,19 @@ contains
   !! @param io_xml_configuration Textual XML configuration that is used to set up the IO server
   subroutine io_server_run(options_database, io_communicator_arg, io_xml_configuration, &
        provided_threading, total_global_processes)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     integer, intent(in) :: io_communicator_arg, provided_threading, total_global_processes
     character, dimension(:), allocatable, intent(inout) :: io_xml_configuration
 
-    integer :: recv_type, i, command, source, ierr
+    integer :: command, source
     character, dimension(:), allocatable :: data_buffer
-    logical :: message_waiting
     type(hashmap_type) :: diagnostic_generation_frequency
 
     call configuration_parse(options_database, io_xml_configuration, io_configuration)
     deallocate(io_xml_configuration)
     call threadpool_init(io_configuration, provided_threading)
     call check_thread_status(forthread_rwlock_init(monc_registration_lock, -1))
+    call check_thread_status(forthread_mutex_init(io_configuration%general_info_mutex, -1))
     initialised_present_data=.false.
     contine_poll_messages=.true.
     contine_poll_interio_messages=.true.
@@ -197,15 +198,15 @@ contains
   !! deallocate dynamically in a threaded environment without excessive ordering and locking in case some data processing
   !! is queued or in progress
   subroutine free_individual_registered_monc_aspects()
-    class(*), pointer :: generic
-    integer :: i, j, specific_monc_data_type
-    
+    integer :: i, specific_monc_data_type
+    type(iterator_type) :: types_iterator
+
     do i=1, size(io_configuration%registered_moncs)
-      do j=1, c_size(io_configuration%registered_moncs(i)%registered_monc_types)
-        generic=>c_value_at(io_configuration%registered_moncs(i)%registered_monc_types, j)
-        specific_monc_data_type=conv_to_integer(generic, .false.)
+      types_iterator=c_get_iterator(io_configuration%registered_moncs(i)%registered_monc_types)
+      do while (c_has_next(types_iterator))
+        specific_monc_data_type=c_get_integer(c_next_mapentry(types_iterator))
         call free_mpi_type(specific_monc_data_type)
-      end do
+      end do      
       if (allocated(io_configuration%registered_moncs(i)%field_start_locations)) &
            deallocate(io_configuration%registered_moncs(i)%field_start_locations)
       if (allocated(io_configuration%registered_moncs(i)%field_end_locations)) &
@@ -249,7 +250,6 @@ contains
     integer :: specific_monc_data_type, specific_monc_buffer_size, recv_count, monc_location, data_set, &
          source, matched_datadefn_index
     character, dimension(:), allocatable :: data_buffer
-    class(*), pointer :: generic
 
     source=arguments(1)
     data_set=arguments(2)
@@ -262,10 +262,10 @@ contains
          io_configuration%registered_moncs(monc_location)%active_threads+1
     call check_thread_status(forthread_mutex_unlock(io_configuration%registered_moncs(monc_location)%active_mutex))
 
-    generic=>c_get(io_configuration%registered_moncs(monc_location)%registered_monc_types, conv_to_string(data_set))
-    specific_monc_data_type=conv_to_integer(generic, .false.)
-    generic=>c_get(io_configuration%registered_moncs(monc_location)%registered_monc_buffer_sizes, conv_to_string(data_set))
-    specific_monc_buffer_size=conv_to_integer(generic, .false.)
+    specific_monc_data_type=c_get_integer(io_configuration%registered_moncs(monc_location)%registered_monc_types, &
+         conv_to_string(data_set))
+    specific_monc_buffer_size=c_get_integer(io_configuration%registered_moncs(monc_location)%registered_monc_buffer_sizes, &
+         conv_to_string(data_set))
 
     allocate(data_buffer(specific_monc_buffer_size))      
     recv_count=data_receive(specific_monc_data_type, 1, source, dump_data=data_buffer, data_dump_id=data_set)
@@ -300,8 +300,7 @@ contains
     integer, dimension(:), intent(in) :: arguments
     character, dimension(:), intent(inout), optional :: data_buffer
 
-    class(*), pointer :: generic
-    integer :: configuration_send_request(2), ierr, number_data_definitions, this_monc_index, source, suspension_mutex
+    integer :: configuration_send_request(2), ierr, number_data_definitions, this_monc_index, source
 
     source=arguments(1)
     configuration_send_request=send_configuration_to_registree(source)
@@ -318,8 +317,7 @@ contains
     io_configuration%active_moncs=io_configuration%active_moncs+1
     call check_thread_status(forthread_rwlock_unlock(monc_registration_lock))
 
-    generic=>conv_to_generic(this_monc_index, .true.)
-    call c_put(io_configuration%monc_to_index, conv_to_string(source), generic)
+    call c_put_integer(io_configuration%monc_to_index, conv_to_string(source), this_monc_index)
 
     call check_thread_status(forthread_mutex_init(io_configuration%registered_moncs(this_monc_index)%active_mutex, -1))
     call check_thread_status(forthread_cond_init(&
@@ -333,7 +331,7 @@ contains
 
     ! Wait for configuration to have been sent to registree
     call mpi_waitall(2, configuration_send_request, MPI_STATUSES_IGNORE, ierr) 
-    call init_data_definition(source, io_configuration%registered_moncs(this_monc_index))
+    call init_data_definition(source, io_configuration%registered_moncs(this_monc_index))    
   end subroutine handle_monc_registration
 
   !> Sends the data and field descriptions to the MONC process that just registered with the IO server
@@ -364,11 +362,8 @@ contains
     integer, intent(in) :: source
     type(io_configuration_registered_monc_type), intent(inout) :: monc_defn
 
-    type(io_configuration_data_definition_type) :: matched_datadefn
     type(data_sizing_description_type) :: data_description(io_configuration%number_of_distinct_data_fields+3)
     integer :: created_mpi_type, data_size, recv_count, i
-    class(*), pointer :: generic
-    logical :: data_defn_found
     
     recv_count=data_receive(mpi_type_data_sizing_description, io_configuration%number_of_distinct_data_fields+3, &
          source, description_data=data_description)
@@ -378,10 +373,8 @@ contains
       created_mpi_type=build_mpi_datatype(io_configuration%data_definitions(i), data_description, data_size, &
            monc_defn%field_start_locations(i), monc_defn%field_end_locations(i), monc_defn%dimensions(i))            
 
-      generic=>conv_to_generic(created_mpi_type, .true.)
-      call c_put(monc_defn%registered_monc_types, conv_to_string(i), generic)
-      generic=>conv_to_generic(data_size, .true.)
-      call c_put(monc_defn%registered_monc_buffer_sizes, conv_to_string(i), generic)
+      call c_put_integer(monc_defn%registered_monc_types, conv_to_string(i), created_mpi_type)
+      call c_put_integer(monc_defn%registered_monc_buffer_sizes, conv_to_string(i), data_size)
 
       monc_defn%definition_names(i)=io_configuration%data_definitions(i)%name
     end do
@@ -389,7 +382,50 @@ contains
       initialised_present_data=.true.
       call register_present_field_names_to_federators(data_description, recv_count)
     end if
+    call get_monc_information_data(source)
   end subroutine init_data_definition
+
+  !> Retrieves MONC information data, this is sent by MONC (and received) regardless, but only actioned if the data has not
+  !! already been set
+  !! @param source MONC source process
+  subroutine get_monc_information_data(source)
+    integer, intent(in) :: source
+
+    character, dimension(:), allocatable :: buffer
+    character(len=STRING_LENGTH) :: q_field_name
+    integer :: buffer_size, z_size, num_q_fields, n, current_point, recv_count
+    type(data_sizing_description_type) :: field_description
+    real(kind=DEFAULT_PRECISION) :: dreal
+    logical :: field_found
+
+
+    z_size=c_get_integer(io_configuration%dimension_sizing, "z")
+    num_q_fields=c_get_integer(io_configuration%dimension_sizing, "qfields")
+
+    buffer_size=(kind(dreal)*z_size) + (STRING_LENGTH * num_q_fields)
+    allocate(buffer(buffer_size))
+    recv_count=data_receive(MPI_BYTE, buffer_size, source, buffer)
+    if (.not. io_configuration%general_info_set) then
+      call check_thread_status(forthread_mutex_lock(io_configuration%general_info_mutex))
+      if (.not. io_configuration%general_info_set) then
+        io_configuration%general_info_set=.true.
+        allocate(io_configuration%zn_field(z_size))
+        io_configuration%zn_field=transfer(buffer(1:kind(dreal)*z_size), io_configuration%zn_field)
+        current_point=(kind(dreal)*z_size)
+        if (num_q_fields .gt. 0) then
+          do n=1, num_q_fields
+            q_field_name=transfer(buffer(current_point+1:current_point+STRING_LENGTH), q_field_name)
+            current_point=current_point+STRING_LENGTH
+            call replace_character(q_field_name, " ", "_")
+            call c_add_string(io_configuration%q_field_names, q_field_name)
+          end do
+        end if
+      end if
+      call provide_q_field_names_to_writer_federator(io_configuration%q_field_names)
+      call check_thread_status(forthread_mutex_unlock(io_configuration%general_info_mutex))
+    end if
+    deallocate(buffer)
+  end subroutine get_monc_information_data  
 
   !> Registers with the writer federator the set of fields (prognostic and diagnostic) that are available, this is based on
   !! the array/optional fields present from MONC and the non-optional scalars. This is quite an expensive operation, so only
@@ -404,21 +440,21 @@ contains
     integer :: i, j
 
     do i=1, recv_count
-      call c_add(present_field_names, data_description(i)%field_name)
+      call c_add_string(present_field_names, data_description(i)%field_name)
     end do
     do i=1, io_configuration%number_of_data_definitions
       do j=1, io_configuration%data_definitions(i)%number_of_data_fields
         if (io_configuration%data_definitions(i)%fields(j)%field_type == SCALAR_FIELD_TYPE .and. .not. &
              io_configuration%data_definitions(i)%fields(j)%optional) then
-          call c_add(present_field_names, io_configuration%data_definitions(i)%fields(j)%name)
+          call c_add_string(present_field_names, io_configuration%data_definitions(i)%fields(j)%name)
         end if        
       end do      
     end do
-    call c_add(present_field_names, "time")
-    call c_add(present_field_names, "timestep")
-    call inform_writer_federator_fields_present(present_field_names)
+    call c_add_string(present_field_names, "time")
+    call c_add_string(present_field_names, "timestep")
+    call inform_writer_federator_fields_present(io_configuration, present_field_names)
     diagnostics_field_names=determine_diagnostics_fields_available(present_field_names)
-    call inform_writer_federator_fields_present(diagnostics_field_names)
+    call inform_writer_federator_fields_present(io_configuration, diagnostics_field_names)
     call c_free(present_field_names)
     call c_free(diagnostics_field_names)
   end subroutine register_present_field_names_to_federators  
@@ -449,5 +485,5 @@ contains
     do i=1,3
       monc_defn%local_dim_ends(i)=field_description%dim_sizes(i)
     end do
-  end subroutine handle_monc_dimension_information  
+  end subroutine handle_monc_dimension_information
 end module io_server_mod

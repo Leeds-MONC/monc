@@ -2,8 +2,7 @@ module reductionlocation_operator_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : io_configuration_type, data_values_type, get_data_value_by_field_name
   use data_utils_mod, only : get_action_attribute_string
-  use collections_mod, only : hashmap_type, list_type, map_type, c_get, c_add
-  use conversions_mod, only : conv_to_generic, generic_to_double_real
+  use collections_mod, only : hashmap_type, list_type, map_type, c_add_string  
   implicit none
 
 #ifndef TEST_MODE
@@ -48,9 +47,9 @@ contains
 
     call extract_tripplet_variables(get_action_attribute_string(action_attributes, "input"), location_local, val, val_local)
 
-    call c_add(reductionlocation_operator_get_required_fields, conv_to_generic(location_local, .true.))
-    call c_add(reductionlocation_operator_get_required_fields, conv_to_generic(val, .true.))
-    call c_add(reductionlocation_operator_get_required_fields, conv_to_generic(val_local, .true.))
+    call c_add_string(reductionlocation_operator_get_required_fields, location_local)
+    call c_add_string(reductionlocation_operator_get_required_fields, val)
+    call c_add_string(reductionlocation_operator_get_required_fields, val_local)
   end function reductionlocation_operator_get_required_fields
 
   subroutine extract_tripplet_variables(field_str, location_local, val, val_local)

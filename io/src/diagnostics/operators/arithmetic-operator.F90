@@ -7,9 +7,9 @@ module arithmetic_operator_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : io_configuration_type, data_values_type, get_data_value_by_field_name
   use data_utils_mod, only : get_action_attribute_string
-  use collections_mod, only : hashmap_type, list_type, map_type, hashmap_type, c_add, c_get, c_put, c_is_empty, c_size
-  use conversions_mod, only : conv_to_generic, conv_to_real, conv_is_real, conv_is_integer, conv_to_integer, &
-       generic_to_double_real, conv_to_string
+  use collections_mod, only : hashmap_type, list_type, map_type, hashmap_type, iterator_type, c_add_string, c_get_string, &
+       c_get_generic, c_put_generic, c_is_empty, c_get_iterator, c_has_next, c_next_string
+  use conversions_mod, only : conv_to_real, conv_is_real, conv_is_integer, conv_to_integer, conv_to_string
   use forthread_mod, only : forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_unlock, &
        forthread_rwlock_init, forthread_rwlock_destroy
   use threadpool_mod, only : check_thread_status
@@ -93,14 +93,13 @@ contains
     type(hashmap_type), intent(inout) :: field_values
 
     type(data_values_type), pointer :: variable_data
-    integer :: i, entries
+    type(iterator_type) :: iterator
 
     get_size_of_data_being_operated_on=-1
     if (.not. c_is_empty(cached_equation%required_fields)) then
-      entries=c_size(cached_equation%required_fields)
-      do i=1, entries
-        variable_data=>get_data_value_by_field_name(field_values, &
-             conv_to_string(c_get(cached_equation%required_fields, i), .false., STRING_LENGTH))
+      iterator=c_get_iterator(cached_equation%required_fields)
+      do while (c_has_next(iterator))
+        variable_data=>get_data_value_by_field_name(field_values, c_next_string(iterator))
         if (get_size_of_data_being_operated_on == -1) then
           get_size_of_data_being_operated_on=size(variable_data%values)
         else
@@ -167,7 +166,7 @@ contains
     character(len=*), intent(in) :: equation
     type(arithmetic_execution_node), pointer :: equation_tree
 
-    integer :: split_point, brace_index
+    integer :: split_point
 
     allocate(equation_tree)
     split_point=get_location_of_least_significant_operator(equation)
@@ -210,7 +209,7 @@ contains
   integer function get_location_of_least_significant_operator(equation)
     character(len=*), intent(in) :: equation
 
-    integer :: i, eq_len, location, location_value, op, op_val, brace_level
+    integer :: i, eq_len, location_value, op, op_val, brace_level
 
     get_location_of_least_significant_operator=0
     location_value=999999
@@ -295,7 +294,7 @@ contains
         if (starting_len .lt. i) then
           str_to_write=equation(starting_len: i-1)
           if (.not. (conv_is_real(str_to_write) .or. conv_is_integer(str_to_write) .or. str_to_write(1:1) .eq. "{")) then
-            call c_add(process_equation_to_get_required_fields, conv_to_generic(str_to_write, .true.)) 
+            call c_add_string(process_equation_to_get_required_fields, str_to_write)
           end if
         end if
         starting_len=i+1
@@ -304,7 +303,7 @@ contains
     if (starting_len .le. eq_length) then
       str_to_write=equation(starting_len: i-1)
       if (.not. (conv_is_real(str_to_write) .or. conv_is_integer(str_to_write))) then
-        call c_add(process_equation_to_get_required_fields, conv_to_generic(str_to_write, .true.))
+        call c_add_string(process_equation_to_get_required_fields, str_to_write)
       end if
     end if
   end function process_equation_to_get_required_fields  
@@ -327,7 +326,7 @@ contains
         allocate(find_or_add_equation)
         find_or_add_equation%execution_tree=>null()
         generic=>find_or_add_equation
-        call c_put(equation_cache, equation, generic)
+        call c_put_generic(equation_cache, equation, generic, .false.)
       end if
       call check_thread_status(forthread_rwlock_unlock(equation_cache_rwlock))
     end if
@@ -345,7 +344,7 @@ contains
     class(*), pointer :: generic
 
     if (dolock) call check_thread_status(forthread_rwlock_rdlock(equation_cache_rwlock))
-    generic=>c_get(equation_cache, equation)
+    generic=>c_get_generic(equation_cache, equation)
     if (dolock) call check_thread_status(forthread_rwlock_unlock(equation_cache_rwlock))
     if (associated(generic)) then
       select type(generic)

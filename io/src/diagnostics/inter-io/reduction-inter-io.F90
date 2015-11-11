@@ -4,9 +4,10 @@
 module reduction_inter_io_mod
   use datadefn_mod, only : DEFAULT_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : io_configuration_type, io_configuration_inter_communication_description
-  use collections_mod, only : map_type, hashmap_type, list_type, c_get, c_add, c_put, c_size, c_remove, c_is_empty, c_contains, &
-       c_entry_at, c_free, c_value_at, c_key_at
-  use conversions_mod, only : conv_to_string, conv_to_integer, conv_to_generic
+  use collections_mod, only : map_type, hashmap_type, list_type, iterator_type, mapentry_type, c_get_generic, c_get_string, &
+       c_add_string, c_put_generic, c_remove, c_is_empty, c_contains, c_free, c_generic_at, c_get_iterator, c_has_next, &
+       c_next_mapentry, c_next_string
+  use conversions_mod, only : conv_to_string
   use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_trylock, &
        forthread_mutex_unlock, forthread_mutex_destroy, forthread_rwlock_rdlock, forthread_rwlock_wrlock, &
        forthread_rwlock_unlock, forthread_rwlock_init, forthread_rwlock_destroy, forthread_rwlock_trywrlock
@@ -80,9 +81,6 @@ contains
   logical function check_reduction_inter_io_for_completion(io_configuration)
     type(io_configuration_type), intent(inout) :: io_configuration
 
-    integer :: progress_len, ierr, i
-    type(reduction_progress_type) :: progress
-
     check_reduction_inter_io_for_completion=check_and_clean_progress(io_configuration%my_io_rank)
   end function check_reduction_inter_io_for_completion  
 
@@ -91,22 +89,22 @@ contains
   subroutine finalise_reduction_inter_io(io_configuration)
     type(io_configuration_type), intent(inout) :: io_configuration
 
-    integer :: progress_len, ierr, i
+    integer :: ierr
     type(reduction_progress_type) :: progress
-    character(len=STRING_LENGTH) :: entry_key
+    type(iterator_type) :: iterator
 
     if (initialised) then
-      progress_len=c_size(reduction_progresses)
-      if (progress_len .gt. 0) then
-        if (io_configuration%my_io_rank /= 0) then        
-          do i=1, progress_len
-            progress=get_reduction_progress_at_index(i, entry_key)
-            if (progress%async_handle /= MPI_REQUEST_NULL) then
-              call mpi_wait(progress%async_handle, MPI_STATUS_IGNORE, ierr)
-            end if
-          end do
-        end if
+      call check_thread_status(forthread_rwlock_rdlock(reduction_progress_rwlock))
+      if (.not. c_is_empty(reduction_progresses)) then
+        iterator=c_get_iterator(reduction_progresses)
+        do while (c_has_next(iterator))
+          progress=retrieve_reduction_progress(c_next_mapentry(iterator))
+          if (progress%async_handle /= MPI_REQUEST_NULL) then
+            call mpi_wait(progress%async_handle, MPI_STATUS_IGNORE, ierr)
+          end if
+        end do
       end if
+      call check_thread_status(forthread_rwlock_unlock(reduction_progress_rwlock))
       call check_thread_status(forthread_rwlock_destroy(reduction_progress_rwlock))
       call check_thread_status(forthread_mutex_destroy(inter_io_description_mutex))
       call check_thread_status(forthread_mutex_destroy(clean_progress_mutex))
@@ -132,7 +130,6 @@ contains
     character(len=*), intent(in) :: reduction_field_name
     procedure(handle_completion) :: completion_procedure
 
-    integer :: i
     type(reduction_progress_type), pointer :: reduction_progress
     logical :: collective_values_new
         
@@ -179,6 +176,8 @@ contains
 
     integer :: i, entries, completed, ierr, num_to_remove, have_lock
     type(list_type) :: entries_to_remove
+    type(iterator_type) :: iterator
+    type(mapentry_type) :: mapentry
     type(reduction_progress_type), pointer :: specific_reduction_progress
     character(len=STRING_LENGTH) :: entry_key
     class(*), pointer :: generic
@@ -188,36 +187,35 @@ contains
     have_lock=forthread_mutex_trylock(clean_progress_mutex)
     if (have_lock == 0) then
       call check_thread_status(forthread_rwlock_rdlock(reduction_progress_rwlock))
-      entries=c_size(reduction_progresses)
-      do i=1, entries
+      iterator=c_get_iterator(reduction_progresses)
+      do while (c_has_next(iterator))
+        mapentry=c_next_mapentry(iterator)
         destroy_lock=.false.
-        specific_reduction_progress=>get_reduction_progress_at_index(i, entry_key, .false.)
+        specific_reduction_progress=>retrieve_reduction_progress(mapentry)
         if (myrank /= specific_reduction_progress%root) then
           call check_thread_status(forthread_mutex_lock(specific_reduction_progress%mutex))
-          if (have_lock == 0) then
-            if (specific_reduction_progress%async_handle /= MPI_REQUEST_NULL) then
-              call mpi_test(specific_reduction_progress%async_handle, completed, MPI_STATUS_IGNORE, ierr)
-              if (completed == 1) then
-                if (allocated(specific_reduction_progress%send_buffer)) deallocate(specific_reduction_progress%send_buffer)
-                destroy_lock=.true.
-                call c_add(entries_to_remove, conv_to_generic(entry_key, .true.))
-              else
-                check_and_clean_progress=.false.
-              end if
+          if (specific_reduction_progress%async_handle /= MPI_REQUEST_NULL) then
+            call mpi_test(specific_reduction_progress%async_handle, completed, MPI_STATUS_IGNORE, ierr)
+            if (completed == 1) then
+              if (allocated(specific_reduction_progress%send_buffer)) deallocate(specific_reduction_progress%send_buffer)
+              destroy_lock=.true.
+              call c_add_string(entries_to_remove, mapentry%key)
+            else
+              check_and_clean_progress=.false.
             end if
-            call check_thread_status(forthread_mutex_unlock(specific_reduction_progress%mutex))
-            if (destroy_lock) call check_thread_status(forthread_mutex_destroy(specific_reduction_progress%mutex))
           end if
+          call check_thread_status(forthread_mutex_unlock(specific_reduction_progress%mutex))
+          if (destroy_lock) call check_thread_status(forthread_mutex_destroy(specific_reduction_progress%mutex))
         end if
       end do
       call check_thread_status(forthread_rwlock_unlock(reduction_progress_rwlock))
 
-      num_to_remove=c_size(entries_to_remove)
-      if (num_to_remove .gt. 0) then
+      if (.not. c_is_empty(entries_to_remove)) then
         call check_thread_status(forthread_rwlock_wrlock(reduction_progress_rwlock))
-        do i=1, num_to_remove
-          entry_key=conv_to_string(c_get(entries_to_remove, i), .false., STRING_LENGTH)
-          generic=>c_get(reduction_progresses, entry_key)
+        iterator=c_get_iterator(entries_to_remove)
+        do while (c_has_next(iterator))
+          entry_key=c_next_string(iterator)
+          generic=>c_get_generic(reduction_progresses, entry_key)
           call c_remove(reduction_progresses, entry_key)
           deallocate(generic)
         end do
@@ -385,7 +383,8 @@ contains
           new_progress%completion_procedure=>null()
         end if        
         generic=>new_progress
-        call c_put(reduction_progresses, generate_reduction_key(field_name, timestep, reduction_operator), generic)
+        call c_put_generic(reduction_progresses, generate_reduction_key(field_name, timestep, reduction_operator), &
+             generic, .false.)
         find_or_add_reduction_progress=>new_progress
       end if
       call check_thread_status(forthread_rwlock_unlock(reduction_progress_rwlock))
@@ -417,7 +416,7 @@ contains
     end if
 
     if (do_read_lock) call check_thread_status(forthread_rwlock_rdlock(reduction_progress_rwlock))
-    generic=>c_get(reduction_progresses, generate_reduction_key(field_name, timestep, reduction_operator))     
+    generic=>c_get_generic(reduction_progresses, generate_reduction_key(field_name, timestep, reduction_operator))     
     if (do_read_lock) call check_thread_status(forthread_rwlock_unlock(reduction_progress_rwlock))
     if (associated(generic)) then
       select type(generic)
@@ -435,13 +434,12 @@ contains
     type(reduction_progress_type), intent(in) :: reduction_progress
         
     class(*), pointer :: generic
-    integer :: progress_location
     character(len=STRING_LENGTH) :: specific_key
 
     specific_key=generate_reduction_key(reduction_progress%field_name, reduction_progress%timestep,&
          reduction_progress%reduction_operator)
     call check_thread_status(forthread_rwlock_wrlock(reduction_progress_rwlock))
-    generic=>c_get(reduction_progresses, specific_key)
+    generic=>c_get_generic(reduction_progresses, specific_key)
     call c_remove(reduction_progresses, specific_key)
     call check_thread_status(forthread_rwlock_unlock(reduction_progress_rwlock))
     if (associated(generic)) deallocate(generic)
@@ -458,39 +456,26 @@ contains
     generate_reduction_key=trim(field_name)//"#"//trim(conv_to_string(timestep))//"#"// trim(conv_to_string(reduction_operator))
   end function generate_reduction_key
 
-  !> Helper function to retrieve the reduction progress at a specific index in the list
-  !! @param index The location in the list to retrieve for
-  !! @returns The progress data object at that location in the list
-  function get_reduction_progress_at_index(index, key, issue_read_lock)
-    integer, intent(in) :: index
-    character(len=*), intent(out) :: key
-    logical, intent(in), optional :: issue_read_lock
-    type(reduction_progress_type), pointer :: get_reduction_progress_at_index
+  !> Helper function to retrieve the reduction progress from a mapentry
+  !! @param mapentry The map entry to retrieve from
+  !! @returns The progress data object in the map entry or null if none is found
+  function retrieve_reduction_progress(mapentry)
+    type(mapentry_type), intent(in) :: mapentry
+    type(reduction_progress_type), pointer :: retrieve_reduction_progress
 
     class(*), pointer :: generic
-    logical :: do_read_lock, found_entry
 
-    if (present(issue_read_lock)) then
-      do_read_lock=issue_read_lock
-    else
-      do_read_lock=.true.
-    end if
-
-    if (do_read_lock) call check_thread_status(forthread_rwlock_rdlock(reduction_progress_rwlock))
-    generic=>c_value_at(reduction_progresses, index)
-    if (do_read_lock) call check_thread_status(forthread_rwlock_unlock(reduction_progress_rwlock))
+    generic=>c_get_generic(mapentry)
 
     if (associated(generic)) then
-      key=c_key_at(reduction_progresses, index)
       select type(generic)
       type is (reduction_progress_type)      
-        get_reduction_progress_at_index=>generic
+        retrieve_reduction_progress=>generic
       end select
     else
-      get_reduction_progress_at_index=>null()
-      key=""
+      retrieve_reduction_progress=>null()
     end if 
-  end function get_reduction_progress_at_index
+  end function retrieve_reduction_progress
 
   !> Given the map of action attributes this procedure will identify the reduction operator that has been
   !! selected by the configuration

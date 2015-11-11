@@ -1,8 +1,8 @@
 !> Flux budget component which produces diagnostic data for the flux aspects of the model
 module flux_budget_mod
   use datadefn_mod, only : DEFAULT_PRECISION
-  use collections_mod, only : hashmap_type, c_contains, c_put, c_size, c_key_at, c_get
-  use conversions_mod, only : conv_to_generic, conv_to_logical
+  use collections_mod, only : hashmap_type, mapentry_type, iterator_type, c_contains, c_put_logical, c_size, c_get_logical, &
+       c_get_iterator, c_has_next, c_next_mapentry
   use monc_component_mod, only : COMPONENT_ARRAY_FIELD_TYPE, COMPONENT_DOUBLE_DATA_TYPE, component_descriptor_type, &
        component_field_value_type, component_field_information_type
   use optionsdatabase_mod, only : options_get_real, options_get_integer
@@ -44,7 +44,9 @@ contains
   !> Provides the descriptor back to the caller and is used in component registration
   !! @returns The flux budget component descriptor
   type(component_descriptor_type) function flux_budget_get_descriptor()
-    integer :: total_number_published_fields, i, current_index
+    type(iterator_type) :: iterator
+    type(mapentry_type) :: mapentry
+    integer :: current_index, total_number_published_fields
 
     flux_budget_get_descriptor%name="flux_budget"
     flux_budget_get_descriptor%version=0.1
@@ -60,36 +62,52 @@ contains
     allocate(flux_budget_get_descriptor%published_fields(total_number_published_fields))
 
     current_index=1
-    do i=1, c_size(heat_flux_fields)
-      flux_budget_get_descriptor%published_fields(current_index)=c_key_at(heat_flux_fields, i)
+    iterator=c_get_iterator(heat_flux_fields)
+    do while (c_has_next(iterator))
+      mapentry=c_next_mapentry(iterator)
+      flux_budget_get_descriptor%published_fields(current_index)=mapentry%key
       current_index=current_index+1
-    end do
-    do i=1, c_size(q_flux_fields)
-      flux_budget_get_descriptor%published_fields(current_index)=c_key_at(q_flux_fields, i)
+    end do    
+    iterator=c_get_iterator(q_flux_fields)
+    do while (c_has_next(iterator))
+      mapentry=c_next_mapentry(iterator)
+      flux_budget_get_descriptor%published_fields(current_index)=mapentry%key
       current_index=current_index+1
-    end do
-    do i=1, c_size(uw_vw_fields)
-      flux_budget_get_descriptor%published_fields(current_index)=c_key_at(uw_vw_fields, i)
+    end do  
+    iterator=c_get_iterator(uw_vw_fields)
+    do while (c_has_next(iterator))
+      mapentry=c_next_mapentry(iterator)
+      flux_budget_get_descriptor%published_fields(current_index)=mapentry%key
       current_index=current_index+1
-    end do
-    do i=1, c_size(prognostic_budget_fields)
-      flux_budget_get_descriptor%published_fields(current_index)=c_key_at(prognostic_budget_fields, i)
+    end do  
+    iterator=c_get_iterator(prognostic_budget_fields)
+    do while (c_has_next(iterator))
+      mapentry=c_next_mapentry(iterator)
+      flux_budget_get_descriptor%published_fields(current_index)=mapentry%key
       current_index=current_index+1
-    end do
-    do i=1, c_size(thetal_fields)
-      flux_budget_get_descriptor%published_fields(current_index)=c_key_at(thetal_fields, i)
+    end do  
+    iterator=c_get_iterator(thetal_fields)
+    do while (c_has_next(iterator))
+      mapentry=c_next_mapentry(iterator)
+      flux_budget_get_descriptor%published_fields(current_index)=mapentry%key
       current_index=current_index+1
-    end do
-    do i=1, c_size(mse_fields)
-      flux_budget_get_descriptor%published_fields(current_index)=c_key_at(mse_fields, i)
+    end do  
+    iterator=c_get_iterator(mse_fields)
+    do while (c_has_next(iterator))
+      mapentry=c_next_mapentry(iterator)
+      flux_budget_get_descriptor%published_fields(current_index)=mapentry%key
       current_index=current_index+1
-    end do
-    do i=1, c_size(qt_fields)
-      flux_budget_get_descriptor%published_fields(current_index)=c_key_at(qt_fields, i)
+    end do  
+    iterator=c_get_iterator(qt_fields)
+    do while (c_has_next(iterator))
+      mapentry=c_next_mapentry(iterator)
+      flux_budget_get_descriptor%published_fields(current_index)=mapentry%key
       current_index=current_index+1
-    end do
-    do i=1, c_size(scalar_fields)
-      flux_budget_get_descriptor%published_fields(current_index)=c_key_at(scalar_fields, i)
+    end do 
+    iterator=c_get_iterator(scalar_fields)
+    do while (c_has_next(iterator))
+      mapentry=c_next_mapentry(iterator)
+      flux_budget_get_descriptor%published_fields(current_index)=mapentry%key
       current_index=current_index+1
     end do    
   end function flux_budget_get_descriptor 
@@ -2090,8 +2108,6 @@ contains
     real(kind=DEFAULT_PRECISION), dimension(:), optional :: real_1d_field
     real(kind=DEFAULT_PRECISION), dimension(:,:), optional :: real_2d_field
 
-    integer :: n
-
     if (present(real_1d_field)) then
       allocate(field_value%real_1d_array(size(real_1d_field)), source=real_1d_field)
     else if (present(real_2d_field)) then
@@ -2107,11 +2123,8 @@ contains
     type(hashmap_type), intent(inout) :: collection
     character(len=*), intent(in) :: field_name
     logical, intent(in) :: enabled_state
-
-    class(*), pointer :: generic
-    generic=>conv_to_generic(enabled_state, .true.)
     
-    call c_put(collection, field_name, generic)
+    call c_put_logical(collection, field_name, enabled_state)
   end subroutine set_published_field_enabled_state
 
   !> Retrieves whether a published field is enabled or not
@@ -2122,8 +2135,6 @@ contains
     type(hashmap_type), intent(inout) :: collection
     character(len=*), intent(in) :: field_name
 
-    class(*), pointer :: generic
-    generic=>c_get(collection, field_name)
-    get_published_field_enabled_state=conv_to_logical(generic, .false.)
+    get_published_field_enabled_state=c_get_logical(collection, field_name)
   end function get_published_field_enabled_state
 end module flux_budget_mod

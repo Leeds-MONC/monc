@@ -2,7 +2,7 @@
 module timeaveraged_time_manipulation_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : io_configuration_type
-  use collections_mod, only : hashmap_type, c_put, c_get
+  use collections_mod, only : hashmap_type, c_put_generic, c_get_generic
   use forthread_mod, only : forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_unlock, &
        forthread_rwlock_init, forthread_rwlock_destroy, forthread_mutex_init, forthread_mutex_lock, &
        forthread_mutex_unlock, forthread_mutex_destroy
@@ -124,7 +124,7 @@ contains
         new_entry%previous_output_time=0.0_DEFAULT_PRECISION
         call check_thread_status(forthread_mutex_init(new_entry%mutex, -1))
         generic=>new_entry
-        call c_put(timeaveraged_values, field_name, generic)
+        call c_put_generic(timeaveraged_values, field_name, generic, .false.)
         find_or_add_timeaveraged_value=>new_entry
       end if
       call check_thread_status(forthread_rwlock_unlock(timeaveraged_value_rw_lock))
@@ -150,7 +150,7 @@ contains
     end if        
 
     if (do_read_lock) call check_thread_status(forthread_rwlock_rdlock(timeaveraged_value_rw_lock))
-    generic=>c_get(timeaveraged_values, field_name)    
+    generic=>c_get_generic(timeaveraged_values, field_name)    
     if (do_read_lock) call check_thread_status(forthread_rwlock_unlock(timeaveraged_value_rw_lock))
     if (associated(generic)) then
       select type(generic)

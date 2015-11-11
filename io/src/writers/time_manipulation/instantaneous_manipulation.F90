@@ -1,8 +1,8 @@
 !> Performs instantaneous time manipulation and only returns a value if the output frequency determines one should be
 module instantaneous_time_manipulation_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
-  use collections_mod, only : hashmap_type, c_put, c_get, c_contains
-  use conversions_mod, only : conv_to_real, conv_to_generic
+  use collections_mod, only : hashmap_type, c_put_real, c_get_real, c_contains
+  use conversions_mod, only : conv_single_real_to_double
   use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_unlock, forthread_mutex_destroy
   use threadpool_mod, only : check_thread_status 
   use configuration_parser_mod, only : data_values_type
@@ -63,7 +63,7 @@ contains
 
     call check_thread_status(forthread_mutex_lock(existing_instantaneous_writes_mutex))
     if (c_contains(existing_instantaneous_writes, field_name)) then
-      previous_time_write=conv_to_real(c_get(existing_instantaneous_writes, field_name), .false.)
+      previous_time_write=real(c_get_real(existing_instantaneous_writes, field_name))
       time_difference=time-previous_time_write
     else
       ! Rethink this as only works if started at time=0
@@ -71,7 +71,7 @@ contains
     end if
     if (time_difference .ge. output_frequency) then
       deduce_whether_to_issue_values=.true.
-      call c_put(existing_instantaneous_writes, field_name, conv_to_generic(time, .true.))
+      call c_put_real(existing_instantaneous_writes, field_name, conv_single_real_to_double(time))
     else
       deduce_whether_to_issue_values=.false.
     end if

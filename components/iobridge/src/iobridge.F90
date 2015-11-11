@@ -3,8 +3,9 @@
 module iobridge_mod
   use monc_component_mod, only : COMPONENT_DOUBLE_DATA_TYPE, COMPONENT_INTEGER_DATA_TYPE, component_descriptor_type, &
        component_field_value_type, component_field_information_type
-  use conversions_mod, only : conv_to_generic, conv_to_string
-  use collections_mod, only : map_type, list_type, c_contains, c_get, c_put, c_size, c_key_at
+  use collections_mod, only : map_type, list_type, c_contains, c_get_generic, c_get_string, c_put_generic, c_put_integer, &
+       c_size, c_key_at
+  use conversions_mod, only : conv_to_string
   use state_mod, only : model_state_type
   use grids_mod, only : X_INDEX, Y_INDEX, Z_INDEX, local_grid_type
   use optionsdatabase_mod, only : options_size, options_get_logical
@@ -12,6 +13,7 @@ module iobridge_mod
   use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, log_master_log
   use optionsdatabase_mod, only : options_get_integer
+  use q_indices_mod, only : q_metadata_type, get_indices_descriptor
   use registry_mod, only : get_all_component_published_fields, get_component_field_value, get_component_field_information
   use io_server_client_mod, only : COMMAND_TAG, DATA_TAG, REGISTER_COMMAND, DEREGISTER_COMMAND, DATA_COMMAND_START, &
        ARRAY_FIELD_TYPE, SCALAR_FIELD_TYPE, MAP_FIELD_TYPE, INTEGER_DATA_TYPE, BOOLEAN_DATA_TYPE, &
@@ -19,7 +21,7 @@ module iobridge_mod
        data_sizing_description_type, definition_description_type, field_description_type, build_mpi_type_data_sizing_description,&
        build_mpi_type_field_description, build_mpi_type_definition_description, populate_mpi_type_extents, append_mpi_datatype, &
        get_mpi_datatype_from_internal_representation, pack_scalar_field, pack_array_field, pack_map_field
-  use mpi, only : MPI_COMM_WORLD, MPI_INT, MPI_REQUEST_NULL, MPI_STATUSES_IGNORE, MPI_STATUS_IGNORE, MPI_STATUS_SIZE
+  use mpi, only : MPI_COMM_WORLD, MPI_INT, MPI_BYTE, MPI_REQUEST_NULL, MPI_STATUSES_IGNORE, MPI_STATUS_IGNORE, MPI_STATUS_SIZE
   implicit none
 
 #ifndef TEST_MODE
@@ -82,7 +84,7 @@ contains
     mpi_type_field_description=build_mpi_type_field_description()
 
     call register_with_io_server(current_state, mpi_type_definition_description, mpi_type_field_description)
-    call send_data_field_sizes_to_server(current_state, mpi_type_data_sizing_description)
+    call send_monc_specific_data_to_server(current_state, mpi_type_data_sizing_description)
 
     call mpi_type_free(mpi_type_data_sizing_description, ierr)
     call mpi_type_free(mpi_type_definition_description, ierr)
@@ -96,7 +98,7 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    integer :: ierr, testv, i, completed_flag, command_to_send
+    integer :: ierr, i, command_to_send
 
     if (.not. io_server_enabled) return
 
@@ -240,13 +242,11 @@ contains
 
     type(list_type) :: published_field_descriptors
     integer :: i
-    class(*), pointer :: data
 
     call populate_globally_visible_sendable_fields(current_state)
     published_field_descriptors=get_all_component_published_fields()
     do i=1, c_size(published_field_descriptors)
-      data=>c_get(published_field_descriptors, i)      
-      call populate_component_public_field(current_state, conv_to_string(data, .true., STRING_LENGTH))
+      call populate_component_public_field(current_state, c_get_string(published_field_descriptors, i))
     end do    
   end subroutine populate_sendable_fields
 
@@ -265,13 +265,13 @@ contains
     if (field_information%enabled) then
       allocate(field_information_info_alloc, source=field_information)
       generic_data=>field_information_info_alloc
-      call c_put(component_field_descriptions, field_name, generic_data)
+      call c_put_generic(component_field_descriptions, field_name, generic_data, .false.)
 
       allocate(field_sizing)
       field_sizing%number_dimensions=field_information%number_dimensions
       field_sizing%dimensions=field_information%dimension_sizes
       generic_data=>field_sizing
-      call c_put(sendable_fields, field_name, generic_data)
+      call c_put_generic(sendable_fields, field_name, generic_data, .false.)
     end if
   end subroutine populate_component_public_field  
 
@@ -288,48 +288,48 @@ contains
     x_size=current_state%local_grid%size(X_INDEX)
 
     raw_generic=>generate_sendable_description(options_size(current_state%options_database))
-    call c_put(sendable_fields, "options_database", raw_generic)
+    call c_put_generic(sendable_fields, "options_database", raw_generic, .false.)
     raw_generic=>generate_sendable_description(3)
-    call c_put(sendable_fields, "local_grid_size", raw_generic)
-    call c_put(sendable_fields, "local_grid_start", raw_generic)
+    call c_put_generic(sendable_fields, "local_grid_size", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "local_grid_start", raw_generic, .false.)
 #ifdef U_ACTIVE
     raw_generic=>generate_sendable_description()
-    call c_put(sendable_fields, "x_size", raw_generic)
-    call c_put(sendable_fields, "x_bottom", raw_generic)
-    call c_put(sendable_fields, "x_resolution", raw_generic)
+    call c_put_generic(sendable_fields, "x_size", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "x_bottom", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "x_resolution", raw_generic, .false.)
     raw_generic=>generate_sendable_description(z_size, y_size, x_size)
-    call c_put(sendable_fields, "u", raw_generic)
-    call c_put(sendable_fields, "zu", raw_generic)
+    call c_put_generic(sendable_fields, "u", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "zu", raw_generic, .false.)
 #endif
 #ifdef V_ACTIVE
     raw_generic=>generate_sendable_description()
-    call c_put(sendable_fields, "y_size", raw_generic)
-    call c_put(sendable_fields, "y_bottom", raw_generic)
-    call c_put(sendable_fields, "y_resolution", raw_generic)
+    call c_put_generic(sendable_fields, "y_size", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "y_bottom", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "y_resolution", raw_generic, .false.)
     raw_generic=>generate_sendable_description(z_size, y_size, x_size)
-    call c_put(sendable_fields, "v", raw_generic)
-    call c_put(sendable_fields, "zv", raw_generic)
+    call c_put_generic(sendable_fields, "v", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "zv", raw_generic, .false.)
 #endif
 #ifdef W_ACTIVE
     raw_generic=>generate_sendable_description(z_size)
-    call c_put(sendable_fields, "z", raw_generic)
+    call c_put_generic(sendable_fields, "z", raw_generic, .false.)
     raw_generic=>generate_sendable_description(z_size, y_size, x_size)
-    call c_put(sendable_fields, "w", raw_generic)
-    call c_put(sendable_fields, "zw", raw_generic)
+    call c_put_generic(sendable_fields, "w", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "zw", raw_generic, .false.)
 #endif
     if (current_state%number_q_fields .gt. 0) then
       raw_generic=>generate_sendable_description(z_size, y_size, x_size, current_state%number_q_fields)
-      call c_put(sendable_fields, "q", raw_generic)
-      call c_put(sendable_fields, "zq", raw_generic)
+      call c_put_generic(sendable_fields, "q", raw_generic, .false.)
+      call c_put_generic(sendable_fields, "zq", raw_generic, .false.)
     end if
     if (current_state%th%active) then
       raw_generic=>generate_sendable_description(z_size, y_size, x_size)
-      call c_put(sendable_fields, "th", raw_generic)
-      call c_put(sendable_fields, "zth", raw_generic)
+      call c_put_generic(sendable_fields, "th", raw_generic, .false.)
+      call c_put_generic(sendable_fields, "zth", raw_generic, .false.)
     end if
     if (current_state%p%active) then
       raw_generic=>generate_sendable_description(z_size, y_size, x_size)
-      call c_put(sendable_fields, "p", raw_generic)   
+      call c_put_generic(sendable_fields, "p", raw_generic, .false.)   
     end if
   end subroutine populate_globally_visible_sendable_fields  
 
@@ -368,21 +368,46 @@ contains
     end if
     field%number_dimensions=number_dimensions
     generate_sendable_description=>field
-  end function generate_sendable_description  
+  end function generate_sendable_description
+
+  !> Sends this MONC specific information to the IO server, which is field info (sizing & availability) as well as meta data
+  !! such as ZN field and Q field names
+  !! @param current_state The current model state
+  !! @param mpi_type_data_sizing_description MPI data type representing the sizing message
+  subroutine send_monc_specific_data_to_server(current_state, mpi_type_data_sizing_description)
+    type(model_state_type), target, intent(inout) :: current_state
+    integer, intent(in) :: mpi_type_data_sizing_description
+
+    type(data_sizing_description_type), dimension(:), allocatable :: data_description
+    character, dimension(:), allocatable :: buffer
+    integer :: number_unique_fields, buffer_size, request_handles(2), ierr
+    real(kind=DEFAULT_PRECISION) :: dreal
+
+    number_unique_fields=c_size(unique_field_names)
+    allocate(data_description(number_unique_fields+3))
+    request_handles(1)=send_data_field_sizes_to_server(current_state, mpi_type_data_sizing_description, &
+       data_description, number_unique_fields)
+    buffer_size=(kind(dreal)*current_state%local_grid%size(Z_INDEX)) + (STRING_LENGTH * current_state%number_q_fields)
+    allocate(buffer(buffer_size))
+    request_handles(2)=send_general_monc_information_to_server(current_state, buffer)
+    call mpi_waitall(2, request_handles, MPI_STATUSES_IGNORE, ierr)
+    deallocate(data_description)
+    deallocate(buffer)
+  end subroutine send_monc_specific_data_to_server  
 
   !> Assembles all the data field sizing information and sends this to the IO server
   !! @param current_state The current model state
   !! @param mpi_type_data_sizing_description MPI data type representing the sizing message
-  subroutine send_data_field_sizes_to_server(current_state, mpi_type_data_sizing_description)
+  !! @param data_description Data descriptions which will be populated and then sent
+  !! @param number_unique_fields The number of unique fields that we are sending over
+  integer function send_data_field_sizes_to_server(current_state, mpi_type_data_sizing_description, &
+       data_description, number_unique_fields)
     type(model_state_type), target, intent(inout) :: current_state
-    integer, intent(in) :: mpi_type_data_sizing_description
+    integer, intent(in) :: mpi_type_data_sizing_description, number_unique_fields
+    type(data_sizing_description_type), dimension(:), intent(inout) :: data_description
 
-    integer :: ierr, i, next_index, number_unique_fields
+    integer :: ierr, i, next_index, request_handle
     character(len=STRING_LENGTH) :: field_name
-    type(data_sizing_description_type), dimension(:), allocatable :: data_description
-
-    number_unique_fields=c_size(unique_field_names)
-    allocate(data_description(number_unique_fields+3))
     
     call package_local_monc_decomposition_into_descriptions(current_state, data_description)
     next_index=4
@@ -394,11 +419,44 @@ contains
       end if      
     end do    
 
-    call mpi_send(data_description, next_index-1, mpi_type_data_sizing_description, &
-         current_state%parallel%corresponding_io_server_process, DATA_TAG, MPI_COMM_WORLD, ierr)
-    deallocate(data_description)
-  end subroutine send_data_field_sizes_to_server
+    call mpi_isend(data_description, next_index-1, mpi_type_data_sizing_description, &
+         current_state%parallel%corresponding_io_server_process, DATA_TAG, MPI_COMM_WORLD, request_handle, ierr)
+    send_data_field_sizes_to_server=request_handle
+  end function send_data_field_sizes_to_server
 
+  !> Sends the general MONC information (ZN field and Q field names) to the IO server
+  !! @param current_state The current model state
+  !! @param buffer The communication buffer to use
+  !! @returns Handle to nonblocking send
+  integer function send_general_monc_information_to_server(current_state, buffer)
+    type(model_state_type), target, intent(inout) :: current_state
+    character, dimension(:), intent(inout) :: buffer
+    
+    character(len=STRING_LENGTH) :: q_field_name
+    type(q_metadata_type) :: q_meta_data
+    integer :: current_loc, n, ierr, request_handle    
+    
+    current_loc=1
+    current_loc=pack_array_field(buffer, current_loc, real_array_1d=current_state%global_grid%configuration%vertical%zn)
+    if (current_state%number_q_fields .gt. 0) then
+      do n=1, current_state%number_q_fields
+        q_meta_data=get_indices_descriptor(n)       
+        if (q_meta_data%l_used) then
+          q_field_name=q_meta_data%name
+        else
+          q_field_name="qfield_"//trim(conv_to_string(n))
+        end if        
+        current_loc=pack_scalar_field(buffer, current_loc, string_value=q_field_name)
+      end do
+    end if
+    call mpi_isend(buffer, current_loc-1, MPI_BYTE, current_state%parallel%corresponding_io_server_process, &
+         DATA_TAG, MPI_COMM_WORLD, request_handle, ierr)    
+    send_general_monc_information_to_server=request_handle
+  end function send_general_monc_information_to_server  
+
+  !> Packages the local MONC decomposition information into descriptions for communication
+  !! @param current_state The current model state
+  !! @param data_description THe data description to pack into
   subroutine package_local_monc_decomposition_into_descriptions(current_state, data_description)
     type(model_state_type), target, intent(inout) :: current_state
     type(data_sizing_description_type), dimension(:), intent(inout) :: data_description
@@ -431,7 +489,7 @@ contains
 
     if (present(field_found)) field_found=.false.
     if (c_contains(sendable_fields, field_name)) then
-      generic=>c_get(sendable_fields, field_name)
+      generic=>c_get_generic(sendable_fields, field_name)
       select type(generic)
       type is (io_server_sendable_field_sizing)
         get_sendable_field_sizing=generic
@@ -447,7 +505,7 @@ contains
 
     class(*), pointer :: generic
     if (c_contains(component_field_descriptions, field_name)) then
-      generic=>c_get(component_field_descriptions, field_name)
+      generic=>c_get_generic(component_field_descriptions, field_name)
       select type(generic)
       type is (component_field_information_type)
         get_component_field_descriptor=generic
@@ -536,7 +594,6 @@ contains
     integer, intent(in) :: number_defns, number_fields
 
     integer :: i, definition_index, field_index
-    class(*), pointer :: raw_generic
 
     allocate(data_definitions(number_defns))
     do i=1, number_defns
@@ -555,8 +612,7 @@ contains
       data_definitions(definition_index)%fields(field_index)%optional=field_descriptions(i)%optional
       if (field_descriptions(i)%optional .or. field_descriptions(i)%field_type == ARRAY_FIELD_TYPE .or. &
            field_descriptions(i)%field_type == MAP_FIELD_TYPE) then
-        raw_generic=>conv_to_generic(1, .true.)
-        call c_put(unique_field_names, field_descriptions(i)%field_name, raw_generic)
+        call c_put_integer(unique_field_names, field_descriptions(i)%field_name, 1)
       end if
       if (.not. field_descriptions(i)%optional) data_definitions(definition_index)%fields(field_index)%enabled=.true.
     end do    
@@ -616,8 +672,6 @@ contains
     type(io_configuration_data_definition_type), intent(inout) :: data_definition
     type(io_configuration_field_type), intent(in) :: field
     integer, intent(in) :: current_buffer_point
-
-    type(component_field_value_type) :: published_value
 
     if (field%name .eq. "timestep") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &

@@ -54,7 +54,7 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), intent(inout), target :: current_state
 
-    real(kind=DEFAULT_PRECISION) :: cfl_number, zumin, zumax, zvmin, zvmax, abswmax
+    real(kind=DEFAULT_PRECISION) :: cfl_number
 
     if (mod(current_state%timestep, current_state%cfl_frequency) == 1 .or. &
          current_state%timestep-current_state%start_timestep .le. current_state%cfl_frequency) then

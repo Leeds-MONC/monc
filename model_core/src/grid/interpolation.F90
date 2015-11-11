@@ -46,7 +46,7 @@ contains
     real(kind=DEFAULT_PRECISION), intent(out) :: f
     character(*), intent(in), optional :: extrapolate
     
-    integer :: nn,k  ! loop counters
+    integer :: nn  ! loop counter
     integer :: nnodes    ! number of input values
     
     integer, parameter :: MAXCHARS=20

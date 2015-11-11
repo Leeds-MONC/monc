@@ -11,7 +11,7 @@ module conversions_mod
 #endif
 
   ! This is the rounding applied when going from single to double precision numbers
-  integer, parameter :: REAL_ROUNDING_PRECISION=1e8
+  integer, parameter :: REAL_ROUNDING_PRECISION=int(1e8)
 
   !> Converts a data type into the generic (class *) form.
   !!

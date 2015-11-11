@@ -73,7 +73,6 @@ contains
     character(*), optional :: assigning_component
 
     integer :: iname, i_unused
-    logical :: n_exist
 
     i_unused=0
     

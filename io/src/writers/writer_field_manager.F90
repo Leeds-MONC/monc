@@ -5,7 +5,7 @@
 module writer_field_manager_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : io_configuration_type, io_configuration_field_type
-  use collections_mod, only : hashmap_type, c_contains, c_get, c_put, c_is_empty, c_remove
+  use collections_mod, only : hashmap_type, c_contains, c_get_generic, c_put_generic, c_is_empty, c_remove
   use conversions_mod, only : conv_to_string, conv_to_real
   use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_unlock, forthread_mutex_destroy, &
        forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_unlock, forthread_rwlock_init, forthread_rwlock_destroy
@@ -190,7 +190,7 @@ contains
       field_ordering%last_timestep_access=timestep
     else
       generic=>generate_value_container(field_name, field_values, timestep, time, frequency, source)
-      call c_put(field_ordering%timestep_to_value, conv_to_string(timestep), generic)
+      call c_put_generic(field_ordering%timestep_to_value, conv_to_string(timestep), generic, .false.)
     end if
     call process_queued_items(io_configuration, field_ordering)
     call check_thread_status(forthread_mutex_unlock(field_ordering%access_mutex))
@@ -235,7 +235,7 @@ contains
 
     class(*), pointer :: generic
 
-    generic=>c_get(collection, conv_to_string(timestep))
+    generic=>c_get_generic(collection, conv_to_string(timestep))
     if (associated(generic)) then
       select type(generic)
         type is (field_value_type)
@@ -299,7 +299,7 @@ contains
         get_or_add_field_ordering%frequency=frequency
         call check_thread_status(forthread_mutex_init(get_or_add_field_ordering%access_mutex, -1))
         generic=>get_or_add_field_ordering
-        call c_put(field_orderings, entry_key, generic)
+        call c_put_generic(field_orderings, entry_key, generic, .false.)
       end if
       call check_thread_status(forthread_rwlock_unlock(field_lock))
     end if
@@ -317,7 +317,7 @@ contains
     class(*), pointer :: generic
 
     if (do_lock) call check_thread_status(forthread_rwlock_rdlock(field_lock))
-    generic=>c_get(field_orderings, field_name)
+    generic=>c_get_generic(field_orderings, field_name)
     if (do_lock) call check_thread_status(forthread_rwlock_unlock(field_lock))
     if (associated(generic)) then
       select type(generic)

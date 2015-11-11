@@ -2,12 +2,13 @@
 module monc_mod
   use datadefn_mod, only : LONG_STRING_LENGTH, STRING_LENGTH
   use monc_component_mod, only : component_descriptor_type
-  use collections_mod, only : list_type, map_type, c_size, c_key_at, c_value_at, c_get
+  use collections_mod, only : list_type, hashmap_type, map_type, iterator_type, mapentry_type, c_size, c_next_generic, &
+       c_get_real, c_has_next, c_get_iterator, c_next_mapentry
   use conversions_mod, only : conv_to_string, conv_to_real
   use state_mod, only : model_state_type
-  use registry_mod, only : get_all_registered_components, get_component_info, get_missing_registry_components, &
-       register_component, execute_initialisation_callbacks, &
-       execute_finalisation_callbacks, init_registry, order_all_callbacks, display_callbacks_in_order_at_each_stage
+  use registry_mod, only : get_all_registered_components, get_component_info, register_component, &
+       execute_initialisation_callbacks, execute_finalisation_callbacks, init_registry, order_all_callbacks, &
+       display_callbacks_in_order_at_each_stage
   use timestepper_mod, only : init_timestepper, timestep, finalise_timestepper
   use logging_mod, only : LOG_INFO, LOG_WARN, LOG_ERROR, LOG_DEBUG, log_log, log_get_logging_level, log_set_logging_level, &
        log_master_log, initialise_logging
@@ -29,8 +30,8 @@ module monc_mod
      !! @param io_xml_configuration The IO server textual configuration
      subroutine io_server_run_procedure(options_database, io_communicator_arg, io_xml_configuration, provided_threading, &
           total_global_processes)
-       import map_type
-       type(map_type), intent(inout) :: options_database
+       import hashmap_type
+       type(hashmap_type), intent(inout) :: options_database
        integer, intent(in) :: io_communicator_arg, provided_threading, total_global_processes
        character, dimension(:), allocatable, intent(inout) :: io_xml_configuration       
      end subroutine io_server_run_procedure
@@ -102,7 +103,7 @@ contains
   !! @param options_database The options database
   !! @returns Whether to enable the IO server or not
   logical function determine_if_io_server_enabled(options_database)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
 
     determine_if_io_server_enabled=options_get_logical(options_database, "enable_io_server")
     if (determine_if_io_server_enabled) then
@@ -113,7 +114,7 @@ contains
   !> Loads the configuration into the options database, either from a file or checkpoint
   !! @param options_database The options database
   subroutine load_model_configuration(options_database)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
 
     call load_command_line_into_options_database(options_database)
     if (options_has_key(options_database, "config")) then
@@ -159,9 +160,7 @@ contains
     call order_all_callbacks()
     ! If the option has been provided then display the registered component information
     if (is_present_and_true(state%options_database, "registered") .and. state%parallel%my_rank==0) &
-         call display_registed_components()
-    if (is_present_and_true(state%options_database, "warnmissing") .and. state%parallel%my_rank==0) &
-         call issue_missing_registry_component_warnings()
+         call display_registed_components()    
     if (is_present_and_true(state%options_database, "showcallbacks") .and. state%parallel%my_rank==0) &
          call display_callbacks_in_order_at_each_stage()
 
@@ -233,15 +232,15 @@ contains
 
   !> Registers each supplied component description
   subroutine fill_registry_with_components(options_database, component_descriptions)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     type(list_type), intent(inout) :: component_descriptions
 
-    integer :: i, number_of_components
     class(*), pointer :: raw_data
+    type(iterator_type) :: iterator
 
-    number_of_components = c_size(component_descriptions)
-    do i=1,number_of_components
-      raw_data=>c_get(component_descriptions, i)
+    iterator=c_get_iterator(component_descriptions)
+    do while (c_has_next(iterator))
+      raw_data=>c_next_generic(iterator)
       select type(raw_data)
         type is (component_descriptor_type)
           call register_component(options_database, raw_data)
@@ -257,7 +256,7 @@ contains
   !! @param options_database The options database
   !! @param key The key to test for
   logical function is_present_and_true(options_database, key)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     character(len=*), intent(in) :: key
     
     if (options_has_key(options_database, key)) then
@@ -265,40 +264,21 @@ contains
       return
     end if
     is_present_and_true=.false.
-  end function is_present_and_true 
-
-  !> Issues warning log_log messages for each component which has not been registered
-  subroutine issue_missing_registry_component_warnings()
-    type(list_type) :: missing_components
-    integer :: i, missing_size
-    class(*), pointer :: raw_data
-
-    missing_components = get_missing_registry_components()
-    missing_size = c_size(missing_components)
-    do i=1,missing_size
-      raw_data=>c_get(missing_components, i)
-      call log_log(LOG_WARN, "Missing registry component: "//conv_to_string(raw_data, .false., STRING_LENGTH))
-    end do
-  end subroutine issue_missing_registry_component_warnings
+  end function is_present_and_true
 
   !> Displays the registered components and their version numbers
   subroutine display_registed_components()
     type(map_type) :: registered_components
-    integer :: i
-    character(len=STRING_LENGTH) :: component_name
-    type(component_descriptor_type), pointer :: detailed_component_info
-    real :: component_version
-    class(*), pointer :: raw_data
+    type(iterator_type) :: iterator
+    type(mapentry_type):: map_entry
 
     registered_components = get_all_registered_components()
     call log_log(LOG_INFO, "Registered components: "//conv_to_string(c_size(registered_components)))
-    do i=1,c_size(registered_components)
-      component_name = c_key_at(registered_components, i)
-      raw_data=>c_value_at(registered_components, i)
-      component_version = conv_to_real(raw_data, .false.)
-      detailed_component_info => get_component_info(component_name)
-      call log_log(LOG_INFO, trim(component_name)//" "//trim(conv_to_string(component_version)))
-    end do
+    iterator=c_get_iterator(registered_components)
+    do while (c_has_next(iterator))
+      map_entry=c_next_mapentry(iterator)
+      call log_log(LOG_INFO, trim(map_entry%key)//" "//trim(conv_to_string(c_get_real(map_entry))))
+    end do    
   end subroutine display_registed_components
 
   !> Splits the MPI_COMM_WORLD communicator into MONC and IO separate communicators. The size of each depends
@@ -362,7 +342,7 @@ contains
   !! file name and the placement period
   !! @param options_database The options database
   subroutine get_io_configuration(options_database, ioserver_configuration_file, ioserver_placement_period)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     character(len=LONG_STRING_LENGTH), intent(out) :: ioserver_configuration_file
     integer, intent(out) :: ioserver_placement_period
    

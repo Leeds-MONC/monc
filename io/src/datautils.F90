@@ -2,8 +2,8 @@
 !! server receives from a MONC process during model dumping
 module data_utils_mod
   use datadefn_mod, only : DOUBLE_PRECISION, SINGLE_PRECISION, STRING_LENGTH
-  use conversions_mod, only : conv_to_integer, conv_to_string, conv_to_generic, conv_is_integer
-  use collections_mod, only : map_type, c_get, c_put, c_contains
+  use conversions_mod, only : conv_to_integer, conv_to_string, conv_is_integer
+  use collections_mod, only : map_type, c_get_integer, c_get_string, c_get_generic, c_put_string, c_contains
   use io_server_client_mod, only : INTEGER_DATA_TYPE, BOOLEAN_DATA_TYPE, STRING_DATA_TYPE, FLOAT_DATA_TYPE, &
        DOUBLE_DATA_TYPE
   use configuration_parser_mod, only : io_configuration_type
@@ -29,13 +29,10 @@ contains
     type(map_type), intent(inout) :: action_attributes
     character(len=*), intent(in) :: field_name
 
-    class(*), pointer :: generic
-
     if (.not. c_contains(action_attributes, field_name)) call log_log(LOG_ERROR, &
          "You must provide the field name in the collective operation configuration")
 
-    generic=>c_get(action_attributes, field_name)
-    get_action_attribute_string=conv_to_string(generic, .false., STRING_LENGTH)
+    get_action_attribute_string=c_get_string(action_attributes, field_name)
   end function get_action_attribute_string
 
   !> Retrieves the name of a field from the attributes specified in the configuration
@@ -59,11 +56,8 @@ contains
     type(map_type), intent(inout) :: action_attributes
     character(len=*), intent(in) :: field_name
 
-    class(*), pointer :: generic
-
     if (c_contains(action_attributes, field_name)) then
-      generic=>c_get(action_attributes, field_name)
-      get_action_attribute_logical=conv_to_string(generic, .false., STRING_LENGTH) .eq. "true"
+      get_action_attribute_logical=trim(c_get_string(action_attributes, field_name)) .eq. "true"
     else
       get_action_attribute_logical=.false.
     end if
@@ -84,16 +78,15 @@ contains
     integer :: start_index, end_index, monc_location
     class(*), pointer :: generic
 
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    monc_location=conv_to_integer(generic, .false.)
+    monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
 
-    generic=>c_get(io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), key)
+    generic=>c_get_generic(io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), key)
     if (.not. associated(generic)) then
       is_field_present=.false.
       return
     end if
     start_index=conv_to_integer(generic, .false.)
-    generic=>c_get(io_configuration%registered_moncs(monc_location)%field_end_locations(data_id), key)
+    generic=>c_get_generic(io_configuration%registered_moncs(monc_location)%field_end_locations(data_id), key)
     if (.not. associated(generic)) then
       is_field_present=.false.
       return
@@ -117,12 +110,9 @@ contains
     integer :: start_index, end_index, element_size
     real(kind=DOUBLE_PRECISION) :: dreal
     real(kind=SINGLE_PRECISION) :: sreal
-    class(*), pointer :: generic
 
-    generic=>c_get(field_starts, key)
-    start_index=conv_to_integer(generic, .false.)
-    generic=>c_get(field_ends, key)
-    end_index=conv_to_integer(generic, .false.)
+    start_index=c_get_integer(field_starts, key)
+    end_index=c_get_integer(field_ends, key)
 
     if (data_type == INTEGER_DATA_TYPE) then
       element_size=kind(start_index)
@@ -148,16 +138,13 @@ contains
     character(len=*), intent(in) :: key
     
     integer :: start_index, end_index, elements, i
-    class(*), pointer :: generic
     character(len=STRING_LENGTH) :: retrieved1, retrieved2
 
     if (.not. c_contains(field_starts, key) .or. .not. c_contains(field_ends, key)) &
          call log_log(LOG_ERROR, "Field name `"//key//"` not found in the data definition")
 
-    generic=>c_get(field_starts, key)
-    start_index=conv_to_integer(generic, .false.)
-    generic=>c_get(field_ends, key)
-    end_index=conv_to_integer(generic, .false.)
+    start_index=c_get_integer(field_starts, key)
+    end_index=c_get_integer(field_ends, key)
 
     elements = (end_index+1 - start_index) / (STRING_LENGTH*2)
 
@@ -166,7 +153,7 @@ contains
       start_index=start_index+STRING_LENGTH
       retrieved2=transfer(data_dump(start_index:start_index+STRING_LENGTH-1), retrieved2)
       start_index=start_index+STRING_LENGTH
-      call c_put(get_map, retrieved1, conv_to_generic(retrieved2, .true.))
+      call c_put_string(get_map, retrieved1, retrieved2)
     end do    
   end function get_map  
 
@@ -184,10 +171,8 @@ contains
     character(len=*), intent(in) :: key
 
     integer :: monc_location
-    class(*), pointer :: generic
 
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    monc_location=conv_to_integer(generic, .false.)
+    monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
 
     get_map_from_monc=get_map(io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), &
          io_configuration%registered_moncs(monc_location)%field_end_locations(data_id), data_dump, key)
@@ -206,15 +191,12 @@ contains
     character(len=STRING_LENGTH) :: get_string
 
     integer :: start_index, end_index
-    class(*), pointer :: generic
 
     if (.not. c_contains(field_starts, key) .or. .not. c_contains(field_ends, key)) &
          call log_log(LOG_ERROR, "Field name `"//key//"` not found in the data definition")
 
-    generic=>c_get(field_starts, key)
-    start_index=conv_to_integer(generic, .false.)
-    generic=>c_get(field_ends, key)
-    end_index=conv_to_integer(generic, .false.)
+    start_index=c_get_integer(field_starts, key)
+    end_index=c_get_integer(field_ends, key)
 
     get_string=transfer(data_dump(start_index:end_index), get_string)
   end function get_string
@@ -234,10 +216,8 @@ contains
     character(len=STRING_LENGTH) :: get_string_from_monc
 
     integer :: monc_location
-    class(*), pointer :: generic
 
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    monc_location=conv_to_integer(generic, .false.)
+    monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
 
     get_string_from_monc=get_string(io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), &
          io_configuration%registered_moncs(monc_location)%field_end_locations(data_id), data_dump, key)
@@ -255,15 +235,12 @@ contains
     character(len=*), intent(in) :: key
 
     integer :: start_index, end_index
-    class(*), pointer :: generic
 
     if (.not. c_contains(field_starts, key) .or. .not. c_contains(field_ends, key)) &
          call log_log(LOG_ERROR, "Field name `"//key//"` not found in the data definition")
 
-    generic=>c_get(field_starts, key)
-    start_index=conv_to_integer(generic, .false.)
-    generic=>c_get(field_ends, key)
-    end_index=conv_to_integer(generic, .false.)
+    start_index=c_get_integer(field_starts, key)
+    end_index=c_get_integer(field_ends, key)
 
     get_scalar_integer=transfer(data_dump(start_index:end_index), get_scalar_integer)
   end function get_scalar_integer
@@ -282,10 +259,8 @@ contains
     character(len=*), intent(in) :: key
 
     integer :: monc_location
-    class(*), pointer :: generic
 
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    monc_location=conv_to_integer(generic, .false.)
+    monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
 
     get_scalar_integer_from_monc=get_scalar_integer(&
          io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), &
@@ -304,15 +279,12 @@ contains
     character(len=*), intent(in) :: key
 
     integer :: start_index, end_index
-    class(*), pointer :: generic
 
     if (.not. c_contains(field_starts, key) .or. .not. c_contains(field_ends, key)) &
          call log_log(LOG_ERROR, "Field name `"//key//"` not found in the data definition")
 
-    generic=>c_get(field_starts, key)
-    start_index=conv_to_integer(generic, .false.)
-    generic=>c_get(field_ends, key)
-    end_index=conv_to_integer(generic, .false.)
+    start_index=c_get_integer(field_starts, key)
+    end_index=c_get_integer(field_ends, key)
 
     get_scalar_real=transfer(data_dump(start_index:end_index), get_scalar_real)
   end function get_scalar_real
@@ -331,10 +303,8 @@ contains
     character(len=*), intent(in) :: key
 
     integer :: monc_location
-    class(*), pointer :: generic
 
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    monc_location=conv_to_integer(generic, .false.)
+    monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
 
     get_scalar_real_from_monc=get_scalar_real(&
          io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), &
@@ -354,16 +324,13 @@ contains
     character(len=*), intent(in) :: key
     real(kind=DOUBLE_PRECISION), dimension(:), allocatable :: get_array_double
 
-    integer :: start_index, end_index, elements
-    class(*), pointer :: generic    
+    integer :: start_index, end_index, elements 
 
     if (.not. c_contains(field_starts, key) .or. .not. c_contains(field_ends, key)) &
          call log_log(LOG_ERROR, "Field name `"//key//"` not found in the data definition")
 
-    generic=>c_get(field_starts, key)
-    start_index=conv_to_integer(generic, .false.)
-    generic=>c_get(field_ends, key)
-    end_index=conv_to_integer(generic, .false.)
+    start_index=c_get_integer(field_starts, key)
+    end_index=c_get_integer(field_ends, key)
 
     elements = (end_index - start_index) / kind(get_array_double)
 
@@ -387,10 +354,8 @@ contains
     real(kind=DOUBLE_PRECISION), dimension(:), allocatable :: get_array_double_from_monc
 
     integer :: monc_location
-    class(*), pointer :: generic
 
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    monc_location=conv_to_integer(generic, .false.)
+    monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
 
     get_array_double_from_monc=get_array_double(&
          io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), &
@@ -411,15 +376,12 @@ contains
     integer, dimension(:), allocatable :: get_array_integer
 
     integer :: start_index, end_index, elements
-    class(*), pointer :: generic
 
     if (.not. c_contains(field_starts, key) .or. .not. c_contains(field_ends, key)) &
          call log_log(LOG_ERROR, "Field name `"//key//"` not found in the data definition")
 
-    generic=>c_get(field_starts, key)
-    start_index=conv_to_integer(generic, .false.)
-    generic=>c_get(field_ends, key)
-    end_index=conv_to_integer(generic, .false.)
+    start_index=c_get_integer(field_starts, key)
+    end_index=c_get_integer(field_ends, key)
 
     elements = (end_index - start_index) / kind(get_array_integer)
 
@@ -443,10 +405,8 @@ contains
     integer, dimension(:), allocatable :: get_array_integer_from_monc
 
     integer ::  monc_location
-    class(*), pointer :: generic
 
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    monc_location=conv_to_integer(generic, .false.)
+    monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
 
     get_array_integer_from_monc=get_array_integer(&
          io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), &
@@ -473,10 +433,8 @@ contains
     real(kind=DOUBLE_PRECISION), dimension(:,:), pointer, contiguous, intent(inout) :: target_data
 
     integer :: monc_location
-    class(*), pointer :: generic
 
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    monc_location=conv_to_integer(generic, .false.)
+    monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
 
     call get_2darray_double(io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), &
          io_configuration%registered_moncs(monc_location)%field_end_locations(data_id), data_dump, key, target_data, &
@@ -503,7 +461,6 @@ contains
 
     integer :: start_index, end_index, element_size
     real(kind=DOUBLE_PRECISION), dimension(:), pointer :: temp_data
-    class(*), pointer :: generic
 
     ! Pointer bounds remapping as transfer needs 1D array but for performance don't want to allocate another array and copy using reshape
     temp_data(1:size1*size2)=>target_data
@@ -511,10 +468,8 @@ contains
     if (.not. c_contains(field_starts, key) .or. .not. c_contains(field_ends, key)) &
          call log_log(LOG_ERROR, "Field name `"//key//"` not found in the data definition")
 
-    generic=>c_get(field_starts, key)
-    start_index=conv_to_integer(generic, .false.)
-    generic=>c_get(field_ends, key)
-    end_index=conv_to_integer(generic, .false.)
+    start_index=c_get_integer(field_starts, key)
+    end_index=c_get_integer(field_ends, key)
 
     element_size=(end_index-start_index) / kind(target_data)
 
@@ -542,7 +497,6 @@ contains
     
     integer :: start_index, end_index, element_size
     real(kind=DOUBLE_PRECISION), dimension(:), pointer :: temp_data
-    class(*), pointer :: generic
 
     ! Pointer bounds remapping as transfer needs 1D array but for performance don't want to allocate another array and copy using reshape
     temp_data(1:size1*size2*size3)=>target_data
@@ -550,10 +504,8 @@ contains
     if (.not. c_contains(field_starts, key) .or. .not. c_contains(field_ends, key)) &
          call log_log(LOG_ERROR, "Field name `"//key//"` not found in the data definition")
 
-    generic=>c_get(field_starts, key)
-    start_index=conv_to_integer(generic, .false.)
-    generic=>c_get(field_ends, key)
-    end_index=conv_to_integer(generic, .false.)
+    start_index=c_get_integer(field_starts, key)
+    end_index=c_get_integer(field_ends, key)
 
     element_size=(end_index-start_index) / kind(target_data)
     
@@ -581,10 +533,8 @@ contains
     real(kind=DOUBLE_PRECISION), dimension(:,:,:), pointer, contiguous, intent(inout) :: target_data
 
     integer :: monc_location
-    class(*), pointer :: generic
 
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    monc_location=conv_to_integer(generic, .false.)
+    monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
 
     call get_3darray_double(io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), &
          io_configuration%registered_moncs(monc_location)%field_end_locations(data_id), data_dump, key, target_data, &
@@ -613,7 +563,6 @@ contains
 
     integer :: start_index, end_index, element_size
     real(kind=DOUBLE_PRECISION), dimension(:), pointer :: temp_data
-    class(*), pointer :: generic
     
     ! Pointer bounds remapping as transfer needs 1D array but for performance don't want to allocate another array and copy using reshape
     temp_data(1:size1*size2*size3*size4)=>target_data     
@@ -621,10 +570,8 @@ contains
     if (.not. c_contains(field_starts, key) .or. .not. c_contains(field_ends, key)) &
          call log_log(LOG_ERROR, "Field name `"//key//"` not found in the data definition")
 
-    generic=>c_get(field_starts, key)
-    start_index=conv_to_integer(generic, .false.)
-    generic=>c_get(field_ends, key)
-    end_index=conv_to_integer(generic, .false.)
+    start_index=c_get_integer(field_starts, key)
+    end_index=c_get_integer(field_ends, key)
 
     element_size=(end_index-start_index) / kind(target_data)
     
@@ -654,10 +601,8 @@ contains
     real(kind=DOUBLE_PRECISION), dimension(:,:,:,:), pointer, contiguous, intent(inout) :: target_data
 
     integer :: monc_location
-    class(*), pointer :: generic
     
-    generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-    monc_location=conv_to_integer(generic, .false.)
+    monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
 
     call get_4darray_double(io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), &
          io_configuration%registered_moncs(monc_location)%field_end_locations(data_id), data_dump, key, target_data, &

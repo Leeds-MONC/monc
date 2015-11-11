@@ -4,11 +4,12 @@
 !! installed callback hooks for that stage in order.
 module registry_mod
   use datadefn_mod, only : STRING_LENGTH
-  use collections_mod, only : list_type, hashmap_type, map_type, c_size, c_value_at, c_key_at, c_get, c_remove, c_put, &
-       c_is_empty, c_contains, c_add, c_free
+  use collections_mod, only : list_type, hashmap_type, map_type, iterator_type, c_size, c_generic_at, c_key_at, c_get_integer, &
+       c_get_string, c_get_generic, c_remove, c_put_generic, c_put_string, c_put_integer, c_put_real, c_is_empty, &
+       c_contains, c_add_generic, c_add_string, c_free, c_get_iterator, c_has_next, c_next_mapentry
   use monc_component_mod, only : component_descriptor_type, component_field_value_type, component_field_information_type, &
        FINALISATION_PRIORITY_INDEX, INIT_PRIORITY_INDEX, TIMESTEP_PRIORITY_INDEX
-  use conversions_mod, only : conv_to_generic, conv_to_string, conv_to_integer
+  use conversions_mod, only : conv_to_string
   use state_mod, only : model_state_type
   use optionsdatabase_mod, only : options_has_key, options_get_string, options_get_logical, options_get_array_size
   use logging_mod, only : LOG_INFO, LOG_ERROR, LOG_WARN, log_master_log
@@ -21,8 +22,7 @@ module registry_mod
   integer, parameter :: GROUP_TYPE_WHOLE=0, & !< Execute the callbacks in this group once per timestep
        GROUP_TYPE_COLUMN=1 !< Execute the callbacks in this group for each column per timestep
 
-  type(list_type), save :: enabled_components, &   !< List of enabled component names       
-       field_information
+  type(list_type), save :: field_information
 
   integer, dimension(:), allocatable :: group_types !< Group types
   character(len=STRING_LENGTH), dimension(:), allocatable :: enabled_component_input_keys,& !< Temporary read array of component enable names
@@ -56,7 +56,7 @@ module registry_mod
   public GROUP_TYPE_WHOLE, GROUP_TYPE_COLUMN, group_descriptor_type, register_component, deregister_component, &
        execute_initialisation_callbacks, execute_timestep_callbacks, &
        execute_finalisation_callbacks, get_component_info, get_all_registered_components, free_registry, init_registry, &
-       get_missing_registry_components, order_all_callbacks, display_callbacks_in_order_at_each_stage, get_ordered_groups, &
+       order_all_callbacks, display_callbacks_in_order_at_each_stage, get_ordered_groups, &
        is_component_enabled, get_all_component_published_fields, get_component_field_value, get_component_field_information, &
        is_component_field_available
 contains
@@ -64,7 +64,7 @@ contains
   !> Initialises the registry with the provided configuration file
   !! @param configurationFileName The filename of the configuration file to parse
   subroutine init_registry(options_database)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
 
     call read_group_configurations(options_database)
     call read_initialisation_and_finalisation_orders(options_database)
@@ -75,10 +75,9 @@ contains
   !! at the end of execution to clean memory up or used to clear the registry
   subroutine free_registry()
     integer :: i, entries
-
-    ! Call deregister as it will free up memory that we allocated as part of registration
+   
     entries = c_size(component_descriptions)
-    do i=1,entries
+    do i=1, entries
       ! Key de registering key at element one as each deregister removes elements from map_type
       call deregister_component(c_key_at(component_descriptions, 1))
     end do
@@ -98,11 +97,12 @@ contains
   !> Will register a component and install the nescesary callback hooks
   !! @param descriptor The component descriptor and a separate copy of this it stored as reference
   subroutine register_component(options_database, descriptor)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     type(component_descriptor_type), intent(in) :: descriptor
 
     type(component_descriptor_type), pointer :: registry_descriptor
-    class(*), pointer :: description_data, raw_generic
+    class(*), pointer :: description_data
+    character(len=STRING_LENGTH) :: group_name
     logical :: component_enabled
 
     allocate(registry_descriptor, source=descriptor) ! Make copy of the descriptor (which registry might modify)
@@ -116,8 +116,8 @@ contains
 
     if (component_enabled) then
       if (c_contains(component_groups, trim(descriptor%name))) then
-        raw_generic=>c_get(component_groups, trim(descriptor%name))
-        call load_callback_hooks(registry_descriptor, conv_to_string(raw_generic, .false., STRING_LENGTH))
+        group_name=c_get_string(component_groups, trim(descriptor%name))
+        call load_callback_hooks(registry_descriptor, group_name)
       else
         call load_callback_hooks(registry_descriptor)
       end if
@@ -125,7 +125,7 @@ contains
     end if    
 
     description_data => registry_descriptor
-    call c_put(component_descriptions, descriptor%name, description_data)
+    call c_put_generic(component_descriptions, descriptor%name, description_data, .false.)
   end subroutine register_component
 
   !> Determines whether a specific published field is available or not
@@ -145,11 +145,10 @@ contains
     character(len=*), intent(in) :: name
     type(component_field_value_type) :: get_component_field_value
 
-    integer :: i, callback_entries
     class(*), pointer :: data
 
     if (c_contains(field_procedure_retrievals, name)) then
-      data=>c_get(field_procedure_retrievals, name)
+      data=>c_get_generic(field_procedure_retrievals, name)
       select type(data)
       type is (pointer_wrapper_type)
         call data%ptr(current_state, name, get_component_field_value)
@@ -167,11 +166,10 @@ contains
     character(len=*), intent(in) :: name
     type(component_field_information_type) :: get_component_field_information
 
-    integer :: i, callback_entries
     class(*), pointer :: data
 
     if (c_contains(field_procedure_retrievals, name)) then
-      data=>c_get(field_procedure_sizings, name)
+      data=>c_get_generic(field_procedure_sizings, name)
       select type(data)
       type is (pointer_wrapper_type)
         call data%ptr(current_state, name, get_component_field_information)
@@ -203,15 +201,15 @@ contains
          associated(descriptor%field_information_retrieval)) then
       do i=1, size(descriptor%published_fields)
         field_generic_description=>descriptor%published_fields(i)
-        call c_add(field_information, field_generic_description)
+        call c_add_generic(field_information, field_generic_description, .false.)
         allocate(wrapper) ! We allocate our own copy of the descriptor here to ensure the consistency of registry information
         wrapper%ptr => descriptor%field_value_retrieval
         genericwrapper=>wrapper
-        call c_put(field_procedure_retrievals, descriptor%published_fields(i), genericwrapper)
+        call c_put_generic(field_procedure_retrievals, descriptor%published_fields(i), genericwrapper, .false.)
         allocate(wrapper)
         wrapper%ptr => descriptor%field_information_retrieval
         genericwrapper=>wrapper
-        call c_put(field_procedure_sizings, descriptor%published_fields(i), genericwrapper)
+        call c_put_generic(field_procedure_sizings, descriptor%published_fields(i), genericwrapper, .false.)
       end do
 
       else if (associated(descriptor%published_fields) .or. associated(descriptor%field_value_retrieval) .or. &
@@ -219,29 +217,7 @@ contains
         call log_master_log(LOG_WARN, "Component "//trim(descriptor%name)//&
              " has provided incomplete configuration for published fields, therefore ignoring these")
     end if
-  end subroutine load_published_fields  
-
-  !> Retrieves a list_type of components which have been configued to be enabled but have not registered
-  !!
-  !! This lack of registration might indicate a problem and if the user has explicitly enabled a component
-  !! then the lack of this might be problemnatic for them.
-  !! @returns The list_type of missing components
-  type(list_type) function get_missing_registry_components()
-    integer i, enabled_size
-    type(map_type) :: all_registered_components
-    character(len=STRING_LENGTH) :: component_name
-    class(*), pointer :: raw_data
-
-    all_registered_components = get_all_registered_components()
-    enabled_size = c_size(enabled_components)
-    do i=1,enabled_size
-      raw_data=>c_get(enabled_components, i)
-      component_name = trim(conv_to_string(raw_data, .false., STRING_LENGTH))
-      if (.not. c_contains(all_registered_components, component_name)) then
-        call c_add(get_missing_registry_components, raw_data)
-      end if
-    end do
-  end function get_missing_registry_components
+  end subroutine load_published_fields
 
   !> Will deregister a component, remove all callback hooks and free registry specific memory allocated
   !! to the component
@@ -250,7 +226,7 @@ contains
     character(len=*), intent(in) :: name
     class(*), pointer :: description_data
 
-    description_data => c_get(component_descriptions, name)
+    description_data=>c_get_generic(component_descriptions, name)
     select type(description_data)
       type is (component_descriptor_type)
         call remove_descriptor(description_data)
@@ -267,7 +243,7 @@ contains
     class(*), pointer :: description_data
 
     get_component_info => null()
-    description_data => c_get(component_descriptions, name)
+    description_data => c_get_generic(component_descriptions, name)
     if (associated(description_data)) then
       select type(description_data)
         type is (component_descriptor_type)
@@ -280,17 +256,17 @@ contains
   !! @returns A map_type where the keys are the component names and value the corresponding version number
   type(map_type) function get_all_registered_components()
     integer :: i, number_of_components
-    class(*), pointer :: description_data, version_ptr
+    class(*), pointer :: description_data
+    type(iterator_type) :: iterator
 
-    number_of_components = c_size(component_descriptions)
-    do i=1,number_of_components
-      description_data=>c_value_at(component_descriptions, i)
+    iterator=c_get_iterator(component_descriptions)
+    do while (c_has_next(iterator))
+      description_data=>c_get_generic(c_next_mapentry(iterator))
       select type(description_data)
         type is(component_descriptor_type)
-          version_ptr=>description_data%version
-          call c_put(get_all_registered_components, description_data%name,version_ptr)
+          call c_put_real(get_all_registered_components, description_data%name, description_data%version)
       end select
-    end do
+    end do    
   end function get_all_registered_components
 
   !> Calls all initialisation callbacks with the specified state
@@ -342,22 +318,20 @@ contains
     integer, intent(in) :: group_id
     
     integer :: group_size, i
-    class(*), pointer :: raw_generic
 
     type(group_descriptor_type) :: descriptor
 
     descriptor=get_group_descriptor_from_id(group_id)
     group_size=descriptor%number_of_members
     do i=1, group_size
-      raw_generic=>conv_to_generic(i, .true.)
-      call c_put(order_grouped_timstep_callbacks, trim(descriptor%group_members(i)), raw_generic)
+      call c_put_integer(order_grouped_timstep_callbacks, trim(descriptor%group_members(i)), i)
     end do    
   end function order_grouped_timstep_callbacks
 
   !> Determines whether or not a specific component is registered and enabled
   !! @param component_name The name of the component to check for
   logical function is_component_enabled(options_database, component_name)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     character(len=*), intent(in) :: component_name
     
     if (c_contains(component_descriptions, component_name)) then
@@ -420,7 +394,7 @@ contains
 
     class(*), pointer :: generic       
 
-    generic=>c_get(group_descriptors, group_name)
+    generic=>c_get_generic(group_descriptors, group_name)
     if (associated(generic)) then
       select type(generic)
         type is(group_descriptor_type)
@@ -437,12 +411,13 @@ contains
   type(group_descriptor_type) function get_group_descriptor_from_id(group_id)
     integer, intent(in) :: group_id
 
-    integer :: i
+    type(iterator_type) :: iterator
     class(*), pointer :: generic
 
-    do i=1,c_size(group_descriptors)
-      generic=>c_value_at(group_descriptors, i)
-      if (associated(generic)) then
+    iterator=c_get_iterator(group_descriptors)
+    do while (c_has_next(iterator))
+      generic=>c_get_generic(c_next_mapentry(iterator))
+       if (associated(generic)) then
         select type(generic)
         type is(group_descriptor_type)
           if (generic%id == group_id) then
@@ -451,7 +426,7 @@ contains
           end if
         end select
       end if
-    end do       
+    end do     
   end function get_group_descriptor_from_id
   
   !> Displays the registered callbacks of a specific stage in the order that they will be called
@@ -470,33 +445,32 @@ contains
   end subroutine display_callbacks_in_order
 
   subroutine read_initialisation_and_finalisation_orders(options_database)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
 
     call read_specific_orders(options_database, "initialisation_stage_ordering", init_orderings)
     call read_specific_orders(options_database, "finalisation_stage_ordering", finalisation_orderings)
   end subroutine read_initialisation_and_finalisation_orders
 
   subroutine read_specific_orders(options_database, key, data_structure)
-    type(map_type), intent(inout) :: options_database, data_structure
+    type(hashmap_type), intent(inout) :: options_database
+    type(map_type), intent(inout) :: data_structure
     character(len=*) :: key
 
     integer :: number_of_elements, i
     character(len=STRING_LENGTH) :: component_name
-    class(*), pointer :: raw_generic
 
     number_of_elements=options_get_array_size(options_database, key)
     do i=1, number_of_elements
       component_name=options_get_string(options_database, key, i)
-      raw_generic=>conv_to_generic(i, .true.)
-      call c_put(data_structure, trim(component_name), raw_generic)
+      call c_put_integer(data_structure, trim(component_name), i)
     end do
   end subroutine read_specific_orders  
 
   subroutine read_group_configurations(options_database)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
 
-    integer :: group_elements, number_group_contents, i, j
-    class(*), pointer :: generic_to_add, raw_generic
+    integer :: group_elements, i, j
+    class(*), pointer :: generic_to_add
     type(group_descriptor_type) :: group_description
     character(len=STRING_LENGTH) :: group_type
 
@@ -530,8 +504,7 @@ contains
           group_description%number_of_members=1
           group_description%group_members(1)=trim(options_get_string(options_database, &
                  trim(group_description%name)//"_group_contents"))
-          raw_generic=>conv_to_generic(group_description%name,.true.)
-          call c_put(component_groups, trim(group_description%group_members(1)), raw_generic)
+          call c_put_string(component_groups, trim(group_description%group_members(1)), group_description%name)
         else
           call log_master_log(LOG_ERROR, "No contents specified for group "//trim(group_description%name))
         end if
@@ -539,12 +512,11 @@ contains
         do j=1, group_description%number_of_members
           group_description%group_members(j)=trim(options_get_string(options_database, &
                trim(group_description%name)//"_group_contents", j))
-          raw_generic=>conv_to_generic(group_description%name,.true.)
-          call c_put(component_groups, trim(group_description%group_members(j)), raw_generic)
+          call c_put_string(component_groups, trim(group_description%group_members(j)), group_description%name)
         end do
       end if
       allocate(generic_to_add, source=group_description)
-      call c_put(group_descriptors, group_description%name, generic_to_add)
+      call c_put_generic(group_descriptors, group_description%name, generic_to_add, .false.)
     end do    
   end subroutine read_group_configurations  
 
@@ -554,11 +526,11 @@ contains
   subroutine remove_descriptor(descriptor)
     type(component_descriptor_type), intent(inout) :: descriptor
 
-    class(*), pointer :: raw_generic
+    character(len=STRING_LENGTH) :: group_name
 
     if (c_contains(component_groups, trim(descriptor%name))) then
-      raw_generic=>c_get(component_groups, trim(descriptor%name))
-      call unload_callback_hooks(descriptor, conv_to_string(raw_generic, .false., STRING_LENGTH))
+      group_name=c_get_string(component_groups, trim(descriptor%name))
+      call unload_callback_hooks(descriptor, group_name)
     else
       call unload_callback_hooks(descriptor)
     end if
@@ -582,8 +554,6 @@ contains
   subroutine load_callback_hooks(descriptor, group_name)
     type(component_descriptor_type), intent(in) :: descriptor
     character(len=*), intent(in), optional :: group_name
-
-    character(len=STRING_LENGTH) :: corresponding_group
 
     if (associated(descriptor%initialisation)) call add_callback(init_callbacks, descriptor%name, descriptor%initialisation)
     if (associated(descriptor%timestep)) then
@@ -609,16 +579,16 @@ contains
     do i=1, entries_in_list
       current_item=get_highest_callback_priority(callbacks, priorities)
       if (current_item .ge. 1) then
-        generic=>c_value_at(callbacks, current_item)
-        call c_put(ordered_callbacks, c_key_at(callbacks, current_item), generic)
+        generic=>c_generic_at(callbacks, current_item)
+        call c_put_generic(ordered_callbacks, c_key_at(callbacks, current_item), generic, .false.)
         call c_remove(callbacks, c_key_at(callbacks, current_item))
       end if
     end do
 
     entries_in_list=c_size(callbacks)
     do i=1, entries_in_list
-      generic=>c_value_at(callbacks, i)
-      call c_put(ordered_callbacks, c_key_at(callbacks, i), generic)
+      generic=>c_generic_at(callbacks, i)
+      call c_put_generic(ordered_callbacks, c_key_at(callbacks, i), generic, .false.)
       call log_master_log(LOG_WARN, "Run order callback for component "//trim(c_key_at(callbacks, i))//&
            " at stage "//stage_name//" not specified")
     end do
@@ -630,7 +600,6 @@ contains
 
     integer :: i, entries_in_list, min_priority, min_location, priority
     character(len=STRING_LENGTH) :: key
-    class(*), pointer :: raw_generic
 
     min_location=0
     min_priority=1000
@@ -639,8 +608,7 @@ contains
     do i=1, entries_in_list
       key=c_key_at(callbacks, i)
       if (c_contains(priorities, key)) then
-        raw_generic=>c_get(priorities, key)
-        priority=conv_to_integer(raw_generic, .false.)
+        priority=c_get_integer(priorities, key)
         if (priority .lt. min_priority) then
           min_priority=priority
           min_location=i
@@ -650,19 +618,6 @@ contains
     get_highest_callback_priority=min_location
   end function get_highest_callback_priority
 
-  !> Will rebalance a specific list_type of callbacks based upon the priority of each
-  !! the higher the priority the sooner it will appear in the list_type
-  !!
-  !! Note that this is an expensive operation, n^2, so ideally only do once
-  !! @param callbacks The list_type of callbacks to rebalance
-  !! @param callbackId The index of the priority value held in the descriptor
-
-
-  !> Given a list_type of callbacks this will return the index of the one with the highest priority
-  !! @param callbacks List of callbacks to search through
-  !! @param callbackId Index of the callback priority values
-
-
   !> Will execute the appropriate callbacks in a specific map_type given the current state
   !! @param callbackmap_type The map_type of callback hooks to execute
   !! @param currentState The model state which may be (and likely is) modified in callbacks
@@ -670,12 +625,12 @@ contains
     type(map_type), intent(inout) :: callback_map
     type(model_state_type), intent(inout) :: current_state
 
-    integer :: i, callback_entries
     class(*), pointer :: data
+    type(iterator_type) :: iterator
 
-    callback_entries = c_size(callback_map)
-    do i=1,callback_entries
-      data => c_value_at(callback_map, i)
+    iterator=c_get_iterator(callback_map)
+    do while (c_has_next(iterator))
+      data=>c_get_generic(c_next_mapentry(iterator))
       select type(data)
         type is (pointer_wrapper_type)
         call data%ptr(current_state)
@@ -698,6 +653,6 @@ contains
     allocate(wrapper) ! We allocate our own copy of the descriptor here to ensure the consistency of registry information
     wrapper%ptr => procedure_pointer
     genericwrapper=>wrapper
-    call c_put(callback_map, name, genericwrapper)
+    call c_put_generic(callback_map, name, genericwrapper, .false.)
   end subroutine add_callback
 end module registry_mod

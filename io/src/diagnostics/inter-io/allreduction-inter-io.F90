@@ -2,7 +2,7 @@
 module allreduction_inter_io_mod
   use datadefn_mod, only : DEFAULT_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : io_configuration_type
-  use collections_mod, only : hashmap_type, c_get, c_put, c_remove, c_is_empty
+  use collections_mod, only : hashmap_type, c_get_generic, c_put_generic, c_remove, c_is_empty
   use conversions_mod, only : conv_to_string
   use forthread_mod, only : forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_unlock, &
        forthread_rwlock_init, forthread_rwlock_destroy
@@ -138,7 +138,7 @@ contains
         allreduce_information%completion_procedure=>completion_procedure
         allreduce_information%root=root
         generic=>allreduce_information
-        call c_put(allreduce_types, trim(field_name)//"#"//conv_to_string(timestep), generic)
+        call c_put_generic(allreduce_types, trim(field_name)//"#"//conv_to_string(timestep), generic, .true.)
       end if
       call check_thread_status(forthread_rwlock_unlock(allreduce_rwlock))
     end if
@@ -158,7 +158,7 @@ contains
     class(*), pointer :: generic
 
     if (dolock) call check_thread_status(forthread_rwlock_rdlock(allreduce_rwlock))
-    generic=>c_get(allreduce_types, trim(field_name)//"#"//conv_to_string(timestep))
+    generic=>c_get_generic(allreduce_types, trim(field_name)//"#"//conv_to_string(timestep))
     if (dolock) call check_thread_status(forthread_rwlock_unlock(allreduce_rwlock))
     
     if (associated(generic)) then

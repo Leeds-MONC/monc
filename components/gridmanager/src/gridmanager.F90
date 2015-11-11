@@ -518,7 +518,7 @@ contains
 
     real(kind=DEFAULT_PRECISION) :: a(2*kkp), r1, d1, dd, d0, a0
     logical :: first_gt=.true.
-    integer :: k, n, k0
+    integer :: k, k0
 
     r1=1.10_DEFAULT_PRECISION
     d1=10.0_DEFAULT_PRECISION
@@ -654,8 +654,6 @@ contains
   !! @param current_state The current model state
   subroutine set_anelastic_pressure(current_state)
     type(model_state_type), intent(inout) :: current_state
-
-    integer :: k
     
     if (current_state%use_anelastic_equations) then
       call compute_anelastic_pressure_profile_and_density(current_state)
@@ -679,7 +677,6 @@ contains
     integer :: ipass, k
     real(kind=DEFAULT_PRECISION) ::    p0    &!pressure at z=0 adjustments made after 1st iteration so P0=PSF after 2nd iteration
         ,   ptop  &!pressure at z=ZN(KKP)
-        ,   thfactor & !factor for multiplying TH profile (if IADJANELP=2)
         , thprof(current_state%local_grid%size(Z_INDEX))
 
     

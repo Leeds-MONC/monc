@@ -4,9 +4,10 @@ module netcdf_filetype_writer_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : INSTANTANEOUS_TYPE, TIME_AVERAGED_TYPE, io_configuration_type, &
        data_values_type, get_data_value_by_field_name
-  use collections_mod, only : hashmap_type, hashset_type, list_type, map_type, c_get, c_contains, &
-       c_key_at, c_value_at, c_put, c_size, c_add, c_remove, c_free
-  use conversions_mod, only : conv_to_generic, conv_to_integer, conv_to_string, conv_to_real
+  use collections_mod, only : hashmap_type, hashset_type, list_type, map_type, iterator_type, mapentry_type, &
+       c_get_generic, c_get_integer, c_contains, c_generic_at, c_real_at, c_integer_at, c_put_generic, &
+       c_put_integer, c_remove, c_free, c_has_next, c_get_iterator, c_next_mapentry, c_next_generic, c_get_real
+  use conversions_mod, only : conv_to_integer, conv_to_string, conv_to_real
   use logging_mod, only : LOG_ERROR, LOG_WARN, LOG_DEBUG, log_log, log_master_log, log_get_logging_level, log_is_master
   use writer_types_mod, only : writer_type, writer_field_type, write_field_collective_values_type
   use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_unlock, forthread_mutex_destroy, &
@@ -71,6 +72,7 @@ contains
     character(len=STRING_LENGTH) :: unique_filename
     type(netcdf_diagnostics_type), pointer :: ncdf_writer_state
     class(*), pointer :: generic
+    integer :: zn_var_id
 
     ncdf_writer_state=>get_file_state(file_writer_information%filename, timestep, .true.)
     if (.not. associated(ncdf_writer_state)) then
@@ -82,7 +84,8 @@ contains
         call check_thread_status(forthread_mutex_init(ncdf_writer_state%mutex, -1))
         call check_thread_status(forthread_mutex_lock(ncdf_writer_state%mutex))
         generic=>ncdf_writer_state
-        call c_put(file_states, trim(file_writer_information%filename)//"#"//trim(conv_to_string(timestep)), generic)
+        call c_put_generic(file_states, trim(file_writer_information%filename)//"#"//trim(conv_to_string(timestep)), &
+             generic, .false.)
         call check_thread_status(forthread_rwlock_unlock(file_states_rwlock))
         
         call generate_unique_filename(file_writer_information%filename, timestep, unique_filename)
@@ -96,7 +99,9 @@ contains
         call define_dimensions(ncdf_writer_state, io_configuration%dimension_sizing)
         call define_time_series_dimensions(ncdf_writer_state, file_writer_information, time, time_points)
         call define_variables(ncdf_writer_state, file_writer_information)
+        zn_var_id=define_zn_variable(ncdf_writer_state)
         call check_status(nf90_enddef(ncdf_writer_state%ncid))
+        call write_zn_variable(ncdf_writer_state, zn_var_id, io_configuration%zn_field)
         call check_thread_status(forthread_mutex_unlock(ncdf_writer_state%mutex))
       else
         call check_thread_status(forthread_rwlock_unlock(file_states_rwlock))
@@ -115,7 +120,7 @@ contains
     integer :: timestep
     type(writer_type), pointer :: close_netcdf_file
 
-    integer :: i, entries
+    type(iterator_type) :: iterator
     class(*), pointer :: generic
 
     type(netcdf_diagnostics_type), pointer :: file_state
@@ -127,11 +132,11 @@ contains
     call check_thread_status(forthread_mutex_destroy(file_state%mutex))
     call c_free(file_state%dimension_to_id)
     call c_free(file_state%variable_to_id)
-    entries=c_size(file_state%timeseries_dimension)
-    do i=1, entries
-      generic=>c_value_at(file_state%timeseries_dimension, i)
+    iterator=c_get_iterator(file_state%timeseries_dimension)
+    do while (c_has_next(iterator))
+      generic=>c_get_generic(c_next_mapentry(iterator))
       deallocate(generic)
-    end do    
+    end do  
     call c_free(file_state%timeseries_dimension)
     call check_thread_status(forthread_rwlock_wrlock(file_states_rwlock))
     call c_remove(file_states, trim(field_name)//"#"//trim(conv_to_string(timestep)))
@@ -208,8 +213,23 @@ contains
     dash_idx=dash_idx-1
     if (dash_idx .eq. -1) dash_idx=len_trim(dim_name)
 
-    get_dimension_original_size=conv_to_integer(c_get(dimension_store, dim_name(:dash_idx)), .false.)
+    get_dimension_original_size=c_get_integer(dimension_store, dim_name(:dash_idx))
   end function get_dimension_original_size  
+
+  !> Writes the ZN variable into the NetCDF file
+  !! @param file_state The NetCDF file state
+  !! @param zn_var_id The ZN variable id in the file
+  !! @param field_values The field values to write
+  subroutine write_zn_variable(file_state, zn_var_id, field_values)
+    type(netcdf_diagnostics_type), intent(inout) :: file_state
+    integer, intent(in) :: zn_var_id
+    real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: field_values
+
+    integer :: count_to_write(1)
+
+    count_to_write(1)=size(field_values)
+    call check_status(nf90_put_var(file_state%ncid, zn_var_id, field_values, count=count_to_write))
+  end subroutine write_zn_variable  
 
   !> Writes collective variables, where we are working with the values from multiple MONCs and storing these in their own
   !! specific relative location in the diagnostics file. 
@@ -225,7 +245,7 @@ contains
     type(netcdf_diagnostics_type), intent(inout) :: file_state
 
     real :: value_to_test
-    integer :: i, j, k, entries, included_num, monc_entries, source, field_id, start(field_to_write_information%dimensions+1), &
+    integer :: i, k, included_num, field_id, start(field_to_write_information%dimensions+1), &
          count(field_to_write_information%dimensions+1), monc_location, dim_identifier, auto_period, dim_start
     class(*), pointer :: generic
     type(write_field_collective_values_type), pointer :: multi_monc_entries
@@ -234,6 +254,8 @@ contains
     character(len=STRING_LENGTH), dimension(:), allocatable :: items_to_remove
     type(data_values_type), pointer :: data_value
     type(netcdf_diagnostics_timeseries_type), pointer :: timeseries_diag
+    type(iterator_type) :: value_to_write_iterator, monc_entries_iterator
+    type(mapentry_type) :: value_to_write_map_entry, monc_entries_map_entry
 
     timeseries_diag=>get_specific_timeseries_dimension(file_state, field_to_write_information%output_frequency, &
          field_to_write_information%timestep_frequency)
@@ -241,24 +263,24 @@ contains
 
     allocate(items_to_remove(timeseries_diag%num_entries))
     included_num=1
-    field_id=conv_to_integer(c_get(file_state%variable_to_id, get_field_key(field_to_write_information)), .false.)
-    entries=c_size(field_to_write_information%values_to_write)
-    do i=1, entries
-      value_to_test=conv_to_real(c_key_at(field_to_write_information%values_to_write, i))
+    field_id=c_get_integer(file_state%variable_to_id, get_field_key(field_to_write_information))
+    value_to_write_iterator=c_get_iterator(field_to_write_information%values_to_write)
+    do while (c_has_next(value_to_write_iterator))
+      value_to_write_map_entry=c_next_mapentry(value_to_write_iterator)
+      value_to_test=conv_to_real(value_to_write_map_entry%key)
       if (value_to_test .le. time .and. value_to_test .gt. field_to_write_information%previous_write_time) then
         if (included_num .le. timeseries_diag%num_entries) then
           if (allocated(timeseries_time_to_write)) timeseries_time_to_write(included_num)=value_to_test
-          generic=>c_get(field_to_write_information%values_to_write, c_key_at(field_to_write_information%values_to_write, i))
+          generic=>c_get_generic(value_to_write_map_entry)
           select type(generic)
           type is(write_field_collective_values_type)
             multi_monc_entries=>generic
           end select
-          monc_entries=c_size(multi_monc_entries%monc_values)
-          do j=1, monc_entries
-            source=conv_to_integer(c_key_at(multi_monc_entries%monc_values, j))
-            data_value=>get_data_value_by_field_name(multi_monc_entries%monc_values, conv_to_string(source))           
-            generic=>c_get(io_configuration%monc_to_index, conv_to_string(source))
-            monc_location=conv_to_integer(generic, .false.)
+          monc_entries_iterator=c_get_iterator(multi_monc_entries%monc_values)
+          do while(c_has_next(monc_entries_iterator))
+            monc_entries_map_entry=c_next_mapentry(monc_entries_iterator)
+            data_value=>get_data_value_by_field_name(multi_monc_entries%monc_values, monc_entries_map_entry%key)           
+            monc_location=c_get_integer(io_configuration%monc_to_index, monc_entries_map_entry%key)
             do k=1, field_to_write_information%dimensions
               dim_identifier=get_dimension_identifier(field_to_write_information%dim_size_defns(k), is_auto_dimension)
               if (dim_identifier .gt. -1) then
@@ -289,7 +311,7 @@ contains
             deallocate(data_value%values)
             deallocate(data_value)
           end do
-          items_to_remove(included_num)=c_key_at(field_to_write_information%values_to_write, i)
+          items_to_remove(included_num)=value_to_write_map_entry%key
           included_num=included_num+1
           call c_free(multi_monc_entries%monc_values)
           deallocate(multi_monc_entries)
@@ -332,8 +354,10 @@ contains
 
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: values_to_write, timeseries_time_to_write
     real :: value_to_test
-    integer :: i, field_id, entries, next_entry_index, array_size, included_num
+    integer :: i, field_id, next_entry_index, array_size, included_num
     integer, dimension(:), allocatable :: count_to_write
+    type(iterator_type) :: iterator
+    type(mapentry_type) :: map_entry
 
     type(data_values_type), pointer :: data_value
     character(len=STRING_LENGTH), dimension(:), allocatable :: items_to_remove
@@ -357,18 +381,18 @@ contains
     end if
     allocate(values_to_write(array_size*timeseries_diag%num_entries))
     allocate(items_to_remove(timeseries_diag%num_entries))
-    entries=c_size(field_to_write_information%values_to_write)
-    do i=1, entries
-      value_to_test=conv_to_real(c_key_at(field_to_write_information%values_to_write, i))
+    iterator=c_get_iterator(field_to_write_information%values_to_write)
+    do while (c_has_next(iterator))
+      map_entry=c_next_mapentry(iterator)
+      value_to_test=conv_to_real(map_entry%key)
       if (value_to_test .le. time .and. value_to_test .gt. field_to_write_information%previous_write_time) then
-        data_value=>get_data_value_by_field_name(field_to_write_information%values_to_write, &
-             c_key_at(field_to_write_information%values_to_write, i))
+        data_value=>get_data_value_by_field_name(field_to_write_information%values_to_write, map_entry%key)
         if (size(values_to_write) .ge. next_entry_index+size(data_value%values)-1) then
           values_to_write(next_entry_index: next_entry_index+size(data_value%values)-1)=data_value%values(:)
           next_entry_index=next_entry_index+size(data_value%values)
           deallocate(data_value%values)
           deallocate(data_value)
-          items_to_remove(included_num)=c_key_at(field_to_write_information%values_to_write, i)
+          items_to_remove(included_num)=map_entry%key
           if (allocated(timeseries_time_to_write)) timeseries_time_to_write(included_num)=value_to_test
           included_num=included_num+1
         else
@@ -378,7 +402,7 @@ contains
       end if
     end do
     count_to_write(size(count_to_write))=included_num-1
-    field_id=conv_to_integer(c_get(file_state%variable_to_id, get_field_key(field_to_write_information)), .false.)
+    field_id=c_get_integer(file_state%variable_to_id, get_field_key(field_to_write_information))
     if (included_num-1 .ne. timeseries_diag%num_entries) then
       call log_log(LOG_WARN, "Miss match of time entries for field '"//trim(field_to_write_information%field_name)//&
            "', included entries="//trim(conv_to_string(included_num-1))//" but expected entries="//&
@@ -430,7 +454,7 @@ contains
              timeseries_diag%last_write_point)
         call check_status(nf90_def_dim(file_state%ncid, dim_key, timeseries_diag%num_entries, timeseries_diag%netcdf_dim_id))        
         generic=>timeseries_diag
-        call c_put(file_state%timeseries_dimension, dim_key, generic)
+        call c_put_generic(file_state%timeseries_dimension, dim_key, generic, .false.)
       end if
       file_writer_information%contents(i)%previous_tracked_write_point=timeseries_diag%last_write_point
     end do
@@ -448,16 +472,19 @@ contains
     integer, intent(in) :: timestep_frequency
     real, intent(out) :: last_write_entry
 
-    integer :: i, entries, ts
+    integer :: ts
     real :: tp_entry, write_point
+    type(iterator_type) :: iterator
+    type(mapentry_type) :: map_entry
 
     get_number_timeseries_entries=0
     write_point=previous_write_time
-    entries=c_size(time_points)
-    do i=1, entries
-      ts=conv_to_integer(c_key_at(time_points, i))
+    iterator=c_get_iterator(time_points)
+    do while (c_has_next(iterator))
+      map_entry=c_next_mapentry(iterator)
+      ts=conv_to_integer(map_entry%key)
       if (mod(ts, timestep_frequency) == 0) then
-        tp_entry=conv_to_real(c_value_at(time_points, i), .false.)
+        tp_entry=c_get_real(map_entry)
         if (tp_entry .ge. write_point+output_frequency) then
           get_number_timeseries_entries=get_number_timeseries_entries+1
           write_point=tp_entry
@@ -467,6 +494,19 @@ contains
     end do
   end function get_number_timeseries_entries
 
+  !> Defines the ZN variable in the NetCDF file
+  !! @param file_state The NetCDF file state
+  !! @returns The resulting ZN variable id
+  integer function define_zn_variable(file_state)
+    type(netcdf_diagnostics_type), intent(inout) :: file_state
+
+    integer :: field_id, dimension_ids(1)
+
+    dimension_ids(1)=c_get_integer(file_state%dimension_to_id, "zn")
+    call check_status(nf90_def_var(file_state%ncid, "zn", NF90_DOUBLE, dimension_ids, field_id))
+    define_zn_variable=field_id
+  end function define_zn_variable  
+
   !> Defines all variables in the file writer state
   !! @param file_state The NetCDF file state
   !! @param file_writer_information The file writer information
@@ -474,21 +514,23 @@ contains
     type(netcdf_diagnostics_type), intent(inout) :: file_state
     type(writer_type), intent(in) :: file_writer_information
 
-    integer :: i, j, data_type, field_id, entries
+    integer :: i, j, data_type, field_id
     integer, dimension(:), allocatable :: dimension_ids
     character(len=STRING_LENGTH) :: variable_key
     type(netcdf_diagnostics_timeseries_type), pointer :: timeseries_diag
     class(*), pointer :: generic
+    type(iterator_type) :: iterator
+    type(mapentry_type) :: map_entry
 
-    entries=c_size(file_state%timeseries_dimension)
-    do i=1, entries
-      generic=>c_value_at(file_state%timeseries_dimension, i)
+    iterator=c_get_iterator(file_state%timeseries_dimension)
+    do while (c_has_next(iterator))
+      map_entry=c_next_mapentry(iterator)
+      generic=>c_get_generic(map_entry)
       select type(generic)
         type is(netcdf_diagnostics_timeseries_type)
           timeseries_diag=>generic
-      end select   
-      variable_key=c_key_at(file_state%timeseries_dimension, i)
-      call check_status(nf90_def_var(file_state%ncid, variable_key, &
+      end select
+      call check_status(nf90_def_var(file_state%ncid, map_entry%key, &
              NF90_DOUBLE, timeseries_diag%netcdf_dim_id, timeseries_diag%netcdf_var_id))
     end do
 
@@ -504,8 +546,7 @@ contains
         allocate(dimension_ids(file_writer_information%contents(i)%dimensions+1))        
         do j=1, file_writer_information%contents(i)%dimensions
           if (c_contains(file_state%dimension_to_id, file_writer_information%contents(i)%dim_size_defns(j))) then
-          dimension_ids(j)=conv_to_integer(c_get(file_state%dimension_to_id, &
-               file_writer_information%contents(i)%dim_size_defns(j)), .false.)
+          dimension_ids(j)=c_get_integer(file_state%dimension_to_id, file_writer_information%contents(i)%dim_size_defns(j))
           else
             call log_log(LOG_ERROR, "Can not find information for dimension named '"//&
                  trim(file_writer_information%contents(i)%dim_size_defns(j))//"'")
@@ -519,7 +560,7 @@ contains
         call check_status(nf90_def_var(file_state%ncid, variable_key, &
              data_type, retrieve_time_series_dimension_id_for_field(file_state, file_writer_information, i), field_id))
       end if
-      call c_put(file_state%variable_to_id, variable_key, conv_to_generic(field_id, .true.))
+      call c_put_integer(file_state%variable_to_id, variable_key, field_id)
       if (len_trim(file_writer_information%contents(i)%units) .gt. 0) then
         call check_status(nf90_put_att(file_state%ncid, field_id, "units", file_writer_information%contents(i)%units))
       end if
@@ -566,7 +607,7 @@ contains
     class(*), pointer :: generic
 
     dim_key="time_series_"//trim(conv_to_string(timestep_frequency))//"_"// trim(conv_to_string(output_frequency))
-    generic=>c_get(file_state%timeseries_dimension, dim_key)
+    generic=>c_get_generic(file_state%timeseries_dimension, dim_key)
 
     if (associated(generic)) then
       select type(generic)
@@ -585,16 +626,15 @@ contains
     type(netcdf_diagnostics_type), intent(inout) :: file_state
     type(map_type), intent(inout) :: dimension_sizing
 
-    integer :: ncdf_dimid, i, entries
-    character(len=STRING_LENGTH) :: dim_str
+    integer :: ncdf_dimid
+    type(iterator_type) :: iterator
+    type(mapentry_type) :: map_entry
 
-    entries=c_size(dimension_sizing)
-
-    do i=1, entries
-      dim_str=c_key_at(dimension_sizing, i)
-      call check_status(nf90_def_dim(file_state%ncid, dim_str, &
-           conv_to_integer(c_value_at(dimension_sizing, i), .false.), ncdf_dimid))
-      call c_put(file_state%dimension_to_id, dim_str, conv_to_generic(ncdf_dimid, .true.))
+    iterator=c_get_iterator(dimension_sizing)
+    do while (c_has_next(iterator))
+      map_entry=c_next_mapentry(iterator)
+      call check_status(nf90_def_dim(file_state%ncid, map_entry%key, c_get_integer(map_entry), ncdf_dimid))
+      call c_put_integer(file_state%dimension_to_id, map_entry%key, ncdf_dimid)
     end do
   end subroutine define_dimensions
 
@@ -612,7 +652,7 @@ contains
     class(*), pointer :: generic
 
     if (dolock) call check_thread_status(forthread_rwlock_rdlock(file_states_rwlock))
-    generic=>c_get(file_states, trim(filename)//"#"//trim(conv_to_string(timestep)))
+    generic=>c_get_generic(file_states, trim(filename)//"#"//trim(conv_to_string(timestep)))
     if (dolock) call check_thread_status(forthread_rwlock_unlock(file_states_rwlock))
 
     if (associated(generic)) then

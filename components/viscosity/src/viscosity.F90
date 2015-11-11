@@ -10,7 +10,7 @@ module viscosity_mod
   use halo_communication_mod, only : copy_buffer_to_field, perform_local_data_copy_for_field, complete_nonblocking_halo_swap, &
        copy_buffer_to_corner
   use registry_mod, only : is_component_enabled
-  use logging_mod, only : LOG_ERROR, log_master_log
+  use logging_mod, only : LOG_ERROR, LOG_WARN, log_master_log
   implicit none
 
 #ifndef TEST_MODE
@@ -89,6 +89,10 @@ contains
     z_size=current_state%global_grid%size(Z_INDEX)
     allocate(u_viscosity(z_size), v_viscosity(z_size), w_viscosity(z_size))
    
+    if (.not. current_state%use_viscosity_and_diffusion) then
+      call log_master_log(LOG_WARN, &
+           "You have enabled the viscosity component, but use viscosity and diffusion is false in the configuration")
+    end if
   end subroutine initialisation_callback
 
   subroutine finalisation_callback(current_state)

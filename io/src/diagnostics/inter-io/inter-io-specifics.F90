@@ -43,7 +43,7 @@ contains
     procedure(handle_recv_data_from_io_server) :: handling_procedure
     character(len=*), intent(in) :: name
 
-    integer :: i, new_index
+    integer :: new_index
 
     io_configuration%number_inter_io_communications=io_configuration%number_inter_io_communications+1
 

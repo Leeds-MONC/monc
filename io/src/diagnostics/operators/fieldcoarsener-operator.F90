@@ -5,8 +5,8 @@ module fieldcoarsener_operator_mod
        data_values_type, get_data_value_by_field_name, get_prognostic_field_configuration
   use data_utils_mod, only : get_action_attribute_string, get_action_attribute_integer
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
-  use collections_mod, only : hashmap_type, list_type, map_type, c_add, c_get
-  use conversions_mod, only : conv_to_generic, conv_to_integer
+  use collections_mod, only : hashmap_type, list_type, map_type, c_add_string, c_get_integer
+  use conversions_mod, only : conv_to_integer
   use logging_mod, only : LOG_ERROR, log_log
   implicit none
 
@@ -27,7 +27,7 @@ contains
     character(len=*), intent(in) :: auto_dimension
     type(map_type), intent(inout) :: action_attributes
 
-    integer :: i, auto_dim_id, index_of_match, entire_dim_size
+    integer :: auto_dim_id, index_of_match, entire_dim_size
     integer, dimension(:), allocatable :: dimensions_to_slice, indexes_to_slice
 
     auto_dim_id=convert_dimension_str_to_id(auto_dimension)
@@ -244,7 +244,7 @@ contains
     character(len=STRING_LENGTH) :: field_to_slice
 
     field_to_slice=get_action_attribute_string(action_attributes, "field")
-    call c_add(fieldcoarsener_operator_get_required_fields, conv_to_generic(field_to_slice, .true.))
+    call c_add_string(fieldcoarsener_operator_get_required_fields, field_to_slice)
   end function fieldcoarsener_operator_get_required_fields
 
   !> Converts a dimension string to the corresponding numeric ID
@@ -272,6 +272,6 @@ contains
     type(io_configuration_type), intent(inout) :: io_configuration
     character(len=STRING_LENGTH), intent(in) :: dimension_name
 
-    get_entire_dimension_size=conv_to_integer(c_get(io_configuration%dimension_sizing, dimension_name), .false.)
+    get_entire_dimension_size=c_get_integer(io_configuration%dimension_sizing, dimension_name)
   end function get_entire_dimension_size
 end module fieldcoarsener_operator_mod

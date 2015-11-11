@@ -47,7 +47,7 @@ module monc_component_mod
       procedure(component_get_field_information), nopass, pointer :: field_information_retrieval => null()
       character(len=STRING_LENGTH), dimension(:), pointer :: published_fields => null()
       character(len=STRING_LENGTH) :: name !< Component name
-      real(kind=4) :: version !< Component version number
+      real(kind=DEFAULT_PRECISION) :: version !< Component version number
     end type component_descriptor_type
 
     !> Interface defining the signature of each callback hook that a component may specify.

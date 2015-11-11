@@ -728,7 +728,7 @@ contains
     
     integer :: i, j, k
 
-    complex_data=cmplx(0.0d0, 0.0d0)
+    complex_data=cmplx(0.0d0, 0.0d0, kind=C_DOUBLE_COMPLEX)
 
     do i=1,size(real_data,3)
       do j=1,size(real_data,2)

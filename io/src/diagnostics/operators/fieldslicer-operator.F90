@@ -5,8 +5,7 @@ module fieldslicer_operator_mod
        data_values_type, get_data_value_by_field_name, get_prognostic_field_configuration
   use data_utils_mod, only : get_action_attribute_string, get_action_attribute_integer
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
-  use collections_mod, only : hashmap_type, list_type, map_type, c_add
-  use conversions_mod, only : conv_to_generic
+  use collections_mod, only : hashmap_type, list_type, map_type, c_add_string
   use logging_mod, only : LOG_ERROR, log_log
   implicit none
 
@@ -132,7 +131,7 @@ contains
     character(len=STRING_LENGTH) :: field_to_slice
 
     field_to_slice=get_action_attribute_string(action_attributes, "field")
-    call c_add(fieldslicer_operator_get_required_fields, conv_to_generic(field_to_slice, .true.))
+    call c_add_string(fieldslicer_operator_get_required_fields, field_to_slice)
   end function fieldslicer_operator_get_required_fields
 
   !> Retrieves the integer index of the dimension to slice

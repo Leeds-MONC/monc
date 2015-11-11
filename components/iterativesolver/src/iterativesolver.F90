@@ -380,7 +380,7 @@ contains
     type(matrix_type), intent(in) :: A
     real(kind=DEFAULT_PRECISION), dimension(:,:,:), target, intent(inout) :: x, Ax
 
-    integer :: ierr, i, k, j, n, istart, iend, jstart, jend
+    integer :: i, k, j, n, istart, iend, jstart, jend
     type(field_data_wrapper_type) :: source_data   
 
     source_data%data=>x

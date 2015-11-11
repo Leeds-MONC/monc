@@ -14,7 +14,8 @@ module terminationcheck_mod
 #endif
 
   integer, parameter :: FILE_LINE_LEN=100, FILE_UNIT=10
-  integer :: termination_time, max_timesteps, check_messages_file_frequency
+  integer :: max_timesteps, check_messages_file_frequency
+  real(kind=DEFAULT_PRECISION) :: termination_time
   character(len=STRING_LENGTH) :: messages_file_name
 
   public terminationcheck_get_descriptor

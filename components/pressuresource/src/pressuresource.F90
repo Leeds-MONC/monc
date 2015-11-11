@@ -61,9 +61,6 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    integer :: k, local_y, local_x, corrected_y, corrected_x
-    logical :: last_x, last_y
-
     if (current_state%first_timestep_column) call register_neighbouring_pressure_data_recv(current_state)
     if (.not. current_state%halo_column) call calculate_psrce(current_state)        
     if (current_state%last_timestep_column) call send_neighbouring_pressure_data(current_state)

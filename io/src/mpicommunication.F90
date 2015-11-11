@@ -1,8 +1,7 @@
 !> Abstraction layer around MPI, this issues and marshals the lower level communication details
 module mpi_communication_mod
   use datadefn_mod, only : STRING_LENGTH
-  use collections_mod, only : map_type, c_put
-  use conversions_mod, only : conv_to_generic
+  use collections_mod, only : map_type, c_put_integer
   use configuration_parser_mod, only : io_configuration_data_definition_type, io_configuration_inter_communication_description
   use logging_mod, only : LOG_ERROR, log_log
   use io_server_client_mod, only : ARRAY_FIELD_TYPE, MAP_FIELD_TYPE, INTEGER_DATA_TYPE, BOOLEAN_DATA_TYPE, STRING_DATA_TYPE, &
@@ -132,7 +131,7 @@ contains
     type(io_configuration_inter_communication_description), dimension(:), intent(inout) :: inter_io_communications
     character, dimension(:), allocatable, intent(inout) :: data_buffer
 
-    integer :: i, completed, ierr, status(MPI_STATUS_SIZE), message_size
+    integer :: i, ierr, status(MPI_STATUS_SIZE), message_size
     logical :: message_pending
 
     do i=1, number_of_inter_io
@@ -183,7 +182,6 @@ contains
          temp_size, prev_data_type, old_types(20), offsets(20), block_counts(20), new_type, current_location, ierr, field_ignores
     logical :: field_found
     type(data_sizing_description_type) :: field_size_info
-    class(*), pointer :: generic
 
     type_extents=populate_mpi_type_extents()
 
@@ -210,8 +208,7 @@ contains
           type_counts=type_counts+1
         end if
       end if
-      generic=>conv_to_generic(current_location, .true.)
-      call c_put(field_start_locations, data_definition%fields(i)%name, generic)
+      call c_put_integer(field_start_locations, data_definition%fields(i)%name, current_location)
       if (data_definition%fields(i)%field_type .eq. ARRAY_FIELD_TYPE .or. &
            data_definition%fields(i)%field_type .eq. MAP_FIELD_TYPE) then
         ! Grab the field info based upon the field name
@@ -258,11 +255,9 @@ contains
           end if
         end if
       end if
-      generic=>conv_to_generic(current_location-1, .true.)
-      call c_put(field_end_locations, data_definition%fields(i)%name, generic)
+      call c_put_integer(field_end_locations, data_definition%fields(i)%name, current_location-1)
       if (present(field_dimensions)) then
-        generic=>conv_to_generic(field_size_info%dimensions, .true.)
-        call c_put(field_dimensions, data_definition%fields(i)%name, generic)
+        call c_put_integer(field_dimensions, data_definition%fields(i)%name, field_size_info%dimensions)
       end if
     end do
     if (field_start .le. i-1) then

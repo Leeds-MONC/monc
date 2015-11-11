@@ -4,10 +4,12 @@ module diagnostic_federator_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : io_configuration_type, io_configuration_misc_item_type, data_values_type, &
        io_configuration_field_type, io_configuration_diagnostic_field_type, get_number_field_dimensions, &
-       get_data_value_by_field_name, get_monc_location
-  use collections_mod, only : hashmap_type, hashset_type, map_type, list_type, c_get, c_size, c_put, c_contains, c_is_empty, &
-       c_add, c_remove, c_value_at, c_key_at, c_free
-  use conversions_mod, only : conv_to_generic, conv_to_string, conv_to_real, conv_to_integer, generic_to_double_real
+       get_data_value_from_map_entry, get_data_value_by_field_name, get_monc_location
+  use collections_mod, only : hashmap_type, hashset_type, map_type, list_type, iterator_type, mapentry_type, c_get_string, &
+       c_get_generic, c_size, c_contains, c_is_empty, c_add_string, c_add_generic, c_add_integer, c_remove, &
+       c_generic_at, c_free, c_put_generic, c_put_integer, c_get_iterator, c_has_next, c_next_string, &
+       c_next_generic, c_next_mapentry
+  use conversions_mod, only : conv_to_string, conv_to_real
   use reduction_inter_io_mod, only : init_reduction_inter_io, check_reduction_inter_io_for_completion, &
        finalise_reduction_inter_io, perform_inter_io_reduction, get_reduction_operator
   use broadcast_inter_io_mod, only : init_broadcast_inter_io, perform_inter_io_broadcast, finalise_broadcast_inter_io, &
@@ -55,7 +57,7 @@ module diagnostic_federator_mod
 
   !< A diagnostic which is a name and then the list of activities require to be executed
   type diagnostics_type
-     character(len=STRING_LENGTH) :: diagnostic_name
+     character(len=STRING_LENGTH) :: diagnostic_name, uuid
      type(list_type) :: activities
      integer :: generation_timestep_frequency
      logical :: collective
@@ -67,7 +69,7 @@ module diagnostic_federator_mod
      real(kind=DEFAULT_PRECISION) :: result
      type(list_type) :: required_fields
      type(map_type) :: activity_attributes
-     character(len=STRING_LENGTH) :: result_name, activity_name
+     character(len=STRING_LENGTH) :: result_name, activity_name, uuid
      procedure(perform_activity), pointer, nopass :: operator_procedure
   end type diagnostics_activity_type
 
@@ -139,35 +141,38 @@ contains
   type(hashset_type) function determine_diagnostics_fields_available(monc_field_names)
     type(hashset_type), intent(inout) :: monc_field_names
 
-    integer :: i, j, k, num_activities, num_fields
+    integer :: i, k, num_fields
     type(diagnostics_activity_type) :: specific_activity
     type(hashset_type) :: result_names_for_activities
+    type(iterator_type) :: required_fields_iterator, activities_iterator
     character(len=STRING_LENGTH) :: specific_field_name
     logical :: diagnostic_provided
 
     do i=1, size(diagnostic_definitions)
       diagnostic_provided=.true.
-      num_activities=c_size(diagnostic_definitions(i)%activities)
-      do j=1, num_activities
-        specific_activity=get_activity_at_index(diagnostic_definitions(i)%activities, j)
-        call c_add(result_names_for_activities, specific_activity%result_name)
+      activities_iterator=c_get_iterator(diagnostic_definitions(i)%activities)
+      do while (c_has_next(activities_iterator))
+        specific_activity=retrieve_next_activity(activities_iterator)
+        call c_add_string(result_names_for_activities, specific_activity%result_name)
       end do
-      do j=1, num_activities
-        specific_activity=get_activity_at_index(diagnostic_definitions(i)%activities, j)
-        num_fields=c_size(specific_activity%required_fields)
-        do k=1, num_fields
-          specific_field_name=conv_to_string(c_get(specific_activity%required_fields, k), .false., STRING_LENGTH)          
+
+      activities_iterator=c_get_iterator(diagnostic_definitions(i)%activities)
+      do while (c_has_next(activities_iterator))
+        specific_activity=retrieve_next_activity(activities_iterator)
+        required_fields_iterator=c_get_iterator(specific_activity%required_fields)
+        do while (c_has_next(required_fields_iterator))
+          specific_field_name=c_next_string(required_fields_iterator)
           if (.not. c_contains(result_names_for_activities, specific_field_name) .and. &
                .not. c_contains(monc_field_names, specific_field_name)) then            
             diagnostic_provided=.false.
             exit
-          end if          
-        end do
+          end if
+        end do        
         if (.not. diagnostic_provided) exit
       end do
       if (diagnostic_provided) then
-        call c_add(determine_diagnostics_fields_available, diagnostic_definitions(i)%diagnostic_name)
-        call c_add(available_fields, diagnostic_definitions(i)%diagnostic_name)
+        call c_add_string(determine_diagnostics_fields_available, diagnostic_definitions(i)%diagnostic_name)
+        call c_add_string(available_fields, diagnostic_definitions(i)%diagnostic_name)
       end if
       call c_free(result_names_for_activities)
     end do    
@@ -214,12 +219,12 @@ contains
     type(diagnostics_at_timestep_type), intent(inout) :: timestep_entry
     type(all_diagnostics_at_timestep_type), intent(inout) :: diagnostics_by_timestep
 
-    integer :: i, j, entries, num_diags
+    integer :: j, num_diags
     type(diagnostics_activity_type), pointer :: activity
-    type(list_type) :: activities_to_remove
-    character(len=STRING_LENGTH) :: field_name
+    character(len=STRING_LENGTH) :: field_name, activity_diag_key
     logical :: updated_entry, entry_in_completed_diagnostics, operator_produced_values
     type(data_values_type) :: value_to_send
+    type(iterator_type) :: activities_iterator
 
     updated_entry=.true.
     
@@ -233,30 +238,28 @@ contains
              diagnostic_definitions(j)%diagnostic_name)
         call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
         if (diagnostic_definitions(j)%collective .or. .not. entry_in_completed_diagnostics) then
-          entries=c_size(diagnostic_definitions(j)%activities)
-          do i=1, entries
-            if (.not. c_contains(timestep_entry%completed_activities, trim(diagnostic_definitions(j)%diagnostic_name)//"#"//&
-                 trim(conv_to_string(i)))) then
-              activity=>get_activity_at_index(diagnostic_definitions(j)%activities, i)      
-              if (are_fields_available_for_activity(timestep_entry, activity)) then                
-                call c_add(timestep_entry%completed_activities, trim(diagnostic_definitions(j)%diagnostic_name)//"#"//&
-                     trim(conv_to_string(i)))
+          activities_iterator=c_get_iterator(diagnostic_definitions(j)%activities)
+          do while (c_has_next(activities_iterator))
+            activity=>retrieve_next_activity(activities_iterator)
+            activity_diag_key=generate_activity_diagnostic_key(diagnostic_definitions(j), activity)
+            if (.not. c_contains(timestep_entry%completed_activities, activity_diag_key)) then
+              if (are_fields_available_for_activity(timestep_entry, activity)) then
+                call c_add_string(timestep_entry%completed_activities, activity_diag_key)
                 updated_entry=.true.              
                 if (activity%activity_type == OPERATOR_TYPE) then                        
                   operator_produced_values=handle_operator_completion(io_configuration, timestep_entry, activity)
-                  call c_add(activities_to_remove, conv_to_generic(i, .true.))
                   if (operator_produced_values .and. activity%result_name == diagnostic_definitions(j)%diagnostic_name) then
                     call handle_diagnostic_calculation_completed(io_configuration, j, timestep_entry, diagnostics_by_timestep)
                   end if
                 else if (activity%activity_type == REDUCTION_TYPE .or. activity%activity_type == BROADCAST_TYPE &
                      .or. activity%activity_type == ALLREDUCTION_TYPE) then
-                  field_name=conv_to_string(c_get(activity%required_fields, 1), .false., STRING_LENGTH)
+                  field_name=c_get_string(activity%required_fields, 1)
                   call check_thread_status(forthread_rwlock_rdlock(timestep_entry%completed_fields_rwlock))
                   value_to_send=get_data_value_by_field_name(timestep_entry%completed_fields, field_name)
                   call check_thread_status(forthread_rwlock_unlock(timestep_entry%completed_fields_rwlock))
                   call check_thread_status(forthread_mutex_unlock(timestep_entry%activity_completion_mutex))
                   call perform_inter_io_communication(io_configuration, timestep_entry, diagnostics_by_timestep, &
-                       activity, value_to_send, field_name, diagnostic_definitions(j)%collective)
+                       activity, value_to_send, field_name)
                   call check_thread_status(forthread_mutex_lock(timestep_entry%activity_completion_mutex))
                 end if
               end if
@@ -289,7 +292,7 @@ contains
       deallocate(operator_result_values)
       generic=>operator_result
       call check_thread_status(forthread_rwlock_wrlock(timestep_entry%completed_fields_rwlock))
-      call c_put(timestep_entry%completed_fields, specific_activity%result_name, generic)
+      call c_put_generic(timestep_entry%completed_fields, specific_activity%result_name, generic, .false.)
       call check_thread_status(forthread_rwlock_unlock(timestep_entry%completed_fields_rwlock))
       call check_thread_status(forthread_rwlock_wrlock(timestep_entry%outstanding_fields_rwlock))       
       call c_remove(timestep_entry%outstanding_fields, specific_activity%result_name)        
@@ -312,21 +315,18 @@ contains
     character(len=STRING_LENGTH) :: field_name
     integer :: timestep
 
-    integer :: i, entries
-    
     type(all_diagnostics_at_timestep_type), pointer :: diagnostics_by_timestep
     type(data_values_type), pointer :: result_to_add
-    class(*), pointer :: generic
+    type(iterator_type) :: iterator
 
     diagnostics_by_timestep=>get_diagnostics_by_timestep(timestep, .true.)
     if (.not. c_is_empty(diagnostics_by_timestep%diagnostic_entries)) then
-      entries=c_size(diagnostics_by_timestep%diagnostic_entries)
-      do i=1, entries
+      iterator=c_get_iterator(diagnostics_by_timestep%diagnostic_entries)
+      do while (c_has_next(iterator))
         allocate(result_to_add)
         result_to_add%values=values
         call handle_completion_for_specific_monc_timestep_entry(io_configuration, result_to_add, &
-             field_name, timestep, get_specific_monc_timestep_entry_at_index(diagnostics_by_timestep, i), &
-             diagnostics_by_timestep)
+             field_name, retrieve_next_specific_monc_timestep_entry(iterator), diagnostics_by_timestep)
       end do
     end if
     call check_thread_status(forthread_rwlock_wrlock(diagnostics_by_timestep%communication_corresponding_activities_rwlock))
@@ -342,23 +342,23 @@ contains
   !! @param timestep Corresponding timestep
   !! @param timestep_entry The specific timestep entry which relates to an individual MONC communicating with the IO server
   subroutine handle_completion_for_specific_monc_timestep_entry(io_configuration, result_to_add, &
-       field_name, timestep, timestep_entry, diagnostics_by_timestep)
+       field_name, timestep_entry, diagnostics_by_timestep)
     type(io_configuration_type), intent(inout) :: io_configuration
     type(data_values_type), pointer, intent(in) :: result_to_add
-    character(len=STRING_LENGTH) :: field_name
-    integer :: timestep, i
+    character(len=STRING_LENGTH), intent(in) :: field_name
     type(diagnostics_at_timestep_type), pointer :: timestep_entry
     type(all_diagnostics_at_timestep_type), intent(inout) :: diagnostics_by_timestep
 
     logical :: entry_in_completed_diagnostics
     type(diagnostics_activity_type), pointer :: activity
     class(*), pointer :: generic
+    integer :: i
     
     activity=>get_comm_activity_from_fieldname(diagnostics_by_timestep, field_name)
         
     generic=>result_to_add
     call check_thread_status(forthread_rwlock_wrlock(timestep_entry%completed_fields_rwlock))
-    call c_put(timestep_entry%completed_fields, trim(activity%result_name), generic)
+    call c_put_generic(timestep_entry%completed_fields, trim(activity%result_name), generic, .false.)
     call check_thread_status(forthread_rwlock_unlock(timestep_entry%completed_fields_rwlock))
 
     call check_thread_status(forthread_rwlock_wrlock(timestep_entry%completed_fields_rwlock))
@@ -396,7 +396,7 @@ contains
     type(all_diagnostics_at_timestep_type), intent(inout) :: diagnostics_by_timestep
 
     type(data_values_type), pointer :: diagnostics_value_entry
-    integer :: i, entries
+    type(iterator_type) :: iterator
     type(diagnostics_at_timestep_type), pointer :: activity_at_index
 
     call check_thread_status(forthread_rwlock_rdlock(timestep_entry%completed_fields_rwlock))
@@ -418,11 +418,12 @@ contains
         call check_thread_status(forthread_rwlock_wrlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
         if (.not. c_contains(diagnostics_by_timestep%completed_diagnostics,&
              diagnostic_definitions(diagnostic_index)%diagnostic_name)) then
-          call c_add(diagnostics_by_timestep%completed_diagnostics, diagnostic_definitions(diagnostic_index)%diagnostic_name)
+          call c_add_string(diagnostics_by_timestep%completed_diagnostics, &
+               diagnostic_definitions(diagnostic_index)%diagnostic_name)
           call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
-          entries=c_size(diagnostics_by_timestep%diagnostic_entries)
-          do i=1, entries
-            activity_at_index=>get_specific_monc_timestep_entry_at_index(diagnostics_by_timestep, i)
+          iterator=c_get_iterator(diagnostics_by_timestep%diagnostic_entries)
+          do while (c_has_next(iterator))
+            activity_at_index=>retrieve_next_specific_monc_timestep_entry(iterator)
             activity_at_index%number_diags_outstanding=activity_at_index%number_diags_outstanding-1
           end do
           call provide_field_to_writer_federator(io_configuration, diagnostic_definitions(diagnostic_index)%diagnostic_name, &
@@ -446,21 +447,20 @@ contains
     type(diagnostics_at_timestep_type), intent(inout) :: timestep_entry
     type(diagnostics_activity_type) :: activity
 
-    integer :: i, entries
     character(len=STRING_LENGTH) :: field_name
+    type(iterator_type) :: iterator
 
     are_fields_available_for_activity=.true.
-    entries=c_size(activity%required_fields)
-    if (entries .gt. 0) then
+    if (.not. c_is_empty(activity%required_fields)) then      
       call check_thread_status(forthread_rwlock_rdlock(timestep_entry%completed_fields_rwlock))
-      do i=1, entries
-        field_name=conv_to_string(c_get(activity%required_fields, i), .true., STRING_LENGTH)
+      iterator=c_get_iterator(activity%required_fields)
+      do while (c_has_next(iterator))
+        field_name=c_next_string(iterator)
         if (.not. c_contains(timestep_entry%completed_fields, field_name)) then          
           are_fields_available_for_activity=.false.
           exit
-        else
         end if
-      end do
+      end do      
       call check_thread_status(forthread_rwlock_unlock(timestep_entry%completed_fields_rwlock))
     end if
   end function are_fields_available_for_activity
@@ -472,20 +472,20 @@ contains
   !! @param value_to_send The value to communicate
   !! @param communication_field_name Name of the field that we are communicating
   subroutine perform_inter_io_communication(io_configuration, timestep_entry, all_entries_at_timestep, &
-       activity, value_to_send, communication_field_name, collective_diagnostic)
+       activity, value_to_send, communication_field_name)
     type(io_configuration_type), intent(inout) :: io_configuration
     type(diagnostics_at_timestep_type), intent(inout) :: timestep_entry
     type(all_diagnostics_at_timestep_type), intent(inout) :: all_entries_at_timestep
     type(diagnostics_activity_type), pointer, intent(in) :: activity
     type(data_values_type), intent(in) :: value_to_send
     character(len=STRING_LENGTH), intent(in) :: communication_field_name
-    logical, intent(in) :: collective_diagnostic
 
     class(*), pointer :: generic
 
     generic=>activity
     call check_thread_status(forthread_rwlock_wrlock(all_entries_at_timestep%communication_corresponding_activities_rwlock))
-    call c_put(all_entries_at_timestep%communication_corresponding_activities, trim(communication_field_name), generic)
+    call c_put_generic(all_entries_at_timestep%communication_corresponding_activities, trim(communication_field_name), &
+         generic, .false.)
     call check_thread_status(forthread_rwlock_unlock(all_entries_at_timestep%communication_corresponding_activities_rwlock))
 
     if (activity%activity_type == REDUCTION_TYPE) then
@@ -517,9 +517,10 @@ contains
     type(all_diagnostics_at_timestep_type), intent(inout) :: diagnostics_by_timestep
 
     logical :: completed_diagnostics_entry
-    integer :: i, j, num_diags, entries
+    integer :: j, num_diags
+    type(iterator_type) :: iterator
     type(diagnostics_activity_type), pointer :: activity
-    character(len=STRING_LENGTH) :: communication_field_name
+    character(len=STRING_LENGTH) :: communication_field_name, activity_diag_key
     
     num_diags=size(diagnostic_definitions)
     do j=1, num_diags
@@ -528,21 +529,20 @@ contains
            diagnostic_definitions(j)%diagnostic_name)
       call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
       if (.not. completed_diagnostics_entry) then
-        entries=c_size(diagnostic_definitions(j)%activities)
-        do i=1, entries
-          if (.not. c_contains(timestep_entry%completed_activities, trim(diagnostic_definitions(j)%diagnostic_name)//"#"//&
-               trim(conv_to_string(i)))) then
-            activity=>get_activity_at_index(diagnostic_definitions(j)%activities, i)
+        iterator=c_get_iterator(diagnostic_definitions(j)%activities)
+        do while (c_has_next(iterator))
+          activity=>retrieve_next_activity(iterator)
+          activity_diag_key=generate_activity_diagnostic_key(diagnostic_definitions(j), activity)
+          if (.not. c_contains(timestep_entry%completed_activities, activity_diag_key)) then
             if ((activity%activity_type == REDUCTION_TYPE .or. activity%activity_type == BROADCAST_TYPE &
                  .or. activity%activity_type == ALLREDUCTION_TYPE)) then
               if (.not. c_is_empty(activity%required_fields)) then
-                communication_field_name=conv_to_string(c_get(activity%required_fields, 1), .false., STRING_LENGTH)
+                communication_field_name=c_get_string(activity%required_fields, 1)
                 if (is_field_present(io_configuration, source, data_id, communication_field_name)) then
-                  call c_add(timestep_entry%completed_activities, trim(diagnostic_definitions(j)%diagnostic_name)//"#"//&
-                       trim(conv_to_string(i)))                  
+                  call c_add_string(timestep_entry%completed_activities, activity_diag_key)
                   call perform_inter_io_communication(io_configuration, timestep_entry, diagnostics_by_timestep, activity, &
                        get_value_from_monc_data(io_configuration, source, data_id, data_dump, communication_field_name), &
-                       communication_field_name, diagnostic_definitions(j)%collective)            
+                       communication_field_name)            
                 end if
               end if
             end if
@@ -566,7 +566,7 @@ contains
     character, dimension(:), allocatable :: data_dump
     type(diagnostics_at_timestep_type), intent(inout) :: timestep_diagnostics_entry
 
-    integer :: i, entries
+    type(iterator_type) :: iterator
     character(len=STRING_LENGTH) :: field_name
     type(data_values_type), pointer :: field_value
     type(hashset_type) :: removed_entries
@@ -574,28 +574,29 @@ contains
         
     if (.not. c_is_empty(timestep_diagnostics_entry%outstanding_fields)) then
       call check_thread_status(forthread_rwlock_rdlock(timestep_diagnostics_entry%outstanding_fields_rwlock))
-      entries=c_size(timestep_diagnostics_entry%outstanding_fields)
-      do i=1, entries
-        field_name=c_get(timestep_diagnostics_entry%outstanding_fields, i)
+      iterator=c_get_iterator(timestep_diagnostics_entry%outstanding_fields)
+      do while (c_has_next(iterator))
+        field_name=c_next_string(iterator)
         if (is_field_present(io_configuration, source, data_id, field_name)) then
           field_value=>get_value_from_monc_data(io_configuration, source, data_id, data_dump, field_name)
           generic=>field_value
           call check_thread_status(forthread_rwlock_wrlock(timestep_diagnostics_entry%completed_fields_rwlock))
-          call c_put(timestep_diagnostics_entry%completed_fields, trim(field_name), generic)
+          call c_put_generic(timestep_diagnostics_entry%completed_fields, trim(field_name), generic, .false.)
           call check_thread_status(forthread_rwlock_unlock(timestep_diagnostics_entry%completed_fields_rwlock))
-          call c_add(removed_entries, field_name)
+          call c_add_string(removed_entries, field_name)
         end if
       end do
       call check_thread_status(forthread_rwlock_unlock(timestep_diagnostics_entry%outstanding_fields_rwlock))
       if (.not. c_is_empty(removed_entries)) then
-        entries=c_size(removed_entries)
+        iterator=c_get_iterator(removed_entries)
         call check_thread_status(forthread_rwlock_wrlock(timestep_diagnostics_entry%outstanding_fields_rwlock))
-        do i=1, entries
-          call c_remove(timestep_diagnostics_entry%outstanding_fields, c_get(removed_entries, i))
+        do while (c_has_next(iterator))
+          call c_remove(timestep_diagnostics_entry%outstanding_fields, c_next_string(iterator))
         end do
         call check_thread_status(forthread_rwlock_unlock(timestep_diagnostics_entry%outstanding_fields_rwlock))
       end if
     end if
+    call c_free(removed_entries)
   end subroutine check_diagnostics_entries_against_data
 
   !> Cleans the diagnostic states if required (based on the timestep period)
@@ -603,8 +604,10 @@ contains
   subroutine clean_diagnostic_states(current_timestep)
     integer, intent(in) :: current_timestep
 
-    integer :: i, j, entries, ts_entries, have_lock
+    integer :: have_lock
     type(list_type) :: entries_to_remove
+    type(iterator_type) :: iterator, all_diagnostics_iterator
+    type(mapentry_type) :: all_diag_mapentry
     type(all_diagnostics_at_timestep_type), pointer :: specific_all_diagnostics_for_ts
     type(diagnostics_at_timestep_type), pointer :: specific_monc_timestep_entry
     logical :: all_completed
@@ -619,29 +622,30 @@ contains
       if (previous_clean_point + PERFORM_CLEAN_EVERY .lt. current_point) then
         previous_clean_point=current_point
         call check_thread_status(forthread_rwlock_rdlock(all_diagnostics_per_timestep_rwlock))
-        entries=c_size(all_diagnostics_at_timestep)
-        do i=1, entries
-          specific_all_diagnostics_for_ts=>get_diagnostics_at_index(i, .false., entry_key)
-          ts_entries=c_size(specific_all_diagnostics_for_ts%diagnostic_entries)
+        all_diagnostics_iterator=c_get_iterator(all_diagnostics_at_timestep)
+        do while(c_has_next(all_diagnostics_iterator))
+          all_diag_mapentry=c_next_mapentry(all_diagnostics_iterator)
+          specific_all_diagnostics_for_ts=>retrieve_diagnostics(all_diag_mapentry)
+          iterator=c_get_iterator(specific_all_diagnostics_for_ts%diagnostic_entries)
           all_completed=.true.
-          do j=1, ts_entries
-            specific_monc_timestep_entry=>get_specific_monc_timestep_entry_at_index(specific_all_diagnostics_for_ts, j)
+          do while (c_has_next(iterator))
+            specific_monc_timestep_entry=>retrieve_next_specific_monc_timestep_entry(iterator)
             if (specific_monc_timestep_entry%number_diags_outstanding .gt. 0) then
               all_completed=.false.
               exit
             end if
           end do
           if (all_completed) then
-            call c_add(entries_to_remove, conv_to_generic(entry_key, .true.))
+            call c_add_string(entries_to_remove, all_diag_mapentry%key)
           end if
         end do
         call check_thread_status(forthread_rwlock_unlock(all_diagnostics_per_timestep_rwlock))
 
         if (.not. c_is_empty(entries_to_remove)) then
           call check_thread_status(forthread_rwlock_wrlock(all_diagnostics_per_timestep_rwlock))
-          entries=c_size(entries_to_remove)
-          do i=1, entries
-            entry_key=conv_to_string(c_get(entries_to_remove, i), .false., STRING_LENGTH)
+          iterator=c_get_iterator(entries_to_remove)
+          do while (c_has_next(iterator))
+            entry_key=c_next_string(iterator)
             call deallocate_diagnostics_at_timestep(entry_key)
             call c_remove(all_diagnostics_at_timestep, entry_key)
           end do
@@ -662,22 +666,23 @@ contains
     type(all_diagnostics_at_timestep_type), pointer :: all_diagnostics_at_ts
     type(diagnostics_at_timestep_type), pointer :: specific_monc_timestep_entry
     type(data_values_type), pointer :: field_data_value
-    integer :: i, entries, cfentries, j
+    integer :: cfentries, j
+    type(iterator_type) :: iterator, completed_fields_iterator
     class(*), pointer :: generic
+
     all_diagnostics_at_ts=>get_diagnostic_by_key(key)
     if (associated(all_diagnostics_at_ts)) then
-      entries=c_size(all_diagnostics_at_ts%diagnostic_entries)
-      do i=1, entries
-        specific_monc_timestep_entry=>get_specific_monc_timestep_entry_at_index(all_diagnostics_at_ts, i)
+      iterator=c_get_iterator(all_diagnostics_at_ts%diagnostic_entries)
+      do while (c_has_next(iterator))
+        specific_monc_timestep_entry=>retrieve_next_specific_monc_timestep_entry(iterator)
         call check_thread_status(forthread_rwlock_destroy(specific_monc_timestep_entry%completed_fields_rwlock))
         call check_thread_status(forthread_rwlock_destroy(specific_monc_timestep_entry%outstanding_fields_rwlock))
         call check_thread_status(forthread_mutex_destroy(specific_monc_timestep_entry%activity_completion_mutex))
         call c_free(specific_monc_timestep_entry%outstanding_fields)
         call c_free(specific_monc_timestep_entry%completed_activities)
-        cfentries=c_size(specific_monc_timestep_entry%completed_fields)
-        do j=1, cfentries
-          field_data_value=>get_data_value_by_field_name(specific_monc_timestep_entry%completed_fields, &
-               c_key_at(specific_monc_timestep_entry%completed_fields, j))          
+        completed_fields_iterator=c_get_iterator(specific_monc_timestep_entry%completed_fields)
+        do while (c_has_next(completed_fields_iterator))
+          field_data_value=>get_data_value_from_map_entry(c_next_mapentry(completed_fields_iterator))
           if (allocated(field_data_value%values)) deallocate(field_data_value%values)
           deallocate(field_data_value)
         end do                
@@ -685,9 +690,9 @@ contains
       end do
       call c_free(all_diagnostics_at_ts%completed_diagnostics)
       call c_free(all_diagnostics_at_ts%communication_corresponding_activities)
-      entries=c_size(all_diagnostics_at_ts%diagnostic_entries)
-      do i=1, entries
-        generic=>c_get(all_diagnostics_at_ts%diagnostic_entries, i)
+      iterator=c_get_iterator(all_diagnostics_at_ts%diagnostic_entries)
+      do while (c_has_next(iterator))
+        generic=>c_next_generic(iterator)
         if (associated(generic)) deallocate(generic)
       end do
       call c_free(all_diagnostics_at_ts%diagnostic_entries)
@@ -771,10 +776,11 @@ contains
       if (.not. associated(find_or_register_timestep_entry)) then
         find_or_register_timestep_entry=>create_timestep_entry(io_configuration, timestep, time, source)
         generic=>find_or_register_timestep_entry
-        call c_put(diagnostics_per_monc_at_timestep, conv_to_string(timestep)//"#"//conv_to_string(source), generic)
+        call c_put_generic(diagnostics_per_monc_at_timestep, conv_to_string(timestep)//"#"//conv_to_string(source), &
+             generic, .false.)
         all_diags_by_timestep=>find_or_add_diagnostics_by_timestep(timestep)
         call check_thread_status(forthread_rwlock_wrlock(all_diagnostics_per_timestep_rwlock))
-        call c_add(all_diags_by_timestep%diagnostic_entries, generic)
+        call c_add_generic(all_diags_by_timestep%diagnostic_entries, generic, .false.)
         call check_thread_status(forthread_rwlock_unlock(all_diagnostics_per_timestep_rwlock))
       end if
       call check_thread_status(forthread_rwlock_unlock(timestep_entries_rwlock))
@@ -790,21 +796,21 @@ contains
     real(kind=DEFAULT_PRECISION), intent(in) :: time
     type(diagnostics_at_timestep_type), pointer :: create_timestep_entry
 
-    integer :: i, entries
+    type(iterator_type) :: iterator
 
     allocate(create_timestep_entry)
-    entries=c_size(all_outstanding_fields)
-    do i=1, entries
-      create_timestep_entry%timestep=timestep
-      create_timestep_entry%time=time
-      create_timestep_entry%number_diags_outstanding=c_size(available_fields)
-      create_timestep_entry%source=source
-      create_timestep_entry%source_location=get_monc_location(io_configuration, source)
-      call c_add(create_timestep_entry%outstanding_fields, c_get(all_outstanding_fields, i))
-      call check_thread_status(forthread_mutex_init(create_timestep_entry%activity_completion_mutex, -1))
-      call check_thread_status(forthread_rwlock_init(create_timestep_entry%completed_fields_rwlock, -1))
-      call check_thread_status(forthread_rwlock_init(create_timestep_entry%outstanding_fields_rwlock, -1))
+    create_timestep_entry%timestep=timestep
+    create_timestep_entry%time=time
+    create_timestep_entry%number_diags_outstanding=c_size(available_fields)
+    create_timestep_entry%source=source
+    create_timestep_entry%source_location=get_monc_location(io_configuration, source)
+    iterator=c_get_iterator(all_outstanding_fields)
+    do while (c_has_next(iterator))      
+      call c_add_string(create_timestep_entry%outstanding_fields, c_next_string(iterator))
     end do
+    call check_thread_status(forthread_mutex_init(create_timestep_entry%activity_completion_mutex, -1))
+    call check_thread_status(forthread_rwlock_init(create_timestep_entry%completed_fields_rwlock, -1))
+    call check_thread_status(forthread_rwlock_init(create_timestep_entry%outstanding_fields_rwlock, -1))
   end function create_timestep_entry
 
   !> Adds the required fields of an activity to the overall required fields which are cloned for each new timestep entry
@@ -812,39 +818,36 @@ contains
   subroutine add_required_fields_if_needed(required_fields)
     type(list_type), intent(inout) :: required_fields
 
-    integer :: i, entries
-    character(len=STRING_LENGTH) :: field_name
+    type(iterator_type) :: iterator
 
-    entries=c_size(required_fields)
-    if (entries .gt. 0) then
-      do i=1, entries
-        field_name=conv_to_string(c_get(required_fields, i), .false., STRING_LENGTH)
-        call c_add(all_outstanding_fields, field_name)
+    if (.not. c_is_empty(required_fields)) then
+      iterator=c_get_iterator(required_fields)
+      do while (c_has_next(iterator))
+        call c_add_string(all_outstanding_fields, c_next_string(iterator))
       end do     
     end if
   end subroutine add_required_fields_if_needed
 
-  !> Retrieves a specific activity at an index
-  !! @param activities The list of activities to look up
-  !! @param index The index to retrieve the activity at
-  !! @returns The activity at the specific index or null if none is found
-  function get_activity_at_index(activities, index)
-    integer, intent(in) :: index
-    type(list_type), intent(inout) :: activities
-    type(diagnostics_activity_type), pointer :: get_activity_at_index
+  !> Retrieves the next activity in a collection being iterated over by an iterator
+  !! @param iterator The iterator we are using to iterate over the collection
+  !! @returns The next activity or null if none is found
+  function retrieve_next_activity(iterator)
+    type(iterator_type), intent(inout) :: iterator
+    type(diagnostics_activity_type), pointer :: retrieve_next_activity
 
     class(*), pointer :: generic
 
-    generic=>c_get(activities, index)
+    generic=>c_next_generic(iterator)
+
     if (associated(generic)) then
       select type(generic)
         type is(diagnostics_activity_type)
-          get_activity_at_index=>generic
+          retrieve_next_activity=>generic
       end select      
     else
-      get_activity_at_index=>null()
+      retrieve_next_activity=>null()
     end if
-  end function get_activity_at_index  
+  end function retrieve_next_activity  
 
   !> Retrieves the timestep at a specific timestep and source MONC
   !! @param timestep The timestep to look up
@@ -859,7 +862,7 @@ contains
     class(*), pointer :: generic
 
     if (do_lock) call check_thread_status(forthread_rwlock_rdlock(timestep_entries_rwlock))
-    generic=>c_get(diagnostics_per_monc_at_timestep, conv_to_string(timestep)//"#"//conv_to_string(source))
+    generic=>c_get_generic(diagnostics_per_monc_at_timestep, conv_to_string(timestep)//"#"//conv_to_string(source))
     if (do_lock) call check_thread_status(forthread_rwlock_unlock(timestep_entries_rwlock))
     if (associated(generic)) then
       select type(generic)
@@ -891,7 +894,7 @@ contains
              find_or_add_diagnostics_by_timestep%communication_corresponding_activities_rwlock, -1))
         call check_thread_status(forthread_rwlock_init(find_or_add_diagnostics_by_timestep%completed_diagnostics_rwlock, -1))
         generic=>find_or_add_diagnostics_by_timestep
-        call c_put(all_diagnostics_at_timestep, conv_to_string(timestep), generic)
+        call c_put_generic(all_diagnostics_at_timestep, conv_to_string(timestep), generic, .false.)
       end if
       call check_thread_status(forthread_rwlock_unlock(all_diagnostics_per_timestep_rwlock))
     end if
@@ -909,7 +912,7 @@ contains
     class(*), pointer :: generic
     
     if (do_lock) call check_thread_status(forthread_rwlock_rdlock(all_diagnostics_per_timestep_rwlock))
-    generic=>c_get(all_diagnostics_at_timestep, conv_to_string(timestep))
+    generic=>c_get_generic(all_diagnostics_at_timestep, conv_to_string(timestep))
     if (do_lock) call check_thread_status(forthread_rwlock_unlock(all_diagnostics_per_timestep_rwlock))
     if (associated(generic)) then
       select type(generic)
@@ -921,28 +924,26 @@ contains
     end if
   end function get_diagnostics_by_timestep
 
-  !> Retrieves a specific MONC timestep entry from the all diagnostics at timestep based upon its index
-  !! @param all_diags_by_timestep All diagnostics by timestep
-  !! @param index The index to look up
-  !! @returns The specific MONC timestep entry or null if none is found
-  function get_specific_monc_timestep_entry_at_index(all_diags_by_timestep, index)
-    type(all_diagnostics_at_timestep_type), intent(inout) :: all_diags_by_timestep
-    integer, intent(in) :: index
-    type(diagnostics_at_timestep_type), pointer :: get_specific_monc_timestep_entry_at_index
+  !> Retrieves the next MONC timestep entry from the all diagnostics based upon a collections iterator
+  !! @param iterator The iterator we are using to iterate ove the collection
+  !! @returns The next MONC timestep entry or null if none is found
+  function retrieve_next_specific_monc_timestep_entry(iterator)
+    type(iterator_type), intent(inout) :: iterator
+    type(diagnostics_at_timestep_type), pointer :: retrieve_next_specific_monc_timestep_entry
 
     class(*), pointer :: generic
 
-    generic=>c_get(all_diags_by_timestep%diagnostic_entries, index)
+    generic=>c_next_generic(iterator)
 
     if (associated(generic)) then
       select type(generic)
       type is (diagnostics_at_timestep_type)
-        get_specific_monc_timestep_entry_at_index=>generic
+        retrieve_next_specific_monc_timestep_entry=>generic
       end select
     else
-      get_specific_monc_timestep_entry_at_index=>null()
+      retrieve_next_specific_monc_timestep_entry=>null()
     end if
-  end function get_specific_monc_timestep_entry_at_index
+  end function retrieve_next_specific_monc_timestep_entry
 
   !> Retrieves all diagnostics at a timestep by its key
   !! @param key The key to look up
@@ -954,7 +955,7 @@ contains
 
     class(*), pointer :: generic
     
-    generic=>c_get(all_diagnostics_at_timestep, key)    
+    generic=>c_get_generic(all_diagnostics_at_timestep, key)    
     if (associated(generic)) then
       select type(generic)
       type is(all_diagnostics_at_timestep_type)
@@ -965,32 +966,26 @@ contains
     end if
   end function get_diagnostic_by_key  
 
-  !> Retrieves the all diagnostics at a specific timestep
-  !! @param index The index to look up
-  !! @param do_lock Whether to issue a read lock or not
-  !! @param entry_key is set to be the corresponding key of this diagnostics entry
+  !> Retrieves the all diagnostics at a specific timestep from its map entry
+  !! @param mapentry The map entry to extract the all diagnostics from
   !! @returns The corresponding all diagnostics or null if none is found
-  function get_diagnostics_at_index(index, do_lock, entry_key)
-    integer, intent(in) :: index
-    logical, intent(in) :: do_lock
-    character(len=*), intent(out) :: entry_key
-    type(all_diagnostics_at_timestep_type), pointer :: get_diagnostics_at_index
+  function retrieve_diagnostics(mapentry)
+    type(mapentry_type), intent(in) :: mapentry
+    type(all_diagnostics_at_timestep_type), pointer :: retrieve_diagnostics
 
     class(*), pointer :: generic
+        
+    generic=>c_get_generic(mapentry)
     
-    if (do_lock) call check_thread_status(forthread_rwlock_rdlock(all_diagnostics_per_timestep_rwlock))
-    generic=>c_value_at(all_diagnostics_at_timestep, index)
-    entry_key=c_key_at(all_diagnostics_at_timestep, index)
-    if (do_lock) call check_thread_status(forthread_rwlock_unlock(all_diagnostics_per_timestep_rwlock))
     if (associated(generic)) then
       select type(generic)
       type is(all_diagnostics_at_timestep_type)
-        get_diagnostics_at_index=>generic
+        retrieve_diagnostics=>generic
       end select
     else
-      get_diagnostics_at_index=>null()
+      retrieve_diagnostics=>null()
     end if
-  end function get_diagnostics_at_index  
+  end function retrieve_diagnostics  
 
   !> Retrieves a communication activity from its field name
   !! @param timestep_entry The timestep entry to base the look up upon
@@ -1004,7 +999,7 @@ contains
     class(*), pointer :: generic
     
     call check_thread_status(forthread_rwlock_rdlock(diagnostics_by_timestep%communication_corresponding_activities_rwlock))
-    generic=>c_get(diagnostics_by_timestep%communication_corresponding_activities, field_name)
+    generic=>c_get_generic(diagnostics_by_timestep%communication_corresponding_activities, field_name)
     call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%communication_corresponding_activities_rwlock))
     if (associated(generic)) then
       select type(generic)
@@ -1027,7 +1022,7 @@ contains
 
     class(*), pointer :: generic
 
-    generic=>c_get(action_members, index)
+    generic=>c_get_generic(action_members, index)
     if (associated(generic)) then
       select type(generic)
       type is(io_configuration_misc_item_type)
@@ -1049,7 +1044,7 @@ contains
     integer :: i, j, entries, action_entities, activity_freq
     type(io_configuration_misc_item_type), pointer :: misc_action
     type(diagnostics_activity_type), pointer :: item
-    character(len=STRING_LENGTH) :: activity_name, timestep_string
+    character(len=STRING_LENGTH) :: activity_name
 
     class(*), pointer :: generic
 
@@ -1058,6 +1053,7 @@ contains
       allocate(diagnostic_definitions(entries))
 
       do i=1, entries
+        diagnostic_definitions(i)%uuid=conv_to_string(i)
         diagnostic_definitions(i)%generation_timestep_frequency=0
         diagnostic_definitions(i)%diagnostic_name=io_configuration%diagnostics(i)%name
         diagnostic_definitions(i)%collective=io_configuration%diagnostics(i)%collective
@@ -1065,8 +1061,9 @@ contains
         if (action_entities .gt. 0) then
           do j=1, action_entities
             misc_action=>get_misc_action_at_index(io_configuration%diagnostics(i)%members, j)
-            allocate(item)          
-            item%result_name=conv_to_string(c_get(misc_action%embellishments, "result"), .false., STRING_LENGTH)
+            allocate(item)
+            item%uuid=conv_to_string(j)
+            item%result_name=c_get_string(misc_action%embellishments, "result")
             if (c_contains(misc_action%embellishments, "root")) then
               if (get_action_attribute_string(misc_action%embellishments, "root") .eq. "auto") then
                 item%root=mod(i, io_configuration%number_of_io_servers)
@@ -1077,7 +1074,7 @@ contains
               item%root=-1
             end if
             if (misc_action%type .eq. "operator") then
-              activity_name=conv_to_string(c_get(misc_action%embellishments, "name"), .false., STRING_LENGTH)
+              activity_name=c_get_string(misc_action%embellishments, "name")
               item%activity_name=activity_name
               item%required_fields=get_operator_required_fields(activity_name, misc_action%embellishments)
               item%activity_attributes=misc_action%embellishments
@@ -1085,14 +1082,13 @@ contains
               item%activity_type=OPERATOR_TYPE          
             else if (misc_action%type .eq. "communication") then
               if (item%root .lt. 0) call log_log(LOG_ERROR, "Root must be supplied and 0 or greater for communication actions")
-              activity_name=conv_to_string(c_get(misc_action%embellishments, "name"), .false., STRING_LENGTH)
+              activity_name=c_get_string(misc_action%embellishments, "name")
               if (activity_name .eq. "reduction" .or. activity_name .eq. "allreduction") then            
-                call c_add(item%required_fields, c_get(misc_action%embellishments, "field"))
+                call c_add_string(item%required_fields, c_get_string(misc_action%embellishments, "field"))
                 item%activity_type=merge(REDUCTION_TYPE, ALLREDUCTION_TYPE, activity_name .eq. "reduction")
-                item%communication_operator=get_reduction_operator(conv_to_string(c_get(&
-                     misc_action%embellishments, "operator"), .false., STRING_LENGTH))
+                item%communication_operator=get_reduction_operator(c_get_string(misc_action%embellishments, "operator"))
               else if (activity_name .eq. "broadcast") then            
-                call c_add(item%required_fields, c_get(misc_action%embellishments, "field"))
+                call c_add_string(item%required_fields, c_get_string(misc_action%embellishments, "field"))
                 item%activity_type=BROADCAST_TYPE
               end if
             end if
@@ -1102,11 +1098,11 @@ contains
               diagnostic_definitions(i)%generation_timestep_frequency=activity_freq
             end if
             generic=>item
-            call c_add(diagnostic_definitions(i)%activities, generic)
+            call c_add_generic(diagnostic_definitions(i)%activities, generic, .false.)
           end do
         end if
-        call c_put(diagnostic_generation_frequency, diagnostic_definitions(i)%diagnostic_name, &
-             conv_to_generic(diagnostic_definitions(i)%generation_timestep_frequency, .true.))
+        call c_put_integer(diagnostic_generation_frequency, diagnostic_definitions(i)%diagnostic_name, &
+             diagnostic_definitions(i)%generation_timestep_frequency)
         call process_auto_dimensions(io_configuration, io_configuration%diagnostics(i), i)
       end do
     end if
@@ -1121,11 +1117,11 @@ contains
     integer, intent(in) :: diagnostic_entry_index
     type(diagnostics_activity_type), pointer :: get_diagnostic_activity_by_result_name
 
-    integer :: i, entries
+    type(iterator_type) :: iterator
 
-    entries=c_size(diagnostic_definitions(diagnostic_entry_index)%activities)
-    do i=1, entries
-      get_diagnostic_activity_by_result_name=>get_activity_at_index(diagnostic_definitions(diagnostic_entry_index)%activities, i)
+    iterator=c_get_iterator(diagnostic_definitions(diagnostic_entry_index)%activities)
+    do while (c_has_next(iterator))
+      get_diagnostic_activity_by_result_name=>retrieve_next_activity(iterator)
       if (get_diagnostic_activity_by_result_name%result_name == result_name) then
         return
       end if      
@@ -1142,7 +1138,7 @@ contains
     type(io_configuration_diagnostic_field_type), intent(inout) :: diagnostic_configuration
     integer, intent(in) :: entry_index
 
-    integer :: i, auto_index, number_auto_dims, diag_modified_dim_size
+    integer :: i, auto_index, diag_modified_dim_size
     character(len=STRING_LENGTH) :: specific_dimension
     type(diagnostics_activity_type), pointer :: diagnostic_activity
 
@@ -1158,7 +1154,7 @@ contains
             if (diag_modified_dim_size .ge. 0) then
               specific_dimension=trim(specific_dimension)//"_"//trim(conv_to_string(diag_modified_dim_size))
               diagnostic_configuration%dim_size_defns(i)=specific_dimension
-              call c_put(io_configuration%dimension_sizing, specific_dimension, conv_to_generic(diag_modified_dim_size, .true.))
+              call c_put_integer(io_configuration%dimension_sizing, specific_dimension, diag_modified_dim_size)
             else
               diagnostic_configuration%dim_size_defns(i)=specific_dimension
             end if
@@ -1176,14 +1172,13 @@ contains
     type(io_configuration_type), intent(inout) :: io_configuration
     type(list_type), intent(inout) :: required_fields
 
-    integer :: i, entries, field_freq
-    character(len=STRING_LENGTH) :: required_field_name
+    integer :: field_freq
+    type(iterator_type) :: iterator
 
-    entries=c_size(required_fields)
     get_diagnostic_generation_frequency=0
-    do i=1, entries
-      required_field_name=conv_to_string(c_get(required_fields, i), .false., STRING_LENGTH)
-      field_freq=get_field_frequency(io_configuration, required_field_name)
+    iterator=c_get_iterator(required_fields)
+    do while (c_has_next(iterator))
+      field_freq=get_field_frequency(io_configuration, c_next_string(iterator))
       if (get_diagnostic_generation_frequency .lt. field_freq) get_diagnostic_generation_frequency=field_freq
     end do    
   end function get_diagnostic_generation_frequency  
@@ -1207,4 +1202,15 @@ contains
     end do
     get_field_frequency=0
   end function get_field_frequency
+
+  !> Generates a unique key for an activity within a diagnostic, which is unique amongst all diagnostics and their activities
+  !! @param diagnostic The diagnostic part of the key
+  !! @param activity The activity part of the key
+  !! @returns A unique activity-diagnostic key
+  character(len=STRING_LENGTH) function generate_activity_diagnostic_key(diagnostic, activity)
+    type(diagnostics_type), intent(in) :: diagnostic
+    type(diagnostics_activity_type), intent(in) :: activity
+
+    generate_activity_diagnostic_key=trim(diagnostic%uuid)//"#"//trim(activity%uuid)
+  end function generate_activity_diagnostic_key
 end module diagnostic_federator_mod

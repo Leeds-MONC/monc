@@ -1,11 +1,12 @@
 !> Loads in the configuration stored in a NetCDF checkpoint file for the model to start from
 module configuration_checkpoint_netcdf_parser_mod
   use datadefn_mod, only : STRING_LENGTH
-  use collections_mod, only : map_type
+  use collections_mod, only : hashmap_type
   use netcdf, only : NF90_NOWRITE, NF90_NETCDF4, NF90_MPIIO, NF90_NOERR, nf90_strerror, nf90_open, nf90_close, &
        nf90_inq_dimid, nf90_inquire_dimension, nf90_inq_varid, nf90_get_var
   use logging_mod, only : LOG_ERROR, log_master_log
-  use conversions_mod, only : conv_is_integer, conv_to_integer, conv_is_real, conv_to_real, conv_is_logical, conv_to_logical
+  use conversions_mod, only : conv_is_integer, conv_to_integer, conv_is_real, conv_to_real, conv_is_logical, conv_to_logical, &
+       conv_single_real_to_double
   use optionsdatabase_mod, only : options_add
   use mpi, only : MPI_INFO_NULL
   implicit none
@@ -25,11 +26,11 @@ contains
   !! @param checkpoint_name Name of the checkpoint file
   !! @param communicator MPI communicator for parallel IO
   subroutine parse_configuration_checkpoint_netcdf(options_database, checkpoint_name, communicator)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     character(*), intent(in) :: checkpoint_name
     integer, intent(in) :: communicator
 
-    integer :: ncid, key_value_pair_dimid, options_dimid, string_dimid
+    integer :: ncid
 
     call check_status(nf90_open(path = checkpoint_name, mode = ior(ior(NF90_NETCDF4, NF90_MPIIO), NF90_NOWRITE), ncid = ncid, &
          comm = communicator, info = MPI_INFO_NULL))
@@ -41,7 +42,7 @@ contains
   !! @param options_database The options database to store the values into
   !! @param ncid The NetCDF file id
   subroutine load_options(options_database, ncid)
-    type(map_type), intent(inout) :: options_database
+    type(hashmap_type), intent(inout) :: options_database
     integer, intent(in) :: ncid
 
     integer :: i, options_id, number_options
@@ -59,7 +60,7 @@ contains
       if (conv_is_integer(value)) then
         call options_add(options_database, trim(key), conv_to_integer(trim(value)))
       else if (conv_is_real(value)) then
-        call options_add(options_database, trim(key), conv_to_real(trim(value)))
+        call options_add(options_database, trim(key), conv_single_real_to_double(conv_to_real(trim(value))))
       else if (conv_is_logical(value)) then
         call options_add(options_database, trim(key), conv_to_logical(trim(value)))
       else

@@ -2,7 +2,8 @@
 !! then the client can guarantee consistency against what the server expects
 module io_server_client_mod
   use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
-  use collections_mod, only : map_type, c_key_at, c_value_at, c_size
+  use collections_mod, only : hashmap_type, iterator_type, mapentry_type, c_get_iterator, c_has_next, &
+       c_next_mapentry, c_get_generic
   use conversions_mod, only : conv_to_string
   use mpi, only : MPI_CHARACTER, MPI_INT, MPI_LOGICAL, MPI_REAL, MPI_DOUBLE_PRECISION, MPI_ADDRESS_KIND
   implicit none
@@ -55,20 +56,23 @@ contains
   !! once for fast look up in the actual construction phase.
   !! @returns An array of type extents keyed by the DATA_TYPE constants of the configuration parser module)
   function populate_mpi_type_extents()
-    integer(kind=8) :: populate_mpi_type_extents(5)
+    integer :: populate_mpi_type_extents(5)
 
     integer :: ierr
+    integer(kind=MPI_ADDRESS_KIND) :: large_number_extents(5)
     
-    call mpi_type_extent(MPI_INT, populate_mpi_type_extents(INTEGER_DATA_TYPE), ierr)
-    call mpi_type_extent(MPI_LOGICAL, populate_mpi_type_extents(BOOLEAN_DATA_TYPE), ierr)
-    call mpi_type_extent(MPI_CHARACTER, populate_mpi_type_extents(STRING_DATA_TYPE), ierr)
-    call mpi_type_extent(MPI_REAL, populate_mpi_type_extents(FLOAT_DATA_TYPE), ierr)
-    call mpi_type_extent(MPI_DOUBLE_PRECISION, populate_mpi_type_extents(DOUBLE_DATA_TYPE), ierr)
+    call mpi_type_extent(MPI_INT, large_number_extents(INTEGER_DATA_TYPE), ierr)
+    call mpi_type_extent(MPI_LOGICAL, large_number_extents(BOOLEAN_DATA_TYPE), ierr)
+    call mpi_type_extent(MPI_CHARACTER, large_number_extents(STRING_DATA_TYPE), ierr)
+    call mpi_type_extent(MPI_REAL, large_number_extents(FLOAT_DATA_TYPE), ierr)
+    call mpi_type_extent(MPI_DOUBLE_PRECISION, large_number_extents(DOUBLE_DATA_TYPE), ierr)
+
+    populate_mpi_type_extents=int(large_number_extents)
   end function populate_mpi_type_extents  
 
   !> Builds the MPI data type for sending data descriptions to registree MONCs
   integer function build_mpi_type_definition_description()
-    integer :: old_types(3), offsets(3), block_counts(3), new_type, ierr
+    integer :: new_type, ierr, block_counts(3), old_types(3), offsets(3)
     integer(MPI_ADDRESS_KIND) :: num_addr, base_addr
 
     type(definition_description_type) :: basic_type
@@ -81,12 +85,12 @@ contains
     call mpi_get_address(basic_type%number_fields, num_addr, ierr)
     old_types(2) = MPI_INT
     block_counts(2) = 1
-    offsets(2)=num_addr-base_addr
+    offsets(2)=int(num_addr-base_addr)
 
     call mpi_get_address(basic_type%frequency, num_addr, ierr)
     old_types(3) = MPI_INT
     block_counts(3) = 1
-    offsets(3)=num_addr-base_addr
+    offsets(3)=int(num_addr-base_addr)
 
     call mpi_type_struct(3, block_counts, offsets, old_types, new_type, ierr) 
     call mpi_type_commit(new_type, ierr)
@@ -95,7 +99,7 @@ contains
 
   !> Builds the MPI data type for sending field descriptions to registree MONCs
   integer function build_mpi_type_field_description()
-    integer :: old_types(5), offsets(5), block_counts(5), new_type, ierr
+    integer :: new_type, ierr, old_types(5), block_counts(5), offsets(5)
     integer(MPI_ADDRESS_KIND) :: num_addr, base_addr
 
     type(field_description_type) :: basic_type
@@ -108,22 +112,22 @@ contains
     call mpi_get_address(basic_type%field_name, num_addr, ierr)    
     old_types(2) = MPI_CHARACTER
     block_counts(2) = STRING_LENGTH
-    offsets(2)=num_addr-base_addr
+    offsets(2)=int(num_addr-base_addr)
 
     call mpi_get_address(basic_type%field_type, num_addr, ierr)
     old_types(3) = MPI_INT
     block_counts(3) = 1
-    offsets(3)=num_addr-base_addr
+    offsets(3)=int(num_addr-base_addr)
     
     call mpi_get_address(basic_type%data_type, num_addr, ierr)
     old_types(4) = MPI_INT
     block_counts(4) = 1
-    offsets(4)=num_addr-base_addr
+    offsets(4)=int(num_addr-base_addr)
 
     call mpi_get_address(basic_type%optional, num_addr, ierr)
     old_types(5) = MPI_LOGICAL
     block_counts(5) = 1
-    offsets(5)=num_addr-base_addr
+    offsets(5)=int(num_addr-base_addr)
 
     call mpi_type_struct(5, block_counts, offsets, old_types, new_type, ierr) 
     call mpi_type_commit(new_type, ierr)
@@ -134,8 +138,8 @@ contains
   !! of the arrays on this process
   !! @return The handle of the MPI type
   integer function build_mpi_type_data_sizing_description()
-    integer :: old_types(3), offsets(3), block_counts(3), new_type, char_size, ierr
-    integer(MPI_ADDRESS_KIND) :: num_addr, base_addr
+    integer :: new_type, ierr, block_counts(3), old_types(3), offsets(3)
+    integer(kind=MPI_ADDRESS_KIND) :: num_addr, base_addr
 
     type(data_sizing_description_type) :: basic_type
 
@@ -147,12 +151,12 @@ contains
     call mpi_get_address(basic_type%dimensions, num_addr, ierr)
     old_types(2) = MPI_INT
     block_counts(2) = 1
-    offsets(2)=num_addr-base_addr
+    offsets(2)=int(num_addr-base_addr)
 
     call mpi_get_address(basic_type%dim_sizes, num_addr, ierr)    
     old_types(3) = MPI_INT
     block_counts(3) = 4
-    offsets(3)=num_addr-base_addr
+    offsets(3)=int(num_addr-base_addr)
 
     call mpi_type_struct(3, block_counts, offsets, old_types, new_type, ierr) 
     call mpi_type_commit(new_type, ierr)
@@ -213,21 +217,25 @@ contains
   integer function pack_map_field(buffer, start_offset, map_to_pack)
     character, dimension(:), intent(inout) :: buffer
     integer, intent(in) :: start_offset
-    type(map_type) :: map_to_pack
+    type(hashmap_type) :: map_to_pack
 
     integer :: i, target_end, current_offset
     character(len=STRING_LENGTH) :: temp_string
     character(len=STRING_LENGTH), pointer :: sized_raw_character
     class(*), pointer :: raw_data, raw_to_string
+    type(iterator_type) :: map_iterator
+    type(mapentry_type) :: specific_mapentry
 
     current_offset=start_offset
-    do i=1, c_size(map_to_pack)
-      temp_string=c_key_at(map_to_pack, i)
+    map_iterator=c_get_iterator(map_to_pack)
+    do while (c_has_next(map_iterator))
+      specific_mapentry=c_next_mapentry(map_iterator)
+      temp_string=specific_mapentry%key
       target_end=current_offset+STRING_LENGTH-1
       buffer(current_offset:target_end)=transfer(temp_string, buffer(current_offset:target_end))
       current_offset=target_end+1
 
-      raw_data=>c_value_at(map_to_pack, i)
+      raw_data=>c_get_generic(specific_mapentry)
       raw_to_string=>raw_data
       select type (raw_data)
       type is(integer)

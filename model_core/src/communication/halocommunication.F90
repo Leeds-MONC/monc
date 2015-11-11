@@ -563,10 +563,8 @@ contains
   integer function determine_halo_corner_size(local_grid)
     type(local_grid_type), intent(inout) :: local_grid
 
-    integer :: i,j
     determine_halo_corner_size = local_grid%halo_size(X_INDEX)*local_grid%halo_size(Y_INDEX)*&
-         local_grid%size(Z_INDEX)
-    
+         local_grid%size(Z_INDEX)    
   end function determine_halo_corner_size
  
   !> For a specific process id this determines the number of halo swap corner elements to involve
