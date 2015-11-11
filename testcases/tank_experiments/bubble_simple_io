@@ -20,7 +20,7 @@ simplecloud_enabled=.true.
 
 # Add bubble to initialisatio
 initialisation_stage_ordering+=tank_experiments
-dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, tank_experiments,simplecloud, diverr, psrce, stepfields, flux_budget, diagnostics
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, tank_experiments,simplecloud, diverr, psrce, stepfields, flux_budget, diagnostics
 finalisation_stage_ordering+=tank_experiments
 
 # Control configuration
