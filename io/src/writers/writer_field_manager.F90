@@ -267,6 +267,7 @@ contains
     generate_value_container%timestep=timestep
     generate_value_container%frequency=frequency
     generate_value_container%time=time
+    generate_value_container%source=source
     allocate(generate_value_container%field_values(size(field_values)), source=field_values)
   end function generate_value_container  
 
