@@ -101,7 +101,6 @@ contains
     call calculate_sum_profiles(current_state)
 
     bar_index=1
-   
 #ifdef U_ACTIVE
     current_state%global_grid%configuration%vertical%olubar(:)=bartmp(:, bar_index)*rnhpts
     current_state%global_grid%configuration%vertical%olzubar(:)=bartmp(:, bar_index+1)*rnhpts
@@ -124,6 +123,7 @@ contains
         bar_index=bar_index+2
       end if
     end do
+
   end subroutine calculate_mean_profiles    
 
   !> Calculates the sum profiles for the bars for each level globally
@@ -132,7 +132,7 @@ contains
     type(model_state_type), intent(inout) :: current_state
 
     integer :: k, n, bar_index, ierr    
-
+    
     do k=current_state%local_grid%local_domain_start_index(Z_INDEX), current_state%local_grid%local_domain_end_index(Z_INDEX)
       bar_index=1
 #ifdef U_ACTIVE

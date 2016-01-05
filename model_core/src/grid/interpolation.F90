@@ -53,7 +53,13 @@ contains
     character(MAXCHARS) :: ext_type
 
     nnodes=size(zvals)
-
+    ! suggested fix from JME
+    do
+      if (nnodes == 1) exit
+      if (zvals(nnodes-1) < zvals(nnodes)) exit
+      nnodes = nnodes - 1
+    enddo
+    !
     ext_type='linear'
     if (present(extrapolate))ext_type=trim(extrapolate)
 
@@ -71,7 +77,7 @@ contains
       
     if (present(extrapolate))ext_type=trim(extrapolate)
 
-    if (z < zvals(1))then 
+    if (z >= zvals(1))then 
       nn=nnodes
       select case (trim(ext_type))
       case ('linear')
@@ -84,7 +90,7 @@ contains
     end if
 
     do nn=1,nnodes-1
-      if (zvals(nn) < z .and. z < zvals(nn+1))then
+      if (zvals(nn) <= z .and. z < zvals(nn+1))then
         f = vals(nn) + (vals(nn+1) - vals(nn))/(zvals(nn+1) - zvals(nn)) &
            *(z - zvals(nn))
         exit

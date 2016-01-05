@@ -36,21 +36,9 @@ contains
   subroutine generate_drybl(current_state)
     type(model_state_type), intent(inout), target :: current_state
     
-    integer, dimension(MAX_SIZE_SEED_ARRAY) :: iranseed
     integer :: i, j, k
-    real(kind=DEFAULT_PRECISION), dimension(current_state%local_grid%size(X_INDEX), current_state%local_grid%size(Y_INDEX), &
-         current_state%local_grid%size(Z_INDEX)) :: randarr
-
-    current_state%type_of_surface_boundary_conditions=PRESCRIBED_SURFACE_FLUXES
-    
-    if (USE_PSEUDO_RANDOM) then
-      call fill_pseudo_array(randarr)
-    else
-      iranseed(1:ISD)=I_SEED
-      call random_seed(get=iranseed)
-      call random_number(randarr)
-    end if
-
+    ! Note : this code should be move to the randomnoise component
+ 
     do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
       do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
         do k=2, current_state%local_grid%local_domain_end_index(Z_INDEX)
@@ -60,46 +48,9 @@ contains
 #ifdef V_ACTIVE
           current_state%v%data(k,j,i)=current_state%surface_geostrophic_wind_y
 #endif
-#ifdef W_ACTIVE
-          current_state%w%data(k,j,i) = 0.0_DEFAULT_PRECISION
-          if (current_state%global_grid%configuration%vertical%z(k) .lt. 500.0_DEFAULT_PRECISION) then            
-            current_state%w%data(k,j,i) = current_state%w%data(k,j,i)+(randarr(&
-                 (i-current_state%local_grid%local_domain_start_index(X_INDEX))+1, &
-                 (j-current_state%local_grid%local_domain_start_index(Y_INDEX))+1, k)-0.5_DEFAULT_PRECISION)*&
-                 (1.0_DEFAULT_PRECISION- current_state%global_grid%configuration%vertical%z(k)/500.0_DEFAULT_PRECISION)
-          end if
-#endif
         end do
-#ifdef W_ACTIVE
-        current_state%w%data(current_state%local_grid%local_domain_end_index(Z_INDEX),j,i)=0.0_DEFAULT_PRECISION
-        current_state%w%data(1,j,i)=0.0_DEFAULT_PRECISION
-#endif
-        if (current_state%use_viscosity_and_diffusion) then
-#ifdef U_ACTIVE
-          current_state%u%data(1,j,i)=-current_state%u%data(2,j,i)
-#endif
-#ifdef V_ACTIVE
-          current_state%v%data(1,j,i)=-current_state%v%data(2,j,i)
-#endif
-        else
-#ifdef U_ACTIVE
-          current_state%u%data(1,j,i)=current_state%u%data(2,j,i)
-#endif
-#ifdef V_ACTIVE
-          current_state%v%data(1,j,i)=current_state%v%data(2,j,i)
-#endif
-        end if
       end do      
     end do
-#ifdef U_ACTIVE
-    current_state%zu%data=current_state%u%data
-#endif
-#ifdef V_ACTIVE
-    current_state%zv%data=current_state%v%data
-#endif
-#ifdef W_ACTIVE
-    current_state%zw%data=current_state%w%data
-#endif
   end subroutine generate_drybl  
 
   !> Generates a pseudo random array, which allows us to do comparisons between different compilers and architectures

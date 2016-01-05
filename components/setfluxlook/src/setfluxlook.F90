@@ -84,7 +84,7 @@ contains
        current_state%fbuoy=0.                                                                 
        if(.not. current_state%passive_th) current_state%fbuoy=&
             current_state%global_grid%configuration%vertical%buoy_co(1)*current_state%surface_temperature_flux
-       if(.not. current_state%passive_q)then                                                      
+       if(.not. current_state%passive_q .and. current_state%number_q_fields > 0)then                                                      
           current_state%fbuoy=current_state%fbuoy+current_state%cq(iqv)*current_state%surface_vapour_flux*G
        end if
        call set_look(current_state)  ! _set M-O lookup table
@@ -110,7 +110,7 @@ contains
           current_state%theta_surf = surface_temperatures(1)*&
                (current_state%surface_reference_pressure/current_state%surface_pressure)**r_over_cp
           current_state%theta_virtual_surf = current_state%theta_surf
-          if (.not. current_state%passive_q) then
+          if (.not. current_state%passive_q .and. current_state%number_q_fields > 0) then
              current_state%theta_virtual_surf = current_state%theta_surf +  &
                   current_state%global_grid%configuration%vertical%thref(2)*  &
                   current_state%cq(iqv)*current_state%surface_vapour_mixing_ratio

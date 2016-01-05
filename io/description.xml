@@ -3,11 +3,11 @@
 		<thread_pool number=10/>
 	</server-configuration>
 
-#include "io/flux_fields_description.xml"
+#include "io/fields_3D_description.xml"
 
 	<data-writing>
-		<file name="diagnostic.nc" write_time_frequency="{diag_write_freq}">
-			<include group="flux_diagnostics" time_manipulation="averaged"  output_frequency="{mm}"/>
+		<file name="fields_3d.nc" write_time_frequency="{diag_write_freq}">
+			<include group="diagnostics_3d" time_manipulation="instantaneous"  output_frequency="{mm}"/>
 		</file>
 	</data-writing>
 </io-configuration>

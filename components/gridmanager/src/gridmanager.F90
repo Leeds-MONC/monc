@@ -81,7 +81,7 @@ contains
          vertical_grid%rhon, vertical_grid%tstarpr, vertical_grid%qsat, vertical_grid%dqsatdt, vertical_grid%qsatfac, &
          vertical_grid%dthref, vertical_grid%rneutml, vertical_grid%rneutml_sq, vertical_grid%buoy_co, &
          vertical_grid%u_init, vertical_grid%v_init, vertical_grid%q_init,                              &
-         vertical_grid%q_rand, vertical_grid%theta_rand, vertical_grid%w_subs, &
+         vertical_grid%q_rand, vertical_grid%theta_rand, vertical_grid%w_subs, vertical_grid%w_rand, &
          vertical_grid%q_force, vertical_grid%theta_force, vertical_grid%u_force, vertical_grid%v_force &
          )
   end subroutine finalise_callback  
@@ -367,48 +367,52 @@ contains
 
     real(kind=DEFAULT_PRECISION) :: delta_t=1.0_DEFAULT_PRECISION, qlinit, tinit, qsatin, dqsatdtin, dsatfacin
     integer :: iter, k
-
+    
     do k=1,kkp
-      vertical_grid%tref(k)=vertical_grid%thref(k)*(vertical_grid%prefn(k)/current_state%surface_reference_pressure)**r_over_cp
-      vertical_grid%prefrcp(k)=(current_state%surface_reference_pressure/vertical_grid%prefn(k))**r_over_cp
-      vertical_grid%rprefrcp(k)=1.0_DEFAULT_PRECISION/vertical_grid%prefrcp(k)
-      ! Denotion between setup run and chain run in LEM - need to consider here too
-      vertical_grid%qsat(k)=qsaturation(vertical_grid%tref(k), 0.01_DEFAULT_PRECISION*vertical_grid%prefn(k))
-      vertical_grid%dqsatdt(k)=(qsaturation(vertical_grid%tref(k)+delta_t, 0.01_DEFAULT_PRECISION*vertical_grid%prefn(k)) -&
-           qsaturation(vertical_grid%tref(k)-delta_t, 0.01_DEFAULT_PRECISION*vertical_grid%prefn(k)))/&
-           (2.0_DEFAULT_PRECISION*delta_t)
-      vertical_grid%qsatfac(k)=1.0_DEFAULT_PRECISION/(1.0_DEFAULT_PRECISION+rlvap_over_cp*vertical_grid%dqsatdt(k))
+       vertical_grid%tref(k)=vertical_grid%thref(k)*(vertical_grid%prefn(k)/current_state%surface_reference_pressure)**r_over_cp
       vertical_grid%tstarpr(k)=0.0_DEFAULT_PRECISION
-    end do
-    if (current_state%calculate_th_and_q_init) then
-      do k=1,kkp
-        !       !Note that at this point THETA_INIT and QINIT(IQ=1) are still
-        !       !theta_l and q_t, as read in from configuration.
-        !       ! start from input QL profile
-        qlinit=qinit(k, current_state%liquid_water_mixing_ratio_index)
-        do iter=1,5
-          !         ! calculate T and thence new q_l from Taylor expansion
-          !         ! keeping theta_l and q_t fixed
-          !         ! Note theta_l = theta - (L/c_p)*q_l here
-          tinit     = vertical_grid%theta_init(k)*vertical_grid%rprefrcp(k) + rlvap_over_cp*qlinit
-          qsatin    = qsaturation(tinit, 0.01_DEFAULT_PRECISION*vertical_grid%prefn(k))
-          dqsatdtin = dqwsatdt(qsatin, tinit)
-          dsatfacin=( 1.0_DEFAULT_PRECISION/(1.0_DEFAULT_PRECISION + rlvap_over_cp*dqsatdtin*vertical_grid%rprefrcp(k)))
-          qlinit=max(0.0_DEFAULT_PRECISION, (qinit(k, current_state%water_vapour_mixing_ratio_index)-&
-               (qsatin+dqsatdtin*(vertical_grid%theta_init(k)*vertical_grid%rprefrcp(k)-tinit) ))*dsatfacin)
-        end do
-        qinit(k, current_state%liquid_water_mixing_ratio_index)=qlinit
-        qinit(k, current_state%water_vapour_mixing_ratio_index)=qinit(k,current_state%water_vapour_mixing_ratio_index)-qlinit
-        vertical_grid%theta_init(k)=vertical_grid%theta_init(k)+rlvap_over_cp*qlinit
-
-        ! Denotion between setup run and chain run in LEM - need to consider here too
-        vertical_grid%tstarpr(k)= tinit-vertical_grid%tref(k)
-        vertical_grid%qsat(k)=qsatin
-        vertical_grid%dqsatdt(k)=dqsatdtin        
-        vertical_grid%qsatfac(k)= ( 1.0_DEFAULT_PRECISION/ ( 1.0_DEFAULT_PRECISION + rlvap_over_cp*dqsatdtin ) )
+   end do
+   if (current_state%th%active) then
+      ! PREFRCP is used and hence calculated if theta is active
+      do k = 1,kkp   
+         vertical_grid%prefrcp(k)=(current_state%surface_reference_pressure/vertical_grid%prefn(k))**r_over_cp
+         vertical_grid%rprefrcp(k)=1.0_DEFAULT_PRECISION/vertical_grid%prefrcp(k)
+         ! Denotion between setup run and chain run in LEM - need to consider here too
+         vertical_grid%qsat(k)=qsaturation(vertical_grid%tref(k), 0.01_DEFAULT_PRECISION*vertical_grid%prefn(k))
+         vertical_grid%dqsatdt(k)=(qsaturation(vertical_grid%tref(k)+delta_t, 0.01_DEFAULT_PRECISION*vertical_grid%prefn(k)) -&
+              qsaturation(vertical_grid%tref(k)-delta_t, 0.01_DEFAULT_PRECISION*vertical_grid%prefn(k)))/&
+              (2.0_DEFAULT_PRECISION*delta_t)
+         vertical_grid%qsatfac(k)=1.0_DEFAULT_PRECISION/(1.0_DEFAULT_PRECISION+rlvap_over_cp*vertical_grid%dqsatdt(k))
       end do
+      if (current_state%calculate_th_and_q_init) then
+         do k=1,kkp
+            !       !Note that at this point THETA_INIT and QINIT(IQ=1) are still
+            !       !theta_l and q_t, as read in from configuration.
+            !       ! start from input QL profile
+            qlinit=qinit(k, current_state%liquid_water_mixing_ratio_index)
+            do iter=1,5
+               !         ! calculate T and thence new q_l from Taylor expansion
+               !         ! keeping theta_l and q_t fixed
+               !         ! Note theta_l = theta - (L/c_p)*q_l here
+               tinit     = vertical_grid%theta_init(k)*vertical_grid%rprefrcp(k) + rlvap_over_cp*qlinit
+               qsatin    = qsaturation(tinit, 0.01_DEFAULT_PRECISION*vertical_grid%prefn(k))
+               dqsatdtin = dqwsatdt(qsatin, tinit)
+               dsatfacin=( 1.0_DEFAULT_PRECISION/(1.0_DEFAULT_PRECISION + rlvap_over_cp*dqsatdtin*vertical_grid%rprefrcp(k)))
+               qlinit=max(0.0_DEFAULT_PRECISION, (qinit(k, current_state%water_vapour_mixing_ratio_index)-&
+                    (qsatin+dqsatdtin*(vertical_grid%theta_init(k)*vertical_grid%rprefrcp(k)-tinit) ))*dsatfacin)
+            end do
+            qinit(k, current_state%liquid_water_mixing_ratio_index)=qlinit
+            qinit(k, current_state%water_vapour_mixing_ratio_index)=qinit(k,current_state%water_vapour_mixing_ratio_index)-qlinit
+            vertical_grid%theta_init(k)=vertical_grid%theta_init(k)+rlvap_over_cp*qlinit
 
-    end if
+            ! Denotion between setup run and chain run in LEM - need to consider here too
+            vertical_grid%tstarpr(k)= tinit-vertical_grid%tref(k)
+            vertical_grid%qsat(k)=qsatin
+            vertical_grid%dqsatdt(k)=dqsatdtin        
+            vertical_grid%qsatfac(k)= ( 1.0_DEFAULT_PRECISION/ ( 1.0_DEFAULT_PRECISION + rlvap_over_cp*dqsatdtin ) )
+         end do
+      endif
+   end if
   end subroutine setup_reference_state_liquid_water_temperature_and_saturation  
 
   !> Sets up the reference properties for the vertical grid at each point
@@ -618,8 +622,9 @@ contains
          vertical_grid%rprefrcp(n), vertical_grid%rho(n), vertical_grid%rhon(n), vertical_grid%tstarpr(n), &
          vertical_grid%qsat(n), vertical_grid%dqsatdt(n), vertical_grid%qsatfac(n), vertical_grid%dthref(n), &
          vertical_grid%rneutml(n), vertical_grid%rneutml_sq(n), vertical_grid%buoy_co(n), &
-         vertical_grid%u_init(n), vertical_grid%v_init(n), vertical_grid%theta_rand(n), vertical_grid%w_subs(n), &
-         vertical_grid%u_force(n), vertical_grid%v_force(n), vertical_grid%theta_force(n) &
+         vertical_grid%u_init(n), vertical_grid%v_init(n), vertical_grid%theta_rand(n), vertical_grid%w_rand(n), &
+         vertical_grid%w_subs(n), &
+         vertical_grid%u_force(n), vertical_grid%v_force(n), vertical_grid%theta_force(n)  &
          )
 
     allocate(vertical_grid%q_rand(n,nq), vertical_grid%q_init(n,nq), vertical_grid%q_force(n,nq))

@@ -4,12 +4,13 @@ module lowerbc_mod
   use state_mod, only : FORWARD_STEPPING, PRESCRIBED_SURFACE_FLUXES, PRESCRIBED_SURFACE_VALUES, &
    model_state_type
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX, vertical_grid_configuration_type
-  use datadefn_mod, only : DEFAULT_PRECISION
+  use datadefn_mod, only : DEFAULT_PRECISION, PRECISION_TYPE
   use prognostics_mod, only : prognostic_field_type
   use science_constants_mod, only : von_karman_constant, smallp, alphah, betah, betam, pi, &
        z0, z0th, convective_limit, gammah, gammam
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log
   use q_indices_mod, only: q_indices_add
+  use mpi, only: MPI_REQUEST_NULL, MPI_STATUSES_IGNORE
   implicit none
 
 #ifndef TEST_MODE
@@ -24,7 +25,11 @@ module lowerbc_mod
   real(kind=DEFAULT_PRECISION) :: tstrcona, rhmbc, ddbc, ddbc_x4, eecon, r2ddbc, rcmbc, tstrconb, &
        x4con, xx0con, y2con, yy0con, viscous_courant_coefficient
 
+  real(kind=DEFAULT_PRECISION), dimension(:,:,:), allocatable :: x_wrapping_send_buffer, y_wrapping_send_buffer, &
+       x_wrapping_recv_buffer, y_wrapping_recv_buffer
+
   integer :: iqv  ! index for vapour
+  integer :: wrapping_comm_requests(4), y_wrapping_target_id, x_wrapping_target_id
 
   public lowerbc_get_descriptor
 contains
@@ -36,14 +41,50 @@ contains
     lowerbc_get_descriptor%version=0.1
     lowerbc_get_descriptor%initialisation=>initialisation_callback
     lowerbc_get_descriptor%timestep=>timestep_callback
+    lowerbc_get_descriptor%finalisation=>finalisation_callback
   end function lowerbc_get_descriptor
-
+  
   subroutine initialisation_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
     real(kind=DEFAULT_PRECISION) :: bhbc
+    integer :: num_wrapped_fields
 
     call allocate_applicable_fields(current_state)
+
+    wrapping_comm_requests=MPI_REQUEST_NULL
+
+    num_wrapped_fields=0
+    if (current_state%th%active) num_wrapped_fields=1
+    num_wrapped_fields=num_wrapped_fields+current_state%number_q_fields
+
+    if (num_wrapped_fields .gt. 0) then
+      if (current_state%parallel%my_coords(Y_INDEX) == 0  .or. &
+           current_state%parallel%my_coords(Y_INDEX) == current_state%parallel%dim_sizes(Y_INDEX)-1) then        
+        if (current_state%parallel%my_coords(Y_INDEX) == 0) then
+          y_wrapping_target_id=current_state%local_grid%neighbours(Y_INDEX, 1)
+        else
+          y_wrapping_target_id=current_state%local_grid%neighbours(Y_INDEX, 3)
+        end if
+        if (current_state%parallel%my_rank .ne. y_wrapping_target_id) then
+          allocate(y_wrapping_send_buffer(current_state%local_grid%size(X_INDEX)+4, 2, num_wrapped_fields), &
+               y_wrapping_recv_buffer(current_state%local_grid%size(X_INDEX)+4, 2, num_wrapped_fields))
+        end if
+      end if
+
+      if (current_state%parallel%my_coords(X_INDEX) == 0  .or. &
+           current_state%parallel%my_coords(X_INDEX) == current_state%parallel%dim_sizes(X_INDEX)-1) then        
+        if (current_state%parallel%my_coords(X_INDEX) == 0) then
+          x_wrapping_target_id=current_state%local_grid%neighbours(X_INDEX, 1)
+        else
+          x_wrapping_target_id=current_state%local_grid%neighbours(X_INDEX, 3)
+        end if
+        if (current_state%parallel%my_rank .ne. x_wrapping_target_id) then
+          allocate(x_wrapping_send_buffer(current_state%local_grid%size(Y_INDEX)+4, 2, num_wrapped_fields), &
+               x_wrapping_recv_buffer(current_state%local_grid%size(Y_INDEX)+4, 2, num_wrapped_fields))
+        end if
+      end if
+    end if
 
     viscous_courant_coefficient=1.0_DEFAULT_PRECISION/current_state%global_grid%configuration%vertical%dzn(2)**2+&
          1.0_DEFAULT_PRECISION/(current_state%global_grid%configuration%horizontal%dx*&
@@ -92,6 +133,15 @@ contains
 
   end subroutine initialisation_callback
 
+  subroutine finalisation_callback(current_state)
+    type(model_state_type), target, intent(inout) :: current_state
+
+    if (allocated(x_wrapping_send_buffer)) deallocate(x_wrapping_send_buffer)
+    if (allocated(y_wrapping_send_buffer)) deallocate(y_wrapping_send_buffer)
+    if (allocated(x_wrapping_recv_buffer)) deallocate(x_wrapping_recv_buffer)
+    if (allocated(y_wrapping_recv_buffer)) deallocate(y_wrapping_recv_buffer)
+  end subroutine finalisation_callback
+
   subroutine allocate_applicable_fields(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
@@ -103,8 +153,8 @@ contains
 
     ! Allocate vis and diff here as they required irespective of whether surface conditions
     ! are used or not (see subroutine simple_boundary_values in this module)
-    allocate(current_state%vis_coefficient%data(z_size, y_size, x_size), &
-         current_state%diff_coefficient%data(z_size, y_size, x_size))
+    ! allocate(current_state%vis_coefficient%data(z_size, y_size, x_size), &
+    !     current_state%diff_coefficient%data(z_size, y_size, x_size))
     
     allocate(current_state%dis%data(z_size, y_size, x_size), &
          current_state%dis_th%data(z_size, y_size, x_size), current_state%disq(current_state%number_q_fields))
@@ -148,7 +198,7 @@ contains
     if (.not. current_state%use_viscosity_and_diffusion .or. .not. current_state%use_surface_boundary_conditions) then
       if (.not. current_state%halo_column) call simple_boundary_values(current_state, current_y_index, current_x_index, th, q)
     else
-      if (.not. current_state%halo_column) then
+     if (.not. current_state%halo_column) then
         horizontal_velocity_at_k2=0.0_DEFAULT_PRECISION
 #ifdef U_ACTIVE
         horizontal_velocity_at_k2=(0.5_DEFAULT_PRECISION*(current_state%zu%data(2,current_y_index,current_x_index)+&
@@ -159,7 +209,7 @@ contains
              2,current_y_index,current_x_index)+zv%data(2,current_y_index-1,current_x_index))+current_state%vgal)**2
 #endif
         horizontal_velocity_at_k2=sqrt(horizontal_velocity_at_k2)+smallp      
-               
+
         if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_FLUXES) then
           call compute_using_fixed_surface_fluxes(current_state, current_y_index, current_x_index, &
                horizontal_velocity_at_k2, th, q)
@@ -172,7 +222,7 @@ contains
         current_state%dis_th%data(1, current_y_index, current_x_index)=0.0_DEFAULT_PRECISION
 
         if (current_state%backscatter) then
-          do n=1, current_state%number_q_fields         
+          do n=1, current_state%number_q_fields
             current_state%disq(n)%data(1,current_y_index,current_x_index)=0.0_DEFAULT_PRECISION
           end do
         end if
@@ -184,36 +234,246 @@ contains
         current_state%cvis=max(current_state%cvis,max(current_state%vis_coefficient%data(1, current_y_index, current_x_index),&
              current_state%diff_coefficient%data(1, current_y_index, current_x_index))*viscous_courant_coefficient)
         !            CVIS will be multiplied by DTM_X4 in TESTCFL
-      else
-        if (current_y_index .eq. current_state%local_grid%local_domain_end_index(Y_INDEX)+&
-             current_state%local_grid%halo_size(Y_INDEX)) then
-          ! Wrap around for the boundary conditions
-          if (current_state%th%active) then
-            zth%data(1,1,current_x_index)=&
-                 zth%data(1,current_state%local_grid%local_domain_end_index(Y_INDEX)-1,current_x_index)
-            zth%data(1,2,current_x_index)=&
-                 zth%data(1,current_state%local_grid%local_domain_end_index(Y_INDEX),current_x_index)
-            zth%data(1,current_state%local_grid%local_domain_end_index(Y_INDEX)+1,current_x_index)=&
-                 zth%data(1,current_state%local_grid%local_domain_start_index(Y_INDEX),current_x_index)
-            zth%data(1,current_state%local_grid%local_domain_end_index(Y_INDEX)+2,current_x_index)=&
-                 zth%data(1,current_state%local_grid%local_domain_start_index(Y_INDEX)+1,current_x_index)
-          end if
-          if (current_state%number_q_fields .gt. 0) then
-            do n=1, current_state%number_q_fields
-              zq(n)%data(1,1,current_x_index)=&
-                 zq(n)%data(1,current_state%local_grid%local_domain_end_index(Y_INDEX)-1,current_x_index)
-              zq(n)%data(1,2,current_x_index)=&
-                 zq(n)%data(1,current_state%local_grid%local_domain_end_index(Y_INDEX),current_x_index)
-              zq(n)%data(1,current_state%local_grid%local_domain_end_index(Y_INDEX)+1,current_x_index)=&
-                 zq(n)%data(1,current_state%local_grid%local_domain_start_index(Y_INDEX),current_x_index)
-              zq(n)%data(1,current_state%local_grid%local_domain_end_index(Y_INDEX)+2,current_x_index)=&
-                 zq(n)%data(1,current_state%local_grid%local_domain_start_index(Y_INDEX)+1,current_x_index)
-            end do
-          end if
-        end if
+      else if (current_x_index == 1 .and. current_y_index == 1) then
+        call register_async_wrapping_recv_requests(current_state)
+      else if (current_x_index == current_state%local_grid%local_domain_end_index(X_INDEX)+&
+           current_state%local_grid%halo_size(X_INDEX) .and. current_y_index == &
+           current_state%local_grid%local_domain_end_index(Y_INDEX)+current_state%local_grid%halo_size(Y_INDEX)) then
+        call complete_async_wrapping(current_state, zth, zq)
       end if
     end if
   end subroutine compute_lower_boundary_conditions
+
+  !> Registers asynchronous wrapping recv requests as needed
+  !! @param current_state The current model state
+  subroutine register_async_wrapping_recv_requests(current_state)
+    type(model_state_type), target, intent(inout) :: current_state
+
+    integer :: ierr
+
+    if (allocated(y_wrapping_recv_buffer)) then
+      call mpi_irecv(y_wrapping_recv_buffer, size(y_wrapping_recv_buffer), PRECISION_TYPE, &
+           y_wrapping_target_id, 0, current_state%parallel%neighbour_comm, wrapping_comm_requests(1), ierr)
+    end if
+    if (allocated(x_wrapping_recv_buffer)) then
+      call mpi_irecv(x_wrapping_recv_buffer, size(x_wrapping_recv_buffer), PRECISION_TYPE, &
+           x_wrapping_target_id, 0, current_state%parallel%neighbour_comm, wrapping_comm_requests(3), ierr)
+    end if
+  end subroutine register_async_wrapping_recv_requests
+  
+  !> Completes the asynchronous wrapping if required for periodic boundary conditions
+  !! @param current_state The current model state
+  !! @param zth Temperature field
+  !! @param zq Q fields
+  subroutine complete_async_wrapping(current_state, zth, zq)
+    type(model_state_type), target, intent(inout) :: current_state
+    type(prognostic_field_type), intent(inout) :: zth
+    type(prognostic_field_type), dimension(:), intent(inout) :: zq
+
+    integer :: ierr, n
+
+    if (allocated(x_wrapping_send_buffer) .or. allocated(y_wrapping_send_buffer)) then
+      if (allocated(y_wrapping_send_buffer)) then
+        if (current_state%parallel%my_coords(Y_INDEX) == 0) then
+          call package_y_wrapping_send_buffer(current_state, zth, zq, current_state%local_grid%local_domain_start_index(Y_INDEX),&
+               current_state%local_grid%local_domain_start_index(Y_INDEX)+1)        
+        else
+          call package_y_wrapping_send_buffer(current_state, zth, zq, current_state%local_grid%local_domain_end_index(Y_INDEX)-1,&
+               current_state%local_grid%local_domain_end_index(Y_INDEX))        
+        end if        
+        call mpi_isend(y_wrapping_send_buffer, size(y_wrapping_send_buffer), PRECISION_TYPE, &
+             y_wrapping_target_id, 0, current_state%parallel%neighbour_comm, &
+             wrapping_comm_requests(2), ierr)       
+      end if
+      if (allocated(x_wrapping_send_buffer)) then
+        if (current_state%parallel%my_coords(X_INDEX) == 0) then
+          call package_x_wrapping_send_buffer(current_state, zth, zq, current_state%local_grid%local_domain_start_index(X_INDEX),&
+               current_state%local_grid%local_domain_start_index(X_INDEX)+1)        
+        else
+          call package_x_wrapping_send_buffer(current_state, zth, zq, current_state%local_grid%local_domain_end_index(X_INDEX)-1,&
+               current_state%local_grid%local_domain_end_index(X_INDEX))        
+        end if        
+        call mpi_isend(x_wrapping_send_buffer, size(x_wrapping_send_buffer), PRECISION_TYPE, &
+             x_wrapping_target_id, 0, current_state%parallel%neighbour_comm, &
+             wrapping_comm_requests(4), ierr)        
+      end if
+
+      ! If send buffer is allocated then recv buffer is allocated, therefore only test the send buffer here and assume recv
+      call mpi_waitall(4, wrapping_comm_requests, MPI_STATUSES_IGNORE, ierr)
+      wrapping_comm_requests=MPI_REQUEST_NULL
+      if (allocated(y_wrapping_recv_buffer)) then
+        if (current_state%parallel%my_coords(Y_INDEX) == 0) then
+          call unpackage_y_wrapping_recv_buffer(current_state, zth, zq, 1, 2)
+        else
+          call unpackage_y_wrapping_recv_buffer(current_state, zth, zq, &
+               current_state%local_grid%local_domain_end_index(Y_INDEX)+1, &
+               current_state%local_grid%local_domain_end_index(Y_INDEX)+2)          
+        end if
+      end if
+      if (allocated(x_wrapping_recv_buffer)) then
+        if (current_state%parallel%my_coords(X_INDEX) == 0) then
+          call unpackage_x_wrapping_recv_buffer(current_state, zth, zq, 1, 2)
+        else
+          call unpackage_x_wrapping_recv_buffer(current_state, zth, zq, &
+               current_state%local_grid%local_domain_end_index(X_INDEX)+1, &
+               current_state%local_grid%local_domain_end_index(X_INDEX)+2)          
+        end if
+      end if
+    end if 
+    if (current_state%parallel%my_rank == y_wrapping_target_id) then
+      if (current_state%th%active) then
+        zth%data(1,1,:)=zth%data(1, current_state%local_grid%local_domain_end_index(Y_INDEX)-1, :)
+        zth%data(1,2,:)=zth%data(1, current_state%local_grid%local_domain_end_index(Y_INDEX), :)
+        zth%data(1,current_state%local_grid%local_domain_end_index(Y_INDEX)+1,:)=&
+             zth%data(1, current_state%local_grid%local_domain_start_index(Y_INDEX), :)
+        zth%data(1,current_state%local_grid%local_domain_end_index(Y_INDEX)+2,:)=&
+             zth%data(1, current_state%local_grid%local_domain_start_index(Y_INDEX)+1, :)
+      end if
+      if (current_state%number_q_fields .gt. 0) then
+        do n=1, current_state%number_q_fields
+          zq(n)%data(1,1,:)=zq(n)%data(1, current_state%local_grid%local_domain_end_index(Y_INDEX)-1, :)
+          zq(n)%data(1,2,:)=zq(n)%data(1, current_state%local_grid%local_domain_end_index(Y_INDEX), :)
+          zq(n)%data(1,current_state%local_grid%local_domain_end_index(Y_INDEX)+1,:)=&
+             zq(n)%data(1, current_state%local_grid%local_domain_start_index(Y_INDEX), :)
+          zq(n)%data(1,current_state%local_grid%local_domain_end_index(Y_INDEX)+2,:)=&
+             zq(n)%data(1, current_state%local_grid%local_domain_start_index(Y_INDEX)+1, :)
+        end do
+      end if
+    end if
+
+    if (current_state%parallel%my_rank == x_wrapping_target_id) then
+      if (current_state%th%active) then
+        zth%data(1,:,1)=zth%data(1,:,current_state%local_grid%local_domain_end_index(X_INDEX)-1)
+        zth%data(1,:,2)=zth%data(1,:,current_state%local_grid%local_domain_end_index(X_INDEX))
+        zth%data(1,:,current_state%local_grid%local_domain_end_index(X_INDEX)+1)=&
+             zth%data(1,:,current_state%local_grid%local_domain_start_index(X_INDEX))
+        zth%data(1,:,current_state%local_grid%local_domain_end_index(X_INDEX)+2)=&
+             zth%data(1,:,current_state%local_grid%local_domain_start_index(X_INDEX)+1)
+      end if
+      if (current_state%number_q_fields .gt. 0) then
+        do n=1, current_state%number_q_fields
+          zq(n)%data(1,:,1)=zq(n)%data(1,:,current_state%local_grid%local_domain_end_index(X_INDEX)-1)
+          zq(n)%data(1,:,2)=zq(n)%data(1,:,current_state%local_grid%local_domain_end_index(X_INDEX))
+          zq(n)%data(1,:,current_state%local_grid%local_domain_end_index(X_INDEX)+1)=&
+               zq(n)%data(1,:,current_state%local_grid%local_domain_start_index(X_INDEX))
+          zq(n)%data(1,:,current_state%local_grid%local_domain_end_index(X_INDEX)+2)=&
+               zq(n)%data(1,:,current_state%local_grid%local_domain_start_index(X_INDEX)+1)
+        end do
+      end if
+    end if
+  end subroutine complete_async_wrapping
+
+  !> Packages theta and Q fields (if enabled) into the send buffer for Y
+  !! @param current_state The current model state
+  !! @param zth Temperature field
+  !! @param zq Q fields
+  !! @param first_y_index The first Y index to read from the data field
+  !! @param second_y_index The second Y index to read from the data field
+  subroutine package_y_wrapping_send_buffer(current_state, zth, zq, first_y_index, second_y_index)
+    type(model_state_type), target, intent(inout) :: current_state
+    type(prognostic_field_type), intent(inout) :: zth
+    type(prognostic_field_type), dimension(:), intent(inout) :: zq
+    integer, intent(in) :: first_y_index, second_y_index
+
+    integer :: index_start, n
+
+    index_start=0
+    if (current_state%th%active) then
+      y_wrapping_send_buffer(:,1,1)=zth%data(1,first_y_index,:)
+      y_wrapping_send_buffer(:,2,1)=zth%data(1,second_y_index,:)
+      index_start=index_start+1
+    end if
+    if (current_state%number_q_fields .gt. 0) then
+      do n=1, current_state%number_q_fields
+        y_wrapping_send_buffer(:,1,index_start+n)=zq(n)%data(1,first_y_index,:)
+        y_wrapping_send_buffer(:,2,index_start+n)=zq(n)%data(1,second_y_index,:)
+      end do
+    end if
+  end subroutine package_y_wrapping_send_buffer
+
+  !> Packages theta and Q fields (if enabled) into the send buffer for X
+  !! @param current_state The current model state
+  !! @param zth Temperature field
+  !! @param zq Q fields
+  !! @param first_x_index The first X index to read from the data field
+  !! @param second_x_index The second X index to read from the data field
+  subroutine package_x_wrapping_send_buffer(current_state, zth, zq, first_x_index, second_x_index)
+    type(model_state_type), target, intent(inout) :: current_state
+    type(prognostic_field_type), intent(inout) :: zth
+    type(prognostic_field_type), dimension(:), intent(inout) :: zq
+    integer, intent(in) :: first_x_index, second_x_index
+
+    integer :: index_start, n
+    
+    index_start=0
+    if (current_state%th%active) then
+      x_wrapping_send_buffer(:,1,1)=zth%data(1,:,first_x_index)
+      x_wrapping_send_buffer(:,2,1)=zth%data(1,:,second_x_index)
+      index_start=index_start+1
+    end if
+    if (current_state%number_q_fields .gt. 0) then
+      do n=1, current_state%number_q_fields
+        x_wrapping_send_buffer(:,1,index_start+n)= zq(n)%data(1,:,first_x_index)
+        x_wrapping_send_buffer(:,2,index_start+n)= zq(n)%data(1,:,second_x_index)
+      end do
+    end if
+  end subroutine package_x_wrapping_send_buffer
+
+  !> Unpackages theta and Q fields from the receive buffer into the fields themselves (if enabled) for Y
+  !! @param current_state The current model state
+  !! @param zth Temperature field
+  !! @param zq Q fields
+  !! @param first_y_index The first Y index to read from the data field
+  !! @param second_y_index The second Y index to read from the data field
+  subroutine unpackage_y_wrapping_recv_buffer(current_state, zth, zq, first_y_index, second_y_index)
+    type(model_state_type), target, intent(inout) :: current_state
+    type(prognostic_field_type), intent(inout) :: zth
+    type(prognostic_field_type), dimension(:), intent(inout) :: zq
+    integer, intent(in) :: first_y_index, second_y_index
+
+    integer :: index_start, n
+
+    index_start=0
+    if (current_state%th%active) then
+      zth%data(1,first_y_index,:)=y_wrapping_recv_buffer(:,1,1)
+      zth%data(1,second_y_index,:)=y_wrapping_recv_buffer(:,2,1)
+      index_start=index_start+1
+    end if
+    if (current_state%number_q_fields .gt. 0) then
+      do n=1, current_state%number_q_fields
+        zq(n)%data(1,first_y_index,:)=y_wrapping_recv_buffer(:,1,index_start+n)
+        zq(n)%data(1,second_y_index,:)=y_wrapping_recv_buffer(:,2,index_start+n)
+      end do
+    end if
+  end subroutine unpackage_y_wrapping_recv_buffer
+
+  !> Unpackages theta and Q fields from the receive buffer into the fields themselves (if enabled) for X
+  !! @param current_state The current model state
+  !! @param zth Temperature field
+  !! @param zq Q fields
+  !! @param first_x_index The first X index to read from the data field
+  !! @param second_x_index The second X index to read from the data field
+  subroutine unpackage_x_wrapping_recv_buffer(current_state, zth, zq, first_x_index, second_x_index)
+    type(model_state_type), target, intent(inout) :: current_state
+    type(prognostic_field_type), intent(inout) :: zth
+    type(prognostic_field_type), dimension(:), intent(inout) :: zq
+    integer, intent(in) :: first_x_index, second_x_index
+
+    integer :: index_start, n
+
+    index_start=0
+    if (current_state%th%active) then
+      zth%data(1,:,first_x_index)=x_wrapping_recv_buffer(:,1,1)
+      zth%data(1,:,second_x_index)=x_wrapping_recv_buffer(:,2,1)
+      index_start=index_start+1
+    end if
+    if (current_state%number_q_fields .gt. 0) then
+      do n=1, current_state%number_q_fields
+        zq(n)%data(1,:,first_x_index)=x_wrapping_recv_buffer(:,1,index_start+n)
+        zq(n)%data(1,:,second_x_index)=x_wrapping_recv_buffer(:,2,index_start+n)
+      end do
+    end if
+  end subroutine unpackage_x_wrapping_recv_buffer
 
   subroutine handle_convective_fluxes(current_state, current_y_index, current_x_index, horizontal_velocity_at_k2, th, q)
     type(model_state_type), target, intent(inout) :: current_state
@@ -240,19 +500,12 @@ contains
 
 
     ! Surface Flux of vapour
-    n=iqv
-    q(n)%data(1, current_y_index, current_x_index)=q(n)%data(2, current_y_index, current_x_index)+&
-       current_state%surface_vapour_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
-       current_state%diff_coefficient%data(1, current_y_index, current_x_index)
-
-    ! Flux of other tracers...
-!    if (current_state%number_q_fields .gt. 0) then
-!      do n=1,current_state%number_q_fields
-!        q(n)%data(1, current_y_index, current_x_index)=q(n)%data(2, current_y_index, current_x_index)+&
-!             current_state%surface_q_flux(n)*current_state%global_grid%configuration%vertical%dzn(2)/&
-!             current_state%diff_coefficient%data(1, current_y_index, current_x_index)
-!      end do
-!    end if
+    if (current_state%number_q_fields .gt. 0) then
+       n=iqv
+       q(n)%data(1, current_y_index, current_x_index)=q(n)%data(2, current_y_index, current_x_index)+&
+            current_state%surface_vapour_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
+            current_state%diff_coefficient%data(1, current_y_index, current_x_index)
+    endif
   end subroutine handle_convective_fluxes
 
   real(kind=DEFAULT_PRECISION) function look(current_state, vel)
@@ -301,17 +554,12 @@ contains
          current_state%diff_coefficient%data(1, current_y_index, current_x_index)
 
     ! Flux of vapour
-    n=iqv
-    q(n)%data(1, current_y_index, current_x_index)=q(n)%data(2, current_y_index, current_x_index)+&
-       current_state%surface_vapour_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
-       current_state%diff_coefficient%data(1, current_y_index, current_x_index)
-!    if (current_state%number_q_fields .gt. 0) then
-!      do n=1,current_state%number_q_fields
-!        q(n)%data(1, current_y_index, current_x_index)=q(n)%data(2, current_y_index, current_x_index)+&
-!             current_state%surface_q_flux(n)*current_state%global_grid%configuration%vertical%dzn(2)/&
-!             current_state%diff_coefficient%data(1, current_y_index, current_x_index)
-!      end do
-!    end if
+    if (current_state%number_q_fields .gt. 0) then
+       n=iqv
+       q(n)%data(1, current_y_index, current_x_index)=q(n)%data(2, current_y_index, current_x_index)+&
+            current_state%surface_vapour_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
+            current_state%diff_coefficient%data(1, current_y_index, current_x_index)
+    endif
   end subroutine handle_neutral_fluxes
 
   subroutine handle_stable_fluxes(current_state, current_y_index, current_x_index, horizontal_velocity_at_k2, th, q)
@@ -355,17 +603,12 @@ contains
            current_state%diff_coefficient%data(1, current_y_index, current_x_index)
 
       !Flux of vapour
-      n=iqv
-      q(n)%data(1, current_y_index, current_x_index)=q(n)%data(2, current_y_index, current_x_index)+&
-         current_state%surface_vapour_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
-         current_state%diff_coefficient%data(1, current_y_index, current_x_index)
-!      if (current_state%number_q_fields .gt. 0) then
-!        do n=1, current_state%number_q_fields
-!          q(n)%data(1, current_y_index, current_x_index)=q(n)%data(2, current_y_index, current_x_index)+&
-!               current_state%surface_q_flux(n)*current_state%global_grid%configuration%vertical%dzn(2)/&
-!               current_state%diff_coefficient%data(1, current_y_index, current_x_index)
-!        end do
-!      end if
+      if (current_state%number_q_fields .gt. 0) then
+         n=iqv
+         q(n)%data(1, current_y_index, current_x_index)=q(n)%data(2, current_y_index, current_x_index)+&
+              current_state%surface_vapour_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
+              current_state%diff_coefficient%data(1, current_y_index, current_x_index)
+      endif
     end if
   end subroutine handle_stable_fluxes
 
@@ -484,19 +727,19 @@ contains
         ustrdg=0.0_DEFAULT_PRECISION
         tstrdg=tstrcona*delt
       else
-        ! Trivial neutral case
-        ustrdg=current_state%global_grid%configuration%vertical%vk_on_zlogm*delu
-        tstrdg=0.0_DEFAULT_PRECISION
+         ! The unstable case
+         mostbc=solve_monin_obukhov_unstable_case(delu, delt, current_state%ellmocon, &
+           ustrdg, tstrdg, current_state%global_grid%configuration%vertical)
       end if
-      mostbc=CONVERGENCE_SUCCESS
     else if (delt .gt. 0.0_DEFAULT_PRECISION) then
       ! The stable case
       mostbc=solve_monin_obukhov_stable_case(delu, delt, current_state%global_grid%configuration%vertical%zlogm, &
            current_state%cmbc, ustrdg, tstrdg)
     else
-      ! The unstable case
-      mostbc=solve_monin_obukhov_unstable_case(delu, delt, current_state%ellmocon, &
-           ustrdg, tstrdg, current_state%global_grid%configuration%vertical)
+      ! Trivial neutral case
+        ustrdg=current_state%global_grid%configuration%vertical%vk_on_zlogm*delu
+        tstrdg=0.0_DEFAULT_PRECISION 
+        mostbc=CONVERGENCE_SUCCESS
     end if
 
     if (mostbc .ne. CONVERGENCE_SUCCESS) then
@@ -552,7 +795,7 @@ contains
         return
       else                                                                 
         ustrl=(1.0_DEFAULT_PRECISION-smth)*ustrpl+smth*ustrl
-        tstrl=(1.0_DEFAULT_PRECISION-smth)*tstrpl+smth*ustrl
+        tstrl=(1.0_DEFAULT_PRECISION-smth)*tstrpl+smth*tstrl
       end if
     end do
     solve_monin_obukhov_unstable_case=CONVERGENCE_FAILURE

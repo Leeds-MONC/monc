@@ -67,7 +67,7 @@ contains
     allocate(density_factor(k_top))
     allocate(radiation_factor(k_top))
     ! NOTE: this may be the wrong declaration as sth_lw may need to declared on the whole domain
-    allocate(sth_lw(k_top,x_local,y_local))
+    allocate(sth_lw(k_top,y_local,x_local))
 
     iql=q_indices_add('cloud liquid mass', 'lwrad_exponential')
 

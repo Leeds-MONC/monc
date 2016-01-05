@@ -85,9 +85,8 @@ contains
           resetq_min(iq)=min(resetq_min(iq),&
              minval(current_state%zq(iq)%data(:,current_state%column_local_y,  current_state%column_local_x)))
         end if
-        where(current_state%zq(iq)%data(:,current_state%column_local_y,  current_state%column_local_x) < 0.0)
-          current_state%zq(iq)%data(:,current_state%column_local_y,  current_state%column_local_x) = 0.0
-        end where
+        call remove_negative_rounding_errors_for_single_field(current_state%column_local_x, current_state%column_local_y, &
+             current_state%column_local_x-2, current_state%column_local_y-1, current_state%zq(iq), current_state%local_grid)
       end do
     end if
 
@@ -171,6 +170,54 @@ contains
     current_state%abswmax=-rlargep
   end subroutine reset_local_minmax_values  
 
+  !> Removes the negative rounding errors from a specific single field. This works two columns behind and then catches up
+  !! on the last column
+  !! @param x_local_index The current local x index
+  !! @param y_local_index The current local y index
+  !! @param x_prev The previous x index to step
+  !! @param y_prev The previous y index to step
+  !! @param field The prognostic field
+  !! @param local_grid Description of the local grid
+  subroutine remove_negative_rounding_errors_for_single_field(x_local_index, y_local_index, x_prev, y_prev, field, local_grid)
+    integer, intent(in) :: x_local_index, y_local_index, x_prev, y_prev
+    type(local_grid_type), intent(inout) :: local_grid
+    type(prognostic_field_type), intent(inout) :: field
+
+    if (x_prev .ge. local_grid%local_domain_start_index(X_INDEX)) then
+      call remove_negative_rounding_errors_in_slice(y_local_index, x_prev, y_prev, field, local_grid)
+    end if
+    if (x_local_index == local_grid%local_domain_end_index(X_INDEX)) then
+      if (x_local_index .gt. 1) then
+        call remove_negative_rounding_errors_in_slice(y_local_index, x_local_index-1, y_prev, field, local_grid)
+      end if
+      call remove_negative_rounding_errors_in_slice(y_local_index, x_local_index, y_prev, field, local_grid)
+    end if    
+  end subroutine remove_negative_rounding_errors_for_single_field
+
+  !> Removes the negative rounding errors from a slice of a single field. This works two columns behind and then catches up
+  !! on the last column
+  !! @param y_local_index The current local y index
+  !! @param x_prev The previous x index to step
+  !! @param y_prev The previous y index to step
+  !! @param field The prognostic field
+  !! @param local_grid Description of the local grid
+  subroutine remove_negative_rounding_errors_in_slice(y_local_index, x_prev, y_prev, field, local_grid)
+    integer, intent(in) :: y_local_index, x_prev, y_prev
+    type(local_grid_type), intent(inout) :: local_grid
+    type(prognostic_field_type), intent(inout) :: field
+
+    if (y_prev .ge. local_grid%local_domain_start_index(Y_INDEX)) then
+      where (field%data(:, y_prev,  x_prev) < 0.0_DEFAULT_PRECISION)
+        field%data(:, y_prev,  x_prev)=0.0_DEFAULT_PRECISION
+      end where
+    end if
+    if (y_local_index == local_grid%local_domain_end_index(Y_INDEX)) then
+      where (field%data(:, y_local_index,  x_prev) < 0.0_DEFAULT_PRECISION)
+        field%data(:, y_local_index,  x_prev)=0.0_DEFAULT_PRECISION
+      end where
+    end if    
+  end subroutine remove_negative_rounding_errors_in_slice  
+
   !> Steps a single specific field. This will step on the yth column of the x-2 slice and x-1 and x if this is the last slice
   !! @param x_local_index The current local x index
   !! @param y_local_index The current local y index
@@ -223,7 +270,7 @@ contains
              flow_field, direction, dtm, gal)     
       end if
     end if
-  end subroutine step_single_field
+  end subroutine step_single_field  
 
   !> Will step a column in a specific slice. If y_prev is large enough then will step the y-1 column and if this
   !! is the last column of the slice then will also step the current column

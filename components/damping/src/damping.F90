@@ -60,7 +60,7 @@ contains
         current_state%global_grid%configuration%vertical%dmpcoz(K)=dmptim*(exp((&
              current_state%global_grid%configuration%vertical%z(K)-zdmp)/hdmp)-1.0)
       end if
-
+      
       if(current_state%global_grid%configuration%vertical%zn(k).lt. zdmp) exit
     end do
   end subroutine init_callback
@@ -73,7 +73,7 @@ contains
     integer :: k, i
 
     if (current_state%halo_column .and. current_state%timestep <3) return
-
+    
     do k=current_state%global_grid%configuration%vertical%kdmpmin,current_state%local_grid%size(Z_INDEX)
 #ifdef U_ACTIVE
       current_state%su%data(k, current_state%column_local_y, current_state%column_local_x)=current_state%su%data(k, &

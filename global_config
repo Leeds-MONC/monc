@@ -1,27 +1,37 @@
+# Essential components - do not change default setting
+# unless you know what you are doing. These have to be on 
+# for MONC to run
+
+
+clearsourceterms_enabled=.true.
+decomposition_enabled=.true.
+grid_manager_enabled=.true.
+halo_swapper_enabled=.true.
+model_synopsis_enabled=.true.
+stepfields_enabled=.true.
+stepping_direction_enabled=.true.
+swap_smooth_enabled=.true.
+termination_check_enabled=.true.
+
 # Component enable configuration
 
 buoyancy_enabled=.true.
 cfltest_enabled=.true.
 checkpointer_enabled=.true.
-clearsourceterms_enabled=.true.
-coriolis_enabled=.true.
+coriolis_enabled=.false.
 damping_enabled=.false.
 debugger_enabled=.false.
-decomposition_enabled=.true.
 diagnostics_enabled=.false.
 diffusion_enabled=.true.
 diverr_enabled=.true.
 fftsolver_enabled=.true.
 flux_budget_enabled=.false.
 forcing_enabled=.false.
-grid_manager_enabled=.true.
-halo_swapper_enabled=.true.
 iobridge_enabled=.false.
 iterativesolver_enabled=.false.
 kidreader_enabled=.false.
-lower_bc_enabled=.true.
+lower_bc_enabled=.false.
 mean_profiles_enabled=.false.
-model_synopsis_enabled=.true.
 physicsa_enabled=.false.
 psrce_enabled=.true.
 pstep_enabled=.true.
@@ -30,11 +40,7 @@ set_consistent_lowbc_enabled=.true.
 setfluxlook_enabled=.true.
 simplecloud_enabled=.false. 
 simplesetup_enabled=.false.
-smagorinsky_enabled=.true.
-stepfields_enabled=.true.
-stepping_direction_enabled=.true.
-swap_smooth_enabled=.true.
-termination_check_enabled=.true.
+smagorinsky_enabled=.false.
 th_advection_enabled=.false.
 tvd_advection_enabled=.true.
 viscosity_enabled=.true.
@@ -189,6 +195,7 @@ l_thref=.false.
 # Random noise setup
 l_rand_pl_theta=.false.
 l_rand_pl_q=.false.
+l_rand_pl_w=.false.
 
 # Subsidence profile
 l_subs_pl_theta=.false.

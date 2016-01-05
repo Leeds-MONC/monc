@@ -49,7 +49,9 @@ contains
     if (current_state%halo_column) return
 
     call set_flow_lowbc(current_state, current_x_index, current_y_index)
-    call set_th_lowbc(current_state, current_x_index, current_y_index)
+    if (current_state%th%active) then 
+       call set_th_lowbc(current_state, current_x_index, current_y_index)
+    endif
     if (current_state%number_q_fields .gt. 0) then
        call set_q_lowbc(current_state, current_x_index, current_y_index)
     endif
@@ -103,16 +105,17 @@ contains
     integer, intent(in) ::  current_x_index, current_y_index
 
     integer :: i  
-
-    do n=1,current_state%number_q_fields
-       current_state%sq(n)%data(1, current_y_index, current_x_index)= &
-            current_state%sq(n)%data(2,current_y_index, current_x_index)
-    enddo
-
+    
+    if (current_state%number_q_fields .gt. 0) then
+       do n=1,current_state%number_q_fields
+          current_state%sq(n)%data(1, current_y_index, current_x_index)= &
+               current_state%sq(n)%data(2,current_y_index, current_x_index)
+       enddo
+    endif
     if (current_state%use_surface_boundary_conditions .and. &
          current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_VALUES) then
        current_state%sq(iqv)%data(1, current_y_index, current_x_index)= &
-            current_state%sq(iqv)%data(2,current_y_index, current_x_index)
+            -(current_state%sq(iqv)%data(2,current_y_index, current_x_index))
     endif
 
   end subroutine set_q_lowbc

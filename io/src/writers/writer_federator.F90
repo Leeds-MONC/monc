@@ -75,7 +75,7 @@ contains
                writer_field_names, duplicate_field_names, diagnostic_generation_frequency)
         else if (io_configuration%file_writers(i)%contents(j)%facet_type == FIELD_TYPE) then
           current_field_index=current_field_index+add_field_to_writer_entry(io_configuration, &
-           i, j, current_field_index, writer_entries(i)%contents(current_field_index)%field_name, writer_field_names, &
+           i, j, current_field_index, io_configuration%file_writers(i)%contents(j)%facet_name, writer_field_names, &
            duplicate_field_names, diagnostic_generation_frequency)
         end if
       end do

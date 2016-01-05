@@ -148,6 +148,8 @@ contains
     character(len=STRING_LENGTH) :: specific_field_name
     logical :: diagnostic_provided
 
+    if (.not. allocated(diagnostic_definitions)) return
+
     do i=1, size(diagnostic_definitions)
       diagnostic_provided=.true.
       activities_iterator=c_get_iterator(diagnostic_definitions(i)%activities)

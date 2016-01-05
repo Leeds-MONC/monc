@@ -74,7 +74,8 @@ module grids_mod
           theta_rand, &!< profile of amplitude of theta perturbations
           theta_force, & !<profile of forcing term for theta
           u_force, & !<profile of forcing term for u
-          v_force    !<profile of forcing term for v
+          v_force, & !<profile of forcing term for v
+	  w_rand     !<profile of amplitude of w perturbations
 
 
 

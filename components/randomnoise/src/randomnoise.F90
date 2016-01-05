@@ -46,9 +46,12 @@ contains
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_rand_pl_q     ! Random Noise node height values for q variables
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_rand_pl_theta ! Random Noise node amplitude for theta variable
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_rand_pl_theta ! Random Noise node height values for theta variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_rand_pl_w     ! Random Noise node amplitude for theta variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_rand_pl_w     ! Random Noise node height values for theta variable
 
     logical :: l_rand_pl_theta ! if .true. then random noise added to theta field
     logical :: l_rand_pl_q     ! if .true. then random noise added to q fields
+    logical :: l_rand_pl_w     ! if .true. then random noise added to w field
 
     character(len=STRING_LENGTH), dimension(:), allocatable :: names_rand_pl_q ! names of q variables to add random noise to
     
@@ -58,6 +61,7 @@ contains
     allocate(zgrid(current_state%local_grid%local_domain_end_index(Z_INDEX)))
 
     l_rand_pl_theta=options_get_logical(current_state%options_database, "l_rand_pl_theta")
+    l_rand_pl_w=options_get_logical(current_state%options_database, "l_rand_pl_w")
     l_rand_pl_q=options_get_logical(current_state%options_database, "l_rand_pl_q")
     if (l_rand_pl_q) then
       allocate(names_rand_pl_q(options_get_array_size(current_state%options_database, "names_rand_pl_q")))
@@ -68,9 +72,9 @@ contains
 
     if (l_rand_pl_theta)then
       ! Get random numbers
-      call random_seed(get=iranseed)
-      call random_number(randarr)
-
+       call random_seed(get=iranseed)
+       call random_number(randarr)
+      
       ! Get amplitude profiles
       allocate(z_rand_pl_theta(options_get_array_size(current_state%options_database, "z_rand_pl_theta")), &
            f_rand_pl_theta(options_get_array_size(current_state%options_database, "f_rand_pl_theta")))
@@ -105,8 +109,8 @@ contains
       f_rand_pl_q(1:nzq, 1:nq_rand)=reshape(f_rand_pl_q_tmp, (/nzq, nq_rand/))
       do n=1,nq_rand
         ! Get random numbers
-        call random_seed(get=iranseed)
-        call random_number(randarr)
+         call random_seed(get=iranseed)
+         call random_number(randarr)
         
         iq=q_indices_add(trim(names_rand_pl_q(n)), 'random noise')
         zgrid=current_state%global_grid%configuration%vertical%zn(:)
@@ -126,6 +130,58 @@ contains
       end do
       deallocate(z_rand_pl_q, f_rand_pl_q_tmp, f_rand_pl_q, names_rand_pl_q)
     end if
-    deallocate(zgrid)    
+
+    if (l_rand_pl_w)then
+      ! Get random numbers
+       call random_seed(get=iranseed)
+       call random_number(randarr)
+      
+      ! Get amplitude profiles
+      allocate(z_rand_pl_w(options_get_array_size(current_state%options_database, "z_rand_pl_w")), &
+           f_rand_pl_w(options_get_array_size(current_state%options_database, "f_rand_pl_w"))) 
+      call options_get_real_array(current_state%options_database, "z_rand_pl_w", z_rand_pl_w)
+      call options_get_real_array(current_state%options_database, "f_rand_pl_w", f_rand_pl_w)
+
+      zgrid=current_state%global_grid%configuration%vertical%zn(:)
+      call piecewise_linear_1d(z_rand_pl_w(1:size(z_rand_pl_w)), f_rand_pl_w(1:size(f_rand_pl_w)), zgrid, &
+         current_state%global_grid%configuration%vertical%w_rand)
+      do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
+        do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
+          do k=2, current_state%local_grid%local_domain_end_index(Z_INDEX) 
+            current_state%w%data(k,j,i) = current_state%w%data(k,j,i) + &
+               current_state%global_grid%configuration%vertical%w_rand(k) * (randarr( &
+               i-current_state%local_grid%local_domain_start_index(X_INDEX)+current_state%local_grid%start(X_INDEX), &
+               j-current_state%local_grid%local_domain_start_index(Y_INDEX)+current_state%local_grid%start(Y_INDEX), &
+               k)-0.5)
+          end do
+#ifdef W_ACTIVE
+          current_state%w%data(current_state%local_grid%local_domain_end_index(Z_INDEX),j,i)=0.0_DEFAULT_PRECISION
+          current_state%w%data(1,j,i)=0.0_DEFAULT_PRECISION
+#endif
+          if (current_state%use_viscosity_and_diffusion) then
+#ifdef U_ACTIVE
+             current_state%u%data(1,j,i)=-current_state%u%data(2,j,i)
+#endif
+#ifdef V_ACTIVE
+             current_state%v%data(1,j,i)=-current_state%v%data(2,j,i)
+#endif
+          else
+#ifdef U_ACTIVE
+             current_state%u%data(1,j,i)=current_state%u%data(2,j,i)
+#endif
+#ifdef V_ACTIVE
+             current_state%v%data(1,j,i)=current_state%v%data(2,j,i)
+#endif
+          end if
+        end do
+      end do
+      
+      deallocate(z_rand_pl_w, f_rand_pl_w)
+
+    end if
+    
+    deallocate(zgrid)
+    
   end subroutine initialisation_callback
+
 end module randomnoise_mod
