@@ -66,7 +66,7 @@ last_group_type=entire
 
 start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral_bcs, setfluxlook
 subgrid_group_contents=lower_bc, smagorinsky
-dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, lwrad_exponential, simplecloud, casim,diverr, psrce, stepfields, flux_budget
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, lwrad_exponential, simplecloud, casim,diverr, psrce, stepfields, flux_budget, diagnostics
 
 solver_group_contents=mean_profiles, fftsolver, iterativesolver, cfltest
 pressure-terms_group_contents=pstep, swap_smooth

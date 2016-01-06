@@ -91,33 +91,42 @@ contains
       do k=2, current_state%local_grid%size(Z_INDEX)
         wmax=max(wmax, current_state%w%data(k, current_state%column_local_y, current_state%column_local_x))
         wmin=min(wmin, current_state%w%data(k, current_state%column_local_y, current_state%column_local_x))
-        if (qlmax .lt. current_state%q(current_state%liquid_water_mixing_ratio_index)%data(k, &
-             current_state%column_local_y, current_state%column_local_x)) then
-          qlmax=max(qlmax, current_state%q(current_state%liquid_water_mixing_ratio_index)%data(k, &
-               current_state%column_local_y, current_state%column_local_x))
-          hqlmax=k
+
+        if (current_state%number_q_fields .gt. 0) then 
+          if (current_state%liquid_water_mixing_ratio_index .gt. 0 .and. &
+               current_state%number_q_fields .ge. current_state%liquid_water_mixing_ratio_index) then
+            if (qlmax .lt. current_state%q(current_state%liquid_water_mixing_ratio_index)%data(k, &
+                 current_state%column_local_y, current_state%column_local_x)) then
+              qlmax=max(qlmax, current_state%q(current_state%liquid_water_mixing_ratio_index)%data(k, &
+                   current_state%column_local_y, current_state%column_local_x))
+              hqlmax=k
+            end if
+
+            if (current_state%q(current_state%liquid_water_mixing_ratio_index)%data(k, &
+                 current_state%column_local_y, current_state%column_local_x) .gt. qlcrit) then
+              cltop_col=current_state%global_grid%configuration%vertical%zn(k)
+              cltop=max(cltop, current_state%global_grid%configuration%vertical%zn(k))
+              clbas=min(clbas, current_state%global_grid%configuration%vertical%zn(k))
+            end if
+
+            if (current_state%q(current_state%liquid_water_mixing_ratio_index)%data(current_state%local_grid%size(Z_INDEX)+1-k, &
+                 current_state%column_local_y, current_state%column_local_x) .gt. qlcrit) then
+              clbas_col=current_state%global_grid%configuration%vertical%zn(current_state%local_grid%size(Z_INDEX)+1-k)
+            end if
+
+            !tql_loc(J,I)=tql_loc(J,I)+DZ(K)*RHON(K)*Q(J,K,IQL,current_state%liquid_water_mixing_ratio_index)
+            totqz=totqz+tempfac(k)*current_state%q(current_state%liquid_water_mixing_ratio_index)%data(k, &
+                 current_state%column_local_y, current_state%column_local_x)*current_state%global_grid%configuration%vertical%zn(k)
+          end if
+
+          if (current_state%water_vapour_mixing_ratio_index .gt. 0 .and. &
+               current_state%number_q_fields .ge. current_state%water_vapour_mixing_ratio_index) then
+            totqv=totqv+tempfac(k)*current_state%q(current_state%water_vapour_mixing_ratio_index)%data(k, &
+                 current_state%column_local_y, current_state%column_local_x)
+            totql=totql+tempfac(k)*current_state%q(current_state%liquid_water_mixing_ratio_index)%data(k, &
+                 current_state%column_local_y, current_state%column_local_x)
+          end if          
         end if
-
-        if (current_state%q(current_state%liquid_water_mixing_ratio_index)%data(k, &
-             current_state%column_local_y, current_state%column_local_x) .gt. qlcrit) then
-          cltop_col=current_state%global_grid%configuration%vertical%zn(k)
-          cltop=max(cltop, current_state%global_grid%configuration%vertical%zn(k))
-          clbas=min(clbas, current_state%global_grid%configuration%vertical%zn(k))
-        end if
-
-        if (current_state%q(current_state%liquid_water_mixing_ratio_index)%data(current_state%local_grid%size(Z_INDEX)+1-k, &
-             current_state%column_local_y, current_state%column_local_x) .gt. qlcrit) then
-          clbas_col=current_state%global_grid%configuration%vertical%zn(current_state%local_grid%size(Z_INDEX)+1-k)
-        end if
-
-        totqv=totqv+tempfac(k)*current_state%q(current_state%water_vapour_mixing_ratio_index)%data(k, &
-             current_state%column_local_y, current_state%column_local_x)
-        totql=totql+tempfac(k)*current_state%q(current_state%liquid_water_mixing_ratio_index)%data(k, &
-             current_state%column_local_y, current_state%column_local_x)
-
-        !tql_loc(J,I)=tql_loc(J,I)+DZ(K)*RHON(K)*Q(J,K,IQL,current_state%liquid_water_mixing_ratio_index)
-        totqz=totqz+tempfac(k)*current_state%q(current_state%liquid_water_mixing_ratio_index)%data(k, &
-             current_state%column_local_y, current_state%column_local_x)*current_state%global_grid%configuration%vertical%zn(k)
       end do
       if (cltop_col .gt. 0.0_DEFAULT_PRECISION) ncl_col=ncl_col+1
       cltop_av=cltop_av+cltop_col
