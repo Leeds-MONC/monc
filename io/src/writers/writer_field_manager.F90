@@ -14,7 +14,8 @@ module writer_field_manager_mod
        get_array_double_from_monc, get_array_integer_from_monc
   use io_server_client_mod, only : DOUBLE_DATA_TYPE, INTEGER_DATA_TYPE
   use logging_mod, only : LOG_WARN, LOG_ERROR, log_log
-  use writer_federator_mod, only : is_field_used_by_writer_federator, provide_ordered_field_to_writer_federator
+  use writer_federator_mod, only : is_field_used_by_writer_federator, provide_ordered_field_to_writer_federator, &
+       is_field_split_on_q
   implicit none
 
 #ifndef TEST_MODE
@@ -83,7 +84,7 @@ contains
       do i=1, num_fields
         field_name=io_configuration%data_definitions(data_id)%fields(i)%name
         if (is_field_present(io_configuration, source, data_id, field_name) .and. &
-             is_field_used_by_writer_federator(field_name)) then
+             (is_field_used_by_writer_federator(field_name) .or. is_field_split_on_q(field_name))) then
           monc_value=get_value_from_monc_data(io_configuration, source, data_id, data_dump, field_name)
           call provide_field_to_writer_federator_src(io_configuration, field_name, monc_value, timestep, time, &
                io_configuration%data_definitions(data_id)%frequency, source)

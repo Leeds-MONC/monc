@@ -38,7 +38,7 @@ module writer_federator_mod
 
   public initialise_writer_federator, finalise_writer_federator, provide_ordered_field_to_writer_federator, &
        check_writer_for_trigger, issue_actual_write, is_field_used_by_writer_federator, inform_writer_federator_fields_present, &
-       inform_writer_federator_time_point, provide_q_field_names_to_writer_federator
+       inform_writer_federator_time_point, provide_q_field_names_to_writer_federator, is_field_split_on_q
 contains
 
   !> Initialises the write federator and configures it based on the user configuration. Also initialises the time manipulations
@@ -163,6 +163,15 @@ contains
 
     is_field_used_by_writer_federator=c_contains(used_field_names, field_name)
   end function is_field_used_by_writer_federator
+
+  !> Determines whether a field is split on Q or not
+  !! @param field_name The field name to check whether it is being used or not
+  !! @returns Whether this field is used or not (and then further split to be constituient parts of Q)
+  logical function is_field_split_on_q(field_name)
+    character(len=*), intent(in) :: field_name
+
+    is_field_split_on_q=c_contains(q_field_splits, field_name)
+  end function is_field_split_on_q  
 
   !> Enables a specific field by its name, this will locate all the fields with this name and enable them
   !! @param field_name The name of the field to enable
