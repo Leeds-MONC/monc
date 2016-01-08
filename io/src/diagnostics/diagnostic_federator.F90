@@ -197,6 +197,7 @@ contains
     type(all_diagnostics_at_timestep_type), pointer :: diagnostics_by_timestep
 
     if (.not. allocated(diagnostic_definitions)) return
+    if (c_is_empty(available_fields)) return
 
     if (is_field_present(io_configuration, source, data_id, "timestep") .and. &
          is_field_present(io_configuration, source, data_id, "time")) then

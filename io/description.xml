@@ -8,6 +8,7 @@
 	<data-writing>
 		<file name="fields_3d.nc" write_time_frequency="{diag_write_freq}">
 			<include group="diagnostics_3d" time_manipulation="instantaneous"  output_frequency="{mm}"/>
+			<include field="thdiag" time_manipulation="averaged"  output_frequency="{mm}"/>
 		</file>
 	</data-writing>
 </io-configuration>

@@ -261,6 +261,7 @@ contains
     type(component_field_information_type) :: field_information
     type(component_field_information_type), pointer :: field_information_info_alloc
 
+
     field_information=get_component_field_information(current_state, field_name)
     if (field_information%enabled) then
       allocate(field_information_info_alloc, source=field_information)
