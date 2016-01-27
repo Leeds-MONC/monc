@@ -1,7 +1,6 @@
 !> Parses a configuration file and loads the contents into the options database which can 
 !! then be interogated by components in the model
 module configuration_file_parser_mod
-  use datadefn_mod, only : STRING_LENGTH
   use collections_mod, only : hashmap_type
   use conversions_mod, only : conv_to_logical, conv_to_integer, conv_to_real, &
        conv_is_logical, conv_is_integer, conv_is_real, conv_single_real_to_double

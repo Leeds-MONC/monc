@@ -7,8 +7,8 @@ module datadefn_mod
   private
 #endif
 
-  integer, public, parameter :: STRING_LENGTH=50 !< Default length of strings
-  integer, public, parameter :: LONG_STRING_LENGTH=100 !< Length of longer strings
+  integer, public, parameter :: STRING_LENGTH=150 !< Default length of strings
+  integer, public, parameter :: LONG_STRING_LENGTH=STRING_LENGTH + 50!< Length of longer strings
 
   integer, public, parameter :: SINGLE_PRECISION = selected_real_kind(6,30)   !< Single precision (32 bit) kind
   integer, public, parameter :: DOUBLE_PRECISION = selected_real_kind(15,307) !< Double precision (64 bit) kind
