@@ -6,6 +6,7 @@ use coriolis_mod, only : coriolis_get_descriptor
 use damping_mod, only : damping_get_descriptor
 use debugger_mod, only : debugger_get_descriptor
 use decomposition_mod, only : decomposition_get_descriptor
+use diagnostics_mod, only : diagnostics_get_descriptor
 use diffusion_mod, only : diffusion_get_descriptor
 use diverr_mod, only : diverr_get_descriptor
 use fftsolver_mod, only : fftsolver_get_descriptor
@@ -20,9 +21,11 @@ use lowerbc_mod, only : lowerbc_get_descriptor
 use meanprofiles_mod, only : meanprofiles_get_descriptor
 use modelsynopsis_mod, only : modelsynopsis_get_descriptor
 use pressuresource_mod, only : pressuresource_get_descriptor
+use profile_diagnostics_mod, only : profile_diagnostics_get_descriptor
 use pstep_mod, only : pstep_get_descriptor
 use pwadvection_mod, only : pwadvection_get_descriptor
 use randomnoise_mod, only : randomnoise_get_descriptor
+use scalar_diagnostics_mod, only : scalar_diagnostics_get_descriptor
 use set_consistent_lowbc_mod, only : set_consistent_lowbc_get_descriptor
 use setfluxlook_mod, only : setfluxlook_get_descriptor
 use simplecloud_mod, only : simplecloud_get_descriptor

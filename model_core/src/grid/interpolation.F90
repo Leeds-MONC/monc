@@ -77,7 +77,7 @@ contains
       
     if (present(extrapolate))ext_type=trim(extrapolate)
 
-    if (z >= zvals(1))then 
+    if (z >= zvals(nnodes))then 
       nn=nnodes
       select case (trim(ext_type))
       case ('linear')

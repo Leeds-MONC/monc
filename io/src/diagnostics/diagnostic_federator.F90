@@ -189,7 +189,7 @@ contains
   subroutine pass_fields_to_diagnostics_federator(io_configuration, source, data_id, data_dump)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:), allocatable :: data_dump
+    character, dimension(:), intent(in) :: data_dump
 
     integer :: timestep
     real(kind=DEFAULT_PRECISION) :: time
@@ -205,9 +205,9 @@ contains
       time=get_scalar_real_from_monc(io_configuration, source, data_id, data_dump, "time")
       timestep_entry=>find_or_register_timestep_entry(io_configuration, timestep, source, time)
       diagnostics_by_timestep=>get_diagnostics_by_timestep(timestep, .true.)
-      call clean_diagnostic_states(timestep)
-      call check_diagnostics_entries_against_data(io_configuration, source, data_id, data_dump, timestep_entry)
+      call clean_diagnostic_states(timestep)      
       call issue_communication_calls(io_configuration, timestep_entry, diagnostics_by_timestep, source, data_id, data_dump)      
+      call check_diagnostics_entries_against_data(io_configuration, source, data_id, data_dump, timestep_entry)
       call check_all_activities_against_completed_fields(io_configuration, timestep_entry, diagnostics_by_timestep)
     else
       call log_log(LOG_WARN, "Can not run the diagnostics federator without a timestep and time field in the MONC data")
@@ -286,11 +286,14 @@ contains
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: operator_result_values
     class(*), pointer :: generic
 
+    call check_thread_status(forthread_rwlock_rdlock(timestep_entry%completed_fields_rwlock))
     call specific_activity%operator_procedure(io_configuration, timestep_entry%completed_fields, &
          specific_activity%activity_attributes, timestep_entry%source_location, timestep_entry%source, operator_result_values)    
+    call check_thread_status(forthread_rwlock_unlock(timestep_entry%completed_fields_rwlock))
 
     if (allocated(operator_result_values)) then
       allocate(operator_result)
+      allocate(operator_result%values(size(operator_result_values)), source=operator_result_values)
       operator_result%values=operator_result_values
       deallocate(operator_result_values)
       generic=>operator_result
@@ -327,7 +330,7 @@ contains
       iterator=c_get_iterator(diagnostics_by_timestep%diagnostic_entries)
       do while (c_has_next(iterator))
         allocate(result_to_add)
-        result_to_add%values=values
+        allocate(result_to_add%values(size(values)), source=values)
         call handle_completion_for_specific_monc_timestep_entry(io_configuration, result_to_add, &
              field_name, retrieve_next_specific_monc_timestep_entry(iterator), diagnostics_by_timestep)
       end do
@@ -364,11 +367,11 @@ contains
     call c_put_generic(timestep_entry%completed_fields, trim(activity%result_name), generic, .false.)
     call check_thread_status(forthread_rwlock_unlock(timestep_entry%completed_fields_rwlock))
 
-    call check_thread_status(forthread_rwlock_wrlock(timestep_entry%completed_fields_rwlock))
+    call check_thread_status(forthread_rwlock_wrlock(timestep_entry%outstanding_fields_rwlock))
     ! is field name here correct?
     call c_remove(timestep_entry%outstanding_fields, trim(field_name))
-    call check_thread_status(forthread_rwlock_unlock(timestep_entry%completed_fields_rwlock))
-    
+    call check_thread_status(forthread_rwlock_unlock(timestep_entry%outstanding_fields_rwlock))
+        
     do i=1, size(diagnostic_definitions)
       if (activity%result_name == diagnostic_definitions(i)%diagnostic_name) then                      
         if (diagnostic_definitions(i)%collective) then          
@@ -385,7 +388,6 @@ contains
         exit
       end if
     end do
-
     call check_all_activities_against_completed_fields(io_configuration, timestep_entry, diagnostics_by_timestep)
   end subroutine handle_completion_for_specific_monc_timestep_entry
 
@@ -516,7 +518,7 @@ contains
     type(io_configuration_type), intent(inout) :: io_configuration
     type(diagnostics_at_timestep_type), intent(inout) :: timestep_entry
     integer, intent(in) :: source, data_id
-    character, dimension(:), allocatable :: data_dump
+    character, dimension(:), intent(in) :: data_dump
     type(all_diagnostics_at_timestep_type), intent(inout) :: diagnostics_by_timestep
 
     logical :: completed_diagnostics_entry
@@ -525,6 +527,7 @@ contains
     type(diagnostics_activity_type), pointer :: activity
     character(len=STRING_LENGTH) :: communication_field_name, activity_diag_key
     
+    call check_thread_status(forthread_mutex_lock(timestep_entry%activity_completion_mutex))
     num_diags=size(diagnostic_definitions)
     do j=1, num_diags
       call check_thread_status(forthread_rwlock_rdlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
@@ -543,9 +546,11 @@ contains
                 communication_field_name=c_get_string(activity%required_fields, 1)
                 if (is_field_present(io_configuration, source, data_id, communication_field_name)) then
                   call c_add_string(timestep_entry%completed_activities, activity_diag_key)
+                  call check_thread_status(forthread_mutex_unlock(timestep_entry%activity_completion_mutex))
                   call perform_inter_io_communication(io_configuration, timestep_entry, diagnostics_by_timestep, activity, &
                        get_value_from_monc_data(io_configuration, source, data_id, data_dump, communication_field_name), &
                        communication_field_name)            
+                  call check_thread_status(forthread_mutex_lock(timestep_entry%activity_completion_mutex))
                 end if
               end if
             end if
@@ -553,6 +558,7 @@ contains
         end do
       end if
     end do
+    call check_thread_status(forthread_mutex_unlock(timestep_entry%activity_completion_mutex))
   end subroutine issue_communication_calls
 
   !> Checks the outstanding fields of a time step entry against the data recieved from MONC and moves any acquired data
@@ -566,7 +572,7 @@ contains
        timestep_diagnostics_entry)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:), allocatable :: data_dump
+    character, dimension(:), intent(in) :: data_dump
     type(diagnostics_at_timestep_type), intent(inout) :: timestep_diagnostics_entry
 
     type(iterator_type) :: iterator
@@ -714,7 +720,7 @@ contains
   function get_value_from_monc_data(io_configuration, source, data_id, data_dump, field_name)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:), allocatable :: data_dump
+    character, dimension(:), intent(in) :: data_dump
     character(len=*), intent(in) :: field_name
     type(data_values_type), pointer :: get_value_from_monc_data
 

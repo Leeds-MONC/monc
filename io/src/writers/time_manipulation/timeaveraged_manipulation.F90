@@ -19,6 +19,7 @@ module timeaveraged_time_manipulation_mod
      character(len=STRING_LENGTH) :: field_name
      real(kind=DEFAULT_PRECISION) :: start_time, previous_time, previous_output_time
      integer :: mutex
+     logical :: empty_values
      real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: time_averaged_values
   end type time_averaged_completed_type
 
@@ -67,6 +68,7 @@ contains
       timeaveraged_value%time_averaged_values=0.0_DEFAULT_PRECISION
       timeaveraged_value%start_time=time
       timeaveraged_value%previous_time=time
+      timeaveraged_value%empty_values=.true.
     end if
     call check_thread_status(forthread_mutex_unlock(timeaveraged_value%mutex))
   end function perform_timeaveraged_time_manipulation
@@ -92,10 +94,15 @@ contains
       timeaveraged_value%time_averaged_values=0.0_DEFAULT_PRECISION
     end if
     
-    do i=1, size(instant_values)
-      timeaveraged_value%time_averaged_values(i)=(timeav*timeaveraged_value%time_averaged_values(i)+&
-           timedg*instant_values(i)) / combined_add
-    end do
+    if (timeaveraged_value%empty_values) then
+      timeaveraged_value%empty_values=.false.
+      timeaveraged_value%time_averaged_values=instant_values
+    else
+      do i=1, size(instant_values)
+        timeaveraged_value%time_averaged_values(i)=(timeav*timeaveraged_value%time_averaged_values(i)+&
+             timedg*instant_values(i)) / combined_add
+      end do
+    end if
     
     timeaveraged_value%previous_time=time
   end subroutine time_average  
@@ -121,6 +128,7 @@ contains
         new_entry%field_name=field_name
         new_entry%start_time=0.0_DEFAULT_PRECISION
         new_entry%previous_time=0.0_DEFAULT_PRECISION
+        new_entry%empty_values=.true.
         new_entry%previous_output_time=0.0_DEFAULT_PRECISION
         call check_thread_status(forthread_mutex_init(new_entry%mutex, -1))
         generic=>new_entry

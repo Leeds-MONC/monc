@@ -135,7 +135,7 @@ contains
         
     call clean_progress(io_configuration%my_io_rank)
     reduction_progress=>find_or_add_reduction_progress(timestep, reduction_op, root, reduction_field_name, completion_procedure)
-    
+
     call check_thread_status(forthread_mutex_lock(reduction_progress%mutex))
     reduction_progress%contributed_moncs=reduction_progress%contributed_moncs+1
 

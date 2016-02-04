@@ -1,0 +1,65 @@
+<data-definition name="scalar_timeser_fields" frequency="{sampling_frequency}">
+<!-- --
+      3D fields, just written out no processing
+<!-- -->
+  <field name="w" type="array" data_type="double" size="z,y,x" collective=true />
+  <field name="u" type="array" data_type="double" size="z,y,x" collective=true />
+  <field name="v" type="array" data_type="double" size="z,y,x" collective=true />
+  <field name="q" type="array" data_type="double" size="z,y,x,qfields" collective=true />
+<!-- --
+      scalar fields - calculated in scalar_diagnostic component
+<!-- -->
+  <field name="totqv_local" type="scalar" data_type="double" optional=true/>
+  <field name="totql_local" type="scalar" data_type="double" optional=true/>
+<!-- --
+      profiles fields - calculated in profile_diagnostic component
+<!-- -->
+  <field name="theta_mean_local" type="array" data_type="double" optional=true/>
+  <field name="vapour_mmr_mean_local" type="array" data_type="double" optional=true/>
+  <field name="liquid_mmr_mean_local" type="array" data_type="double" optional=true/>
+</data-definition>
+
+<data-handling>
+<!-- --
+      data handling for scalar fields - reduction over processors and then mean field
+<!-- -->  
+  <diagnostic field="totqv"  type="scalar" data_type="double" units="K">
+    <communication name="reduction" operator="mean" result="totqv" field="totqv_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="totql"  type="scalar" data_type="double" units="K">
+    <communication name="reduction" operator="mean" result="totql" field="totql_local" root="auto"/>
+  </diagnostic>  
+<!-- --
+      data handling for profile fields - reduction over processors and then mean field
+<!-- -->  
+  <diagnostic field="theta_mean"  type="array" data_type="double" size="zn" units="K">
+    <communication name="reduction" operator="mean" result="theta_mean" field="theta_mean_local" root="auto"/>
+  </diagnostic>  
+  <diagnostic field="vapour_mmr_mean"  type="array" data_type="double" size="zn" units="K">
+    <communication name="reduction" operator="mean" result="vapour_mmr_mean" field="vapour_mmr_mean_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="liquid_mmr_mean"  type="array" data_type="double" size="zn" units="K">
+    <communication name="reduction" operator="mean" result="liquid_mmr_mean" field="liquid_mmr_mean_local" root="auto"/>
+  </diagnostic>    
+</data-handling>
+
+<!-- --
+      group name for all the 3D fields used in the data write statement
+<!-- -->
+<group name="instantaneous_3D">
+  <member name="w"/>
+  <member name="u"/>
+  <member name="v"/>
+  <member name="q"/>
+</group>
+
+<group name="scalar_timeser">
+  <member name="totqv"/>
+  <member name="totql"/>
+</group>
+
+<group name="profile_timeser">
+  <member name="theta_mean"/>
+  <member name="vapour_mmr_mean"/>
+  <member name="liquid_mmr_mean"/>
+</group>

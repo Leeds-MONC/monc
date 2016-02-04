@@ -1,0 +1,23 @@
+<data-definition name="profile_timeseries_fields" frequency="{sampling_frequency}">
+  <field name="theta_mean_local" type="array" data_type="double" optional=true/>
+  <field name="vapour_mmr_mean_local" type="array" data_type="double" optional=true/>
+  <field name="liquid_mmr_mean_local" type="array" data_type="double" optional=true/>  
+</data-definition>
+
+<data-handling>
+  <diagnostic field="theta_mean"  type="array" data_type="double" size="zn" units="K">
+    <communication name="reduction" operator="mean" result="theta_mean" field="theta_mean_local" root="auto"/>
+  </diagnostic>  
+  <diagnostic field="vapour_mmr_mean"  type="array" data_type="double" size="zn" units="K">
+    <communication name="reduction" operator="mean" result="vapour_mmr_mean" field="vapour_mmr_mean_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="liquid_mmr_mean"  type="array" data_type="double" size="zn" units="K">
+    <communication name="reduction" operator="mean" result="liquid_mmr_mean" field="liquid_mmr_mean_local" root="auto"/>
+  </diagnostic>
+</data-handling>
+
+<group name="profile_timeseries">
+  <member name="theta_mean"/>
+  <member name="vapour_mmr_mean"/>
+  <member name="liquid_mmr_mean"/> 
+</group>

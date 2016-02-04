@@ -41,13 +41,13 @@ module io_server_mod
        mpi_type_definition_description, & !< The MPI data type for data descriptions sent to MONCs
        mpi_type_field_description !< The MPI data type for field descriptions sent to MONCs
   type(io_configuration_type), volatile, save :: io_configuration !< Internal representation of the IO configuration
-  logical :: contine_poll_messages, & !< Whether to continue waiting command messages from any MONC processes
+  logical, volatile :: contine_poll_messages, & !< Whether to continue waiting command messages from any MONC processes
        initialised_present_data
   logical, volatile :: contine_poll_interio_messages, already_registered_finishing_call
   type(field_description_type), dimension(:), allocatable :: registree_field_descriptions
   type(definition_description_type), dimension(:), allocatable :: registree_definition_descriptions
 
-  integer :: monc_registration_lock
+  integer, volatile :: monc_registration_lock
 
   public io_server_run
 contains
@@ -176,8 +176,8 @@ contains
     else if (command == INTER_IO_COMMUNICATION) then
       call threadpool_start_thread(handle_inter_io_communication_command, (/ source /), data_buffer=data_buffer)      
       deallocate(data_buffer)
-    else if (command .ge. DATA_COMMAND_START) then
-      call threadpool_start_thread(handle_data_message, (/ source,  command-DATA_COMMAND_START /))
+    else if (command .ge. DATA_COMMAND_START) then      
+      call pull_back_data_message_and_handle(source, command-DATA_COMMAND_START)
     end if    
   end subroutine handle_command_message
 
@@ -237,38 +237,54 @@ contains
     io_configuration%active_moncs=io_configuration%active_moncs-1
     if (io_configuration%active_moncs==0) contine_poll_messages=.false.
     call check_thread_status(forthread_rwlock_unlock(monc_registration_lock))
-  end subroutine handle_deregistration_command  
+  end subroutine handle_deregistration_command
 
-  !> Handles the command for data download from a specific process. This will allocate the receive buffer
-  !! and then call to get the data. Once it has been received then the data is run against handling rules
-  !! @param data_set The data set ID that is being sent over
-  !! @param source The source PID
-  subroutine handle_data_message(arguments, input_data_buffer)
-    integer, dimension(:), intent(in) :: arguments
-    character, dimension(:), intent(inout), optional :: input_data_buffer
+  !> Retrieves the message from MONC off the data channel and throws this to a thread in the thread pool to actually process
+  !! We do it this way to enforce ordering between the command (including the data set ID) and the raw data itself
+  !! @param source Source PID of the MONC process
+  !! @param data_set ID of the data set being communicated
+  subroutine pull_back_data_message_and_handle(source, data_set)
+    integer, intent(in) :: source, data_set
 
-    integer :: specific_monc_data_type, specific_monc_buffer_size, recv_count, monc_location, data_set, &
-         source, matched_datadefn_index
+    integer :: specific_monc_data_type, specific_monc_buffer_size, recv_count, monc_location
     character, dimension(:), allocatable :: data_buffer
 
-    source=arguments(1)
-    data_set=arguments(2)
-    monc_location=get_monc_location(io_configuration, source) 
-
     call check_thread_status(forthread_rwlock_rdlock(monc_registration_lock))
-
-    call check_thread_status(forthread_mutex_lock(io_configuration%registered_moncs(monc_location)%active_mutex))
-    io_configuration%registered_moncs(monc_location)%active_threads=&
-         io_configuration%registered_moncs(monc_location)%active_threads+1
-    call check_thread_status(forthread_mutex_unlock(io_configuration%registered_moncs(monc_location)%active_mutex))
+    monc_location=get_monc_location(io_configuration, source)
 
     specific_monc_data_type=c_get_integer(io_configuration%registered_moncs(monc_location)%registered_monc_types, &
          conv_to_string(data_set))
     specific_monc_buffer_size=c_get_integer(io_configuration%registered_moncs(monc_location)%registered_monc_buffer_sizes, &
          conv_to_string(data_set))
 
-    allocate(data_buffer(specific_monc_buffer_size))      
+    allocate(data_buffer(specific_monc_buffer_size))
     recv_count=data_receive(specific_monc_data_type, 1, source, dump_data=data_buffer, data_dump_id=data_set)
+
+    call check_thread_status(forthread_rwlock_unlock(monc_registration_lock))
+    call threadpool_start_thread(handle_data_message, (/ source,  data_set /), data_buffer=data_buffer)
+    deallocate(data_buffer)
+  end subroutine pull_back_data_message_and_handle  
+
+  !> Handles the command for data download from a specific process. This will allocate the receive buffer
+  !! and then call to get the data. Once it has been received then the data is run against handling rules
+  !! @param arguments, element 1 is the source & element 2 is the data_set 
+  !! @param data_buffer The actual data from MONC read from the data channel
+  subroutine handle_data_message(arguments, data_buffer)
+    integer, dimension(:), intent(in) :: arguments
+    character, dimension(:), intent(inout), optional :: data_buffer
+
+    integer :: monc_location, data_set, source, matched_datadefn_index
+
+    source=arguments(1)
+    data_set=arguments(2)
+
+    call check_thread_status(forthread_rwlock_rdlock(monc_registration_lock))
+    monc_location=get_monc_location(io_configuration, source)
+
+    call check_thread_status(forthread_mutex_lock(io_configuration%registered_moncs(monc_location)%active_mutex))
+    io_configuration%registered_moncs(monc_location)%active_threads=&
+         io_configuration%registered_moncs(monc_location)%active_threads+1
+    call check_thread_status(forthread_mutex_unlock(io_configuration%registered_moncs(monc_location)%active_mutex))
     
     matched_datadefn_index=retrieve_data_definition(io_configuration, &
          io_configuration%registered_moncs(monc_location)%definition_names(data_set))
@@ -289,7 +305,6 @@ contains
     call check_thread_status(forthread_cond_signal(io_configuration%registered_moncs(monc_location)%deactivate_condition_variable))
     call check_thread_status(forthread_mutex_unlock(io_configuration%registered_moncs(monc_location)%active_mutex))
     call check_thread_status(forthread_rwlock_unlock(monc_registration_lock))
-    deallocate(data_buffer)
   end subroutine handle_data_message
 
   !> Handles registration from some MONC process. The source process sends some data description to this IO server which

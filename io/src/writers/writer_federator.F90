@@ -4,7 +4,8 @@ module writer_federator_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : TIME_AVERAGED_TYPE, INSTANTANEOUS_TYPE, GROUP_TYPE, FIELD_TYPE, io_configuration_type, &
        io_configuration_field_type, io_configuration_diagnostic_field_type, io_configuration_data_definition_type, &
-       data_values_type, get_data_value_by_field_name, get_diagnostic_field_configuration, get_prognostic_field_configuration
+       data_values_type, get_data_value_by_field_name, get_diagnostic_field_configuration, get_prognostic_field_configuration, &
+       get_monc_location
   use instantaneous_time_manipulation_mod, only : init_instantaneous_manipulation, finalise_instantaneous_manipulation, &
        perform_instantaneous_time_manipulation
   use timeaveraged_time_manipulation_mod, only : init_time_averaged_manipulation, finalise_time_averaged_manipulation, &
@@ -19,7 +20,8 @@ module writer_federator_mod
        forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_unlock, forthread_rwlock_init, forthread_rwlock_destroy
   use threadpool_mod, only : check_thread_status
   use logging_mod, only : LOG_DEBUG, LOG_ERROR, LOG_WARN, log_log, log_master_log, log_get_logging_level, log_is_master
-  use writer_types_mod, only : writer_type, writer_field_type, write_field_collective_values_type, pending_write_type
+  use writer_types_mod, only : writer_type, writer_field_type, write_field_collective_values_type, pending_write_type, &
+       collective_q_field_representation_type
   use netcdf_filetype_writer_mod, only : initialise_netcdf_filetype, finalise_netcdf_filetype, define_netcdf_file, &
        write_variable, close_netcdf_file  
   use global_callback_inter_io_mod, only : perform_global_callback
@@ -31,8 +33,8 @@ module writer_federator_mod
 #endif
 
   type(writer_type), volatile, dimension(:), allocatable :: writer_entries
-  type(hashset_type), volatile :: used_field_names
-  type(hashmap_type), volatile :: time_points, q_field_splits
+  type(hashset_type), volatile :: used_field_names, q_field_names
+  type(hashmap_type), volatile :: time_points, q_field_splits, collective_q_field_dims
 
   integer, volatile :: time_points_rwlock
 
@@ -96,7 +98,7 @@ contains
   subroutine inform_writer_federator_time_point(io_configuration, source, data_id, data_dump)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:), allocatable :: data_dump
+    character, dimension(:), intent(in) :: data_dump
 
     real(kind=DEFAULT_PRECISION) :: time
     integer :: timestep
@@ -128,7 +130,6 @@ contains
     type(hashset_type), intent(inout) :: field_names
 
     type(iterator_type) :: iterator
-    type(mapentry_type) :: mapentry
     character(len=STRING_LENGTH) :: specific_name
     integer :: i, number_q_fields
 
@@ -139,16 +140,16 @@ contains
         call enable_specific_field_by_name(specific_name)      
       end if
     end do
-    iterator=c_get_iterator(q_field_splits)
+    iterator=c_get_iterator(q_field_names)
     do while (c_has_next(iterator))
-      mapentry=c_next_mapentry(iterator)
-      if (c_contains(field_names, trim(mapentry%key))) then
+      specific_name=c_next_string(iterator)
+      if (c_contains(field_names, specific_name)) then
         number_q_fields=c_get_integer(io_configuration%dimension_sizing, "qfields")
         do i=1, number_q_fields
           if (c_size(io_configuration%q_field_names) .ge. i) then
-            call enable_specific_field_by_name(trim(mapentry%key)//"_"//trim(c_get_string(io_configuration%q_field_names, i)))
+            call enable_specific_field_by_name(trim(specific_name)//"_"//trim(c_get_string(io_configuration%q_field_names, i)))
           else
-            call enable_specific_field_by_name(trim(mapentry%key)//"_udef"//trim(conv_to_string(i)))
+            call enable_specific_field_by_name(trim(specific_name)//"_udef"//trim(conv_to_string(i)))
           end if
         end do
       end if
@@ -170,7 +171,7 @@ contains
   logical function is_field_split_on_q(field_name)
     character(len=*), intent(in) :: field_name
 
-    is_field_split_on_q=c_contains(q_field_splits, field_name)
+    is_field_split_on_q=c_contains(q_field_names, field_name)
   end function is_field_split_on_q  
 
   !> Enables a specific field by its name, this will locate all the fields with this name and enable them
@@ -196,23 +197,22 @@ contains
   !> Provides the Q field names to the write federator, this is required as on initialisation we don't know what these are and
   !! only when MONC register do they inform the IO server of the specifics
   !! @param q_field_names An ordered list of Q field names
-  subroutine provide_q_field_names_to_writer_federator(q_field_names)
-    type(list_type), intent(inout) :: q_field_names
+  subroutine provide_q_field_names_to_writer_federator(q_provided_field_names)
+    type(list_type), intent(inout) :: q_provided_field_names
 
     type(iterator_type) :: iterator, q_field_iterator
-    type(mapentry_type) :: mapentry
     logical :: continue_search
     integer :: writer_index, contents_index, i
-    character(len=STRING_LENGTH) :: search_field, field_name
+    character(len=STRING_LENGTH) :: search_field, field_name, specific_name
 
-    iterator=c_get_iterator(q_field_splits)
+    iterator=c_get_iterator(q_field_names)
     do while (c_has_next(iterator))
-      mapentry=c_next_mapentry(iterator)
-      q_field_iterator=c_get_iterator(q_field_names)
+      specific_name=c_next_string(iterator)
+      q_field_iterator=c_get_iterator(q_provided_field_names)
       i=1
       do while (c_has_next(q_field_iterator))
-        search_field=trim(mapentry%key)//"_udef"//trim(conv_to_string(i))
-        field_name=trim(mapentry%key)//"_"//trim(c_next_string(q_field_iterator))        
+        search_field=trim(specific_name)//"_udef"//trim(conv_to_string(i))
+        field_name=trim(specific_name)//"_"//trim(c_next_string(q_field_iterator))        
         continue_search=.true.
         writer_index=1
         contents_index=0
@@ -252,8 +252,15 @@ contains
     if (c_contains(used_field_names, field_name)) then
       call provide_ordered_single_field_to_writer_federator(io_configuration, field_name, field_values, &
            timestep, time, source)
-    else if (c_contains(q_field_splits, field_name)) then
-      individual_size=c_get_integer(q_field_splits, field_name)
+    else if (c_contains(q_field_names, field_name)) then
+      if (c_contains(q_field_splits, field_name)) then
+        individual_size=c_get_integer(q_field_splits, field_name)
+      else if (source .gt. -1) then
+        individual_size=get_size_of_collective_q(io_configuration, field_name, source)
+      else
+        call log_log(LOG_WARN, "Can not find Q split field in Q field names or collective field names with source, ignoring")
+        return
+      end if
       iterator=c_get_iterator(io_configuration%q_field_names)
       index=1
       do while (c_has_next(iterator))
@@ -261,9 +268,34 @@ contains
              trim(field_name)//"_"//trim(c_next_string(iterator)), field_values(index:index+individual_size-1), &
              timestep, time, source)
         index=index+individual_size
-      end do      
+      end do
     end if
-  end subroutine provide_ordered_field_to_writer_federator  
+  end subroutine provide_ordered_field_to_writer_federator
+
+  !> Retrieves the data size for each Q entry of a collective Q field for the specific source MONC that has sent data
+  !! @param io_configuration The IO server configuration
+  !! @param field_name The field name to write (if appropriate)
+  !! @param source  MONC source for the communicated fields
+  !! @returns The size (elements) per Q split field
+  integer function get_size_of_collective_q(io_configuration, field_name, source)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    character(len=*), intent(in) :: field_name
+    integer, intent(in) :: source
+
+    class(*), pointer :: generic
+    integer :: i, monc_index
+
+    get_size_of_collective_q=1
+    monc_index=get_monc_location(io_configuration, source)
+    generic=>c_get_generic(collective_q_field_dims, field_name)
+    select type(generic)
+      type is(collective_q_field_representation_type)
+        do i=1, size(generic%dimensions)
+          get_size_of_collective_q=&
+               get_size_of_collective_q*io_configuration%registered_moncs(monc_index)%local_dim_sizes(generic%dimensions(i))
+        end do        
+    end select    
+  end function get_size_of_collective_q  
 
   !> Provides a single ordered field, i.e. Q fields have been split by this point
   !! @param io_configuration The IO server configuration
@@ -460,7 +492,7 @@ contains
   subroutine check_writer_for_trigger(io_configuration, source, data_id, data_dump)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:), allocatable :: data_dump
+    character, dimension(:), intent(in) :: data_dump
 
     integer :: i, timestep
     real(kind=DEFAULT_PRECISION) :: time
@@ -789,18 +821,22 @@ contains
     type(io_configuration_diagnostic_field_type) :: diagnostic_field_configuration
     
     if (get_diagnostic_field_configuration(io_configuration, field_name, diagnostic_field_configuration)) then
-      if (diagnostic_field_configuration%dim_size_defns(diagnostic_field_configuration%dimensions) .eq. "qfields") then
-        get_field_number_of_fields=num_q_fields
-      else
-        get_field_number_of_fields=1
+      if (diagnostic_field_configuration%field_type == ARRAY_FIELD_TYPE) then
+        if (diagnostic_field_configuration%dim_size_defns(diagnostic_field_configuration%dimensions) .eq. "qfields") then
+          get_field_number_of_fields=num_q_fields
+          return
+        end if
       end if
+      get_field_number_of_fields=1
     else if (get_prognostic_field_configuration(io_configuration, field_name, &
-         prognostic_field_configuration, prognostic_containing_data_defn)) then        
-      if (prognostic_field_configuration%dim_size_defns(prognostic_field_configuration%dimensions) .eq. "qfields") then
-        get_field_number_of_fields=num_q_fields
-      else
-        get_field_number_of_fields=1
+         prognostic_field_configuration, prognostic_containing_data_defn)) then
+      if (prognostic_field_configuration%field_type == ARRAY_FIELD_TYPE) then
+        if (prognostic_field_configuration%dim_size_defns(prognostic_field_configuration%dimensions) .eq. "qfields") then
+          get_field_number_of_fields=num_q_fields
+          return
+        end if
       end if
+        get_field_number_of_fields=1
     end if
   end function get_field_number_of_fields
 
@@ -861,50 +897,76 @@ contains
     type(io_configuration_field_type) :: prognostic_field_configuration
     type(io_configuration_data_definition_type) :: prognostic_containing_data_defn
     type(io_configuration_diagnostic_field_type) :: diagnostic_field_configuration
+    type(collective_q_field_representation_type), pointer :: collective_q_field
+    class(*), pointer :: generic
     
     if (get_diagnostic_field_configuration(io_configuration, field_name, diagnostic_field_configuration)) then
-      if (diagnostic_field_configuration%dim_size_defns(diagnostic_field_configuration%dimensions) .eq. "qfields") then        
-        number_q_fields=c_get_integer(io_configuration%dimension_sizing, "qfields")
-        do i=1, number_q_fields
-          call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
-             my_facet_index+i, trim(field_name)//"_udef"//trim(conv_to_string(i)), writer_field_names, &
-             duplicate_field_names, c_get_integer(diagnostic_generation_frequency, field_name), diagnostic_field_configuration)
-        end do
-        tot_size=1
-        do i=1, writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dimensions
-          tot_size=tot_size*writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%actual_dim_size(i)
-        end do
-        call c_put_integer(q_field_splits, field_name, tot_size)
-        add_field_to_writer_entry=number_q_fields
-      else
-        call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
-             my_facet_index+1, field_name, writer_field_names, duplicate_field_names, &
-             c_get_integer(diagnostic_generation_frequency, field_name), diagnostic_field_configuration)
-        add_field_to_writer_entry=1
-      end if      
-    else if (get_prognostic_field_configuration(io_configuration, field_name, &
-           prognostic_field_configuration, prognostic_containing_data_defn)) then
-      if (prognostic_field_configuration%dim_size_defns(prognostic_field_configuration%dimensions) .eq. "qfields") then        
-        number_q_fields=c_get_integer(io_configuration%dimension_sizing, "qfields")
-        do i=1, number_q_fields
-          call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
-               my_facet_index+i, trim(field_name)//"_udef"//trim(conv_to_string(i)), writer_field_names, &
-               duplicate_field_names, prognostic_containing_data_defn%frequency, &
-               prognostic_field_configuration=prognostic_field_configuration)
-        end do
-        tot_size=1
-        do i=1, writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dimensions
-          tot_size=tot_size*writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%actual_dim_size(i)
-        end do
-        call c_put_integer(q_field_splits, field_name, tot_size)
-        add_field_to_writer_entry=number_q_fields
-      else
-        call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
-             my_facet_index+1, field_name, writer_field_names, duplicate_field_names, prognostic_containing_data_defn%frequency, &
-             prognostic_field_configuration=prognostic_field_configuration)
-        add_field_to_writer_entry=1
+      if (diagnostic_field_configuration%field_type == ARRAY_FIELD_TYPE) then
+        if (diagnostic_field_configuration%dim_size_defns(diagnostic_field_configuration%dimensions) .eq. "qfields") then  
+          number_q_fields=c_get_integer(io_configuration%dimension_sizing, "qfields")
+          do i=1, number_q_fields
+            call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
+                 my_facet_index+i, trim(field_name)//"_udef"//trim(conv_to_string(i)), writer_field_names, &
+                 duplicate_field_names, c_get_integer(diagnostic_generation_frequency, field_name), diagnostic_field_configuration)
+          end do
+          tot_size=1
+          do i=1, writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dimensions
+            tot_size=tot_size*writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%actual_dim_size(i)
+          end do
+          call c_put_integer(q_field_splits, field_name, tot_size)
+          add_field_to_writer_entry=number_q_fields
+          return
+        end if
       end if
-    end if    
+      call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
+           my_facet_index+1, field_name, writer_field_names, duplicate_field_names, &
+           c_get_integer(diagnostic_generation_frequency, field_name), diagnostic_field_configuration)
+      add_field_to_writer_entry=1      
+    else if (get_prognostic_field_configuration(io_configuration, field_name, &
+         prognostic_field_configuration, prognostic_containing_data_defn)) then
+      if (prognostic_field_configuration%field_type == ARRAY_FIELD_TYPE) then
+        if (prognostic_field_configuration%dim_size_defns(prognostic_field_configuration%dimensions) .eq. "qfields") then  
+          number_q_fields=c_get_integer(io_configuration%dimension_sizing, "qfields")
+          do i=1, number_q_fields
+            call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
+                 my_facet_index+i, trim(field_name)//"_udef"//trim(conv_to_string(i)), writer_field_names, &
+                 duplicate_field_names, prognostic_containing_data_defn%frequency, &
+                 prognostic_field_configuration=prognostic_field_configuration)
+          end do
+          if (prognostic_field_configuration%collective) then
+            allocate(collective_q_field)
+            allocate(collective_q_field%dimensions(&
+                 writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dimensions))
+            do i=1, writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dimensions
+              if (trim(writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dim_size_defns(i)) == "z") then
+                collective_q_field%dimensions(i)=1
+              else if (trim(writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dim_size_defns(i)) &
+                   == "y") then
+                collective_q_field%dimensions(i)=2
+              else if (trim(writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dim_size_defns(i)) &
+                   == "x") then
+                collective_q_field%dimensions(i)=3
+              end if
+            end do
+            generic=>collective_q_field
+            call c_put_generic(collective_q_field_dims, field_name, generic, .false.)
+          else
+            tot_size=1
+            do i=1, writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dimensions
+              tot_size=tot_size*writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%actual_dim_size(i)
+            end do
+            call c_put_integer(q_field_splits, field_name, tot_size)
+          end if
+          call c_add_string(q_field_names, field_name)
+          add_field_to_writer_entry=number_q_fields
+          return
+        end if
+      end if
+      call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
+           my_facet_index+1, field_name, writer_field_names, duplicate_field_names, prognostic_containing_data_defn%frequency, &
+           prognostic_field_configuration=prognostic_field_configuration)
+      add_field_to_writer_entry=1
+    end if
   end function add_field_to_writer_entry  
 
   !> Adds a specific field and its information to a writer entry

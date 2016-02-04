@@ -1,0 +1,18 @@
+<io-configuration>
+	<server-configuration>
+		<thread_pool number=10/>
+	</server-configuration>
+
+#include "io/scalar_fields.xml"
+#include "io/profile_fields.xml"
+#include "io/3d_fields.xml"
+
+<data-writing>
+  <file name="diagnostics.nc" write_time_frequency="{diag_write_freq}">
+    <include group="profile_timeseries" time_manipulation="averaged" output_frequency="{mm}"/>
+    <include group="scalar_timeseries" time_manipulation="instantaneous" output_frequency="{mm}"/>
+    <include group="instantaneous_3D" time_manipulation="instantaneous" output_frequency="{mm}"/>
+  </file>
+</data-writing>
+
+</io-configuration>

@@ -1,0 +1,9 @@
+<data-definition name="my_field" frequency="{sampling_frequency}">
+	<field name="thdiag_local" type="array" data_type="double" optional=true />
+</data-definition>
+<data-handling>
+       <diagnostic field="thdiag"  type="array" data_type="double" size="zn" units="K">
+	 <communication name="reduction" operator="mean" result="thdiag" field="thdiag_local" root="auto"/>
+       </diagnostic>
+</data-handling>
+

@@ -53,6 +53,11 @@ module writer_types_mod
      type(queue_type) :: pending_writes
   end type writer_type
 
+  !< Represents the dimension information associated with a Q field that is written collectively
+  type collective_q_field_representation_type
+     integer, dimension(:), allocatable :: dimensions
+  end type collective_q_field_representation_type
+
   public writer_type, writer_field_type, write_field_collective_values_type, pending_write_type, &
-       perform_time_manipulation
+       perform_time_manipulation, collective_q_field_representation_type
 end module writer_types_mod

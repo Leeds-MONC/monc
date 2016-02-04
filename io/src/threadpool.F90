@@ -36,11 +36,11 @@ module threadpool_mod
   integer, volatile, dimension(:), allocatable :: thread_ids, thread_pass_data
   integer, volatile, dimension(:), allocatable :: activate_thread_condition_variables, activate_thread_mutex
   type(threaded_procedure_container_type), volatile, dimension(:), allocatable :: thread_entry_containers
-  integer :: netcdfmutex !< Mutex used for controling NetCDF access
-  integer :: next_suggested_idle_thread
-  logical :: threadpool_active, threadpool_serial_mode
+  integer, volatile :: netcdfmutex !< Mutex used for controling NetCDF access
+  integer, volatile :: next_suggested_idle_thread
+  logical, volatile :: threadpool_active, threadpool_serial_mode
 
-  integer, volatile :: active_threads, total_number_of_threads
+  integer, volatile :: active_threads, total_number_of_threads, active_scalar_mutex
 
   public threadpool_init, threadpool_finalise, threadpool_start_thread, check_thread_status, threadpool_lock_netcdf_access, &
        threadpool_unlock_netcdf_access, threadpool_deactivate, threadpool_is_idle
@@ -78,6 +78,7 @@ contains
       threadpool_active=.true.
       active_threads=total_number_of_threads
       next_suggested_idle_thread=1
+      call check_thread_status(forthread_mutex_init(active_scalar_mutex, -1))
       do n=1, total_number_of_threads
         call check_thread_status(forthread_cond_init(activate_thread_condition_variables(n), -1))
         call check_thread_status(forthread_mutex_init(activate_thread_mutex(n), -1))
@@ -154,8 +155,10 @@ contains
       if (.not. threadpool_active) return
       thread_busy(thread_id)=.true.
       thread_start(thread_id)=.false.
-
+      
+      call check_thread_status(forthread_mutex_lock(active_scalar_mutex))
       active_threads=active_threads-1
+      call check_thread_status(forthread_mutex_unlock(active_scalar_mutex))
       if (allocated(thread_entry_containers(thread_id)%data_buffer)) then
         call thread_entry_containers(thread_id)%proc(thread_entry_containers(thread_id)%arguments, &
              data_buffer=thread_entry_containers(thread_id)%data_buffer)
@@ -164,7 +167,9 @@ contains
         call thread_entry_containers(thread_id)%proc(thread_entry_containers(thread_id)%arguments)
       end if
       deallocate(thread_entry_containers(thread_id)%arguments)
+      call check_thread_status(forthread_mutex_lock(active_scalar_mutex))
       active_threads=active_threads+1
+      call check_thread_status(forthread_mutex_unlock(active_scalar_mutex))
       thread_busy(thread_id)=.false.
     end do
   end subroutine threadpool_thread_entry_procedure
@@ -172,6 +177,7 @@ contains
   !> Determines whether the thread pool is idle or not (i.e. all threads are idle and waiting for work)
   !! @returns Whether the thread pool is idle
   logical function threadpool_is_idle()
+
     threadpool_is_idle = active_threads==total_number_of_threads
   end function threadpool_is_idle  
 
@@ -200,6 +206,7 @@ contains
   subroutine threadpool_finalise()
     if (.not. threadpool_serial_mode) then
       call check_thread_status(forthread_mutex_destroy(netcdfmutex))
+      call check_thread_status(forthread_mutex_destroy(active_scalar_mutex))
       deallocate(thread_busy, thread_start, thread_ids, thread_pass_data, activate_thread_condition_variables, &
            activate_thread_mutex, thread_entry_containers)
     end if
