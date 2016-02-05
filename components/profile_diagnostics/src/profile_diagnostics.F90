@@ -6,7 +6,7 @@ module profile_diagnostics_mod
   use optionsdatabase_mod, only : options_get_real
   use state_mod, only : model_state_type
   use datadefn_mod, only : DEFAULT_PRECISION
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
 
   implicit none
 
@@ -47,8 +47,8 @@ contains
 
     integer :: k
     
-    iqv=q_indices_add('vapour', 'simplecloud')
-    iql=q_indices_add('cloud liquid mass', 'simplecloud')
+    iqv=get_q_index(standard_q_names%VAPOUR, 'buoyancy')
+    iql=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'buoyancy')
 
     qlcrit=options_get_real(current_state%options_database, "qlcrit")
     total_points=(current_state%local_grid%size(Y_INDEX) * current_state%local_grid%size(X_INDEX))

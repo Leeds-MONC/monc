@@ -138,16 +138,18 @@ contains
     type(list_type), intent(inout) :: component_descriptions
     type(model_state_type), intent(inout) :: state
 
-    integer :: ierr
+    integer :: ierr, total_size
     real(kind=DEFAULT_PRECISION) :: start_time, end_time, timestepping_time, modeldump_time
 
     call cpu_time(start_time)
     call mpi_comm_rank(state%parallel%monc_communicator, state%parallel%my_rank, ierr)
     call mpi_comm_size(state%parallel%monc_communicator, state%parallel%processes, ierr)
+    call mpi_comm_size(MPI_COMM_WORLD, total_size, ierr)
 
     call initialise_logging(state%parallel%my_rank)
     
-    call log_master_log(LOG_INFO,"MONC running with "//trim(conv_to_string(state%parallel%processes))//" processes")
+    call log_master_log(LOG_INFO,"MONC running with "//trim(conv_to_string(state%parallel%processes))//" processes, "// &
+         trim(conv_to_string(total_size-state%parallel%processes))// " IO server(s)")
 
 #ifdef DEBUG_MODE
     call log_master_log(LOG_WARN,"MONC compiled with debug options, you probably want to recompile without for production runs")

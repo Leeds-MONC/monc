@@ -49,7 +49,7 @@ module diagnostic_federator_mod
   !< The diagnostics at a timestep for a specific MONC - this holds all the state required for executing the diagnostics
   type diagnostics_at_timestep_type
      integer :: timestep, completed_fields_rwlock, outstanding_fields_rwlock, activity_completion_mutex, source, &
-          source_location, number_diags_outstanding
+          source_location, number_diags_outstanding, number_datas_outstanding, deletion_metric_mutex
      real(kind=DEFAULT_PRECISION) :: time
      type(hashset_type) :: outstanding_fields, completed_activities
      type(hashmap_type) :: completed_fields
@@ -209,9 +209,13 @@ contains
       call issue_communication_calls(io_configuration, timestep_entry, diagnostics_by_timestep, source, data_id, data_dump)      
       call check_diagnostics_entries_against_data(io_configuration, source, data_id, data_dump, timestep_entry)
       call check_all_activities_against_completed_fields(io_configuration, timestep_entry, diagnostics_by_timestep)
+      
+      call check_thread_status(forthread_mutex_lock(timestep_entry%deletion_metric_mutex))
+      timestep_entry%number_datas_outstanding=timestep_entry%number_datas_outstanding-1
+      call check_thread_status(forthread_mutex_unlock(timestep_entry%deletion_metric_mutex))
     else
       call log_log(LOG_WARN, "Can not run the diagnostics federator without a timestep and time field in the MONC data")
-    end if
+    end if    
   end subroutine pass_fields_to_diagnostics_federator
 
   !> Checks all pending activities against the completed fields and runs them if the required fields are now available
@@ -409,11 +413,13 @@ contains
          trim(diagnostic_definitions(diagnostic_index)%diagnostic_name))
     call check_thread_status(forthread_rwlock_unlock(timestep_entry%completed_fields_rwlock))
 
-    if (diagnostic_definitions(diagnostic_index)%collective) then
-      timestep_entry%number_diags_outstanding=timestep_entry%number_diags_outstanding-1
+    if (diagnostic_definitions(diagnostic_index)%collective) then      
       call provide_field_to_writer_federator(io_configuration, diagnostic_definitions(diagnostic_index)%diagnostic_name, &
                diagnostics_value_entry%values, timestep_entry%timestep, timestep_entry%time, &
                diagnostic_definitions(diagnostic_index)%generation_timestep_frequency, timestep_entry%source)
+      call check_thread_status(forthread_mutex_lock(timestep_entry%deletion_metric_mutex))
+      timestep_entry%number_diags_outstanding=timestep_entry%number_diags_outstanding-1
+      call check_thread_status(forthread_mutex_unlock(timestep_entry%deletion_metric_mutex))
       if (allocated(diagnostics_value_entry%values)) deallocate(diagnostics_value_entry%values)
     else
       call check_thread_status(forthread_rwlock_rdlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
@@ -426,14 +432,16 @@ contains
           call c_add_string(diagnostics_by_timestep%completed_diagnostics, &
                diagnostic_definitions(diagnostic_index)%diagnostic_name)
           call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
-          iterator=c_get_iterator(diagnostics_by_timestep%diagnostic_entries)
-          do while (c_has_next(iterator))
-            activity_at_index=>retrieve_next_specific_monc_timestep_entry(iterator)
-            activity_at_index%number_diags_outstanding=activity_at_index%number_diags_outstanding-1
-          end do
           call provide_field_to_writer_federator(io_configuration, diagnostic_definitions(diagnostic_index)%diagnostic_name, &
                diagnostics_value_entry%values, timestep_entry%timestep, timestep_entry%time, &
                diagnostic_definitions(diagnostic_index)%generation_timestep_frequency)
+          iterator=c_get_iterator(diagnostics_by_timestep%diagnostic_entries)
+          do while (c_has_next(iterator))
+            activity_at_index=>retrieve_next_specific_monc_timestep_entry(iterator)
+            call check_thread_status(forthread_mutex_lock(activity_at_index%deletion_metric_mutex))
+            activity_at_index%number_diags_outstanding=activity_at_index%number_diags_outstanding-1
+            call check_thread_status(forthread_mutex_unlock(activity_at_index%deletion_metric_mutex))
+          end do          
           if (allocated(diagnostics_value_entry%values)) deallocate(diagnostics_value_entry%values)
         else
           call check_thread_status(forthread_rwlock_unlock(diagnostics_by_timestep%completed_diagnostics_rwlock))
@@ -497,7 +505,9 @@ contains
       call perform_inter_io_reduction(io_configuration, value_to_send%values, size(value_to_send%values), &
            communication_field_name, activity%communication_operator, activity%root, timestep_entry%timestep, handle_completion)
       if (activity%root .ne. io_configuration%my_io_rank) then
-          timestep_entry%number_diags_outstanding=timestep_entry%number_diags_outstanding-1
+        call check_thread_status(forthread_mutex_lock(timestep_entry%deletion_metric_mutex))
+        timestep_entry%number_diags_outstanding=timestep_entry%number_diags_outstanding-1
+        call check_thread_status(forthread_mutex_unlock(timestep_entry%deletion_metric_mutex))
       end if
     else if (activity%activity_type == ALLREDUCTION_TYPE) then
       call perform_inter_io_allreduction(io_configuration, value_to_send%values, size(value_to_send%values), &
@@ -613,7 +623,7 @@ contains
   subroutine clean_diagnostic_states(current_timestep)
     integer, intent(in) :: current_timestep
 
-    integer :: have_lock
+    integer :: have_lock, outstanding_diags, outstanding_datas
     type(list_type) :: entries_to_remove
     type(iterator_type) :: iterator, all_diagnostics_iterator
     type(mapentry_type) :: all_diag_mapentry
@@ -639,7 +649,11 @@ contains
           all_completed=.true.
           do while (c_has_next(iterator))
             specific_monc_timestep_entry=>retrieve_next_specific_monc_timestep_entry(iterator)
-            if (specific_monc_timestep_entry%number_diags_outstanding .gt. 0) then
+            call check_thread_status(forthread_mutex_lock(specific_monc_timestep_entry%deletion_metric_mutex))
+            outstanding_diags=specific_monc_timestep_entry%number_diags_outstanding
+            outstanding_datas=specific_monc_timestep_entry%number_datas_outstanding
+            call check_thread_status(forthread_mutex_unlock(specific_monc_timestep_entry%deletion_metric_mutex))
+            if (outstanding_diags .gt. 0 .or. outstanding_datas .gt. 0) then
               all_completed=.false.
               exit
             end if
@@ -687,6 +701,7 @@ contains
         call check_thread_status(forthread_rwlock_destroy(specific_monc_timestep_entry%completed_fields_rwlock))
         call check_thread_status(forthread_rwlock_destroy(specific_monc_timestep_entry%outstanding_fields_rwlock))
         call check_thread_status(forthread_mutex_destroy(specific_monc_timestep_entry%activity_completion_mutex))
+        call check_thread_status(forthread_mutex_destroy(specific_monc_timestep_entry%deletion_metric_mutex))
         call c_free(specific_monc_timestep_entry%outstanding_fields)
         call c_free(specific_monc_timestep_entry%completed_activities)
         completed_fields_iterator=c_get_iterator(specific_monc_timestep_entry%completed_fields)
@@ -813,11 +828,14 @@ contains
     create_timestep_entry%number_diags_outstanding=c_size(available_fields)
     create_timestep_entry%source=source
     create_timestep_entry%source_location=get_monc_location(io_configuration, source)
+    create_timestep_entry%number_datas_outstanding=size(io_configuration%registered_moncs(&
+         create_timestep_entry%source_location)%definition_names)
     iterator=c_get_iterator(all_outstanding_fields)
     do while (c_has_next(iterator))      
       call c_add_string(create_timestep_entry%outstanding_fields, c_next_string(iterator))
     end do
     call check_thread_status(forthread_mutex_init(create_timestep_entry%activity_completion_mutex, -1))
+    call check_thread_status(forthread_mutex_init(create_timestep_entry%deletion_metric_mutex, -1))
     call check_thread_status(forthread_rwlock_init(create_timestep_entry%completed_fields_rwlock, -1))
     call check_thread_status(forthread_rwlock_init(create_timestep_entry%outstanding_fields_rwlock, -1))
   end function create_timestep_entry
