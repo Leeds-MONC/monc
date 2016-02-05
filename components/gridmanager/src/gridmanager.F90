@@ -11,7 +11,7 @@ module gridmanager_mod
   use datadefn_mod, only : DEFAULT_PRECISION
   use science_constants_mod, only : von_karman_constant, z0, z0th, cp, r_over_cp, r, g, rlvap_over_cp
   use saturation_mod, only : qsaturation, dqwsatdt
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
   use interpolation_mod, only: piecewise_linear_1d
 
   implicit none
@@ -297,7 +297,7 @@ contains
       allocate(f_init_pl_q(nzq, nq_init))
       f_init_pl_q(1:nzq, 1:nq_init)=reshape(f_init_pl_q_tmp, (/nzq, nq_init/))
       do n=1, nq_init
-        iq=q_indices_add(trim(names_init_pl_q(n)), 'piecewise_initialization')
+        iq=get_q_index(trim(names_init_pl_q(n)), 'piecewise_initialization')
         call piecewise_linear_1d(z_init_pl_q(1:nzq), f_init_pl_q(1:nzq,n), zgrid, &
            current_state%global_grid%configuration%vertical%q_init(:,iq))
         do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)

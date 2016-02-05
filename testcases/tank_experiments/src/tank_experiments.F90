@@ -12,7 +12,7 @@ module tank_experiments_mod
   use optionsdatabase_mod, only :  options_get_real_array, options_get_real, options_get_logical, &
      options_get_array_size, options_get_string_array
   use saturation_mod, only: qsaturation
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
   implicit none
 
 #ifndef TEST_MODE
@@ -156,7 +156,7 @@ contains
     end if
 
     ! Add in the q variable index for vapour
-    if (l_moist) iqv=q_indices_add('vapour', 'tank_experiments')
+    if (l_moist) iqv=get_q_index(standard_q_names%VAPOUR, 'tank_experiments')
 
     call generate_bubbles(current_state)
     
@@ -285,7 +285,7 @@ contains
                   qsat=qsaturation(TdegK, current_state%global_grid%configuration%vertical%prefn(k)/100.)
                   current_state%q(iqv)%data(k,j,i)  = qsat*bubble_RH(ibub)/100.
                   do n=1,nq_bubbles
-                    iq=q_indices_add(trim(bubble_q_names(n)), 'bubble_initialization')
+                    iq=get_q_index(trim(bubble_q_names(n)), 'bubble_initialization')
                     current_state%q(iq)%data(k,j,i) = bubble_q_values(n, ibub)
                   end do
 

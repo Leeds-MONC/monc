@@ -9,7 +9,7 @@ module lowerbc_mod
   use science_constants_mod, only : von_karman_constant, smallp, alphah, betah, betam, pi, &
        z0, z0th, convective_limit, gammah, gammam
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
   use mpi, only: MPI_REQUEST_NULL, MPI_STATUSES_IGNORE
   implicit none
 
@@ -128,7 +128,7 @@ contains
     
     ! Determine vapour index
     if (.not. current_state%passive_q) then 
-       iqv = q_indices_add('vapour', 'lowerbc')
+       iqv = get_q_index(standard_q_names%VAPOUR, 'lowerbc')
     endif
 
   end subroutine initialisation_callback

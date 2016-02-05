@@ -7,7 +7,7 @@ module simplecloud_mod
   use grids_mod, only : Z_INDEX
   use science_constants_mod, only : r_over_cp, rlvap_over_cp
   use saturation_mod, only: qsaturation, dqwsatdt
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
 implicit none
 
 #ifndef TEST_MODE
@@ -39,8 +39,8 @@ contains
 
     integer :: k ! look counter
 
-    iqv=q_indices_add('vapour', 'simplecloud')
-    iql=q_indices_add('cloud liquid mass', 'simplecloud')
+    iqv=get_q_index(standard_q_names%VAPOUR, 'simplecloud')
+    iql=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'simplecloud')
 
     ! set buoyancy coefficient (value for vapour should be set
     ! elsewhere for a moist model

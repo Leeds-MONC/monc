@@ -8,7 +8,7 @@ module forcing_mod
   use optionsdatabase_mod, only : options_get_integer, options_get_logical, options_get_real, options_get_array_size, &
      options_get_logical_array, options_get_real_array, options_get_string_array, options_get_string
   use interpolation_mod, only: piecewise_linear_1d
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
   use science_constants_mod, only: seconds_in_a_day
   use naming_conventions_mod
   use registry_mod, only : is_component_enabled
@@ -404,7 +404,7 @@ contains
       allocate(units_q_force(options_get_array_size(current_state%options_database, "units_q_force")))
       call options_get_string_array(current_state%options_database, "units_q_force", units_q_force)
       do n=1, nq_force
-        iq=q_indices_add(trim(names_force_pl_q(n)), 'forcing:time-independent')
+        iq=get_q_index(trim(names_force_pl_q(n)), 'forcing:time-independent')
         call piecewise_linear_1d(z_force_pl_q(1:nzq), f_force_pl_q(1:nzq,n), zgrid, &
            current_state%global_grid%configuration%vertical%q_force(:,iq))
         

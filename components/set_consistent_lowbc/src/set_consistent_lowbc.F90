@@ -8,7 +8,7 @@ module set_consistent_lowbc_mod
   use state_mod, only : PRESCRIBED_SURFACE_FLUXES, PRESCRIBED_SURFACE_VALUES, &
                         model_state_type
   use grids_mod, only : Z_INDEX
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
 
   logical :: advect_flow, advect_th, advect_q
 
@@ -33,7 +33,7 @@ contains
 
     ! Determine vapour index
     if (.not. current_state%passive_q) then 
-       iqv = q_indices_add('vapour', 'lowerbc')
+       iqv = get_q_index(standard_q_names%VAPOUR, 'lowerbc')
     endif
     
   end subroutine initialisation_callback

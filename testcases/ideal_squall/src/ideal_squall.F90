@@ -14,7 +14,7 @@ module ideal_squall_mod
   use optionsdatabase_mod, only :  options_get_real_array, options_get_real, &
      options_get_logical, options_get_array_size, options_get_string_array
 
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
 
   implicit none
 

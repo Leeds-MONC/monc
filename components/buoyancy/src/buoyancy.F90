@@ -8,7 +8,7 @@ module buoyancy_mod
   use state_mod, only : FORWARD_STEPPING, model_state_type
   use grids_mod, only : Z_INDEX
   use science_constants_mod
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
 implicit none
 
 #ifndef TEST_MODE
@@ -81,7 +81,7 @@ contains
         allocate(current_state%cq(current_state%number_q_fields))
         current_state%cq=0.0_DEFAULT_PRECISION
       end if
-      iqv = q_indices_add('vapour', 'buoyancy')
+      iqv = get_q_index(standard_q_names%VAPOUR, 'buoyancy')
       current_state%cq(iqv) = ratio_mol_wts-1.0
     end if
 

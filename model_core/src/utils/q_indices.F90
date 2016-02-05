@@ -20,8 +20,48 @@ module q_indices_mod
   !< Register of the Q variables
   type(q_metadata_type) :: q_register(n_maxqs)
 
-  public q_metadata_type, q_indices_add, get_indices_descriptor, get_max_number_q_indices, &
-       get_number_active_q_indices, set_q_index
+
+  ! standard names
+  type :: standard_q_names_type
+     character(LEN=6 ) :: VAPOUR                 = 'vapour' 
+     character(LEN=17) :: CLOUD_LIQUID_MASS      = 'cloud_liquid_mass'
+     character(LEN=9 ) :: RAIN_MASS              = 'rain_mass'
+     character(LEN=8 ) :: ICE_MASS               = 'ice_mass'
+     character(LEN=9 ) :: SNOW_MASS              = 'snow_mass'
+     character(LEN=12) :: GRAUPEL_MASS           = 'graupel_mass'
+     character(LEN=19) :: CLOUD_LIQUID_NUMBER    = 'cloud_liquid_number'
+     character(LEN=11) :: RAIN_NUMBER            = 'rain_number'
+     character(LEN=10) :: ICE_NUMBER             = 'ice_number'
+     character(LEN=11) :: SNOW_NUMBER            = 'snow_number'
+     character(LEN=14) :: GRAUPEL_NUMBER         = 'graupel_number'
+     character(LEN=17) :: RAIN_THIRD_MOMENT      = 'rain_third_moment'
+     character(LEN=17) :: SNOW_THIRD_MOMENT      = 'snow_third_moment'
+     character(LEN=20) :: GRAUPEL_THIRD_MOMENT   = 'graupel_third_moment'
+     character(LEN=15) :: AITKEN_SOL_MASS        = 'aitken_sol_mass'
+     character(LEN=17) :: AITKEN_SOL_NUMBER      = 'aitken_sol_number'
+     character(LEN=14) :: ACCUM_SOL_MASS         = 'accum_sol_mass'
+     character(LEN=16) :: ACCUM_SOL_NUMBER       = 'accum_sol_number'
+     character(LEN=15) :: COARSE_SOL_MASS        = 'coarse_sol_mass'
+     character(LEN=17) :: COARSE_SOL_NUMBER      = 'coarse_sol_number'
+     character(LEN=17) :: ACTIVE_SOL_LIQUID      = 'active_sol_liquid'
+     character(LEN=15) :: ACTIVE_SOL_RAIN        = 'active_sol_rain'
+     character(LEN=16) :: COARSE_DUST_MASS       = 'coarse_dust_mass'
+     character(LEN=18) :: COARSE_DUST_NUMBER     = 'coarse_dust_number'
+     character(LEN=16) :: ACTIVE_INSOL_ICE       = 'active_insol_ice'
+     character(LEN=14) :: ACTIVE_SOL_ICE         = 'active_sol_ice'
+     character(LEN=19) :: ACTIVE_INSOL_LIQUID    = 'active_insol_liquid'
+     character(LEN=16) :: ACCUM_INSOL_MASS       = 'accum_insol_mass'
+     character(LEN=18) :: ACCUM_INSOL_NUMBER     = 'accum_insol_number'
+     character(LEN=17) :: ACTIVE_SOL_NUMBER      = 'active_sol_number'
+     character(LEN=19) :: ACTIVE_INSOL_NUMBER    = 'active_insol_number'
+  end type standard_q_names_type
+
+  type(standard_q_names_type) :: standard_q_names
+
+  public q_metadata_type, get_q_index, get_indices_descriptor, get_max_number_q_indices, &
+       get_number_active_q_indices, set_q_index, standard_q_names
+
+
 contains
 
   !> Sets a Q index to be active at a specific index and sets the name
@@ -68,7 +108,7 @@ contains
   !! @param name variable name
   !! @param assigning_component name of component which is assigning this variable
   !! @returns The variable index
-  integer function q_indices_add(name, assigning_component)
+  integer function get_q_index(name, assigning_component)
     character(*), intent(in) :: name
     character(*), optional :: assigning_component
 
@@ -79,7 +119,7 @@ contains
     do iname=n_maxqs, 1, -1
       if (trim(name) == trim(q_register(iname)%name)) then
         ! Here we find the variable has already been added
-        q_indices_add=iname
+        get_q_index=iname
         return
       end if
       ! Counting backwards we will eventually find the first open slot
@@ -93,16 +133,16 @@ contains
     end if
 
     ! Not already defined, so populate the empty slot
-    q_indices_add=i_unused
-    q_register(q_indices_add)%name = adjustr(trim(name))
-    q_register(q_indices_add)%l_used = .true.
+    get_q_index=i_unused
+    q_register(get_q_index)%name = adjustr(trim(name))
+    q_register(get_q_index)%l_used = .true.
 
     if (present(assigning_component)) then
-      call log_master_log(LOG_INFO, 'q variable #'//trim(conv_to_string(q_indices_add))//' is assigned to '//trim(name)//&
+      call log_master_log(LOG_INFO, 'q variable #'//trim(conv_to_string(get_q_index))//' is assigned to '//trim(name)//&
            '. Assigned from component: '//trim(assigning_component))
     else
-      call log_master_log(LOG_INFO, 'q variable #'//trim(conv_to_string(q_indices_add))//' is assigned to '//trim(name))
+      call log_master_log(LOG_INFO, 'q variable #'//trim(conv_to_string(get_q_index))//' is assigned to '//trim(name))
     end if
 
-  end function q_indices_add
+  end function get_q_index
 end module q_indices_mod

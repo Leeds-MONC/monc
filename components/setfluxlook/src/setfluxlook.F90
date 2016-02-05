@@ -11,7 +11,7 @@ module setfluxlook_mod
   use netcdf, only : nf90_noerr, nf90_global, nf90_nowrite, nf90_inquire_attribute, nf90_open, nf90_strerror, &
        nf90_inq_dimid, nf90_inquire_dimension, nf90_inq_varid, nf90_get_var, nf90_inquire, nf90_close, nf90_get_att
   use logging_mod, only : LOG_INFO, LOG_WARN, LOG_ERROR, LOG_DEBUG, log_master_log, log_log, log_get_logging_level
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
   use interpolation_mod, only: interpolate_point_linear_1d
   implicit none
 
@@ -66,7 +66,7 @@ contains
         allocate(current_state%cq(current_state%number_q_fields))
         current_state%cq=0.0_DEFAULT_PRECISION
       end if
-      iqv = q_indices_add('vapour', 'setfluxlook')
+      iqv = get_q_index(standard_q_names%VAPOUR, 'setfluxlook')
       current_state%cq(iqv) = ratio_mol_wts-1.0
     end if
 

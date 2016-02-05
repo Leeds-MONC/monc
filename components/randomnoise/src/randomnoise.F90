@@ -7,7 +7,7 @@ module randomnoise_mod
   use optionsdatabase_mod, only : options_get_integer, options_get_logical, options_get_real, &
      options_get_logical_array, options_get_real_array, options_get_string_array, options_get_array_size
   use interpolation_mod, only: piecewise_linear_1d
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
 
 implicit none
 
@@ -112,7 +112,7 @@ contains
          call random_seed(get=iranseed)
          call random_number(randarr)
         
-        iq=q_indices_add(trim(names_rand_pl_q(n)), 'random noise')
+        iq=get_q_index(trim(names_rand_pl_q(n)), 'random noise')
         zgrid=current_state%global_grid%configuration%vertical%zn(:)
         call piecewise_linear_1d(z_rand_pl_q(1:size(z_rand_pl_q)), f_rand_pl_q(1:nzq,n), zgrid, &
            current_state%global_grid%configuration%vertical%q_rand(:,iq))

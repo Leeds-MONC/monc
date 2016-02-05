@@ -11,7 +11,7 @@ module lwrad_exponential_mod
   use state_mod, only : FORWARD_STEPPING, model_state_type
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
   use science_constants_mod, only : cp
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
   
   implicit none
   
@@ -69,7 +69,7 @@ contains
     ! NOTE: this may be the wrong declaration as sth_lw may need to declared on the whole domain
     allocate(sth_lw(k_top,y_local,x_local))
 
-    iql=q_indices_add('cloud liquid mass', 'lwrad_exponential')
+    iql=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'lwrad_exponential')
 
     longwave_exp_decay=options_get_real(current_state%options_database, "longwave_exp_decay")
     cltop_longwave_flux=options_get_real(current_state%options_database, "cltop_longwave_flux")

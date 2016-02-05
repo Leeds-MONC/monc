@@ -7,7 +7,7 @@ module simplesetup_mod
   use prognostics_mod, only : prognostic_field_type
   use optionsdatabase_mod, only : options_get_integer, options_get_logical, options_get_real, &
        options_get_integer_array, options_get_real_array
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
   implicit none
 
 #ifndef TEST_MODE
@@ -84,8 +84,8 @@ contains
       end do
 
       ! Set standard q indices
-      current_state%water_vapour_mixing_ratio_index=q_indices_add('vapour', 'simplesetup')
-      current_state%liquid_water_mixing_ratio_index=q_indices_add('cloud liquid mass', 'simplesetup')
+      current_state%water_vapour_mixing_ratio_index=get_q_index(standard_q_names%VAPOUR, 'simplesetup')
+      current_state%liquid_water_mixing_ratio_index=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'simplesetup')
     end if
 
 

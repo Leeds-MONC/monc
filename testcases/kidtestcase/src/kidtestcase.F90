@@ -5,7 +5,7 @@ module kidtestcase_mod
   use logging_mod, only : LOG_ERROR, log_log, log_master_log
   use datadefn_mod, only : DEFAULT_PRECISION
   use science_constants_mod, only : pi, r_over_cp, G, Ru=>r
-  use q_indices_mod, only: q_indices_add
+  use q_indices_mod, only: get_q_index, standard_q_names
   use interpolation_mod, only: piecewise_linear_1d
   use saturation_mod, only: qsaturation
   use optionsdatabase_mod, only :  options_get_integer
@@ -171,7 +171,7 @@ contains
     current_state%global_grid%configuration%vertical%theta_init = current_state%global_grid%configuration%vertical%thref
     current_state%th%data=0.0
 
-    iq=q_indices_add('vapour', 'kidtestcase-Cu')
+    iq=get_q_index(standard_q_names%VAPOUR, 'kidtestcase-Cu')
     
     call piecewise_linear_1d(pheight, pqv, zgrid, &
        current_state%global_grid%configuration%vertical%q_init(:,iq))    
@@ -286,7 +286,7 @@ contains
 
     ! Set some tracers
     
-    iq=q_indices_add('tracer', 'kidtestcase-Cu')
+    iq=get_q_index('tracer', 'kidtestcase-Cu')
     do i=current_state%local_grid%local_domain_start_index(X_INDEX)-1, current_state%local_grid%local_domain_end_index(X_INDEX)
       x = (0.5 + current_state%local_grid%start(X_INDEX) + (i-current_state%local_grid%local_domain_start_index(X_INDEX))) * &
          current_state%global_grid%configuration%horizontal%dx
