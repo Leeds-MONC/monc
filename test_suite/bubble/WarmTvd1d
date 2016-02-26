@@ -35,7 +35,7 @@ decomposition_method = onedim
 
 # IO server configuration
 #ioserver_configuration_file="io/description.xml"
-#ioserver_placement_period=2
+#moncs_per_io_server=2
 #enable_io_server=.true.
 
 #Advection

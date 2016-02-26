@@ -22,7 +22,6 @@ dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, 
 finalisation_stage_ordering+=tank_experiments
 
 # Control configuration
-nn_timesteps=10000
 nn_modeldump=50
 display_synopsis_frequency=100
 cfl_frequency=2

@@ -41,7 +41,7 @@ module netcdf_filetype_writer_mod
   end type netcdf_diagnostics_type
 
   type(hashmap_type), volatile :: file_states
-  integer, volatile :: file_states_rwlock
+  integer, volatile :: file_states_rwlock, netcdf_mutex
 
   public initialise_netcdf_filetype, finalise_netcdf_filetype, define_netcdf_file, write_variable, close_netcdf_file
 contains
@@ -49,11 +49,13 @@ contains
   !> Initialises the NetCDF writing functionality
   subroutine initialise_netcdf_filetype()
     call check_thread_status(forthread_rwlock_init(file_states_rwlock, -1))
+    call check_thread_status(forthread_mutex_init(netcdf_mutex, -1))
   end subroutine initialise_netcdf_filetype
 
   !> Finalises  the NetCDF writing functionality
   subroutine finalise_netcdf_filetype()
     call check_thread_status(forthread_rwlock_destroy(file_states_rwlock))
+    call check_thread_status(forthread_mutex_destroy(netcdf_mutex))
   end subroutine finalise_netcdf_filetype  
   
   !> Defines a NetCDF file - which creates it, defines all dimensions and variables. This must be called by all IO server
@@ -88,7 +90,9 @@ contains
              generic, .false.)
         call check_thread_status(forthread_rwlock_unlock(file_states_rwlock))
         
-        call generate_unique_filename(file_writer_information%filename, timestep, unique_filename)
+        call generate_unique_filename(file_writer_information%filename, file_writer_information%defined_write_time, &
+             unique_filename)
+        call check_thread_status(forthread_mutex_lock(netcdf_mutex))
         if (io_configuration%number_of_io_servers .gt. 1) then
           call check_status(nf90_create(unique_filename, ior(NF90_NETCDF4, NF90_MPIIO), ncdf_writer_state%ncid, &
                comm = io_configuration%io_communicator, info = MPI_INFO_NULL))
@@ -103,6 +107,7 @@ contains
         call check_status(nf90_enddef(ncdf_writer_state%ncid))
         call write_zn_variable(ncdf_writer_state, zn_var_id, io_configuration%zn_field)
         call check_thread_status(forthread_mutex_unlock(ncdf_writer_state%mutex))
+        call check_thread_status(forthread_mutex_unlock(netcdf_mutex))
       else
         call check_thread_status(forthread_rwlock_unlock(file_states_rwlock))
       end if
@@ -127,7 +132,9 @@ contains
 
     file_state=>get_file_state(field_name, timestep, .true.)
     call check_thread_status(forthread_mutex_lock(file_state%mutex))
+    call check_thread_status(forthread_mutex_lock(netcdf_mutex))
     call check_status(nf90_close(file_state%ncid))
+    call check_thread_status(forthread_mutex_unlock(netcdf_mutex))
     call check_thread_status(forthread_mutex_unlock(file_state%mutex))
     call check_thread_status(forthread_mutex_destroy(file_state%mutex))
     call c_free(file_state%dimension_to_id)
@@ -306,7 +313,9 @@ contains
             start(field_to_write_information%dimensions+1) = included_num
             count(field_to_write_information%dimensions+1) = 1
             call check_thread_status(forthread_mutex_lock(file_state%mutex))
+            call check_thread_status(forthread_mutex_lock(netcdf_mutex))
             call check_status(nf90_put_var(file_state%ncid, field_id, data_value%values, start=start, count=count))
+            call check_thread_status(forthread_mutex_unlock(netcdf_mutex))
             call check_thread_status(forthread_mutex_unlock(file_state%mutex))
             deallocate(data_value%values)
             deallocate(data_value)
@@ -327,8 +336,10 @@ contains
            trim(conv_to_string(timeseries_diag%num_entries)))
     end if
     if (allocated(timeseries_time_to_write)) then
+      call check_thread_status(forthread_mutex_lock(netcdf_mutex))
       call check_status(nf90_put_var(file_state%ncid, timeseries_diag%netcdf_var_id, &
            timeseries_time_to_write, count=(/ timeseries_diag%num_entries /)))
+      call check_thread_status(forthread_mutex_unlock(netcdf_mutex))
       timeseries_diag%variable_written=.true.
     end if
     if (included_num .gt. 1) then
@@ -409,12 +420,14 @@ contains
            trim(conv_to_string(timeseries_diag%num_entries)))
     end if
     call check_thread_status(forthread_mutex_lock(file_state%mutex))
+    call check_thread_status(forthread_mutex_lock(netcdf_mutex))
     call check_status(nf90_put_var(file_state%ncid, field_id, values_to_write, count=count_to_write))
     if (allocated(timeseries_time_to_write)) then
       call check_status(nf90_put_var(file_state%ncid, timeseries_diag%netcdf_var_id, &
            timeseries_time_to_write, count=(/ timeseries_diag%num_entries /)))
       timeseries_diag%variable_written=.true.
     end if    
+    call check_thread_status(forthread_mutex_unlock(netcdf_mutex))
     call check_thread_status(forthread_mutex_unlock(file_state%mutex))
     deallocate(values_to_write)
     if (included_num .gt. 1) then
@@ -452,7 +465,7 @@ contains
              file_writer_information%contents(i)%previous_tracked_write_point, &
              file_writer_information%contents(i)%output_frequency, file_writer_information%contents(i)%timestep_frequency, &
              timeseries_diag%last_write_point)
-        call check_status(nf90_def_dim(file_state%ncid, dim_key, timeseries_diag%num_entries, timeseries_diag%netcdf_dim_id))        
+        call check_status(nf90_def_dim(file_state%ncid, dim_key, timeseries_diag%num_entries, timeseries_diag%netcdf_dim_id))
         generic=>timeseries_diag
         call c_put_generic(file_state%timeseries_dimension, dim_key, generic, .false.)
       end if
@@ -688,9 +701,9 @@ contains
   !! @param old_name The existing name that is used as a base
   !! @param timestep The current model timestep
   !! @param new_name The new name that is produced by this subroutine
-  subroutine generate_unique_filename(old_name, timestep, new_name)
+  subroutine generate_unique_filename(old_name, configured_write_time, new_name)
     character(len=STRING_LENGTH), intent(in) :: old_name
-    integer, intent(in) :: timestep
+    real, intent(in) :: configured_write_time
     character(len=STRING_LENGTH), intent(out) :: new_name
 
     integer :: dot_posn
@@ -701,7 +714,7 @@ contains
     else
       new_name=old_name
     end if
-    new_name=trim(new_name)//"_"//trim(conv_to_string(timestep))
+    new_name=trim(new_name)//"_"//trim(conv_to_string(configured_write_time))
     if (dot_posn .gt. 0) then
       new_name=trim(new_name)//old_name(dot_posn:len(old_name))
     end if    

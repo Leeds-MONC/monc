@@ -39,7 +39,6 @@ advection_theta_field=tvd
 advection_q_fields=tvd
 
 # Control configuration
-nn_timesteps=10000
 display_synopsis_frequency=100
 termination_time=1800.
 dtm=2.0

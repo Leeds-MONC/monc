@@ -50,7 +50,8 @@ contains
   type(data_values_type) function perform_timeaveraged_time_manipulation(instant_values, output_frequency, &
        field_name, timestep, time)
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: instant_values
-    real, intent(in) :: output_frequency, time
+    real, intent(in) :: output_frequency
+    real(kind=DEFAULT_PRECISION), intent(in) :: time
     character(len=*), intent(in) :: field_name
     integer, intent(in) :: timestep
 
@@ -61,7 +62,7 @@ contains
     call check_thread_status(forthread_mutex_lock(timeaveraged_value%mutex))
     call time_average(timeaveraged_value, instant_values, time)
 
-    if (time-timeaveraged_value%previous_output_time .ge. output_frequency) then
+    if ((aint(time*10000000.0)-aint(timeaveraged_value%previous_output_time*10000000.0))/10000000.0 .ge. output_frequency) then
       timeaveraged_value%previous_output_time=time
       allocate(perform_timeaveraged_time_manipulation%values(size(timeaveraged_value%time_averaged_values)))
       perform_timeaveraged_time_manipulation%values=timeaveraged_value%time_averaged_values
@@ -80,7 +81,7 @@ contains
   subroutine time_average(timeaveraged_value, instant_values, time)
     type(time_averaged_completed_type), intent(inout) :: timeaveraged_value
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: instant_values
-    real, intent(in) :: time
+    real(kind=DEFAULT_PRECISION), intent(in) :: time
 
     integer :: i
     real(kind=DEFAULT_PRECISION) :: timeav, timedg, combined_add    

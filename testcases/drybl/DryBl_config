@@ -23,7 +23,7 @@ dtm=0.5
 
 # IO server configuration
 ioserver_configuration_file="io/description.xml"
-ioserver_placement_period=7
+moncs_per_io_server=7
 sampling_frequency=1
 mm=60.0
 diag_write_freq=1800.0

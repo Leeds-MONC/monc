@@ -57,10 +57,10 @@ contains
     call init_time_averaged_manipulation()
     call init_instantaneous_manipulation()
     call initialise_netcdf_filetype()
-
-    current_field_index=0
-    allocate(writer_entries(io_configuration%number_of_writers))
+    
+    allocate(writer_entries(io_configuration%number_of_writers))    
     do i=1, io_configuration%number_of_writers
+      current_field_index=0
       number_contents=io_configuration%file_writers(i)%number_of_contents
       allocate(writer_entries(i)%contents(get_total_number_writer_fields(io_configuration, i)))
       writer_entries(i)%filename=io_configuration%file_writers(i)%file_name
@@ -69,6 +69,7 @@ contains
       call check_thread_status(forthread_mutex_init(writer_entries(i)%pending_writes_mutex, -1))
       writer_entries(i)%write_time_frequency=io_configuration%file_writers(i)%write_time_frequency
       writer_entries(i)%previous_write_time=0
+      writer_entries(i)%defined_write_time=io_configuration%file_writers(i)%write_time_frequency
       writer_entries(i)%latest_pending_write_time=0
       writer_entries(i)%currently_writing=.false.
       do j=1, number_contents
@@ -337,11 +338,11 @@ contains
             if (writer_entries(writer_index)%contents(contents_index)%collective_write .and. source .gt. -1) then
               result_values=writer_entries(writer_index)%contents(contents_index)%time_manipulation(field_values, &
                    writer_entries(writer_index)%contents(contents_index)%output_frequency, &
-                   trim(field_name)//"#"//conv_to_string(source), timestep, real(time, kind=4))
+                   trim(field_name)//"#"//conv_to_string(source), timestep, time)
             else
               result_values=writer_entries(writer_index)%contents(contents_index)%time_manipulation(field_values, &
                    writer_entries(writer_index)%contents(contents_index)%output_frequency, &
-                   field_name, timestep, real(time, kind=4))
+                   field_name, timestep, time)
             end if
             generic=>result_values
             call c_put_generic(typed_result_values, conv_to_string(&
@@ -350,7 +351,7 @@ contains
             result_values=>get_data_value_by_field_name(typed_result_values, conv_to_string(&
                  writer_entries(writer_index)%contents(contents_index)%time_manipulation_type))            
           end if
-          if (allocated(result_values%values)) then  
+          if (allocated(result_values%values)) then
             if (log_get_logging_level() .ge. LOG_DEBUG) then
               call log_log(LOG_DEBUG, "[WRITE FED VALUE STORE] Storing value for field "//trim(field_name)//" ts="//&
                    trim(conv_to_string(timestep))// " t="//trim(conv_to_string(time)))
@@ -428,7 +429,7 @@ contains
         call check_thread_status(forthread_mutex_unlock(writer_entry%num_fields_to_write_mutex))
         if (do_close_num_fields) then
           call close_diagnostics_file(io_configuration, writer_entry, writer_entry%write_timestep, writer_entry%write_time)
-        end if     
+        end if    
       end if
     end if
   end subroutine determine_if_outstanding_field_can_be_written  
@@ -563,6 +564,7 @@ contains
     total_outstanding=0
     total_flds=0
     num_written=0
+    call check_thread_status(forthread_mutex_lock(writer_entry%num_fields_to_write_mutex))
     do j=1, size(writer_entry%contents)      
       if (.not. c_is_empty(writer_entry%contents(j)%values_to_write)) then
         empty_contents_here=.false.
@@ -576,8 +578,7 @@ contains
         end if
       end if
     end do
-    call check_thread_status(forthread_mutex_lock(writer_entry%num_fields_to_write_mutex))
-    writer_entries%num_fields_to_write=total_outstanding
+    writer_entry%num_fields_to_write=total_outstanding
     call check_thread_status(forthread_mutex_unlock(writer_entry%num_fields_to_write_mutex))
     if (log_get_logging_level() .ge. LOG_DEBUG) then
       call log_log(LOG_DEBUG, "Started write for NetCDF file, timestep= "//trim(conv_to_string(timestep))&
@@ -585,7 +586,7 @@ contains
            " outstanding="//trim(conv_to_string(total_outstanding)))
     end if
     if (empty_contents_here .or. total_outstanding == 0) then
-      call close_diagnostics_file(io_configuration, writer_entry, timestep, time)            
+      call close_diagnostics_file(io_configuration, writer_entry, timestep, time)
     end if    
   end subroutine issue_actual_write
 
@@ -682,6 +683,7 @@ contains
     writer_entry=>close_netcdf_file(io_configuration, field_name, timestep)
 
     writer_entry%previous_write_time=writer_entry%write_time   
+    writer_entry%defined_write_time=writer_entry%defined_write_time+writer_entry%write_time_frequency
     call check_thread_status(forthread_mutex_lock(writer_entry%pending_writes_mutex))
     if (.not. c_is_empty(writer_entry%pending_writes)) then      
       generic=>c_pop_generic(writer_entry%pending_writes)    

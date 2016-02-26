@@ -50,8 +50,12 @@ module terminationcheck_mod
 
     integer :: ierr, file_message_status
 
-    current_state%continue_timestep = mod(current_state%timestep, max_timesteps) /= 0
-    if (.not. current_state%continue_timestep) current_state%termination_reason=TIMESTEP_TERMINATION_REASON
+    if (max_timesteps .gt. 0) then
+      current_state%continue_timestep=mod(current_state%timestep, max_timesteps) /= 0
+      if (.not. current_state%continue_timestep) current_state%termination_reason=TIMESTEP_TERMINATION_REASON
+    else
+      current_state%continue_timestep=.true.
+    end if
     if (current_state%continue_timestep) then
       current_state%continue_timestep = current_state%time .lt. termination_time
       if (.not. current_state%continue_timestep) current_state%termination_reason=TIME_TERMINATION_REASON

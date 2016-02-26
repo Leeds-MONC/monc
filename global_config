@@ -80,12 +80,12 @@ initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointe
 finalisation_stage_ordering=checkpointer, diverr, fftsolver, grid_manager, halo_swapper, io_bridge, iterativesolver, physicsa, psrce, smagorinsky, tvd_advection,lwrad_exponential, model_synopsis, mean_profiles, forcing, stepfields, flux_budget
 
 # Control configuration
-nn_timesteps=1
+nn_timesteps=-1
 display_synopsis_frequency=10
 termination_time=1.0
 dtm=0.001
 nsmth=40
-logging_modlevel=3  #INFO level logging
+logging=3  #INFO level logging
 check_msg_frequency=500
 msg_filename=messages
 
@@ -246,7 +246,7 @@ surface_vapour_mixing_ratio=0.0
 
 # IO server configuration
 ioserver_configuration_file="io/description.xml"
-ioserver_placement_period=3
+moncs_per_io_server=3
 enable_io_server=.true.
 
 # Kid reader configuration

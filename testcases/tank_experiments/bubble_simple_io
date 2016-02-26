@@ -24,7 +24,6 @@ dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, 
 finalisation_stage_ordering+=tank_experiments
 
 # Control configuration
-nn_timesteps=10000
 nn_modeldump=1
 display_synopsis_frequency=1
 cfl_frequency=2
@@ -34,7 +33,7 @@ dtm=1.
 
 # IO server configuration
 ioserver_configuration_file="io/description.xml"
-ioserver_placement_period=3
+moncs_per_io_server=3
 sampling_frequency=2
 mm=5.0
 diag_write_freq=10.0

@@ -14,7 +14,8 @@ module writer_types_mod
      type(data_values_type) function perform_time_manipulation(instant_values, output_frequency, field_name, timestep, time)
        import DEFAULT_PRECISION, data_values_type
        real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: instant_values
-       real, intent(in) :: output_frequency, time
+       real, intent(in) :: output_frequency
+       real(kind=DEFAULT_PRECISION), intent(in) :: time
        character(len=*), intent(in) :: field_name
        integer, intent(in) :: timestep
      end function perform_time_manipulation
@@ -48,7 +49,7 @@ module writer_types_mod
      character(len=STRING_LENGTH) :: filename
      type(writer_field_type), dimension(:), allocatable :: contents
      integer :: trigger_and_write_mutex, write_timestep, num_fields_to_write, num_fields_to_write_mutex, pending_writes_mutex
-     real :: write_time_frequency, previous_write_time, latest_pending_write_time, write_time
+     real :: write_time_frequency, previous_write_time, latest_pending_write_time, write_time, defined_write_time
      logical :: currently_writing
      type(queue_type) :: pending_writes
   end type writer_type

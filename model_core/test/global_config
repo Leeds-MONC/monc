@@ -71,7 +71,7 @@ nn_consolidation=2
 termination_time=1.0
 dtm=0.001
 nsmth=40
-logging_modlevel=4  #Everything level logging
+logging=4  #Everything level logging
 
 # CFL configuration
 cfl_frequency=10
@@ -222,7 +222,7 @@ rlargep=1.0e37
 
 # IO server configuration
 ioserver_configuration_file=""
-ioserver_placement_period=1
+moncs_per_io_server=1
 
 # Kid reader configuration
 kid_configuration_file=""

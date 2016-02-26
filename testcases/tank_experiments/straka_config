@@ -33,7 +33,7 @@ dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, 
 
 # IO server configuration 
 ioserver_configuration_file="io/description.xml"
-ioserver_placement_period=3
+moncs_per_io_server=3
 sampling_frequency=2
 mm=5.0
 diag_write_freq=10.0
@@ -44,7 +44,6 @@ advection_theta_field=tvd
 advection_q_fields=tvd
 
 # Control configuration
-nn_timesteps=10000
 display_synopsis_frequency=100
 cfl_frequency=2
 termination_time=900.

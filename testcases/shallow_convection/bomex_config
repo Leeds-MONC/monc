@@ -19,7 +19,6 @@ mean_profiles_enabled=.true. #This must be set to true if running with damping
 th_advection_enabled=.false.
 
 # Control configuration
-nn_timesteps=500000
 display_synopsis_frequency=100
 termination_time=21600.
 dtm=0.4

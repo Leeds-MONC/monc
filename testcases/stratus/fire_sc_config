@@ -26,14 +26,13 @@ scalar_diagnostics_enabled=.true.
 profile_diagnostics_enabled=.true.
 
 # Control configuration
-nn_timesteps=500000
 display_synopsis_frequency=100
 termination_time=200.
 dtm=0.2
 
 # IO server configuration
 ioserver_configuration_file="io/test_description.xml"
-ioserver_placement_period=8
+moncs_per_io_server=8
 sampling_frequency=1
 mm=10.0
 diag_write_freq=100.0

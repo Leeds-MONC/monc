@@ -38,8 +38,8 @@ module writer_field_manager_mod
      module procedure provide_field_to_writer_federator_src, provide_field_to_writer_federator_nosrc
   end interface provide_field_to_writer_federator
 
-  integer :: field_lock
-  type(hashmap_type) :: field_orderings
+  integer, volatile :: field_lock
+  type(hashmap_type), volatile :: field_orderings
 
   public initialise_writer_field_manager, finalise_writer_field_manager, provide_monc_data_to_writer_federator, &
        provide_field_to_writer_federator

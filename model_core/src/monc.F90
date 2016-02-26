@@ -75,7 +75,7 @@ contains
     call mpi_comm_rank(MPI_COMM_WORLD, myrank, ierr)
     call initialise_logging(myrank)
     
-    call log_set_logging_level(options_get_integer(state%options_database, "logging_modlevel"))
+    call log_set_logging_level(options_get_integer(state%options_database, "logging"))
 
     if (enable_io_server) then
       call mpi_comm_size(MPI_COMM_WORLD, size, ierr)
@@ -343,17 +343,17 @@ contains
   !> Reads the IO server configuration and populates the required variables of the configuration
   !! file name and the placement period
   !! @param options_database The options database
-  subroutine get_io_configuration(options_database, ioserver_configuration_file, ioserver_placement_period)
+  subroutine get_io_configuration(options_database, ioserver_configuration_file, moncs_per_io_server)
     type(hashmap_type), intent(inout) :: options_database
     character(len=LONG_STRING_LENGTH), intent(out) :: ioserver_configuration_file
-    integer, intent(out) :: ioserver_placement_period
+    integer, intent(out) :: moncs_per_io_server
    
     integer :: myrank, ierr
 
     ioserver_configuration_file=options_get_string(options_database, "ioserver_configuration_file")
-    ioserver_placement_period=options_get_integer(options_database, "ioserver_placement_period")
+    moncs_per_io_server=options_get_integer(options_database, "moncs_per_io_server")
 
-    if (ioserver_placement_period == -1 .or. ioserver_configuration_file == "") then
+    if (moncs_per_io_server == -1 .or. ioserver_configuration_file == "") then
       call mpi_comm_rank(MPI_COMM_WORLD, myrank, ierr)
       if (myrank == 0) call log_log(LOG_ERROR, "To run an IO server you must provide the placement period and configuration file")
       call mpi_barrier(MPI_COMM_WORLD) ! All other processes barrier here to ensure 0 displays the message before quit

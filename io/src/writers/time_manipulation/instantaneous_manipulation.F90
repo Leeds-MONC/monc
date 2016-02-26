@@ -40,7 +40,8 @@ contains
   type(data_values_type) function perform_instantaneous_time_manipulation(instant_values, output_frequency, &
        field_name, timestep, time)
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: instant_values
-    real, intent(in) :: output_frequency, time
+    real, intent(in) :: output_frequency
+    real(kind=DEFAULT_PRECISION), intent(in) :: time
     character(len=*), intent(in) :: field_name
     integer, intent(in) :: timestep
 
@@ -57,21 +58,22 @@ contains
   !! @returns Whether or not one should issue the instantaneous values to write
   logical function deduce_whether_to_issue_values(field_name, output_frequency, time)
     character(len=*), intent(in) :: field_name
-    real, intent(in) :: output_frequency, time
+    real, intent(in) :: output_frequency
+    real(kind=DEFAULT_PRECISION), intent(in) :: time
 
-    real :: previous_time_write, time_difference
+    real(kind=DEFAULT_PRECISION) :: previous_time_write, time_difference
 
     call check_thread_status(forthread_mutex_lock(existing_instantaneous_writes_mutex))
     if (c_contains(existing_instantaneous_writes, field_name)) then
-      previous_time_write=real(c_get_real(existing_instantaneous_writes, field_name))
-      time_difference=time-previous_time_write
+      previous_time_write=c_get_real(existing_instantaneous_writes, field_name)
+      time_difference=(aint(time*10000000.0)-aint(previous_time_write*10000000.0))/10000000.0
     else
       ! Rethink this as only works if started at time=0
       time_difference=time
     end if
     if (time_difference .ge. output_frequency) then
       deduce_whether_to_issue_values=.true.
-      call c_put_real(existing_instantaneous_writes, field_name, conv_single_real_to_double(time))
+      call c_put_real(existing_instantaneous_writes, field_name, time)
     else
       deduce_whether_to_issue_values=.false.
     end if
