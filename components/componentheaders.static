@@ -40,4 +40,3 @@ use tvdadvection_mod, only : tvdadvection_get_descriptor
 use viscosity_mod, only : viscosity_get_descriptor
 use lwrad_exponential_mod, only : lwrad_exponential_get_descriptor
 use lateral_bcs_mod, only : lateral_bcs_get_descriptor
-use casim_mod, only : casim_get_descriptor
