@@ -2,7 +2,7 @@
 	<field name="w" type="array" data_type="double" size="z,y,x" collective=true />
 	<field name="u" type="array" data_type="double" size="z,y,x" collective=true />
 	<field name="v" type="array" data_type="double" size="z,y,x" collective=true />
-	<field name="q" type="array" data_type="double" size="x,y,z,qfields" collective=true />
+	<field name="q" type="array" data_type="double" size="z,y,x,qfields" collective=true />
 </data-definition>
 
 <group name="instantaneous_3d">
