@@ -117,13 +117,23 @@ contains
     type(model_state_type), intent(inout) :: current_state
     type(global_grid_type), intent(inout) :: specific_grid
 
-    integer :: number_kgd, i, kgd(20)
-    real(kind=DEFAULT_PRECISION) :: hgd(20)
+    integer, parameter :: KGD_SIZE=20
+    integer :: number_kgd, i, kgd(KGD_SIZE)
+    real(kind=DEFAULT_PRECISION) :: hgd(KGD_SIZE)
 
     kgd=-1
 
     call options_get_integer_array(current_state%options_database, "kgd", kgd)
     call options_get_real_array(current_state%options_database, "hgd", hgd)  
+
+    if (kgd(1)==1)then
+      if (hgd(1)/=0.0_DEFAULT_PRECISION)then
+        call log_log(LOG_ERROR, "Lowest level is assumed to lie at the surface, check hgd(1)")
+      else
+        kgd(1:KGD_SIZE-1) = kgd(2:)
+        hgd(1:KGD_SIZE-1) = hgd(2:)
+      end if
+    end if
 
     do i=1,size(kgd)
       if (kgd(i) == -1) exit      
