@@ -185,7 +185,7 @@ contains
   !! @param arguments The thread based arguments, this is the index of the inter IO server description
   subroutine handle_inter_io_communication_command(arguments, data_buffer)
     integer, dimension(:), intent(in) :: arguments
-    character, dimension(:), intent(inout), optional :: data_buffer
+    character, dimension(:), allocatable, intent(inout), optional :: data_buffer
 
     integer :: source
 
@@ -221,7 +221,7 @@ contains
   !! @param source The MONC process PID that we are deregistering
   subroutine handle_deregistration_command(arguments, data_buffer)
     integer, dimension(:), intent(in) :: arguments
-    character, dimension(:), intent(inout), optional :: data_buffer
+    character, dimension(:), allocatable, intent(inout), optional :: data_buffer
 
     integer :: monc_location, source
 
@@ -271,7 +271,7 @@ contains
   !! @param data_buffer The actual data from MONC read from the data channel
   subroutine handle_data_message(arguments, data_buffer)
     integer, dimension(:), intent(in) :: arguments
-    character, dimension(:), intent(inout), optional :: data_buffer
+    character, dimension(:), allocatable, intent(inout), optional :: data_buffer
 
     integer :: monc_location, data_set, source, matched_datadefn_index
 
@@ -313,7 +313,7 @@ contains
   !! @param source The PID of the MONC process that is registering itself
   subroutine handle_monc_registration(arguments, data_buffer)
     integer, dimension(:), intent(in) :: arguments
-    character, dimension(:), intent(inout), optional :: data_buffer
+    character, dimension(:), allocatable, intent(inout), optional :: data_buffer
 
     integer :: configuration_send_request(2), ierr, number_data_definitions, this_monc_index, source
 

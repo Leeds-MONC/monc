@@ -1168,21 +1168,24 @@ contains
 
     i=1
     node=>specificmap%map_ds%head
-    do while(associated(node))
-      raw_data=>node%data
-      if (associated(raw_data)) then
-        select type (raw_data)
-        type is (mapnode_type)
-          if (raw_data%key .eq. key) then
-            map_getnode=>raw_data
-            if (present(foundindex)) foundindex=i
-            return
-          end if
-        end select
-      end if
-      node=>node%next
-      i=i+1
-    end do
+    if (associated(node)) then
+      do while(1==1)
+        raw_data=>node%data
+        if (associated(raw_data)) then
+          select type (raw_data)
+          type is (mapnode_type)
+            if (raw_data%key .eq. key) then
+              map_getnode=>raw_data
+              if (present(foundindex)) foundindex=i
+              return
+            end if
+          end select
+        end if
+        node=>node%next
+        i=i+1
+        if (.not. associated(node)) exit
+      end do
+    end if
     map_getnode => null()
     if(present(foundindex)) foundindex = 0
   end function map_getnode
@@ -1223,20 +1226,23 @@ contains
     node=>specificmap%map_ds%head
     previousnode=>null()
 
-    do while(associated(node))
-      previousnode=>node
-      node=>node%next
-      if (associated(previousnode%data)) then
-        select type (n=>previousnode%data)
-        type is (mapnode_type)
-          if (n%memory_allocation_automatic) then
-            if (associated(n%value)) deallocate(n%value)
-          end if
-        end select
-        deallocate(previousnode%data) ! Free the mapnode data structure
-      end if
-      deallocate(previousnode)
-    end do
+    if (associated(node)) then
+      do while(1==1)
+        previousnode=>node
+        node=>node%next
+        if (associated(previousnode%data)) then
+          select type (n=>previousnode%data)
+          type is (mapnode_type)
+            if (n%memory_allocation_automatic) then
+              if (associated(n%value)) deallocate(n%value)
+            end if
+          end select
+          deallocate(previousnode%data) ! Free the mapnode data structure
+        end if
+        deallocate(previousnode)
+        if (.not. associated(node)) exit
+      end do
+    end if
 
     specificmap%map_ds%tail=>null()
     specificmap%map_ds%head=>null()
@@ -1807,21 +1813,24 @@ contains
     
     i=1
     node=>specificmap%map_ds(hash)%head
-    do while(associated(node))
-      raw_data=>node%data
-      if (associated(raw_data)) then
-        select type (raw_data)
-        type is (mapnode_type)
-          if (raw_data%key .eq. key) then
-            hashmap_getnode=>raw_data
-            if (present(key_location)) key_location=i
-            return
-          end if
-        end select
-      end if
-      node=>node%next
-      i=i+1
-    end do
+    if (associated(node)) then
+      do while(1==1)
+        raw_data=>node%data
+        if (associated(raw_data)) then
+          select type (raw_data)
+          type is (mapnode_type)
+            if (raw_data%key .eq. key) then
+              hashmap_getnode=>raw_data
+              if (present(key_location)) key_location=i
+              return
+            end if
+          end select
+        end if
+        node=>node%next
+        i=i+1
+        if (.not. associated(node)) exit
+      end do
+    end if
     if (present(key_location)) key_location=0
   end function hashmap_getnode
 
@@ -1891,20 +1900,23 @@ contains
         node=>specificmap%map_ds(i)%head
         previousnode=>null()
 
-        do while(associated(node))
-          previousnode=>node
-          node=>node%next
-          if (associated(previousnode%data)) then
-            select type (n=>previousnode%data)
-            type is (mapnode_type)
-              if (n%memory_allocation_automatic) then
-                if (associated(n%value)) deallocate(n%value)
-              end if
-            end select
-            deallocate(previousnode%data) ! Free the mapnode data structure
-          end if
-          deallocate(previousnode)
-        end do
+        if (associated(node)) then
+          do while(1==1)
+            previousnode=>node
+            node=>node%next
+            if (associated(previousnode%data)) then
+              select type (n=>previousnode%data)
+              type is (mapnode_type)
+                if (n%memory_allocation_automatic) then
+                  if (associated(n%value)) deallocate(n%value)
+                end if
+              end select
+              deallocate(previousnode%data) ! Free the mapnode data structure
+            end if
+            deallocate(previousnode)
+            if (.not. associated(node)) exit
+          end do
+        end if
 
         specificmap%map_ds(i)%tail=>null()
         specificmap%map_ds(i)%head=>null()
@@ -2026,20 +2038,23 @@ contains
     
     i=1
     node=>specificset%set_ds(hash)%head
-    do while(associated(node))
-      raw_data=>node%data
-      if (associated(raw_data)) then
-        select type (raw_data)
-        type is (setnode_type)
-          if (raw_data%key .eq. key) then            
-            key_location=i
-            return
-          end if
-        end select
-      end if
-      node=>node%next
-      i=i+1
-    end do
+    if (associated(node)) then
+      do while(1==1)
+        raw_data=>node%data
+        if (associated(raw_data)) then
+          select type (raw_data)
+          type is (setnode_type)
+            if (raw_data%key .eq. key) then            
+              key_location=i
+              return
+            end if
+          end select
+        end if
+        node=>node%next
+        i=i+1
+        if (.not. associated(node)) exit
+      end do
+    end if
     key_location=0
   end subroutine hashset_getlocation
 
@@ -2107,14 +2122,17 @@ contains
         node=>specificset%set_ds(i)%head
         previousnode=>null()
 
-        do while(associated(node))
-          previousnode=>node
-          node=>node%next
-          if (associated(previousnode%data)) then            
-            deallocate(previousnode%data) ! Free the mapnode data structure
-          end if
-          deallocate(previousnode)
-        end do
+        if (associated(node)) then
+          do while(1==1)        
+            previousnode=>node
+            node=>node%next
+            if (associated(previousnode%data)) then            
+              deallocate(previousnode%data) ! Free the mapnode data structure
+            end if
+            deallocate(previousnode)
+            if (.not. associated(node)) exit
+          end do
+        end if
 
         specificset%set_ds(i)%tail=>null()
         specificset%set_ds(i)%head=>null()
@@ -2843,7 +2861,8 @@ contains
     j=1
     node => specificlist%head
     if (associated(node)) then
-      do while(associated(node%next) .and. j .lt. i)
+      do while(j .lt. i)
+        if (.not. associated(node%next)) exit
         node => node%next
         j=j+1
       end do
@@ -2980,7 +2999,8 @@ contains
     j=1
     if (i .le. specificlist%size) then
       node => specificlist%head
-      do while(associated(node) .and. j .lt. i)
+      do while(j .lt. i)
+        if (.not. associated(node)) exit
         node => node%next
         j=j+1
       end do
@@ -3108,7 +3128,8 @@ contains
       return
     end if
     node => specificlist%head
-    do while(associated(node) .and. j .lt. i)
+    do while(j .lt. i)
+      if (.not. associated(node)) exit
       node => node%next
       j=j+1
     end do
@@ -3129,14 +3150,17 @@ contains
     node=>specificlist%head
     previousnode=>null()
 
-    do while(associated(node))
-      previousnode=>node
-      node=>node%next
-      if (previousnode%memory_allocation_automatic) then
-        if (associated(previousnode%data)) deallocate(previousnode%data)
-      end if      
-      deallocate(previousnode)
-    end do
+    if (associated(node)) then
+      do while(1==1)
+        previousnode=>node
+        node=>node%next
+        if (previousnode%memory_allocation_automatic) then
+          if (associated(previousnode%data)) deallocate(previousnode%data)
+        end if
+        deallocate(previousnode)
+        if (.not. associated(node)) exit
+      end do
+    end if
 
     specificlist%tail=>null()
     specificlist%head=>null()

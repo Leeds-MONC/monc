@@ -14,6 +14,8 @@ module data_utils_mod
   private
 #endif
 
+  integer, parameter :: ARRAY_STEP_THRESHOLD=204800
+
   public is_field_present, get_map, get_map_from_monc, get_scalar_integer, get_scalar_integer_from_monc, get_scalar_real, &
        get_scalar_real_from_monc, get_array_double, get_array_double_from_monc, get_3darray_double, &
        get_3darray_double_from_monc, get_4darray_double, get_4darray_double_from_monc, get_2darray_double, &
@@ -134,7 +136,7 @@ contains
   !! @returns Corresponding map and contents
   type(map_type) function get_map(field_starts, field_ends, data_dump, key)
     type(map_type), intent(inout) :: field_starts, field_ends
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     
     integer :: start_index, end_index, elements, i
@@ -167,7 +169,7 @@ contains
   type(map_type) function get_map_from_monc(io_configuration, source, data_id, data_dump, key)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
 
     integer :: monc_location
@@ -186,7 +188,7 @@ contains
   !! @returns Corresponding string
   function get_string(field_starts, field_ends, data_dump, key)
     type(map_type), intent(inout) :: field_starts, field_ends
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     character(len=STRING_LENGTH) :: get_string
 
@@ -211,7 +213,7 @@ contains
   function get_string_from_monc(io_configuration, source, data_id, data_dump, key)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     character(len=STRING_LENGTH) :: get_string_from_monc
 
@@ -231,7 +233,7 @@ contains
   !! @returns Corresponding integer
   integer function get_scalar_integer(field_starts, field_ends, data_dump, key)
     type(map_type), intent(inout) :: field_starts, field_ends
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
 
     integer :: start_index, end_index
@@ -255,7 +257,7 @@ contains
   integer function get_scalar_integer_from_monc(io_configuration, source, data_id, data_dump, key)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
 
     integer :: monc_location
@@ -275,7 +277,7 @@ contains
   !! @returns Real value of the corresponding field
   real(kind=DOUBLE_PRECISION) function get_scalar_real(field_starts, field_ends, data_dump, key)
     type(map_type), intent(inout) :: field_starts, field_ends
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
 
     integer :: start_index, end_index
@@ -299,7 +301,7 @@ contains
   real(kind=DOUBLE_PRECISION) function get_scalar_real_from_monc(io_configuration, source, data_id, data_dump, key)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
 
     integer :: monc_location
@@ -320,11 +322,11 @@ contains
   !! @returns Double array values of the corresponding field
   function get_array_double(field_starts, field_ends, data_dump, key)
     type(map_type), intent(inout) :: field_starts, field_ends
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     real(kind=DOUBLE_PRECISION), dimension(:), allocatable :: get_array_double
 
-    integer :: start_index, end_index, elements 
+    integer :: start_index, end_index, elements, start_e, end_e, current_start_index, current_end_index
 
     if (.not. c_contains(field_starts, key) .or. .not. c_contains(field_ends, key)) &
          call log_log(LOG_ERROR, "Field name `"//key//"` not found in the data definition")
@@ -332,10 +334,22 @@ contains
     start_index=c_get_integer(field_starts, key)
     end_index=c_get_integer(field_ends, key)
 
-    elements = (end_index - start_index) / kind(get_array_double)
+    elements = ceiling((end_index - start_index) / real(kind(get_array_double)))
 
     allocate(get_array_double(elements))
-    get_array_double=transfer(data_dump(start_index:end_index), get_array_double)
+    if (elements .ge. ARRAY_STEP_THRESHOLD) then       
+       current_start_index=start_index
+       do while (current_start_index .lt. start_index)
+          current_end_index=current_start_index+ARRAY_STEP_THRESHOLD-1
+          if (current_end_index .gt. end_index) current_end_index=end_index
+          start_e=((current_start_index-start_index)/kind(get_array_double))+1
+          end_e=ceiling((current_end_index-start_index)/real(kind(get_array_double)))
+          get_array_double(start_e:end_e)=transfer(data_dump(current_start_index:current_end_index), get_array_double)
+          current_start_index=current_start_index+ARRAY_STEP_THRESHOLD
+       end do
+    else
+       get_array_double=transfer(data_dump(start_index:end_index), get_array_double, elements)
+    end if
   end function get_array_double
 
   !> Retreives an array of doubles with a corresponding key from the raw data dump. The size depends on the configuration
@@ -349,7 +363,7 @@ contains
   function get_array_double_from_monc(io_configuration, source, data_id, data_dump, key)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     real(kind=DOUBLE_PRECISION), dimension(:), allocatable :: get_array_double_from_monc
 
@@ -371,7 +385,7 @@ contains
   !! @returns Integer array values of the corresponding field
   function get_array_integer(field_starts, field_ends, data_dump, key)
     type(map_type), intent(inout) :: field_starts, field_ends
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     integer, dimension(:), allocatable :: get_array_integer
 
@@ -400,7 +414,7 @@ contains
   function get_array_integer_from_monc(io_configuration, source, data_id, data_dump, key)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     integer, dimension(:), allocatable :: get_array_integer_from_monc
 
@@ -428,7 +442,7 @@ contains
   subroutine get_2darray_double_from_monc(io_configuration, source, data_id, data_dump, key, target_data, size1, size2)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id, size1, size2
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     real(kind=DOUBLE_PRECISION), dimension(:,:), pointer, contiguous, intent(inout) :: target_data
 
@@ -455,7 +469,7 @@ contains
   subroutine get_2darray_double(field_starts, field_ends, data_dump, key, target_data, size1, size2)
     type(map_type), intent(inout) :: field_starts, field_ends
     integer, intent(in) ::  size1, size2
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     real(kind=DOUBLE_PRECISION), dimension(:,:), pointer, contiguous, intent(inout) :: target_data
 
@@ -491,7 +505,7 @@ contains
   subroutine get_3darray_double(field_starts, field_ends, data_dump, key, target_data, size1, size2, size3)
     type(map_type), intent(inout) :: field_starts, field_ends
     integer, intent(in) ::  size1, size2, size3
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     real(kind=DOUBLE_PRECISION), dimension(:,:,:), pointer, contiguous, intent(inout) :: target_data
     
@@ -528,7 +542,7 @@ contains
   subroutine get_3darray_double_from_monc(io_configuration, source, data_id, data_dump, key, target_data, size1, size2, size3)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id, size1, size2, size3
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     real(kind=DOUBLE_PRECISION), dimension(:,:,:), pointer, contiguous, intent(inout) :: target_data
 
@@ -557,7 +571,7 @@ contains
   subroutine get_4darray_double(field_starts, field_ends, data_dump, key, target_data, size1, size2, size3, size4)
     type(map_type), intent(inout) :: field_starts, field_ends
     integer, intent(in) :: size1, size2, size3, size4
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     real(kind=DOUBLE_PRECISION), dimension(:,:,:,:), pointer, contiguous, intent(inout) :: target_data
 
@@ -596,7 +610,7 @@ contains
        size2, size3, size4)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id, size1, size2, size3, size4
-    character, dimension(:) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: key
     real(kind=DOUBLE_PRECISION), dimension(:,:,:,:), pointer, contiguous, intent(inout) :: target_data
 

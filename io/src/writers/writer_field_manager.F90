@@ -67,7 +67,7 @@ contains
   subroutine provide_monc_data_to_writer_federator(io_configuration, source, data_id, data_dump)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:), intent(in) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
 
     integer :: i, num_fields, timestep
     character(len=STRING_LENGTH) :: field_name
@@ -106,7 +106,7 @@ contains
   function get_value_from_monc_data(io_configuration, source, data_id, data_dump, field_name)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:), intent(in) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: field_name
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: get_value_from_monc_data
 

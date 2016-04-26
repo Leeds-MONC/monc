@@ -20,7 +20,7 @@ module threadpool_mod
   interface
      subroutine thread_procedure(arguments, data_buffer)
        integer, dimension(:), intent(in) :: arguments
-       character, dimension(:), intent(inout), optional :: data_buffer
+       character, dimension(:), allocatable, intent(inout), optional :: data_buffer
      end subroutine thread_procedure
   end interface
 
@@ -113,7 +113,7 @@ contains
   subroutine threadpool_start_thread(proc, arguments, data_buffer)
     procedure(thread_procedure) :: proc
     integer, dimension(:), intent(in) :: arguments
-    character, dimension(:), intent(in), optional :: data_buffer
+    character, dimension(:), allocatable, intent(in), optional :: data_buffer
 
     integer :: idle_thread_id
 

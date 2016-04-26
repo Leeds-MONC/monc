@@ -141,51 +141,34 @@ contains
   !! @param current_state The current model state
   !! @param richardson_number Richardson number
   !! @param ssq The half squared strain rate
-  !! @param elamr_sq Used in backscatter, is the rneutml squared *  viscosity
-  subroutine setfri(current_state, richardson_number, ssq, elamr_sq)
+  subroutine setfri(current_state, richardson_number, ssq)
     type(model_state_type), target, intent(inout) :: current_state
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: richardson_number, ssq
-    real(kind=DEFAULT_PRECISION), dimension(:), intent(out), optional :: elamr_sq
 
     integer :: k
     real(kind=DEFAULT_PRECISION) :: rifac, sctmp
-
 
     do k=2,current_state%local_grid%size(Z_INDEX)-1
       if (richardson_number(k) .le. 0.0_DEFAULT_PRECISION) then
         current_state%vis_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)=&
              sqrt(1.0_DEFAULT_PRECISION-subc*richardson_number(k))
         current_state%diff_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)=&
-             suba*sqrt(1.-subb*richardson_number(k))
-        if (present(elamr_sq)) then
-          elamr_sq(k)=current_state%vis_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)/&
-               sqrt(1.0_DEFAULT_PRECISION-richardson_number(k)*&
-               current_state%diff_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)/&
-               current_state%vis_coefficient%data(k, current_state%column_local_y, current_state%column_local_x))
-        end if
+             suba*sqrt(1.-subb*richardson_number(k))        
       else if ((richardson_number(k) .gt. 0.0_DEFAULT_PRECISION) .and. (richardson_number(k) .lt. ric)) then
         rifac=(1.-richardson_number(k)*ricinv)**4
         current_state%vis_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)=&
              rifac*(1.-subh*richardson_number(k))
         current_state%diff_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)=&
-             rifac*suba*(1.-subg*richardson_number(k))
-        if (present(elamr_sq)) then
-          elamr_sq(k)=current_state%vis_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)/&
-               sqrt(1.0_DEFAULT_PRECISION-richardson_number(k)*&
-               current_state%diff_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)/&
-               current_state%vis_coefficient%data(k, current_state%column_local_y, current_state%column_local_x))
-        end if
+             rifac*suba*(1.-subg*richardson_number(k))       
       else
         current_state%vis_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)=0.0_DEFAULT_PRECISION
         current_state%diff_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)=0.0_DEFAULT_PRECISION
-        if (present(elamr_sq)) elamr_sq(k)=0.0_DEFAULT_PRECISION
       end if
       sctmp=current_state%global_grid%configuration%vertical%rneutml_sq(k)*sqrt(ssq(k))
       current_state%vis_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)=&
            current_state%vis_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)*sctmp
       current_state%diff_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)=&
-           current_state%diff_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)*sctmp
-      if (present(elamr_sq)) elamr_sq(k)=elamr_sq(k)*current_state%global_grid%configuration%vertical%rneutml_sq(k)
+           current_state%diff_coefficient%data(k, current_state%column_local_y, current_state%column_local_x)*sctmp     
     end do
 
     current_state%vis_coefficient%data(current_state%local_grid%size(Z_INDEX), &

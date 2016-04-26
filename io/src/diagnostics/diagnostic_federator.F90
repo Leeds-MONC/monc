@@ -189,7 +189,7 @@ contains
   subroutine pass_fields_to_diagnostics_federator(io_configuration, source, data_id, data_dump)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:), intent(in) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
 
     integer :: timestep
     real(kind=DEFAULT_PRECISION) :: time
@@ -528,7 +528,7 @@ contains
     type(io_configuration_type), intent(inout) :: io_configuration
     type(diagnostics_at_timestep_type), intent(inout) :: timestep_entry
     integer, intent(in) :: source, data_id
-    character, dimension(:), intent(in) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     type(all_diagnostics_at_timestep_type), intent(inout) :: diagnostics_by_timestep
 
     logical :: completed_diagnostics_entry
@@ -582,7 +582,7 @@ contains
        timestep_diagnostics_entry)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:), intent(in) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     type(diagnostics_at_timestep_type), intent(inout) :: timestep_diagnostics_entry
 
     type(iterator_type) :: iterator
@@ -735,7 +735,7 @@ contains
   function get_value_from_monc_data(io_configuration, source, data_id, data_dump, field_name)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:), intent(in) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
     character(len=*), intent(in) :: field_name
     type(data_values_type), pointer :: get_value_from_monc_data
 

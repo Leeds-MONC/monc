@@ -142,7 +142,10 @@ contains
     iterator=c_get_iterator(file_state%timeseries_dimension)
     do while (c_has_next(iterator))
       generic=>c_get_generic(c_next_mapentry(iterator))
-      deallocate(generic)
+      select type(generic)
+      type is(netcdf_diagnostics_timeseries_type)
+        deallocate(generic)
+      end select      
     end do  
     call c_free(file_state%timeseries_dimension)
     call check_thread_status(forthread_rwlock_wrlock(file_states_rwlock))

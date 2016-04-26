@@ -7,6 +7,7 @@ module operator_mod
   use arithmetic_operator_mod, only : initialise_arithmetic_operator, finalise_arithmetic_operator, &
        arithmetic_operator_get_required_fields, perform_arithmetic_operator
   use reductionlocation_operator_mod, only : perform_reductionlocation_operator, reductionlocation_operator_get_required_fields
+  use localreduce_operator_mod, only : perform_localreduce_operator, localreduce_operator_get_required_fields
   use fieldslicer_operator_mod, only : perform_fieldslicer_operator, fieldslicer_operator_get_required_fields
   use fieldcoarsener_operator_mod, only : perform_fieldcoarsener_operator, fieldcoarsener_operator_get_required_fields, &
        fieldcoarsener_operator_get_auto_size
@@ -56,6 +57,8 @@ contains
 
     if (trim(operator_name) .eq. "arithmetic") then
       get_operator_perform_procedure=>perform_arithmetic_operator
+    else if (trim(operator_name) .eq. "localreduce") then
+      get_operator_perform_procedure=>perform_localreduce_operator
     else if (trim(operator_name) .eq. "reductionlocation") then
       get_operator_perform_procedure=>perform_reductionlocation_operator
     else if (trim(operator_name) .eq. "field_slicer") then
@@ -76,6 +79,8 @@ contains
 
     if (trim(operator_name) .eq. "arithmetic") then
       get_operator_required_fields=arithmetic_operator_get_required_fields(action_attributes)
+    else if (trim(operator_name) .eq. "localreduce") then
+      get_operator_required_fields=localreduce_operator_get_required_fields(action_attributes)
     else if (trim(operator_name) .eq. "reductionlocation") then
       get_operator_required_fields=reductionlocation_operator_get_required_fields(action_attributes)
     else if (trim(operator_name) .eq. "field_slicer") then

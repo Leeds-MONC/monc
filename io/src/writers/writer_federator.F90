@@ -99,7 +99,7 @@ contains
   subroutine inform_writer_federator_time_point(io_configuration, source, data_id, data_dump)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:), intent(in) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
 
     real(kind=DEFAULT_PRECISION) :: time
     integer :: timestep
@@ -493,7 +493,7 @@ contains
   subroutine check_writer_for_trigger(io_configuration, source, data_id, data_dump)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
-    character, dimension(:), intent(in) :: data_dump
+    character, dimension(:), allocatable, intent(in) :: data_dump
 
     integer :: i, timestep
     real(kind=DEFAULT_PRECISION) :: time
@@ -962,12 +962,15 @@ contains
           call c_add_string(q_field_names, field_name)
           add_field_to_writer_entry=number_q_fields
           return
-        end if
+        end if     
       end if
       call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
            my_facet_index+1, field_name, writer_field_names, duplicate_field_names, prognostic_containing_data_defn%frequency, &
            prognostic_field_configuration=prognostic_field_configuration)
       add_field_to_writer_entry=1
+    else
+      call log_log(LOG_ERROR, "Field '"//trim(field_name)//&
+           "' configured for file write but can not find this as a prognostic or diagnostic definition")
     end if
   end function add_field_to_writer_entry  
 
