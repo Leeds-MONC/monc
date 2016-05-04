@@ -58,6 +58,8 @@ contains
     real(kind=DEFAULT_PRECISION), allocatable :: f_rand_pl_q_tmp(:) !temporary 1D storage of random noise for q field
     real(kind=DEFAULT_PRECISION), allocatable :: zgrid(:)  ! z grid to use in interpolation
 
+    if (current_state%continuation_run) return
+
     allocate(zgrid(current_state%local_grid%local_domain_end_index(Z_INDEX)))
 
     l_rand_pl_theta=options_get_logical(current_state%options_database, "l_rand_pl_theta")

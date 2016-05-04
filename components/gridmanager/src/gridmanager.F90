@@ -62,7 +62,6 @@ contains
          trim(conv_to_string(current_state%global_grid%size(Z_INDEX)))//", y="//&
          trim(conv_to_string(current_state%global_grid%size(Y_INDEX)))//", x="//&
          trim(conv_to_string(current_state%global_grid%size(X_INDEX))))
-
   end subroutine initialise_callback
 
   !> Called as MONC exits, for good practice this will deallocate the memory used for the grids
@@ -113,7 +112,7 @@ contains
 
     integer :: k
 
-    call calculate_initial_profiles(current_state, vertical_grid)
+    if (.not. current_state%continuation_run) call calculate_initial_profiles(current_state, vertical_grid)
     call set_up_vertical_reference_properties(current_state, vertical_grid, current_state%global_grid%size(Z_INDEX))
     call set_anelastic_pressure(current_state)
 

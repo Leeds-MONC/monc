@@ -22,7 +22,7 @@ termination_time=32400.
 dtm=0.5
 
 # IO server configuration
-ioserver_configuration_file="io/description.xml"
+ioserver_configuration_file="io/dry_bl.xml"
 moncs_per_io_server=7
 sampling_frequency=1
 mm=60.0

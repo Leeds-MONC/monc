@@ -11,6 +11,7 @@ module smagorinsky_mod
        initiate_nonblocking_halo_swap, get_single_field_per_halo_cell, copy_corner_to_buffer
   use registry_mod, only : is_component_enabled
   use logging_mod, only : LOG_ERROR, log_master_log
+  use q_indices_mod, only: get_q_index, standard_q_names
   implicit none
 
 #ifndef TEST_MODE
@@ -21,6 +22,8 @@ module smagorinsky_mod
   real(kind=DEFAULT_PRECISION) :: eps, repsh, thcona, thconb, thconap1, suba, subb, subc, subg, subh, subr, pr_n, ric, ricinv
 
   public smagorinsky_get_descriptor
+
+  integer :: iqv, iql ! index for water vapour and liquid
 
 contains
 
@@ -74,6 +77,13 @@ contains
       call init_halo_communication(current_state, get_single_field_per_halo_cell, &
            current_state%diffusion_halo_swap_state, 2, .true.)
     end if    
+
+    iqv = get_q_index(standard_q_names%VAPOUR, 'smagorinsky')
+    current_state%water_vapour_mixing_ratio_index=iqv
+
+    iql = get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'smagorinsky')
+    current_state%liquid_water_mixing_ratio_index=iql
+
   end subroutine initialisation_callback
   
   !> For each none halo cell this will calculate the subgrid terms for viscosity and diffusion

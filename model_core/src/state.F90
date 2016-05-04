@@ -36,7 +36,7 @@ module state_mod
   !! declared. This allows us to simply persist and retrieve the ModelState when suspending
   !! and reactivating MONC.
   type, public :: model_state_type
-    logical :: continue_timestep=.true., initialised=.false.
+    logical :: continue_timestep=.true., initialised=.false., continuation_run=.false.
     logical :: use_viscosity_and_diffusion=.true., &
        use_surface_boundary_conditions=.true., backscatter=.true.
 

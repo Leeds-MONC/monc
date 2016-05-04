@@ -60,15 +60,10 @@ contains
     character(len=LONG_STRING_LENGTH) :: io_server_config_file
     character, dimension(:), allocatable :: io_server_configuration_contents
 
-    call load_model_configuration(state%options_database)
+    call mpi_init_thread(MPI_THREAD_MULTIPLE, provided_threading, ierr)
+    call load_model_configuration(state, state%options_database)
 
     enable_io_server=determine_if_io_server_enabled(state%options_database)
-
-    if (enable_io_server) then
-      call mpi_init_thread(MPI_THREAD_MULTIPLE, provided_threading, ierr)
-    else
-      call mpi_init(ierr)
-    end if
     
     call init_data_defn()
     ! Set up the logging with comm world PIDs initially for logging from the configuration parsing
@@ -113,13 +108,16 @@ contains
 
   !> Loads the configuration into the options database, either from a file or checkpoint
   !! @param options_database The options database
-  subroutine load_model_configuration(options_database)
+  subroutine load_model_configuration(state, options_database)
+    type(model_state_type), intent(inout) :: state
     type(hashmap_type), intent(inout) :: options_database
 
     call load_command_line_into_options_database(options_database)
     if (options_has_key(options_database, "config")) then
+      state%continuation_run=.false.
       call parse_configuration_file(options_database, options_get_string(options_database, "config"))
     else if (options_has_key(options_database, "checkpoint")) then
+      state%continuation_run=.true.
       call parse_configuration_checkpoint_netcdf(options_database, &
            options_get_string(options_database, "checkpoint"), MPI_COMM_WORLD)
     else

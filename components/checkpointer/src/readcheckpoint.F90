@@ -16,8 +16,9 @@ module checkpointer_read_checkpoint_mod
   use checkpointer_common_mod, only : EMPTY_DIM_KEY, STRING_DIM_KEY, X_DIM_KEY, Y_DIM_KEY, &
        Z_DIM_KEY, Q_DIM_KEY, Q_KEY, ZQ_KEY, TH_KEY, ZTH_KEY, P_KEY, U_KEY, V_KEY, W_KEY, ZU_KEY, ZV_KEY, ZW_KEY, X_KEY, Y_KEY, &
        Z_KEY, NQFIELDS, UGAL, VGAL, TIME_KEY, TIMESTEP, CREATED_ATTRIBUTE_KEY, TITLE_ATTRIBUTE_KEY, &
-       ABSOLUTE_NEW_DTM_KEY, DTM_KEY, DTM_NEW_KEY, Q_INDICES_KEY, check_status, remove_null_terminator_from_string
-  use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
+       ABSOLUTE_NEW_DTM_KEY, DTM_KEY, DTM_NEW_KEY, Q_INDICES_KEY, check_status, remove_null_terminator_from_string, &
+       MAX_STRING_LENGTH
+  use datadefn_mod, only : DEFAULT_PRECISION
   use q_indices_mod, only : set_q_index
   implicit none
 
@@ -122,7 +123,7 @@ contains
 
     call read_single_variable(ncid, TIMESTEP, integer_data_1d=i_data)
     current_state%timestep = i_data(1)+1 ! plus one to increment for next timestep
-    !current_state%start_timestep = current_state%timestep+1    
+    !current_state%start_timestep = current_state%timestep 
     call read_single_variable(ncid, UGAL, real_data_1d_double=r_data)
     current_state%ugal = r_data(1)
     call read_single_variable(ncid, VGAL, real_data_1d_double=r_data)
@@ -178,14 +179,12 @@ contains
     if (does_field_exist(ncid, U_KEY)) then
       call load_single_3d_field(ncid, current_state%local_grid, current_state%u, DUAL_GRID, &
            DUAL_GRID, PRIMAL_GRID, U_KEY, multi_process)
-      if (current_state%ugal .ne. 0.0) current_state%u%data=current_state%u%data-current_state%ugal
       call load_single_3d_field(ncid, current_state%local_grid, current_state%zu, DUAL_GRID, &
            DUAL_GRID, PRIMAL_GRID, ZU_KEY, multi_process)
     end if
     if (does_field_exist(ncid, V_KEY)) then
       call load_single_3d_field(ncid, current_state%local_grid, current_state%v, DUAL_GRID, &
            PRIMAL_GRID, DUAL_GRID, V_KEY, multi_process)
-      if (current_state%vgal .ne. 0.0) current_state%v%data=current_state%v%data-current_state%vgal
       call load_single_3d_field(ncid, current_state%local_grid, current_state%zv, DUAL_GRID, &
            PRIMAL_GRID, DUAL_GRID, ZV_KEY, multi_process)
     end if
@@ -233,7 +232,7 @@ contains
     integer, intent(in) :: ncid
 
     integer :: number_q_indices, i, q_indices_id
-    character(len=STRING_LENGTH) :: key, value
+    character(len=MAX_STRING_LENGTH) :: key, value
 
     number_q_indices=get_number_q_indices(ncid)
     if (number_q_indices .gt. 0) then
@@ -387,9 +386,11 @@ contains
 
     allocate(data(dimension_size))
     call read_single_variable(ncid, variable_key, real_data_1d=data)
-    grid%bottom(dimension) = int(data(1))
     grid%top(dimension) = int(data(dimension_size))
     grid%resolution(dimension) = int(data(2) - data(1))
+    ! For now hard code the bottom of the grid in each dimension as 0, first element is the 0th + size
+    ! I.e. if dxx=100, start=0 then first point is 100 rather than 0 (in x and y), is correct in z in CP file
+    grid%bottom(dimension) = 0
     grid%size(dimension) = dimension_size
     grid%dimensions = grid%dimensions + 1
     grid%active(dimension) = .true.

@@ -1,13 +1,11 @@
-<data-definition name="instant_fields_3d" frequency="{sampling_frequency}">
+<data-definition name="instant_fields_winds" frequency="{sampling_frequency}">
 	<field name="w" type="array" data_type="double" size="z,y,x" collective=true />
 	<field name="u" type="array" data_type="double" size="z,y,x" collective=true />
 	<field name="v" type="array" data_type="double" size="z,y,x" collective=true />
-	<field name="q" type="array" data_type="double" size="z,y,x,qfields" collective=true />
 </data-definition>
 
-<group name="instantaneous_3d">
+<group name="instantaneous_winds">
 	<member name="w"/>
 	<member name="u"/>
 	<member name="v"/>
-	<member name="q"/>
 </group>

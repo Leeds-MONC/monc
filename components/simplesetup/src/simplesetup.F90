@@ -32,6 +32,7 @@ contains
     call read_configuration(current_state)
     if (.not. current_state%initialised) then
       current_state%dtm=options_get_real(current_state%options_database, "dtm")
+      current_state%dtm_new=current_state%dtm
       call create_grid(current_state, current_state%global_grid)
       call decompose_grid(current_state)
       call allocate_prognostics(current_state)

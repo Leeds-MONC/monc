@@ -17,7 +17,7 @@ module checkpointer_write_checkpoint_mod
        X_DIM_KEY, Y_DIM_KEY, Z_DIM_KEY, Q_DIM_KEY, Q_KEY, ZQ_KEY, TH_KEY, ZTH_KEY, P_KEY, U_KEY, V_KEY, W_KEY, ZU_KEY, ZV_KEY, &
        ZW_KEY, X_KEY, Y_KEY, Z_KEY, NQFIELDS, UGAL, VGAL, TIME_KEY, TIMESTEP, MAX_STRING_LENGTH, CREATED_ATTRIBUTE_KEY, &
        TITLE_ATTRIBUTE_KEY, ABSOLUTE_NEW_DTM_KEY, DTM_KEY, DTM_NEW_KEY, Q_INDICES_KEY, check_status
-  use datadefn_mod, only : DEFAULT_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
+  use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use q_indices_mod, only : q_metadata_type, get_max_number_q_indices, get_indices_descriptor, get_number_active_q_indices
   use mpi, only : MPI_INFO_NULL
   implicit none
@@ -134,7 +134,9 @@ contains
       select type (raw_data)
       type is(integer)
         call check_status(nf90_put_var(ncid, options_id, trim(conv_to_string(raw_data)), (/ 1, 2, i /)))
-      type is(real)
+      type is(real(kind=SINGLE_PRECISION))
+        call check_status(nf90_put_var(ncid, options_id, trim(conv_to_string(raw_data)), (/ 1, 2, i /)))
+      type is(real(kind=DOUBLE_PRECISION))
         call check_status(nf90_put_var(ncid, options_id, trim(conv_to_string(raw_data)), (/ 1, 2, i /)))
       type is(logical)
         call check_status(nf90_put_var(ncid, options_id, trim(conv_to_string(raw_data)), (/ 1, 2, i /)))
@@ -161,17 +163,11 @@ contains
 
     multi_process = current_state%parallel%processes .gt. 1
 #ifdef U_ACTIVE
-    ! Add on the Galilean transformation to the U field for dumping
-    if (current_state%ugal .ne. 0.0) current_state%u%data = current_state%u%data + current_state%ugal
     call write_out_velocity_field(ncid, current_state%local_grid, current_state%u, u_id, multi_process)
-    if (current_state%ugal .ne. 0.0) current_state%u%data = current_state%u%data - current_state%ugal
     call write_out_velocity_field(ncid, current_state%local_grid, current_state%zu, zu_id, multi_process)
 #endif
 #ifdef V_ACTIVE
-    ! Add on the Galilean transformation to the V field for dumping
-    if (current_state%vgal .ne. 0.0) current_state%v%data = current_state%v%data + current_state%vgal
     call write_out_velocity_field(ncid, current_state%local_grid, current_state%v, v_id, multi_process)
-    if (current_state%vgal .ne. 0.0) current_state%v%data = current_state%v%data - current_state%vgal
     call write_out_velocity_field(ncid, current_state%local_grid, current_state%zv, zv_id, multi_process)
 #endif
 #ifdef W_ACTIVE
@@ -300,7 +296,7 @@ contains
 
     integer :: options_dim_id, command_dimensions(3)
 
-    call check_status(nf90_def_dim(ncid, STRING_DIM_KEY, MAX_STRING_LENGTH, string_dim_id))
+    call check_status(nf90_def_dim(ncid, STRING_DIM_KEY, STRING_LENGTH, string_dim_id))
     call check_status(nf90_def_dim(ncid, KEY_VALUE_PAIR_KEY, 2, key_value_dim_id))
     call check_status(nf90_def_dim(ncid, OPTIONS_DIM_KEY, options_size(current_state%options_database), options_dim_id))
 
