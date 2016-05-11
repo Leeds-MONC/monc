@@ -84,11 +84,7 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
 
     integer :: z_size, y_size, x_size
-    ! remove lines because samg and diff should depend on vis and diff, not the other 
-    ! way round
-    !if (.not. is_component_enabled(current_state%options_database, "smagorinsky")) then 
-    !  call log_master_log(LOG_ERROR, "Diffusion requires the smagorinsky component to be enabled") 
-    !end if
+
     z_size=current_state%local_grid%size(Z_INDEX) + current_state%local_grid%halo_size(Z_INDEX) * 2
     y_size=current_state%local_grid%size(Y_INDEX) + current_state%local_grid%halo_size(Y_INDEX) * 2
     x_size=current_state%local_grid%size(X_INDEX) + current_state%local_grid%halo_size(X_INDEX) * 2
@@ -98,10 +94,6 @@ contains
     allocate(th_diffusion(z_size))
     allocate(q_diffusion(z_size, current_state%number_q_fields))
 
-    if (.not. current_state%use_viscosity_and_diffusion) then
-      call log_master_log(LOG_WARN, &
-           "You have enabled the diffusion component, but use viscosity and diffusion is false in the configuration")
-    end if
   end subroutine initialisation_callback
 
   subroutine finalisation_callback(current_state)

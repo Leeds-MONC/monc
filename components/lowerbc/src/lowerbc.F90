@@ -9,6 +9,8 @@ module lowerbc_mod
   use science_constants_mod, only : von_karman_constant, smallp, alphah, betah, betam, pi, &
        z0, z0th, convective_limit, gammah, gammam
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log
+  use registry_mod, only : is_component_enabled
+  use logging_mod, only : LOG_ERROR, log_master_log
   use q_indices_mod, only: get_q_index, standard_q_names
   use mpi, only: MPI_REQUEST_NULL, MPI_STATUSES_IGNORE
   implicit none
@@ -49,6 +51,15 @@ contains
 
     real(kind=DEFAULT_PRECISION) :: bhbc
     integer :: num_wrapped_fields
+
+    ! Adhill - this check is only required so that the vis_ and diff_coefficients
+    !          are allocated in their respective components
+     if (.not. is_component_enabled(current_state%options_database, "diffusion")) then
+      call log_master_log(LOG_ERROR, "Lowerbc requires the diffusion component to be enabled")
+    end if    
+    if (.not. is_component_enabled(current_state%options_database, "viscosity")) then
+      call log_master_log(LOG_ERROR, "Lowerbc requires the viscosity component to be enabled")
+    end if
 
     call allocate_applicable_fields(current_state)
 
@@ -151,11 +162,6 @@ contains
     y_size=current_state%local_grid%size(Y_INDEX) + current_state%local_grid%halo_size(Y_INDEX) * 2
     x_size=current_state%local_grid%size(X_INDEX) + current_state%local_grid%halo_size(X_INDEX) * 2
 
-    ! Allocate vis and diff here as they required irespective of whether surface conditions
-    ! are used or not (see subroutine simple_boundary_values in this module)
-    ! allocate(current_state%vis_coefficient%data(z_size, y_size, x_size), &
-    !     current_state%diff_coefficient%data(z_size, y_size, x_size))
-    
     allocate(current_state%dis%data(z_size, y_size, x_size), &
          current_state%dis_th%data(z_size, y_size, x_size), current_state%disq(current_state%number_q_fields))
 
@@ -196,7 +202,7 @@ contains
     real(kind=DEFAULT_PRECISION) :: horizontal_velocity_at_k2
 
     if (.not. current_state%use_viscosity_and_diffusion .or. .not. current_state%use_surface_boundary_conditions) then
-      if (.not. current_state%halo_column) call simple_boundary_values(current_state, current_y_index, current_x_index, th, q)
+       call simple_boundary_values(current_state, current_y_index, current_x_index, th, q)
     else
      if (.not. current_state%halo_column) then
         horizontal_velocity_at_k2=0.0_DEFAULT_PRECISION

@@ -5,7 +5,7 @@ module pwadvection_mod
   use optionsdatabase_mod, only : options_get_string
   use collections_mod, only : map_type
   use state_mod, only : model_state_type
-  use grids_mod, only : Z_INDEX
+  use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
 implicit none
 
 #ifndef TEST_MODE
@@ -14,7 +14,7 @@ implicit none
 
   logical :: advect_flow, advect_th, advect_q
 
-  logical :: l_toplevel=.false.
+  logical :: l_toplevel=.true.
 
  public pwadvection_get_descriptor
 contains
@@ -136,9 +136,10 @@ contains
     integer :: k
 
     if (current_state%th%active) then
+       
       do k=2,current_state%local_grid%size(Z_INDEX)-1
 #ifdef U_ACTIVE
-        current_state%sth%data(k, current_y_index, current_x_index)=current_state%sth%data(k, current_y_index, current_x_index)+&
+        current_state%sth%data(k, current_y_index, current_x_index)= &   !current_state%sth%data(k, current_y_index, current_x_index)+&
              current_state%global_grid%configuration%horizontal%cx*&
              0.5_DEFAULT_PRECISION*(current_state%u%data(k, current_y_index, current_x_index-1)*&
              current_state%th%data(k, current_y_index, current_x_index-1)-&
@@ -165,9 +166,10 @@ contains
       end do
 
       if (l_toplevel)then
+
         k=current_state%local_grid%size(Z_INDEX)
 #ifdef U_ACTIVE
-        current_state%sth%data(k, current_y_index, current_x_index)=current_state%sth%data(k, current_y_index, current_x_index)+&
+        current_state%sth%data(k, current_y_index, current_x_index)= &  !current_state%sth%data(k, current_y_index, current_x_index)+&
              current_state%global_grid%configuration%horizontal%cx*&
              0.5_DEFAULT_PRECISION*(current_state%u%data(k, current_y_index, current_x_index-1)*&
              current_state%th%data(k, current_y_index, current_x_index-1)-&
@@ -189,7 +191,7 @@ contains
              current_x_index)
 #endif
       end if
-    end if
+   end if
   end subroutine advect_th_field  
 
   !> Advects the flow fields depending upon which fields are active in the model in a column
@@ -202,7 +204,7 @@ contains
 
     integer :: k
 
-    do k=2,current_state%local_grid%size(Z_INDEX)-1      
+    do k=2,current_state%local_grid%size(Z_INDEX)-1
 #ifdef U_ACTIVE
       current_state%su%data(k, current_y_index, current_x_index)=&
            current_state%global_grid%configuration%horizontal%tcx*(current_state%u%data(k, current_y_index, current_x_index-1)*&
@@ -339,7 +341,7 @@ contains
          current_state%w%data(k-1, current_y_index+1, current_x_index))
 #endif
 #endif
-  end if
+ end if
   end subroutine advect_flow_fields
 
   !> Parses a field string (read in from the configuration file) and determines whether this algorithm should be used

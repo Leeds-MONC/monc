@@ -68,7 +68,7 @@ last_group_type=entire
 
 start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral_bcs, setfluxlook
 subgrid_group_contents=lower_bc, smagorinsky
-dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, lwrad_exponential, simplecloud, casim,diverr, psrce, stepfields, flux_budget, diagnostics, profile_diagnostics, scalar_diagnostics
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, lwrad_exponential, simplecloud, casim,diverr, psrce, flux_budget, diagnostics, profile_diagnostics, scalar_diagnostics, stepfields
 
 solver_group_contents=mean_profiles, fftsolver, iterativesolver, cfltest
 pressure-terms_group_contents=pstep, swap_smooth
@@ -237,7 +237,7 @@ gammah=12.0
 pi=3.14159
 cp=1005.0
 rlvap=2.501e6
-r=287.0
+r=287.05
 G=9.81
 convective_limit=-0.5
 ratio_mol_wts=1.608

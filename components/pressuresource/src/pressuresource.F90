@@ -122,7 +122,7 @@ contains
       end if
 #endif
 #ifdef V_ACTIVE
-      if (local_y .gt. 3 .and. local_x .gt. 3) then        
+      if (local_y .gt. 3 .and. local_x .gt. 3) then
         current_state%p%data(k, local_y, local_x)=current_state%p%data(k, local_y, local_x)-&
              current_state%global_grid%configuration%horizontal%cy * current_state%sv%data(k, local_y-1, local_x)      
       end if

@@ -1,0 +1,48 @@
+<data-definition name="profile_timeseries_fields" frequency="{sampling_frequency}">
+  <field name="u_wind_total_local" type="array" data_type="double" optional=true/>
+  <field name="v_wind_total_local" type="array" data_type="double" optional=true/>
+  <field name="uu_total_local" type="array" data_type="double" optional=true/>
+  <field name="vv_total_local" type="array" data_type="double" optional=true/>
+  <field name="ww_total_local" type="array" data_type="double" optional=true/>
+  <field name="theta_total_local" type="array" data_type="double" optional=true/>
+  <field name="vapour_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="liquid_mmr_total_local" type="array" data_type="double" optional=true/>  
+</data-definition>
+
+<data-handling>
+  <diagnostic field="u_wind_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <communication name="reduction" operator="mean" result="u_wind_mean" field="u_wind_total_local" root="auto"/>
+  </diagnostic> 
+  <diagnostic field="v_wind_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <communication name="reduction" operator="mean" result="v_wind_mean" field="v_wind_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="uu_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+    <communication name="reduction" operator="mean" result="uu_mean" field="uu_total_local" root="auto"/>
+  </diagnostic> 
+  <diagnostic field="vv_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+    <communication name="reduction" operator="mean" result="vv_mean" field="vv_total_local" root="auto"/>
+  </diagnostic>  
+  <diagnostic field="ww_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+    <communication name="reduction" operator="mean" result="ww_mean" field="ww_total_local" root="auto"/>
+  </diagnostic>  
+  <diagnostic field="theta_mean"  type="array" data_type="double" size="zn" units="K">
+    <communication name="reduction" operator="mean" result="theta_mean" field="theta_total_local" root="auto"/>
+  </diagnostic>  
+  <diagnostic field="vapour_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <communication name="reduction" operator="mean" result="vapour_mmr_mean" field="vapour_mmr_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="liquid_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <communication name="reduction" operator="mean" result="liquid_mmr_mean" field="liquid_mmr_total_local" root="auto"/>
+  </diagnostic>
+</data-handling>
+
+<group name="profile_timeseries">
+  <member name="u_wind_mean"/>
+  <member name="v_wind_mean"/>
+  <member name="uu_mean"/>
+  <member name="vv_mean"/>
+  <member name="ww_mean"/>
+  <member name="theta_mean"/>
+  <member name="vapour_mmr_mean"/>
+  <member name="liquid_mmr_mean"/> 
+</group>

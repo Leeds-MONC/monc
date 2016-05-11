@@ -3,13 +3,14 @@ global_configuration=global_config
 
 # Override global component defaults
 cfltest_enabled=.true.
+checkpointer_enabled=.false.
 fftsolver_enabled=.true.
 iterativesolver_enabled=.false.
 pw_advection_enabled=.true.
 tvd_advection_enabled=.true.
 simplesetup_enabled=.true.
-smagorinsky_enabled=.true.
-lower_bc_enabled=.false.
+smagorinsky_enabled=.false.
+lower_bc_enabled=.true.
 setfluxlook_enabled=.true. #This must be set to true if running with lower_bc
 viscosity_enabled=.true.
 diffusion_enabled=.true.
@@ -19,16 +20,18 @@ damping_enabled=.false.
 forcing_enabled=.false. 
 galilean_transformation=.true. # Needs debugging
 randomnoise_enabled=.false.
-mean_profiles_enabled=.false. #This must be set to true if running with damping
+mean_profiles_enabled=.true. #This must be set to true if running with damping
 th_advection_enabled=.true.
-io_server_enabled=.false.
+iobridge_enabled=.true.
+scalar_diagnostics_enabled=.true.
+profile_diagnostics_enabled=.true.
 
 # Test case source code
 tank_experiments_enabled=.true.
 
 # Add bubble to initialisation
 initialisation_stage_ordering+=tank_experiments
-dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, tank_experiments,simplecloud, diverr, psrce, stepfields
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, tank_experiments, lwrad_exponential, simplecloud, casim,diverr, psrce, flux_budget, diagnostics, profile_diagnostics, scalar_diagnostics, stepfields
 
 # Decomposition configuration
 decomposition_method = twodim
@@ -39,10 +42,19 @@ advection_theta_field=tvd
 advection_q_fields=tvd
 
 # Control configuration
-nn_timesteps=10000
+
 display_synopsis_frequency=100
-termination_time=1800.
+termination_time=3700.
 dtm=2.0
+nsmth=20
+
+# IO server configuration
+ioserver_configuration_file="add_ioconfig_file_path"
+moncs_per_io_server=16
+sampling_frequency=1
+mm=600.0
+mm1=20.0
+diag_write_freq=3600.0
 
 # Checkpoint configuration
 checkpoint_frequency=150
@@ -62,8 +74,8 @@ z0th=2.0e-4
 
 # CFL configuration
 cfl_frequency=1000
-cfl_cvismax=0.2
-cfl_cvelmax=0.2
+cfl_cvismax=0.4
+cfl_cvelmax=0.4
 cfl_dtmmax=2.0
 cfl_dtmmin=0.1
 
@@ -87,7 +99,7 @@ origional_vertical_grid_setup=.true.
 passive_th=.false.
 passive_q=.true.
 backscatter=.false.
-use_viscosity_and_diffusion=.true.
+use_viscosity_and_diffusion=.false.
 use_surface_fluxes=.false.
 use_time_varying_surface_values=.false.
 

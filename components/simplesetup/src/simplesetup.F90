@@ -199,7 +199,7 @@ contains
     zztop=options_get_real(current_state%options_database, "zztop")
     enable_theta=options_get_logical(current_state%options_database, "enable_theta")
 
-    if (current_state%rmlmax<=0.0)current_state%rmlmax=0.23*(dxx*dxx+dyy+dyy)**0.5
+    if (current_state%rmlmax<=0.0)current_state%rmlmax=0.23 * max(dxx, dyy)
 
     if (.not. enable_theta) current_state%passive_th=.true.
     if ( current_state%number_q_fields == 0) current_state%passive_q=.true.

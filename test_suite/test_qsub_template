@@ -1,12 +1,15 @@
 #!/bin/bash --login
 #PBS -N MONC
 #PBS -l select=1
-#PBS -l walltime=02:45:00
+#PBS -l walltime=03:00:00
 #PBS -j oe
 #PBS -P monc
 #PBS -q normal
 
 echo Starting job
+
+# Allow multi-threading on cray
+export MPICH_MAX_THREAD_SAFETY=multiple
 
 # Make sure any symbolic links are resolved to absolute path
 export PBS_O_WORKDIR=$(readlink -f $PBS_O_WORKDIR)

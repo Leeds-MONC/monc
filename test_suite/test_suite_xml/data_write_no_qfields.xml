@@ -1,0 +1,22 @@
+<io-configuration>
+	<server-configuration>
+		<thread_pool number=10/>
+	</server-configuration>
+
+#include "test_suite/test_suite_xml/scalar_fields_no_qfields.xml"
+#include "test_suite/test_suite_xml/profile_fields_no_qfields.xml"
+#include "test_suite/test_suite_xml/3d_fields_no_qfields.xml"
+
+<data-writing>
+  <file name="profile_ts.nc" write_time_frequency="{diag_write_freq}">
+    <include group="profile_timeseries" time_manipulation="averaged" output_frequency="{mm}"/>
+  </file>
+  <file name="scalar_ts.nc" write_time_frequency="{diag_write_freq}">
+    <include group="scalar_timeseries" time_manipulation="instantaneous" output_frequency="{mm1}"/>
+  </file>
+  <file name="3dfields_ts.nc" write_time_frequency="{diag_write_freq}">
+    <include group="instantaneous_3D" time_manipulation="instantaneous" output_frequency="{mm}"/>
+  </file>
+</data-writing>
+
+</io-configuration>

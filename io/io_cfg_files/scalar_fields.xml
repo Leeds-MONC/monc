@@ -1,0 +1,86 @@
+<data-definition name="scalar_timeseries_fields" frequency="{sampling_frequency}">
+  <field name="vwp_local" type="array" data_type="double" optional=true/>
+  <field name="lwp_local" type="array" data_type="double" optional=true/>
+  <field name="qlmax_local" type="array" data_type="double" optional=true/>
+  <field name="cltop_local" type="array" data_type="double" optional=true/>
+  <field name="clbas_local" type="array" data_type="double" optional=true/>
+  <field name="wmax_local" type="array" data_type="double" optional=true/>
+  <field name="wmin_local" type="array" data_type="double" optional=true/>
+</data-definition>
+
+<data-handling>
+  <diagnostic field="VWP_mean"  type="scalar" data_type="double" units="kg/m^2">
+    <communication name="reduction" operator="mean" result="VWP_mean" field="VWP_mean_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="mean" result="VWP_mean_loc_reduced" field="vwp_local"/>
+  </diagnostic>
+  <diagnostic field="LWP_mean"  type="scalar" data_type="double" units="kg/m^2">
+    <communication name="reduction" operator="mean" result="LWP_mean" field="LWP_mean_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="mean" result="LWP_mean_loc_reduced" field="lwp_local"/>
+  </diagnostic>
+  <diagnostic field="LWP_var"  type="scalar" data_type="double" units="kg^2/m^4">
+    <communication name="reduction" operator="mean" result="LWP_var" field="LWP_var_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="mean" result="LWP_var_loc_reduced" field="lwp_var_local"/>
+    <operator name="arithmetic" result="lwp_var_local" equation="(lwp_local-10)"/>
+  </diagnostic>
+  <diagnostic field="VWP_max"  type="scalar" data_type="double" units="kg/m^2">
+    <communication name="reduction" operator="max" result="VWP_max" field="VWP_max_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="max" result="VWP_max_loc_reduced" field="vwp_local"/>
+  </diagnostic>
+  <diagnostic field="LWP_max"  type="scalar" data_type="double" units="kg/m^2">
+    <communication name="reduction" operator="max" result="LWP_max" field="LWP_max_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="max" result="LWP_max_loc_reduced" field="lwp_local"/>
+  </diagnostic>
+  <diagnostic field="qlmax"  type="scalar" data_type="double" units="kg/kg">
+    <communication name="reduction" operator="max" result="qlmax" field="qlmax_loc_reduced" root="auto"/>
+   <operator name="localreduce" operator="max" result="qlmax_loc_reduced" field="qlmax_local"/>
+  </diagnostic>
+  <diagnostic field="cltop_mean"  type="scalar" data_type="double" units="m">
+    <communication name="reduction" operator="mean" result="cltop_mean" field="cltop_mean_loc_reduced" root="auto"/>
+   <operator name="localreduce" operator="mean" result="cltop_mean_loc_reduced" field="cltop_local"/>
+  </diagnostic>
+  <diagnostic field="clbas_mean"  type="scalar" data_type="double" units="m">
+    <communication name="reduction" operator="mean" result="clbas_mean" field="clbas_mean_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="mean" result="clbas_mean_loc_reduced" field="clbas_local"/>
+  </diagnostic>
+  <diagnostic field="cltop_min"  type="scalar" data_type="double" units="m">
+    <communication name="reduction" operator="min" result="cltop_min" field="cltop_min_loc_reduced" root="auto"/>
+   <operator name="localreduce" operator="min" result="cltop_min_loc_reduced" field="cltop_local"/>
+  </diagnostic>
+  <diagnostic field="clbas_min"  type="scalar" data_type="double" units="m">
+    <communication name="reduction" operator="min" result="clbas_min" field="clbas_min_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="min" result="clbas_min_loc_reduced" field="clbas_local"/>
+  </diagnostic>
+  <diagnostic field="cltop_max"  type="scalar" data_type="double" units="m">
+    <communication name="reduction" operator="max" result="cltop_max" field="cltop_max_loc_reduced" root="auto"/>
+   <operator name="localreduce" operator="max" result="cltop_max_loc_reduced" field="cltop_local"/>
+  </diagnostic>
+  <diagnostic field="clbas_max"  type="scalar" data_type="double" units="m">
+    <communication name="reduction" operator="max" result="clbas_max" field="clbas_max_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="max" result="clbas_max_loc_reduced" field="clbas_local"/>
+  </diagnostic>
+  <diagnostic field="wmax"  type="scalar" data_type="double" units="m/s">
+    <communication name="reduction" operator="max" result="wmax" field="wmax_loc_reduced" root="auto"/>
+    <operator name="localreduce" field="wmax_local" result="wmax_loc_reduced" operator="max"/>
+  </diagnostic>  
+  <diagnostic field="wmin"  type="scalar" data_type="double" units="m/s">
+    <communication name="reduction" operator="min" result="wmin" field="wmin_loc_reduced" root="auto"/>
+    <operator name="localreduce" field="wmin_local" result="wmin_loc_reduced" operator="min"/>
+  </diagnostic>  
+</data-handling>
+
+<group name="scalar_timeseries">
+  <member name="VWP_mean"/>
+  <member name="LWP_mean"/>
+  <member name="VWP_max"/>
+  <member name="LWP_max"/>
+  <member name="LWP_var"/>  
+  <member name="qlmax"/>
+  <member name="cltop_mean"/>
+  <member name="clbas_mean"/>
+  <member name="cltop_min"/>
+  <member name="clbas_min"/>
+  <member name="cltop_max"/>
+  <member name="clbas_max"/>
+  <member name="wmax"/>
+  <member name="wmin"/>  
+</group>

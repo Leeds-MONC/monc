@@ -49,9 +49,6 @@ contains
     if (.not. is_component_enabled(current_state%options_database, "viscosity")) then
       call log_master_log(LOG_ERROR, "Smagorinsky requires the viscosity component to be enabled")
     end if
-    !if (.not. is_component_enabled(current_state%options_database, "lower_bc")) then
-    !  call log_master_log(LOG_ERROR, "Smagorinsky requires the lower_bc component to be enabled")
-    !end if    
     if (.not. current_state%use_viscosity_and_diffusion) then 
        call log_master_log(LOG_ERROR, "Smagorinsky requires use_viscosity_and_diffusion=.true. or monc will fail")
     endif

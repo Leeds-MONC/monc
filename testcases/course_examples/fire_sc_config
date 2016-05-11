@@ -101,6 +101,9 @@ f_rand_pl_theta=0.1, 0.1, 0.0001, 0.0001
 # Simple cloud
 max_height_cloud=1600.
 
+# minimum value to be considered cloud
+qlcrit = 1.e-8
+
 # physical constants
 z0=0.002
 z0th=0.0002

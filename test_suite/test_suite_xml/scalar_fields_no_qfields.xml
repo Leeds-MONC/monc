@@ -1,0 +1,32 @@
+<data-definition name="scalar_timeseries_fields" frequency="{sampling_frequency}">
+  <field name="wmax_local" type="array" data_type="double" optional=true/>
+  <field name="wmin_local" type="array" data_type="double" optional=true/>
+  <field name="senhf_local" type="array" data_type="double" optional=true/>
+  <field name="lathf_local" type="array" data_type="double" optional=true/>
+</data-definition>
+
+<data-handling>
+  <diagnostic field="wmax"  type="scalar" data_type="double" units="m/s">
+    <communication name="reduction" operator="max" result="wmax" field="wmax_loc_reduced" root="auto"/>
+    <operator name="localreduce" field="wmax_local" result="wmax_loc_reduced" operator="max"/>
+  </diagnostic>  
+  <diagnostic field="wmin"  type="scalar" data_type="double" units="m/s">
+    <communication name="reduction" operator="min" result="wmin" field="wmin_loc_reduced" root="auto"/>
+    <operator name="localreduce" field="wmin_local" result="wmin_loc_reduced" operator="min"/>
+  </diagnostic> 
+  <diagnostic field="senhf_mean"  type="scalar" data_type="double" units="m">
+     <communication name="reduction" operator="mean" result="senhf_mean" field="senhf_mean_loc_reduced" root="auto"/>
+     <operator name="localreduce" operator="mean" result="senhf_mean_loc_reduced" field="senhf_local"/>
+  </diagnostic>
+  <diagnostic field="lathf_mean"  type="scalar" data_type="double" units="m">
+    <communication name="reduction" operator="mean" result="lathf_mean" field="lathf_mean_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="mean" result="lathf_mean_loc_reduced" field="lathf_local"/>
+  </diagnostic>  
+</data-handling>
+
+<group name="scalar_timeseries">
+  <member name="wmax"/>
+  <member name="wmin"/> 
+  <member name="senhf_mean"/>
+  <member name="lathf_mean"/> 
+</group>
