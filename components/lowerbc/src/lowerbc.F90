@@ -54,7 +54,7 @@ contains
 
     ! Adhill - this check is only required so that the vis_ and diff_coefficients
     !          are allocated in their respective components
-     if (.not. is_component_enabled(current_state%options_database, "diffusion")) then
+    if (.not. is_component_enabled(current_state%options_database, "diffusion")) then
       call log_master_log(LOG_ERROR, "Lowerbc requires the diffusion component to be enabled")
     end if    
     if (.not. is_component_enabled(current_state%options_database, "viscosity")) then
@@ -204,35 +204,43 @@ contains
     if (.not. current_state%use_viscosity_and_diffusion .or. .not. current_state%use_surface_boundary_conditions) then
        call simple_boundary_values(current_state, current_y_index, current_x_index, th, q)
     else
-     if (.not. current_state%halo_column) then
-        horizontal_velocity_at_k2=0.0_DEFAULT_PRECISION
+       ! one level in for the halo-column
+       if (.not. (current_state%column_local_y .lt. current_state%local_grid%local_domain_start_index(Y_INDEX)-1 .or.&
+         current_state%column_local_x .lt. current_state%local_grid%local_domain_start_index(X_INDEX)-1 .or.&
+         current_state%column_local_y .gt. current_state%local_grid%local_domain_end_index(Y_INDEX)+1 .or.&
+         current_state%column_local_x .gt. current_state%local_grid%local_domain_end_index(X_INDEX)+1)) then
+
+          !if (.not. current_state%halo_column) then
+          ! Include one halo to ensure that the halo is set in tvdadvection. This is done using the 
+          ! logic from the timestep callback in tvdadvection in the timestep callback above
+          horizontal_velocity_at_k2=0.0_DEFAULT_PRECISION
 #ifdef U_ACTIVE
-        horizontal_velocity_at_k2=(0.5_DEFAULT_PRECISION*(current_state%zu%data(2,current_y_index,current_x_index)+&
-             zu%data(2,current_y_index,current_x_index-1))+ current_state%ugal)**2
+         horizontal_velocity_at_k2=(0.5_DEFAULT_PRECISION*(current_state%zu%data(2,current_y_index,current_x_index)+&
+              zu%data(2,current_y_index,current_x_index-1))+ current_state%ugal)**2
 #endif
 #ifdef V_ACTIVE
-        horizontal_velocity_at_k2=horizontal_velocity_at_k2+(0.5_DEFAULT_PRECISION*(zv%data(&
-             2,current_y_index,current_x_index)+zv%data(2,current_y_index-1,current_x_index))+current_state%vgal)**2
+         horizontal_velocity_at_k2=horizontal_velocity_at_k2+(0.5_DEFAULT_PRECISION*(zv%data(&
+              2,current_y_index,current_x_index)+zv%data(2,current_y_index-1,current_x_index))+current_state%vgal)**2
 #endif
-        horizontal_velocity_at_k2=sqrt(horizontal_velocity_at_k2)+smallp      
+         horizontal_velocity_at_k2=sqrt(horizontal_velocity_at_k2)+smallp      
 
-        if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_FLUXES) then
-          call compute_using_fixed_surface_fluxes(current_state, current_y_index, current_x_index, &
-               horizontal_velocity_at_k2, th, q)
-        else
-          call compute_using_fixed_surface_temperature(current_state, current_y_index, current_x_index, &
+         if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_FLUXES) then
+            call compute_using_fixed_surface_fluxes(current_state, current_y_index, current_x_index, &
+                 horizontal_velocity_at_k2, th, q)
+         else
+            call compute_using_fixed_surface_temperature(current_state, current_y_index, current_x_index, &
                horizontal_velocity_at_k2, zth, th, zq, q)
+         end if
+
+         current_state%dis%data(1, current_y_index, current_x_index)=0.0_DEFAULT_PRECISION
+         current_state%dis_th%data(1, current_y_index, current_x_index)=0.0_DEFAULT_PRECISION
+
+         if (current_state%backscatter) then
+            do n=1, current_state%number_q_fields
+               current_state%disq(n)%data(1,current_y_index,current_x_index)=0.0_DEFAULT_PRECISION
+            end do
         end if
-
-        current_state%dis%data(1, current_y_index, current_x_index)=0.0_DEFAULT_PRECISION
-        current_state%dis_th%data(1, current_y_index, current_x_index)=0.0_DEFAULT_PRECISION
-
-        if (current_state%backscatter) then
-          do n=1, current_state%number_q_fields
-            current_state%disq(n)%data(1,current_y_index,current_x_index)=0.0_DEFAULT_PRECISION
-          end do
-        end if
-
+        
         !-----------------------
         ! _return viscous number
         !-----------------------
@@ -240,14 +248,14 @@ contains
         current_state%cvis=max(current_state%cvis,max(current_state%vis_coefficient%data(1, current_y_index, current_x_index),&
              current_state%diff_coefficient%data(1, current_y_index, current_x_index))*viscous_courant_coefficient)
         !            CVIS will be multiplied by DTM_X4 in TESTCFL
-      else if (current_x_index == 1 .and. current_y_index == 1) then
+     else if (current_x_index == 1 .and. current_y_index == 1) then
         call register_async_wrapping_recv_requests(current_state)
-      else if (current_x_index == current_state%local_grid%local_domain_end_index(X_INDEX)+&
-           current_state%local_grid%halo_size(X_INDEX) .and. current_y_index == &
-           current_state%local_grid%local_domain_end_index(Y_INDEX)+current_state%local_grid%halo_size(Y_INDEX)) then
+     else if (current_x_index == current_state%local_grid%local_domain_end_index(X_INDEX)+&
+             current_state%local_grid%halo_size(X_INDEX) .and. current_y_index == &
+             current_state%local_grid%local_domain_end_index(Y_INDEX)+current_state%local_grid%halo_size(Y_INDEX)) then
         call complete_async_wrapping(current_state, zth, zq)
-      end if
-    end if
+     end if
+  end if
   end subroutine compute_lower_boundary_conditions
 
   !> Registers asynchronous wrapping recv requests as needed

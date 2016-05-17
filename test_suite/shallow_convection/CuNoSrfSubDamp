@@ -2,6 +2,7 @@
 global_configuration=global_config
 
 # Override global component defaults
+checkpointer_enabled=.false.
 fftsolver_enabled=.true.
 pw_advection_enabled=.true.
 simplesetup_enabled=.true.
@@ -17,18 +18,26 @@ forcing_enabled=.true.
 randomnoise_enabled=.true.
 mean_profiles_enabled=.true. #This must be set to true if running with damping
 th_advection_enabled=.false.
+iobridge_enabled=.true.
+scalar_diagnostics_enabled=.true.
+profile_diagnostics_enabled=.true.
 
 # Control configuration
-nn_timesteps=500000
 display_synopsis_frequency=100
-termination_time=21600.
+termination_time=21610.
 dtm=0.4
 
-decomposition_method = onedim
+# IO server configuration
+ioserver_configuration_file="add_ioconfig_file_path"
+moncs_per_io_server=16
+sampling_frequency=1
+mm=1800.0
+mm1=20.0
+diag_write_freq=10800.0
 
 # Checkpoint configuration
 checkpoint_frequency=10000
-checkpoint_file="bomex_simple.nc"
+checkpoint_file="bomex_dump.nc"
 checkpoint_unique_per_dump=.true.
 
 # Advection choices
@@ -59,7 +68,6 @@ hgd=0.0,3000.0
 nsmth=80
 galilean_transformation=.true.
 
-
 enable_theta=.true.
 number_q_fields=2
 use_anelastic_equations=.true.
@@ -87,7 +95,7 @@ l_matchthref=.false.
 # Random noise
 l_rand_pl_theta=.true.
 z_rand_pl_theta=0.0, 500.0, 501.0, 3000.
-f_rand_pl_theta=0.5, 0.5, 0.001, 0.001
+f_rand_pl_theta=0.5, 0.5, 0.0001, 0.0001
 
 # Simple cloud
 max_height_cloud=3000.
@@ -109,10 +117,10 @@ zdmp=2300.0
 hdmp=2000.0
 
 # Subsidence profile
-l_subs_pl_theta=.true.
+l_subs_pl_theta=.false.
 z_subs_pl=0.0, 1500.0, 2100.0, 3000.
 f_subs_pl=0.0, -0.0065, 0.0, 0.0
-l_subs_pl_q=.true.
+l_subs_pl_q=.false.
 
 #SUBSIDENCE=1, DIVERGENCE=0
 subsidence_input_type=1 
@@ -148,7 +156,7 @@ constant_forcing_type_v=0
 
 # surface flux config
 # type_of_surface_boundary_conditions=PRESCRIBED_FLUX=0
-use_surface_boundary_conditions=.true.
+use_surface_boundary_conditions=.false.
 use_time_varying_surface_values= .false.
 type_of_surface_boundary_conditions = 0 
 surface_boundary_input_times = 0
