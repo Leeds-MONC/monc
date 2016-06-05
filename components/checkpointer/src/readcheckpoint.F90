@@ -386,8 +386,8 @@ contains
 
     allocate(data(dimension_size))
     call read_single_variable(ncid, variable_key, real_data_1d=data)
-    grid%top(dimension) = int(data(dimension_size))
-    grid%resolution(dimension) = int(data(2) - data(1))
+    grid%top(dimension) = data(dimension_size)
+    grid%resolution(dimension) = (data(2) - data(1))
     ! For now hard code the bottom of the grid in each dimension as 0, first element is the 0th + size
     ! I.e. if dxx=100, start=0 then first point is 100 rather than 0 (in x and y), is correct in z in CP file
     grid%bottom(dimension) = 0

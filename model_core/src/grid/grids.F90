@@ -99,10 +99,10 @@ module grids_mod
   !> Defines the global grid
   type, public :: global_grid_type
      type(grid_configuration_type) :: configuration !< Configuration of the grid
-     integer, dimension(3) :: bottom,&     !< Bottom (lowest) bounds in each dimension
+     real(kind=DEFAULT_PRECISION), dimension(3) :: bottom,&     !< Bottom (lowest) bounds in each dimension
           top,&        !< Top (highest) bounds in each dimension
-          resolution,& !< The resolution of the grid in each dimension
-          size         !< Number of grid points in each dimension
+          resolution   !< The resolution of the grid in each dimension
+     integer, dimension(3) ::    size         !< Number of grid points in each dimension
      logical, dimension(3) :: active = (/ .false., .false., .false. /) !< Whether a specific dimension is active
      integer :: dimensions = 0 !< Number of active dimensions
   end type global_grid_type

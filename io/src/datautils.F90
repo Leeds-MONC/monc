@@ -337,9 +337,9 @@ contains
     elements = ceiling((end_index - start_index) / real(kind(get_array_double)))
 
     allocate(get_array_double(elements))
-    if (elements .ge. ARRAY_STEP_THRESHOLD) then       
+    if (elements .ge. ARRAY_STEP_THRESHOLD) then 
        current_start_index=start_index
-       do while (current_start_index .lt. start_index)
+       do while (current_start_index .lt. end_index)
           current_end_index=current_start_index+ARRAY_STEP_THRESHOLD-1
           if (current_end_index .gt. end_index) current_end_index=end_index
           start_e=((current_start_index-start_index)/kind(get_array_double))+1

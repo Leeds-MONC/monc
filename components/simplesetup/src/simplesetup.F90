@@ -14,8 +14,8 @@ module simplesetup_mod
   private
 #endif
 
-  integer :: x_size, y_size, z_size, dxx, dyy
-  real(kind=DEFAULT_PRECISION) :: zztop
+  integer :: x_size, y_size, z_size
+  real(kind=DEFAULT_PRECISION) :: zztop, dxx, dyy
   logical :: enable_theta=.false.
   public simplesetup_get_descriptor
 contains
@@ -152,11 +152,11 @@ contains
     specific_grid%bottom(Y_INDEX) = 0
     specific_grid%bottom(X_INDEX) = 0
 
-    specific_grid%top(Z_INDEX) = int(zztop)
+    specific_grid%top(Z_INDEX) = zztop
     specific_grid%top(Y_INDEX) = dyy * y_size
     specific_grid%top(X_INDEX) = dxx * x_size
 
-    specific_grid%resolution(Z_INDEX) = int(zztop / z_size)
+    specific_grid%resolution(Z_INDEX) = zztop / z_size
     specific_grid%resolution(Y_INDEX) = dyy
     specific_grid%resolution(X_INDEX) = dxx
 
@@ -194,8 +194,8 @@ contains
     x_size=options_get_integer(current_state%options_database, "x_size")
     y_size=options_get_integer(current_state%options_database, "y_size")
     z_size=options_get_integer(current_state%options_database, "z_size")
-    dxx=options_get_integer(current_state%options_database, "dxx")
-    dyy=options_get_integer(current_state%options_database, "dyy")
+    dxx=options_get_real(current_state%options_database, "dxx")
+    dyy=options_get_real(current_state%options_database, "dyy")
     zztop=options_get_real(current_state%options_database, "zztop")
     enable_theta=options_get_logical(current_state%options_database, "enable_theta")
 

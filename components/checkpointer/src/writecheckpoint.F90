@@ -271,8 +271,8 @@ contains
   !! @param gridresolution The resolution of the grid
   !! @param dimension_id The NetCDF id of the grid variable to write to
   subroutine write_grid_dimension(ncid, grids_modize, gridbottom, gridresolution, dimension_id)
-    integer, intent(in) :: ncid, grids_modize, gridbottom, gridresolution, dimension_id
-
+    integer, intent(in) :: ncid, grids_modize, dimension_id
+    real(kind=DEFAULT_PRECISION), intent(in) :: gridbottom, gridresolution
     real, dimension(:), allocatable :: data
     integer :: i
 

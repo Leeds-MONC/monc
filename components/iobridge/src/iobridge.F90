@@ -685,19 +685,19 @@ contains
            int_value=current_state%global_grid%size(Y_INDEX))
     else if (field%name .eq. "y_bottom") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
-           int_value=current_state%global_grid%bottom(Y_INDEX))
+           real_value=current_state%global_grid%bottom(Y_INDEX))
     else if (field%name .eq. "y_resolution") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
-           int_value=current_state%global_grid%resolution(Y_INDEX))
+           real_value=current_state%global_grid%resolution(Y_INDEX))
     else if (field%name .eq. "x_size") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
            int_value=current_state%global_grid%size(X_INDEX))
     else if (field%name .eq. "x_bottom") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
-           int_value=current_state%global_grid%bottom(X_INDEX))
+           real_value=current_state%global_grid%bottom(X_INDEX))
     else if (field%name .eq. "x_resolution") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
-           int_value=current_state%global_grid%resolution(X_INDEX))
+           real_value=current_state%global_grid%resolution(X_INDEX))
     else if (field%name .eq. "time") then
       ! The time is incremented with dtm as the model was about to increment for the next step and this is needed for diagnostics
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &

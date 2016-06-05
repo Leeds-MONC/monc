@@ -451,7 +451,8 @@ contains
     type(vertical_grid_configuration_type), intent(inout) :: vertical_grid
     integer, dimension(:), intent(in) :: kgd
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: hgd
-    integer, intent(in) :: ninitp, kkp, zztop, nsmth
+    integer, intent(in) :: ninitp, kkp, nsmth
+    real(kind=DEFAULT_PRECISION),intent(in) :: zztop
     logical, intent(in) :: origional_setup
 
     integer :: k
@@ -483,7 +484,8 @@ contains
     type(vertical_grid_configuration_type), intent(inout) :: vertical_grid
     integer, dimension(:), intent(in) :: kgd
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: hgd
-    integer, intent(in) :: ninitp, kkp, zztop, nsmth
+    integer, intent(in) :: ninitp, kkp, nsmth
+    real(kind=DEFAULT_PRECISION), intent(in) :: zztop
 
     integer :: n, k
     
@@ -517,7 +519,8 @@ contains
   subroutine new_vertical_grid_setup(vertical_grid, kgd, kkp, zztop)
     type(vertical_grid_configuration_type), intent(inout) :: vertical_grid
     integer, dimension(:), intent(in) :: kgd
-    integer, intent(in) :: kkp, zztop
+    integer, intent(in) :: kkp
+    real(kind=DEFAULT_PRECISION), intent(in) :: zztop
 
     real(kind=DEFAULT_PRECISION) :: a(2*kkp), r1, d1, dd, d0, a0
     logical :: first_gt=.true.
@@ -571,7 +574,8 @@ contains
     type(vertical_grid_configuration_type), intent(inout) :: vertical_grid
     integer, dimension(:), intent(in) :: kgd
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: hgd
-    integer, intent(in) :: ninitp, kkp, zztop
+    integer, intent(in) :: ninitp, kkp
+    real(kind=DEFAULT_PRECISION), intent(in) :: zztop
 
     integer :: kmax, k, i
     real(kind=DEFAULT_PRECISION) :: zmax
