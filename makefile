@@ -14,7 +14,14 @@ BUILD_DIR=build
 export NETCDF_DIR=$(NETCDF_ROOT)
 export HDF5_DIR=$(HDF5_ROOT)
 export FFTW_DIR=$(FFTW_ROOT)
+export CASIM_DIR=$(CASIM_ROOT)
 FTN=ftn
+
+ifeq ($(strip $(CASIM_DIR)),)
+	CASIM_BUILD_LOC=
+else
+	CASIM_BUILD_LOC=$(CASIM_DIR)/$(BUILD_DIR)/*.o
+endif
 
 COMPILERFFLAGS=-O3
 COMPILERRECURSIVE=
@@ -62,7 +69,7 @@ clean-build: clean-build-model_core clean-build-components clean-build-testcases
 	rm -Rf build
 
 buildmonc: check-vars create-build-dirs compile-model_core compile-ioserver compile-components compile-testcases compile-bootstrapper
-	$(FTN) -o $(EXEC_NAME) $(BUILD_DIR)/*.o $(CORE_DIR)/$(BUILD_DIR)/*.o $(COMPONENTS_DIR)/$(BUILD_DIR)/*.o $(TESTCASE_DIR)/$(BUILD_DIR)/*.o $(IO_SERVER_DIR)/$(BUILD_DIR)/*.o $(LFLAGS)
+	$(FTN) -o $(EXEC_NAME) $(BUILD_DIR)/*.o $(CORE_DIR)/$(BUILD_DIR)/*.o $(COMPONENTS_DIR)/$(BUILD_DIR)/*.o $(CASIM_BUILD_LOC)  $(TESTCASE_DIR)/$(BUILD_DIR)/*.o $(IO_SERVER_DIR)/$(BUILD_DIR)/*.o $(LFLAGS)
 
 check-vars:
 	$(call check_defined, NETCDF_DIR, Need the path to the NetCDF installation directory as an environment variable - export this before running make)

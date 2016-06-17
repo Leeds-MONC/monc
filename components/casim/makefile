@@ -1,4 +1,8 @@
-SRCSF = src/casim.F90
+ifeq ($(strip $(CASIM_DIR)),)
+	SRCSF = src/casim_stub.F90
+else
+	SRCSF = src/casim.F90
+endif
 
 BUILDDIR=build
 COREDIR=../../model_core/build
