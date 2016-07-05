@@ -499,7 +499,8 @@ contains
       end if
       group_description%number_of_members=options_get_array_size(options_database, &
            trim(group_description%name)//"_group_contents")    
-      if (group_description%number_of_members == 0) then
+      if (group_description%number_of_members == 0 .or. .not. options_has_key(options_database, &
+           trim(group_description%name)//"_group_contentsa_size")) then
         if (options_has_key(options_database, trim(group_description%name)//"_group_contents")) then
           group_description%number_of_members=1
           group_description%group_members(1)=trim(options_get_string(options_database, &
