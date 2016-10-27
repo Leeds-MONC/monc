@@ -31,7 +31,7 @@ termination_time=7200.
 dtm=0.2
 
 # IO server configuration
-ioserver_configuration_file="io/test_description.xml"
+ioserver_configuration_file="testcases/course_examples/test_description.xml"
 moncs_per_io_server=4
 sampling_frequency=2
 mm=60.0
