@@ -4,7 +4,7 @@ module monc_mod
   use monc_component_mod, only : component_descriptor_type
   use collections_mod, only : list_type, hashmap_type, map_type, iterator_type, mapentry_type, c_size, c_next_generic, &
        c_get_real, c_has_next, c_get_iterator, c_next_mapentry
-  use conversions_mod, only : conv_to_string, conv_to_real
+  use conversions_mod, only : conv_to_string, conv_to_real, conv_is_logical, conv_to_logical
   use state_mod, only : model_state_type
   use registry_mod, only : get_all_registered_components, get_component_info, register_component, &
        execute_initialisation_callbacks, execute_finalisation_callbacks, init_registry, order_all_callbacks, &
@@ -17,7 +17,7 @@ module monc_mod
   use configuration_file_parser_mod, only : parse_configuration_file
   use configuration_checkpoint_netcdf_parser_mod, only : parse_configuration_checkpoint_netcdf
   use science_constants_mod, only : initialise_science_constants
-  use mpi, only : MPI_COMM_WORLD, MPI_THREAD_MULTIPLE
+  use mpi, only : MPI_COMM_WORLD, MPI_THREAD_MULTIPLE, MPI_THREAD_SERIALIZED, MPI_THREAD_SINGLE, MPI_THREAD_FUNNELED, mpi_wtime
   use datadefn_mod, only : DEFAULT_PRECISION, init_data_defn
   implicit none
 
@@ -28,17 +28,15 @@ module monc_mod
      !> IO server entry procedure which may be passed to the core entry point (if IO server is enabled)
      !! @param io_communicator_arg The IO communicator
      !! @param io_xml_configuration The IO server textual configuration
-     subroutine io_server_run_procedure(options_database, io_communicator_arg, io_xml_configuration, provided_threading, &
-          total_global_processes)
-       import hashmap_type
+     subroutine io_server_run_procedure(options_database, io_communicator_arg, provided_threading, &
+          total_global_processes, continuation_run, io_configuration_file)
+       import hashmap_type, LONG_STRING_LENGTH
        type(hashmap_type), intent(inout) :: options_database
        integer, intent(in) :: io_communicator_arg, provided_threading, total_global_processes
-       character, dimension(:), allocatable, intent(inout) :: io_xml_configuration       
+       logical, intent(in) :: continuation_run
+       character(len=LONG_STRING_LENGTH), intent(in) :: io_configuration_file
      end subroutine io_server_run_procedure
   end interface
-
-  !< For reading the IO XML configuration, these are string length constants which can be increased if required
-  integer, parameter :: FILE_STR_STRIDE=10000, FILE_LINE_LEN=2000
 
   public monc_core_bootstrap
 
@@ -55,15 +53,21 @@ contains
     procedure(io_server_run_procedure) :: io_server_run
 
     type(model_state_type) :: state
-    integer :: ierr, myrank, size, io_server_placement_period, provided_threading
-    logical :: i_am_monc_process, enable_io_server
+    integer :: ierr, myrank, size, io_server_placement_period, provided_threading, selected_threading_mode
+    logical :: i_am_monc_process
     character(len=LONG_STRING_LENGTH) :: io_server_config_file
-    character, dimension(:), allocatable :: io_server_configuration_contents
-
-    call mpi_init_thread(MPI_THREAD_MULTIPLE, provided_threading, ierr)
+    
+    selected_threading_mode=get_mpi_threading_mode()
+    call mpi_init_thread(selected_threading_mode, provided_threading, ierr)
+    if (selected_threading_mode .gt. provided_threading) then
+      call log_master_log(LOG_ERROR, "You have selected to thread at level '"//&
+           trim(mpi_threading_level_to_string(selected_threading_mode))//&
+           "' but the maximum level your MPI implementation can provide is '"//&
+           trim(mpi_threading_level_to_string(provided_threading))//"'")
+    end if    
     call load_model_configuration(state, state%options_database)
 
-    enable_io_server=determine_if_io_server_enabled(state%options_database)
+    state%io_server_enabled=determine_if_io_server_enabled(state%options_database)
     
     call init_data_defn()
     ! Set up the logging with comm world PIDs initially for logging from the configuration parsing
@@ -72,7 +76,7 @@ contains
     
     call log_set_logging_level(options_get_integer(state%options_database, "logging"))
 
-    if (enable_io_server) then
+    if (state%io_server_enabled) then
       call mpi_comm_size(MPI_COMM_WORLD, size, ierr)
       if (size==1) call log_log(LOG_ERROR, &
            "Run with 1 process, With IO server enabled then the minimum process size is 2 (1 for IO, 1 for MONC)")
@@ -80,9 +84,8 @@ contains
       call split_communicator_into_monc_and_io(io_server_placement_period, state%parallel%monc_communicator, &
            state%parallel%io_communicator, i_am_monc_process, state%parallel%corresponding_io_server_process)
       if (.not. i_am_monc_process) then        
-        io_server_configuration_contents=get_io_xml(io_server_config_file)
-        call io_server_run(state%options_database, state%parallel%io_communicator, &
-             io_server_configuration_contents, provided_threading, size)       
+        call io_server_run(state%options_database, state%parallel%io_communicator, provided_threading, &
+             size, state%continuation_run, io_server_config_file)
       else  
         call monc_run(component_descriptions, state)
       end if
@@ -137,9 +140,9 @@ contains
     type(model_state_type), intent(inout) :: state
 
     integer :: ierr, total_size
-    real(kind=DEFAULT_PRECISION) :: start_time, end_time, timestepping_time, modeldump_time
+    double precision :: end_time, timestepping_time, modeldump_time
 
-    call cpu_time(start_time)
+    state%model_start_wtime=mpi_wtime()
     call mpi_comm_rank(state%parallel%monc_communicator, state%parallel%my_rank, ierr)
     call mpi_comm_size(state%parallel%monc_communicator, state%parallel%processes, ierr)
     call mpi_comm_size(MPI_COMM_WORLD, total_size, ierr)
@@ -169,12 +172,12 @@ contains
       call perform_model_steps(state, timestepping_time, modeldump_time)
     end if
     call mpi_barrier(state%parallel%monc_communicator, ierr)
-    call cpu_time(end_time)
+    end_time=mpi_wtime()
     if (state%parallel%my_rank==0) then
-      call log_log(LOG_INFO, "Entire MONC run completed in "//trim(conv_to_string(int((end_time-start_time) * 1000)))//&
+      call log_log(LOG_INFO, "Entire MONC run completed in "//trim(conv_to_string(int((end_time-state%model_start_wtime)*1000)))//&
            "ms (timestepping="//trim(conv_to_string(int(timestepping_time * 1000)))//"ms, modeldump="//&
            trim(conv_to_string(int(modeldump_time * 1000)))//"ms, misc="//trim(conv_to_string((&
-           int((end_time-start_time) * 1000)) - (int(timestepping_time * 1000) + int(modeldump_time * 1000))))//"ms)")
+           int((end_time-state%model_start_wtime) * 1000)) - (int(timestepping_time * 1000) + int(modeldump_time * 1000))))//"ms)")
     end if    
   end subroutine monc_run
 
@@ -184,10 +187,10 @@ contains
   !! @modeldump_time The time spent in doing the model dump
   subroutine perform_model_steps(state, timestepping_time, modeldump_time)
     type(model_state_type), intent(inout) :: state
-    real(kind=DEFAULT_PRECISION), intent(out) :: timestepping_time, modeldump_time
+    double precision, intent(out) :: timestepping_time, modeldump_time
 
     integer :: logging_mod_level
-    real(kind=DEFAULT_PRECISION) :: start_time, end_time, start_iteration_time
+    double precision :: start_time, end_time, start_iteration_time
 
     timestepping_time=0.0_DEFAULT_PRECISION
     modeldump_time=0.0_DEFAULT_PRECISION
@@ -197,18 +200,20 @@ contains
     logging_mod_level = log_get_logging_level()
     call execute_initialisation_callbacks(state)
     state%continue_timestep=.true.
-    call cpu_time(start_time)
+    start_time=mpi_wtime()
     do while (state%continue_timestep)
       if (state%update_dtm) state%dtm=state%dtm_new
       ! The start of a timestep
-      if (logging_mod_level .ge. LOG_DEBUG) call cpu_time(start_iteration_time)
+      if (logging_mod_level .ge. LOG_DEBUG) start_iteration_time=mpi_wtime()
       call timestep(state) ! Call out to the timestepper to do the actual timestepping per component
       if (logging_mod_level .ge. LOG_DEBUG .and. state%parallel%my_rank==0) &
            call display_timestep_information(state%timestep, start_iteration_time)
-      state%timestep = state%timestep+1
-      state%time = state%time + state%dtm
+      if (state%continue_timestep) then
+        state%timestep = state%timestep+1
+        state%time = state%time + state%dtm
+      end if
     end do
-    call cpu_time(end_time)
+    end_time=mpi_wtime()
     state%timestep_runtime=end_time-start_time
     timestepping_time=timestepping_time+state%timestep_runtime
     call execute_finalisation_callbacks(state)
@@ -221,11 +226,11 @@ contains
   !! @param startTime The F95 CPU time that the current timestep was started at
   subroutine display_timestep_information(timestep, start_time)
     integer, intent(in) :: timestep
-    real(kind=DEFAULT_PRECISION), intent(in) :: start_time
+    double precision, intent(in) :: start_time
 
-    real(kind=DEFAULT_PRECISION) :: end_time
+    double precision :: end_time
 
-    call cpu_time(end_time)
+    end_time=mpi_wtime()
     call log_log(LOG_DEBUG, "Timestep "//trim(conv_to_string(timestep))//" completed in "//&
          trim(conv_to_string(int((end_time-start_time) * 1000)))//"ms")
   end subroutine display_timestep_information  
@@ -357,102 +362,43 @@ contains
       call mpi_barrier(MPI_COMM_WORLD) ! All other processes barrier here to ensure 0 displays the message before quit
       stop
     end if
-  end subroutine get_io_configuration
+  end subroutine get_io_configuration  
 
-  !> Reads in textual data from a file and returns this, used to read the IO server XML configuration file. Returned is a
-  !! character array of exactly the correct size filled with all the configuration
-  !! @param filename Name of the file to read
-  !! @returns The contents of the XML file
-  recursive function get_io_xml(filename, funit_num) result(io_xml)
-    character(len=*), intent(in) :: filename
-    integer, intent(in), optional :: funit_num
-    character, dimension(:), allocatable :: io_xml, temp_io_xml
+  !> Retrives the configured MPI threading mode, this is serialized by default but can be overridden via environment variable
+  !! @returns The MONC MPI threading mode
+  integer function get_mpi_threading_mode()
+    character(len=STRING_LENGTH) :: thread_multiple_config_value
+    integer :: status
 
-    character(len=FILE_LINE_LEN) :: temp_line, adjusted_io_line
-    character(len=FILE_STR_STRIDE) :: reading_buffer
-    integer :: ierr, first_quote, last_quote, chosen_unit
+    call get_environment_variable("MONC_THREAD_MULTIPLE", thread_multiple_config_value, status=status)
 
-    if (present(funit_num)) then
-      chosen_unit=funit_num
-    else
-      chosen_unit=2
-    end if
-
-    reading_buffer=""
-    open (unit=chosen_unit, file=filename, status='OLD', iostat=ierr)
-    if (ierr .ne. 0) call log_log(LOG_ERROR, "Error opening file '"//trim(filename)//"'")
-    do while (ierr == 0)
-      read(chosen_unit,"(A)",iostat=ierr) temp_line
-      adjusted_io_line=adjustl(temp_line)
-      if (ierr == 0 .and. adjusted_io_line(1:1) .ne. "!" .and. adjusted_io_line(1:2) .ne. "//") then
-        if (index(temp_line, "#include") .ne. 0) then
-          first_quote=index(temp_line, """")
-          last_quote=index(temp_line, """", back=.true.)
-          if (first_quote .ne. 0 .and. last_quote .ne. 0) then
-            call add_in_specific_line(io_xml, reading_buffer)
-            temp_io_xml=get_io_xml(temp_line(first_quote+1:last_quote-1), chosen_unit+1)
-            call combine_xml_arrays(io_xml, temp_io_xml)
-            deallocate(temp_io_xml)
-            reading_buffer=new_line("A")
-          else
-            call log_log(LOG_ERROR, "Malformed IO XML, include directives must have filename in quotes")
-          end if          
-        else
-          if (len_trim(reading_buffer) + len_trim(temp_line) .ge. FILE_STR_STRIDE) then
-            call add_in_specific_line(io_xml, reading_buffer)
-            reading_buffer=""
-          end if
-          reading_buffer=trim(reading_buffer)//trim(temp_line)//new_line("A")
-        end if
+    if (status == 0 .and. conv_is_logical(trim(thread_multiple_config_value))) then
+      if (conv_to_logical(trim(thread_multiple_config_value))) then
+        get_mpi_threading_mode=MPI_THREAD_MULTIPLE
+      else
+        get_mpi_threading_mode=MPI_THREAD_SERIALIZED
       end if
-    end do
-    if (len_trim(reading_buffer) .gt. 0) call add_in_specific_line(io_xml, reading_buffer)
-    close(chosen_unit)
-  end function get_io_xml
-
-  !> Adds a specific line into the io xml. The IO XML is always exactly the correct size, so here is either allocated or
-  !! resized to match what the read buffer requires
-  !! @param io_xml The IO XML which holds all the configuration and is exactly the correct size
-  !! @param reading_buffer A buffer which will be copied into the resized/allocated IO XML
-  subroutine add_in_specific_line(io_xml, reading_buffer)
-    character, dimension(:), allocatable, intent(inout) :: io_xml
-    character(len=*), intent(in) :: reading_buffer
-
-    character, dimension(:), allocatable :: temp_io_xml
-    integer :: i
-
-    if (.not. allocated(io_xml)) then
-      allocate(io_xml(len_trim(reading_buffer)))
-      do i=1, len_trim(reading_buffer)
-        io_xml(i)=reading_buffer(i:i)
-      end do
     else
-      allocate(temp_io_xml(size(io_xml)+len_trim(reading_buffer)))
-      temp_io_xml(:size(io_xml)) = io_xml
-      do i=1, len_trim(reading_buffer)
-        temp_io_xml(size(io_xml)+i) = reading_buffer(i:i)
-      end do
-      call move_alloc(from=temp_io_xml,to=io_xml)
+      get_mpi_threading_mode=MPI_THREAD_SERIALIZED
     end if
-  end subroutine add_in_specific_line
+  end function get_mpi_threading_mode
 
-  !> Combines two IO XML arrays together (for instance one returned from a recursive include)
-  !! @param io_xml The IO XML is a source and target, this is allocated or resized to hold its contents + other arrays contents
-  !! @param other_xml_array The other XML array which will be copied into the IO XML
-  subroutine combine_xml_arrays(io_xml, other_xml_array)
-    character, dimension(:), allocatable, intent(inout) :: io_xml, other_xml_array
+  !> Converts an MPI threading level to the string representation of it
+  !! @param lvl The integer MPI level
+  !! @returns The string representation of the level
+  character(len=STRING_LENGTH) function mpi_threading_level_to_string(lvl)
+    integer, intent(in) :: lvl
 
-    character, dimension(:), allocatable :: temp_io_xml
-
-    if (.not. allocated(other_xml_array)) return
-
-    if (.not. allocated(io_xml)) then
-      allocate(io_xml(size(other_xml_array)), source=other_xml_array)
+    if (lvl == MPI_THREAD_SINGLE) then
+      mpi_threading_level_to_string="single"
+    else if (lvl == MPI_THREAD_FUNNELED) then
+      mpi_threading_level_to_string="funneled"
+    else if (lvl == MPI_THREAD_SERIALIZED) then
+      mpi_threading_level_to_string="serialized"
+    else if (lvl == MPI_THREAD_MULTIPLE) then
+      mpi_threading_level_to_string="multiple"
     else
-      allocate(temp_io_xml(size(io_xml)+size(other_xml_array)))
-      temp_io_xml(:size(io_xml)) = io_xml
-      temp_io_xml(size(io_xml)+1:) = other_xml_array
-      call move_alloc(from=temp_io_xml,to=io_xml)
+      mpi_threading_level_to_string="unknown"
     end if
-  end subroutine combine_xml_arrays
+  end function mpi_threading_level_to_string  
 end module monc_mod

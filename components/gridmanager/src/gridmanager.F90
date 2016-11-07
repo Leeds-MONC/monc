@@ -96,7 +96,7 @@ contains
          current_state%global_grid%configuration%vertical%kgd, current_state%global_grid%configuration%vertical%hgd, &
          size(current_state%global_grid%configuration%vertical%kgd), current_state%global_grid%size(Z_INDEX), &
          current_state%global_grid%top(Z_INDEX), options_get_integer(current_state%options_database, "nsmth"), &
-         current_state%origional_vertical_grid_setup)
+         current_state%origional_vertical_grid_setup, current_state%continuation_run)
     call set_vertical_reference_profile(current_state, current_state%global_grid%configuration%vertical, &
          current_state%global_grid%size(Z_INDEX))
   end subroutine initialise_verticalgrid_configuration_type
@@ -112,7 +112,7 @@ contains
 
     integer :: k
 
-    if (.not. current_state%continuation_run) call calculate_initial_profiles(current_state, vertical_grid)
+    call calculate_initial_profiles(current_state, vertical_grid)
     call set_up_vertical_reference_properties(current_state, vertical_grid, current_state%global_grid%size(Z_INDEX))
     call set_anelastic_pressure(current_state)
 
@@ -241,12 +241,14 @@ contains
          current_state%global_grid%configuration%vertical%theta_init)
       if (l_matchthref) &
          current_state%global_grid%configuration%vertical%thref = current_state%global_grid%configuration%vertical%theta_init
-      do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
-        do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
-          current_state%th%data(:,j,i) = current_state%global_grid%configuration%vertical%theta_init(:) - &
-             current_state%global_grid%configuration%vertical%thref(:) 
+      if (.not. current_state%continuation_run) then
+        do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
+          do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
+            current_state%th%data(:,j,i) = current_state%global_grid%configuration%vertical%theta_init(:) - &
+                 current_state%global_grid%configuration%vertical%thref(:) 
+          end do
         end do
-      end do
+      end if
       deallocate(z_init_pl_theta, f_init_pl_theta)
     end if
 
@@ -259,11 +261,13 @@ contains
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
       call piecewise_linear_1d(z_init_pl_u(1:size(z_init_pl_u)), f_init_pl_u(1:size(f_init_pl_u)), &
          zgrid, current_state%global_grid%configuration%vertical%u_init)
-      do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
-        do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
-          current_state%u%data(:,j,i) = current_state%global_grid%configuration%vertical%u_init(:)
+      if (.not. current_state%continuation_run) then
+        do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
+          do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
+            current_state%u%data(:,j,i) = current_state%global_grid%configuration%vertical%u_init(:)
+          end do
         end do
-      end do
+      end if
       deallocate(z_init_pl_u, f_init_pl_u)
     end if
 
@@ -276,11 +280,13 @@ contains
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
       call piecewise_linear_1d(z_init_pl_v(1:size(z_init_pl_v)), f_init_pl_v(1:size(f_init_pl_v)), &
          zgrid, current_state%global_grid%configuration%vertical%v_init)
-      do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
-        do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
-          current_state%v%data(:,j,i) = current_state%global_grid%configuration%vertical%v_init(:)
+      if (.not. current_state%continuation_run) then
+        do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
+          do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
+            current_state%v%data(:,j,i) = current_state%global_grid%configuration%vertical%v_init(:)
+          end do
         end do
-      end do
+      end if
       deallocate(z_init_pl_v, f_init_pl_v)
     end if
 
@@ -299,11 +305,15 @@ contains
         iq=get_q_index(trim(names_init_pl_q(n)), 'piecewise_initialization')
         call piecewise_linear_1d(z_init_pl_q(1:nzq), f_init_pl_q(1:nzq,n), zgrid, &
            current_state%global_grid%configuration%vertical%q_init(:,iq))
-        do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
-          do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
-            current_state%q(iq)%data(:,j,i) = current_state%global_grid%configuration%vertical%q_init(:, iq)
+        if (.not. current_state%continuation_run) then
+          do i=current_state%local_grid%local_domain_start_index(X_INDEX), &
+               current_state%local_grid%local_domain_end_index(X_INDEX)
+            do j=current_state%local_grid%local_domain_start_index(Y_INDEX), &
+                 current_state%local_grid%local_domain_end_index(Y_INDEX)
+              current_state%q(iq)%data(:,j,i) = current_state%global_grid%configuration%vertical%q_init(:, iq)
+            end do
           end do
-        end do
+        end if
       end do
       deallocate(f_init_pl_q_tmp, z_init_pl_q, f_init_pl_q, names_init_pl_q)
     end if
@@ -447,20 +457,22 @@ contains
   !! @param zztop The real world (m) height of the top of the column
   !! @param nsmth Number of smoothing iterations to run on the grid
   !! @param origional_setup To use the origional vertical grid setup routine or the new one
-  subroutine set_up_and_smooth_grid(vertical_grid, kgd, hgd, ninitp, kkp, zztop, nsmth, origional_setup)
+  subroutine set_up_and_smooth_grid(vertical_grid, kgd, hgd, ninitp, kkp, zztop, nsmth, origional_setup, continuation_run)
     type(vertical_grid_configuration_type), intent(inout) :: vertical_grid
     integer, dimension(:), intent(in) :: kgd
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: hgd
     integer, intent(in) :: ninitp, kkp, nsmth
     real(kind=DEFAULT_PRECISION),intent(in) :: zztop
-    logical, intent(in) :: origional_setup
+    logical, intent(in) :: origional_setup, continuation_run
 
     integer :: k
 
-    if (origional_setup) then
-      call original_vertical_grid_setup(vertical_grid, kgd, hgd, ninitp, kkp, zztop, nsmth)
-    else
-      call new_vertical_grid_setup(vertical_grid, kgd, kkp, zztop)
+    if (.not. continuation_run) then
+      if (origional_setup) then
+        call original_vertical_grid_setup(vertical_grid, kgd, hgd, ninitp, kkp, zztop, nsmth)
+      else
+        call new_vertical_grid_setup(vertical_grid, kgd, kkp, zztop)
+      end if
     end if
     
     ! Regardless of the vertical grid computation method, set the level deltas
@@ -617,18 +629,20 @@ contains
     integer, intent(in) :: n
     integer, intent(in) :: nq
 
-    allocate(vertical_grid%z(n), vertical_grid%zn(n), vertical_grid%dz(n), vertical_grid%dzn(n),&
+    allocate(vertical_grid%dz(n), vertical_grid%dzn(n),&
          vertical_grid%czb(n), vertical_grid%cza(n), vertical_grid%czg(n), vertical_grid%czh(n),&
          vertical_grid%rdz(n), vertical_grid%rdzn(n), vertical_grid%tzc1(n), vertical_grid%tzc2(n),&
-         vertical_grid%tzd1(n), vertical_grid%tzd2(n), vertical_grid%thref(n), vertical_grid%theta_init(n), &
+         vertical_grid%tzd1(n), vertical_grid%tzd2(n), vertical_grid%theta_init(n), &
          vertical_grid%tref(n), vertical_grid%prefn(n), vertical_grid%pdiff(n), vertical_grid%prefrcp(n), &
          vertical_grid%rprefrcp(n), vertical_grid%rho(n), vertical_grid%rhon(n), vertical_grid%tstarpr(n), &
          vertical_grid%qsat(n), vertical_grid%dqsatdt(n), vertical_grid%qsatfac(n), vertical_grid%dthref(n), &
          vertical_grid%rneutml(n), vertical_grid%rneutml_sq(n), vertical_grid%buoy_co(n), &
          vertical_grid%u_init(n), vertical_grid%v_init(n), vertical_grid%theta_rand(n), vertical_grid%w_rand(n), &
-         vertical_grid%w_subs(n), &
-         vertical_grid%u_force(n), vertical_grid%v_force(n), vertical_grid%theta_force(n)  &
-         )
+         vertical_grid%w_subs(n), vertical_grid%u_force(n), vertical_grid%v_force(n), vertical_grid%theta_force(n))
+
+    if (.not. allocated(vertical_grid%thref)) allocate(vertical_grid%thref(n))
+    if (.not. allocated(vertical_grid%z)) allocate(vertical_grid%z(n))
+    if (.not. allocated(vertical_grid%zn)) allocate(vertical_grid%zn(n))
 
     allocate(vertical_grid%q_rand(n,nq), vertical_grid%q_init(n,nq), vertical_grid%q_force(n,nq))
   end subroutine allocate_vertical_grid_data  
@@ -743,7 +757,7 @@ contains
                 current_state%global_grid%configuration%vertical%pdiff(k)=G*&
                      current_state%global_grid%configuration%vertical%dzn(k+1)/(0.5_DEFAULT_PRECISION*cp*&
                      (current_state%global_grid%configuration%vertical%thref(k)+&
-                     current_state%global_grid%configuration%vertical%thref(k+1)))
+                     current_state%global_grid%configuration%vertical%thref(k+1)))                
             end do
             do k=current_state%local_grid%size(Z_INDEX)-1,1,-1
                 current_state%global_grid%configuration%vertical%prefn(k)=&

@@ -16,6 +16,7 @@ module reduction_inter_io_mod
   use inter_io_specifics_mod, only : handle_completion, register_inter_io_communication, find_inter_io_from_name, &
        package_inter_io_communication_message, unpackage_inter_io_communication_message
   use mpi, only : MPI_DOUBLE_PRECISION, MPI_INT, MPI_ANY_SOURCE, MPI_REQUEST_NULL, MPI_STATUS_IGNORE, MPI_CHARACTER, MPI_BYTE
+  use mpi_communication_mod, only : lock_mpi, unlock_mpi, wait_for_mpi_request
   implicit none
 
 #ifndef TEST_MODE
@@ -89,7 +90,6 @@ contains
   subroutine finalise_reduction_inter_io(io_configuration)
     type(io_configuration_type), intent(inout) :: io_configuration
 
-    integer :: ierr
     type(reduction_progress_type) :: progress
     type(iterator_type) :: iterator
 
@@ -100,7 +100,7 @@ contains
         do while (c_has_next(iterator))
           progress=retrieve_reduction_progress(c_next_mapentry(iterator))
           if (progress%async_handle /= MPI_REQUEST_NULL) then
-            call mpi_wait(progress%async_handle, MPI_STATUS_IGNORE, ierr)
+            call wait_for_mpi_request(progress%async_handle)
           end if
         end do
       end if
@@ -195,7 +195,7 @@ contains
         if (myrank /= specific_reduction_progress%root) then
           call check_thread_status(forthread_mutex_lock(specific_reduction_progress%mutex))
           if (specific_reduction_progress%async_handle /= MPI_REQUEST_NULL) then
-            call mpi_test(specific_reduction_progress%async_handle, completed, MPI_STATUS_IGNORE, ierr)
+            call wait_for_mpi_request(specific_reduction_progress%async_handle)
             if (completed == 1) then
               if (allocated(specific_reduction_progress%send_buffer)) deallocate(specific_reduction_progress%send_buffer)
               destroy_lock=.true.
@@ -281,12 +281,14 @@ contains
       if (io_configuration%my_io_rank /= reduction_progress%root) then
         inter_io_comm_index=find_inter_io_from_name(io_configuration, MY_INTER_IO_NAME)
 
-       reduction_progress%send_buffer=package_inter_io_communication_message(reduction_progress%field_name, &
-            reduction_progress%timestep, reduction_progress%values, reduction_progress%reduction_operator)
+        reduction_progress%send_buffer=package_inter_io_communication_message(reduction_progress%field_name, &
+             reduction_progress%timestep, reduction_progress%values, reduction_progress%reduction_operator)
+        call lock_mpi()
         call mpi_isend(reduction_progress%send_buffer, size(reduction_progress%send_buffer), &
              MPI_BYTE, reduction_progress%root, &
              io_configuration%inter_io_communications(inter_io_comm_index)%message_tag, &
              io_configuration%io_communicator, reduction_progress%async_handle, ierr)
+        call unlock_mpi()
         ! Deallocate the current value as this is finished with and has been packed into the send buffer
         if (allocated(reduction_progress%values)) deallocate(reduction_progress%values)
       end if

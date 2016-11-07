@@ -1,0 +1,22 @@
+<io-configuration>
+	<server-configuration>
+		<thread_pool number=10/>
+	</server-configuration>
+
+#include "io/io_cfg_files/scalar_fields.xml"
+#include "io/io_cfg_files/profile_fields.xml"
+#include "io/io_cfg_files/3d_fields.xml"
+
+<data-writing>
+  <file name="profile_ts.nc" write_time_frequency="{diag_write_freq}" title="Profile diagnostics">
+    <include group="profile_timeseries" time_manipulation="averaged" output_frequency="{mm}"/>
+  </file>
+  <file name="scalar_ts.nc" write_time_frequency="{diag_write_freq}" title="Scalar diagnostics">
+    <include group="scalar_timeseries" time_manipulation="instantaneous" output_frequency="{mm1}"/>
+  </file>
+  <file name="3dfields_ts.nc" write_time_frequency="{diag_write_freq}" title="3D fields">
+    <include group="3d_fields" time_manipulation="instantaneous" output_frequency="{mm}"/>
+  </file>
+</data-writing>
+
+</io-configuration>

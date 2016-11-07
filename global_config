@@ -76,17 +76,19 @@ last_group_contents=checkpointer, model_synopsis, termination_check, iobridge
 
 # Component ordering for other stages
 
-initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, io_bridge, iterativesolver, setfluxlook, lower_bc, physicsa, psrce, pw_advection, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, lwrad_exponential, simplecloud, casim,th_advection, randomnoise, forcing, flux_budget, diagnostics, profile_diagnostics, scalar_diagnostics, lateral_bcs
-finalisation_stage_ordering=checkpointer, diverr, fftsolver, grid_manager, halo_swapper, io_bridge, iterativesolver, physicsa, psrce, smagorinsky, tvd_advection,lwrad_exponential, model_synopsis, mean_profiles, forcing, stepfields, flux_budget
+initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iobridge, iterativesolver, setfluxlook, lower_bc, physicsa, psrce, pw_advection, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, lwrad_exponential, simplecloud, casim,th_advection, randomnoise, forcing, flux_budget, diagnostics, profile_diagnostics, scalar_diagnostics, lateral_bcs
+finalisation_stage_ordering=iobridge, checkpointer, diverr, fftsolver, grid_manager, halo_swapper, iterativesolver, physicsa, psrce, smagorinsky, tvd_advection,lwrad_exponential, model_synopsis, mean_profiles, forcing, stepfields, flux_budget
 
 # Control configuration
 nn_timesteps=-1
 display_synopsis_frequency=10
 termination_time=1.0
+walltime_limit=none
 dtm=0.001
 nsmth=40
 logging=3  #INFO level logging
 check_msg_frequency=500
+check_walltime_frequency=200
 msg_filename=messages
 
 # CFL configuration
@@ -117,10 +119,15 @@ hdmp=0.0
 decomposition_method = twodim
 
 # Checkpoint configuration
-checkpoint_frequency=10
+checkpoint_freq=10
 checkpoint_file="monc.nc"
 checkpoint_unique_per_dump=.false.
-checkpoint_enable_write=.true.
+
+# Internal write is a write from the checkpoint component:
+# always - Always do a write
+# never - Never do a write
+# auto - Default, do a write only if IO server is disabled
+checkpoint_internal_write=auto
 
 # Diagnostic flux configuration
 wmfcrit=0.0
@@ -193,6 +200,7 @@ l_init_pl_q=.false.
 
 l_matchthref=.false.
 l_thref=.false.
+l_thref_zero_buoy=.false.
 
 # Random noise setup
 l_rand_pl_theta=.false.
@@ -202,7 +210,9 @@ l_rand_pl_w=.false.
 # Subsidence profile
 l_subs_pl_theta=.false.
 l_subs_pl_q=.false.
-subsidence_input_type=SUBSIDENCE
+subsidence_input_type=1
+subsidence_local_theta=.true.
+subsidence_local_q=.true.
 
 # Large-scale time-independent forcing
 l_constant_forcing_theta=.false.
@@ -219,6 +229,16 @@ forcing_timescale_theta=3600.
 forcing_timescale_q=3600.
 forcing_timescale_u=3600.
 forcing_timescale_v=3600.
+
+relax_to_initial_u_profile=.false.
+relax_to_initial_v_profile=.false.
+relax_to_initial_theta_profile=.false.
+
+l_constant_forcing_theta_z2pressure=.false.
+
+units_u_force=m_per_second_per_day
+units_v_force=m_per_second_per_day
+units_theta_force=K_per_day
 
 # Advection configuration (options are any, pw or tvd)
 advection_flow_fields=any

@@ -58,11 +58,17 @@ contains
     
     ! allocate local arrays for the horizontal wind averages
     allocate(u_wind_tot(current_state%local_grid%size(Z_INDEX)) &
-         , uprime_tot(current_state%local_grid%size(Z_INDEX))   &
          , v_wind_tot(current_state%local_grid%size(Z_INDEX))   &
-         , vprime_tot(current_state%local_grid%size(Z_INDEX))   &
          , ww_tot(current_state%local_grid%size(Z_INDEX)) &
          , w_wind_tot(current_state%local_grid%size(Z_INDEX)))
+
+    if (allocated(current_state%global_grid%configuration%vertical%olubar)) then
+      allocate(uprime_tot(current_state%local_grid%size(Z_INDEX)))
+    end if
+    
+    if (allocated(current_state%global_grid%configuration%vertical%olvbar)) then
+      allocate(vprime_tot(current_state%local_grid%size(Z_INDEX)))
+    end if    
     
     if (current_state%th%active) then
         allocate(theta_tot(current_state%local_grid%size(Z_INDEX))) 
@@ -74,8 +80,7 @@ contains
        qlcrit=options_get_real(current_state%options_database, "qlcrit")                                                         
        allocate(qv_tot(current_state%local_grid%size(Z_INDEX))  &
          , ql_tot(current_state%local_grid%size(Z_INDEX)))
-    endif
-   
+    endif   
   end subroutine initialisation_callback  
 
   subroutine timestep_callback(current_state)
@@ -86,9 +91,9 @@ contains
 
     if (current_state%first_timestep_column) then
        u_wind_tot(:) = 0.0
-       uprime_tot(:) = 0.0
+       if (allocated(uprime_tot)) uprime_tot(:) = 0.0
        v_wind_tot(:) = 0.0
-       vprime_tot(:) = 0.0
+       if (allocated(vprime_tot)) vprime_tot(:) = 0.0
        w_wind_tot(:) = 0.0
        ww_tot(:) = 0.0
 
@@ -107,15 +112,19 @@ contains
           u_wind_tot(k) = u_wind_tot(k) + & 
                (current_state%u%data(k,current_state%column_local_y,current_state%column_local_x)  &
                 + current_state%ugal)
-          uprime_tot(k) = uprime_tot(k) + &
-               ((current_state%u%data(k,current_state%column_local_y,current_state%column_local_x) &
-               - (current_state%global_grid%configuration%vertical%olubar(k) - current_state%ugal))**2.)
+          if (allocated(uprime_tot)) then
+            uprime_tot(k) = uprime_tot(k) + &
+                 ((current_state%u%data(k,current_state%column_local_y,current_state%column_local_x) &
+                 - (current_state%global_grid%configuration%vertical%olubar(k) - current_state%ugal))**2.)
+          end if
           v_wind_tot(k) = v_wind_tot(k) + & 
                (current_state%v%data(k,current_state%column_local_y,current_state%column_local_x)  &
                + current_state%vgal)
-          vprime_tot(k) = vprime_tot(k) + &
-               ((current_state%v%data(k,current_state%column_local_y,current_state%column_local_x) &
-               - (current_state%global_grid%configuration%vertical%olvbar(k) - current_state%vgal))**2.)
+          if (allocated(vprime_tot)) then
+            vprime_tot(k) = vprime_tot(k) + &
+                 ((current_state%v%data(k,current_state%column_local_y,current_state%column_local_x) &
+                 - (current_state%global_grid%configuration%vertical%olvbar(k) - current_state%vgal))**2.)
+          end if
           ww_tot(k) = ww_tot(k) + &
                (current_state%w%data(k,current_state%column_local_y,current_state%column_local_x)**2.)
           w_wind_tot(k) = w_wind_tot(k) + & 
@@ -150,8 +159,17 @@ contains
     field_information%number_dimensions=1
     field_information%dimension_sizes(1)=current_state%local_grid%size(Z_INDEX)
     field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
-    field_information%enabled=.true.
-
+    if (name .eq. "theta_total_local") then
+      field_information%enabled=current_state%th%active
+    else if (name .eq. "vapour_mmr_total_local" .or. name .eq. "liquid_mmr_total_local") then
+      field_information%enabled=.not. current_state%passive_q .and. current_state%number_q_fields .gt. 0
+    else if (name .eq. "uu_total_local") then
+      field_information%enabled=allocated(uprime_tot)
+    else if (name .eq. "vv_total_local") then
+      field_information%enabled=allocated(vprime_tot)
+    else 
+      field_information%enabled=.true.
+    end if
   end subroutine field_information_retrieval_callback
 
   !> Field value retrieval callback, this returns the value of a specific published field

@@ -158,16 +158,14 @@ contains
            current_state%savw%data(k,y_index,x_index))
 #endif
       if (current_state%th%active) then
-        current_state%th%data(k,y_index,x_index)=c1*current_state%th%data(k,y_index,x_index)+&
-             c2*current_state%zth%data(k,y_index,x_index)
+        ! Uses the partial smooth of theta from stepfields 
         existing_value = current_state%zth%data(k,y_index,x_index)
         current_state%zth%data(k,y_index,x_index)=current_state%th%data(k,y_index,x_index) + current_state%tsmth * existing_value
         current_state%th%data(k,y_index,x_index)=existing_value
       end if
       do n=1, current_state%number_q_fields
         if (current_state%q(n)%active) then
-          current_state%q(n)%data(k,y_index,x_index)=c1*current_state%q(n)%data(k,y_index,x_index)+&
-               c2*current_state%zq(n)%data(k,y_index,x_index)
+          ! Uses the partial smooth of q from stepfields 
           existing_value = current_state%zq(n)%data(k,y_index,x_index)
           current_state%zq(n)%data(k,y_index,x_index)=current_state%q(n)%data(k,y_index,x_index)+&
                current_state%tsmth * existing_value

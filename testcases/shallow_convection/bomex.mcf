@@ -27,7 +27,7 @@ termination_time=21600.
 dtm=0.4
 
 # IO server configuration
-ioserver_configuration_file="io/io_cfg_files/data_write_incl_qfields_1file.xml"
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 moncs_per_io_server=16
 sampling_frequency=1
 mm=1800.0

@@ -65,7 +65,8 @@ contains
     type(data_values_type), pointer :: field_local_values
 
     field_to_slice=get_action_attribute_string(action_attributes, "field")
-    if (get_prognostic_field_configuration(io_configuration, field_to_slice, corresponding_field_definition)) then
+    ! NSE
+    if (get_prognostic_field_configuration(io_configuration, field_to_slice, "", corresponding_field_definition)) then
       call get_dimensions_and_indexes_to_slice(get_action_attribute_string(action_attributes, "dimension"), &
            get_action_attribute_string(action_attributes, "period"), dimensions_to_slice, indexes_to_slice)
 

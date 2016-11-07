@@ -9,14 +9,15 @@ module configuration_checkpoint_netcdf_parser_mod
        conv_single_real_to_double
   use optionsdatabase_mod, only : options_add
   use mpi, only : MPI_INFO_NULL
+  use netcdf_misc_mod, only : check_netcdf_status
   implicit none
 
 #ifndef TEST_MODE
   private
 #endif
 
-  character(len=*), parameter :: OPTIONS_KEY="options", &  !< The options key which references the configuration in the checkpoint
-       OPTIONS_DIM_KEY="options_size" !< Options dimension key
+  character(len=*), parameter :: OPTIONS_KEY="options_database", &  !< The options key which references the configuration
+       OPTIONS_DIM_KEY="number_options" !< Options dimension key
 
   public parse_configuration_checkpoint_netcdf
 contains
@@ -32,10 +33,9 @@ contains
 
     integer :: ncid
 
-    call check_status(nf90_open(path = checkpoint_name, mode = ior(ior(NF90_NETCDF4, NF90_MPIIO), NF90_NOWRITE), ncid = ncid, &
-         comm = communicator, info = MPI_INFO_NULL))
+    call check_netcdf_status(nf90_open(path = checkpoint_name, mode = NF90_NOWRITE, ncid = ncid))
     call load_options(options_database, ncid)
-    call check_status(nf90_close(ncid))
+    call check_netcdf_status(nf90_close(ncid))
   end subroutine parse_configuration_checkpoint_netcdf
 
   !> Will read in and initialise the options database from the contents of the checkpoint file
@@ -49,19 +49,19 @@ contains
     character(len=STRING_LENGTH) :: key, value
 
     number_options=get_number_of_options(ncid)
-    call check_status(nf90_inq_varid(ncid, OPTIONS_KEY, options_id))
+    call check_netcdf_status(nf90_inq_varid(ncid, OPTIONS_KEY, options_id))
 
     do i=1, number_options
-      call check_status(nf90_get_var(ncid, options_id, key, (/ 1, 1, i /)))
-      call check_status(nf90_get_var(ncid, options_id, value, (/ 1, 2, i /)))
+      call check_netcdf_status(nf90_get_var(ncid, options_id, key, (/ 1, 1, i /)))
+      call check_netcdf_status(nf90_get_var(ncid, options_id, value, (/ 1, 2, i /)))
       ! NetCDF does C style null termination right at the end, need to remove this so can trim spaces etc
       call remove_null_terminator_from_string(key)
       call remove_null_terminator_from_string(value)
-      if (conv_is_integer(value)) then
+      if (conv_is_integer(trim(value))) then
         call options_add(options_database, trim(key), conv_to_integer(trim(value)))
-      else if (conv_is_real(value)) then
+      else if (conv_is_real(trim(value))) then
         call options_add(options_database, trim(key), conv_single_real_to_double(conv_to_real(trim(value))))
-      else if (conv_is_logical(value)) then
+      else if (conv_is_logical(trim(value))) then
         call options_add(options_database, trim(key), conv_to_logical(trim(value)))
       else
         call options_add(options_database, trim(key), trim(value))
@@ -90,18 +90,8 @@ contains
     integer, intent(in) :: ncid
 
     integer :: options_dimid, options_dim
-    call check_status(nf90_inq_dimid(ncid, OPTIONS_DIM_KEY, options_dimid))
-    call check_status(nf90_inquire_dimension(ncid, options_dimid, len=options_dim))
+    call check_netcdf_status(nf90_inq_dimid(ncid, OPTIONS_DIM_KEY, options_dimid))
+    call check_netcdf_status(nf90_inquire_dimension(ncid, options_dimid, len=options_dim))
     get_number_of_options=options_dim
-  end function get_number_of_options 
-
-  !> Will check a NetCDF status and log any errors
-  !! @param status The NetCDF status flag
-  subroutine check_status(status)
-    integer, intent(in) :: status
-    
-    if (status /= NF90_NOERR) then
-      call log_master_log(LOG_ERROR, "NetCDF returned error code of "//trim(nf90_strerror(status)))
-    end if
-  end subroutine check_status
+  end function get_number_of_options
 end module configuration_checkpoint_netcdf_parser_mod

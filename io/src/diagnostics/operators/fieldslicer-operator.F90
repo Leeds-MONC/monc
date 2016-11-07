@@ -37,7 +37,8 @@ contains
     type(io_configuration_field_type) :: corresponding_field_definition
 
     field_to_slice=get_action_attribute_string(action_attributes, "field")
-    if (get_prognostic_field_configuration(io_configuration, field_to_slice, corresponding_field_definition)) then      
+    ! NSE
+    if (get_prognostic_field_configuration(io_configuration, field_to_slice, "", corresponding_field_definition)) then      
       dimension_to_slice=get_dimension_to_slice(action_attributes)
       index_to_slice=get_action_attribute_integer(action_attributes, "index")
 

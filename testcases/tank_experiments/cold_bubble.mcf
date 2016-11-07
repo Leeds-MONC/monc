@@ -48,7 +48,7 @@ dtm=2.0
 nsmth=20
 
 # IO server configuration
-ioserver_configuration_file="io/io_cfg_files/data_write_no_qfields_1file.xml"
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 moncs_per_io_server=16
 sampling_frequency=1
 mm=600.0

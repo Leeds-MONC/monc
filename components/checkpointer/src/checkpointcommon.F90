@@ -8,12 +8,13 @@ module checkpointer_common_mod
   use logging_mod, only : LOG_ERROR, log_log
   implicit none
 
-  character(len=*), parameter ::  X_DIM_KEY = "x_size", &                 !< X dimension/variable key
-                                  Y_DIM_KEY="y_size", &                   !< Y dimension/variable key
-                                  Z_DIM_KEY="z_size", &                   !< Z dimension/variable key
-                                  Q_DIM_KEY="q_size", &
-                                  U_KEY = "u", &                          !< U variable NetCDF key
-                                  V_KEY = "v", &                          !< V variable NetCDF key
+  character(len=*), parameter ::  X_DIM_KEY = "x", &                 !< X dimension/variable key
+                                  Y_DIM_KEY="y", &                   !< Y dimension/variable key
+                                  Z_DIM_KEY="z", &                   !< Z dimension/variable key                                  
+                                  ZN_DIM_KEY="zn", &                  
+                                  Q_DIM_KEY="q", &
+                                  U_KEY = "u_nogal", &                          !< U variable NetCDF key
+                                  V_KEY = "v_nogal", &                          !< V variable NetCDF key
                                   W_KEY = "w", &                          !< W variable NetCDF key
                                   Q_KEY = "q", &                          !< Q variable NetCDF key
                                   ZU_KEY = "zu", &
@@ -23,6 +24,7 @@ module checkpointer_common_mod
                                   X_KEY = "x", &
                                   Y_KEY = "y", &
                                   Z_KEY = "z", &
+                                  ZN_KEY="zn", &
                                   TH_KEY = "th", &                         !< Theta variable NetCDF key
                                   ZTH_KEY = "zth", &
                                   P_KEY = "p", &                          !< Pressure variable NetCDF key
@@ -34,14 +36,34 @@ module checkpointer_common_mod
                                   UGAL="ugal",&
                                   VGAL="vgal",&
                                   EMPTY_DIM_KEY="empty_dim", &            !< Empty dimension key
-                                  KEY_VALUE_PAIR_KEY="key_value_pair", &  !< Key-value pair dimension key
-                                  OPTIONS_DIM_KEY="options_size", &       !< Options dimension key
-                                  OPTIONS_KEY="options", &                !< Options variable key
-                                  STRING_DIM_KEY="string_size",&          !< String dimension key
+                                  KEY_VALUE_PAIR_KEY="kvp", &  !< Key-value pair dimension key
+                                  OPTIONS_DIM_KEY="number_options", &       !< Options dimension key
+                                  OPTIONS_KEY="options_database", &                !< Options variable key
+                                  STRING_DIM_KEY="string",&          !< String dimension key
                                   TITLE_ATTRIBUTE_KEY="title",&
                                   CREATED_ATTRIBUTE_KEY="created",&
                                   NQFIELDS="nqfields", &
-                                  Q_INDICES_KEY="qindices"
+                                  Q_INDICES_DIM_KEY="active_q_indicies", &
+                                  Q_INDICES_KEY="q_indicies", &
+                                  X_RESOLUTION="x_resolution", &
+                                  Y_RESOLUTION="y_resolution", &
+                                  X_TOP="x_top", &
+                                  Y_TOP="y_top", &
+                                  X_BOTTOM="x_bottom", &
+                                  Y_BOTTOM="y_bottom", &
+                                  Q_FIELD_ANONYMOUS_NAME="q_qfield", &
+                                  ZQ_FIELD_ANONYMOUS_NAME="zq_qfield", &
+                                  THREF="thref", &
+                                  OLUBAR="olubar", &
+                                  OLZUBAR="olzubar", &
+                                  OLVBAR="olvbar", &
+                                  OLZVBAR="olzvbar", &
+                                  OLTHBAR="olthbar", &
+                                  OLZTHBAR="olzthbar", &
+                                  OLQBAR="olqbar", &
+                                  OLQBAR_ANONYMOUS_NAME="olqbar_qfield", &
+                                  OLZQBAR="olzqbar", &
+                                  OLZQBAR_ANONYMOUS_NAME="olzqbar_qfield"
 
   integer, parameter :: MAX_STRING_LENGTH = 100   !< Maximum string length (stored size)
 

@@ -158,8 +158,7 @@ contains
     ! Add in the q variable index for vapour
     if (l_moist) iqv=get_q_index(standard_q_names%VAPOUR, 'tank_experiments')
 
-    call generate_bubbles(current_state)
-    
+    if (.not. current_state%continuation_run) call generate_bubbles(current_state)    
 
     ! Sources
     l_sources=options_get_logical(current_state%options_database, "l_sources") 

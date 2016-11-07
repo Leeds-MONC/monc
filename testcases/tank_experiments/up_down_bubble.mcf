@@ -48,7 +48,7 @@ checkpoint_file="up_down_bubble_dump.nc"
 checkpoint_unique_per_dump=.true.
 
 # IO server configuration
-ioserver_configuration_file="io/io_cfg_files/data_write_no_qfields_1file.xml"
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 moncs_per_io_server=16
 sampling_frequency=1
 mm=300.0

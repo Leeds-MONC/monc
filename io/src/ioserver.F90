@@ -3,12 +3,14 @@
 !! can be thought of similar to a bus, with command and data channels. The command gives context to what is on
 !! the data channel and not all commands require data (such as deregistration of MONC process)
 module io_server_mod
-  use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
+  use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH, LONG_STRING_LENGTH
   use configuration_parser_mod, only : DATA_SIZE_STRIDE, io_configuration_type, io_configuration_data_definition_type, &
        io_configuration_registered_monc_type, configuration_parse, extend_registered_moncs_array, retrieve_data_definition, &
-       build_definition_description_type_from_configuration, build_field_description_type_from_configuration, get_monc_location
+       build_definition_description_type_from_configuration, build_field_description_type_from_configuration, get_monc_location, &
+       get_io_xml
   use mpi_communication_mod, only : build_mpi_datatype, data_receive, test_for_command, register_command_receive, &
-       cancel_requests, free_mpi_type, get_number_io_servers, get_my_io_rank, test_for_inter_io
+       cancel_requests, free_mpi_type, get_number_io_servers, get_my_io_rank, test_for_inter_io, lock_mpi, unlock_mpi, &
+       waitall_for_mpi_requests, initialise_mpi_communication, pause_for_mpi_interleaving
   use diagnostic_federator_mod, only : initialise_diagnostic_federator, finalise_diagnostic_federator, &
        check_diagnostic_federator_for_completion, pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available
   use writer_federator_mod, only : initialise_writer_federator, finalise_writer_federator, check_writer_for_trigger, &
@@ -19,9 +21,10 @@ module io_server_mod
        c_remove, c_add_string, c_integer_at, c_free, c_get_iterator, c_has_next, c_next_mapentry
   use conversions_mod, only : conv_to_string
   use string_utils_mod, only : replace_character
+  use optionsdatabase_mod, only : options_get_string
   use io_server_client_mod, only : REGISTER_COMMAND, DEREGISTER_COMMAND, INTER_IO_COMMUNICATION, DATA_COMMAND_START, DATA_TAG, &
-       LOCAL_SIZES_KEY, LOCAL_START_POINTS_KEY, LOCAL_END_POINTS_KEY, SCALAR_FIELD_TYPE, data_sizing_description_type, &
-       definition_description_type, field_description_type, build_mpi_type_data_sizing_description, &
+       LOCAL_SIZES_KEY, LOCAL_START_POINTS_KEY, LOCAL_END_POINTS_KEY, NUMBER_Q_INDICIES_KEY, SCALAR_FIELD_TYPE, &
+       data_sizing_description_type, definition_description_type, field_description_type, build_mpi_type_data_sizing_description,&
        get_data_description_from_name, build_mpi_type_field_description, build_mpi_type_definition_description
   use forthread_mod, only : forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_tryrdlock, &
        forthread_rwlock_unlock, forthread_rwlock_init, forthread_rwlock_destroy, forthread_mutex_init, forthread_mutex_lock, &
@@ -31,6 +34,7 @@ module io_server_mod
   use global_callback_inter_io_mod, only : perform_global_callback
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, initialise_logging
   use mpi, only : MPI_COMM_WORLD, MPI_STATUSES_IGNORE, MPI_BYTE
+  use io_server_state_reader_mod, only : read_io_server_state
   implicit none
 
 #ifndef TEST_MODE
@@ -57,19 +61,36 @@ contains
   !! have deregistered, note that to trigger this then at least one MONC process must first register
   !! @param io_communicator_arg The IO communicator containing just the IO servers
   !! @param io_xml_configuration Textual XML configuration that is used to set up the IO server
-  subroutine io_server_run(options_database, io_communicator_arg, io_xml_configuration, &
-       provided_threading, total_global_processes)
+  subroutine io_server_run(options_database, io_communicator_arg, &
+       provided_threading, total_global_processes, continuation_run, io_configuration_file)
     type(hashmap_type), intent(inout) :: options_database
     integer, intent(in) :: io_communicator_arg, provided_threading, total_global_processes
-    character, dimension(:), allocatable, intent(inout) :: io_xml_configuration
+    logical, intent(in) :: continuation_run
+    character(len=LONG_STRING_LENGTH), intent(in) :: io_configuration_file
 
-    integer :: command, source
-    character, dimension(:), allocatable :: data_buffer
+    integer :: command, source, my_rank, ierr
+    character, dimension(:), allocatable :: data_buffer, io_xml_configuration
     type(hashmap_type) :: diagnostic_generation_frequency
 
+    if (continuation_run) then
+      ! Handle case where we need to allocate this due to no IO server config
+      call read_io_server_state(options_get_string(options_database, "checkpoint"), io_xml_configuration, io_communicator_arg)
+    end if
+
+    if (.not. allocated(io_xml_configuration)) then
+      io_xml_configuration=get_io_xml(io_configuration_file)
+      if (continuation_run) then
+        call mpi_comm_rank(io_communicator_arg, my_rank, ierr)
+        if (my_rank == 0) then
+          call log_log(LOG_WARN, "No IO server configuration in checkpoint file - starting from XML provided file instead")
+        end if
+      end if      
+    end if    
+    
     call configuration_parse(options_database, io_xml_configuration, io_configuration)
     deallocate(io_xml_configuration)
-    call threadpool_init(io_configuration, provided_threading)
+    call threadpool_init(io_configuration)
+    call initialise_mpi_communication(provided_threading)
     call check_thread_status(forthread_rwlock_init(monc_registration_lock, -1))
     call check_thread_status(forthread_mutex_init(io_configuration%general_info_mutex, -1))
     initialised_present_data=.false.
@@ -84,9 +105,9 @@ contains
     registree_definition_descriptions=build_definition_description_type_from_configuration(io_configuration)
     registree_field_descriptions=build_field_description_type_from_configuration(io_configuration)
     diagnostic_generation_frequency=initialise_diagnostic_federator(io_configuration)
-    call initialise_writer_federator(io_configuration, diagnostic_generation_frequency)
+    call initialise_writer_federator(io_configuration, diagnostic_generation_frequency, continuation_run)
     call c_free(diagnostic_generation_frequency)
-    call initialise_writer_field_manager(io_configuration)
+    call initialise_writer_field_manager(io_configuration, continuation_run)
 
     mpi_type_data_sizing_description=build_mpi_type_data_sizing_description()
     mpi_type_definition_description=build_mpi_type_definition_description()
@@ -102,12 +123,12 @@ contains
     call finalise_writer_federator()
     call finalise_diagnostic_federator(io_configuration)
     call check_thread_status(forthread_rwlock_destroy(monc_registration_lock))
-    call threadpool_finalise()
     call free_individual_registered_monc_aspects()
     call cancel_requests()
     call free_mpi_type(mpi_type_data_sizing_description)
     call free_mpi_type(mpi_type_definition_description)
     call free_mpi_type(mpi_type_field_description)    
+    call threadpool_finalise()
   end subroutine io_server_run
 
   !> Awaits a command or shutdown from MONC processes and other IO servers
@@ -143,7 +164,8 @@ contains
           already_registered_finishing_call=.true.          
           call perform_global_callback(io_configuration, "termination", 1, termination_callback)          
         end if
-      end if      
+      end if  
+      if (.not. completed) call pause_for_mpi_interleaving()
     end do    
   end function await_command
 
@@ -338,6 +360,7 @@ contains
     call check_thread_status(forthread_cond_init(&
          io_configuration%registered_moncs(this_monc_index)%deactivate_condition_variable, -1))
     io_configuration%registered_moncs(this_monc_index)%active_threads=0
+    io_configuration%registered_moncs(this_monc_index)%source_id=source
 
     allocate(io_configuration%registered_moncs(this_monc_index)%field_start_locations(number_data_definitions), &
          io_configuration%registered_moncs(this_monc_index)%field_end_locations(number_data_definitions), &
@@ -345,8 +368,8 @@ contains
          io_configuration%registered_moncs(this_monc_index)%dimensions(number_data_definitions))
 
     ! Wait for configuration to have been sent to registree
-    call mpi_waitall(2, configuration_send_request, MPI_STATUSES_IGNORE, ierr) 
-    call init_data_definition(source, io_configuration%registered_moncs(this_monc_index))    
+    call waitall_for_mpi_requests(configuration_send_request, 2)
+    call init_data_definition(source, io_configuration%registered_moncs(this_monc_index))
   end subroutine handle_monc_registration
 
   !> Sends the data and field descriptions to the MONC process that just registered with the IO server
@@ -358,10 +381,12 @@ contains
     
     integer :: ierr, srequest(2)
 
+    call lock_mpi()
     call mpi_isend(registree_definition_descriptions, size(registree_definition_descriptions), mpi_type_definition_description, &
          source, DATA_TAG, MPI_COMM_WORLD, srequest(1), ierr)
     call mpi_isend(registree_field_descriptions, size(registree_field_descriptions), mpi_type_field_description, &
          source, DATA_TAG, MPI_COMM_WORLD, srequest(2), ierr)
+    call unlock_mpi()
 
     send_configuration_to_registree=srequest    
   end function send_configuration_to_registree  
@@ -377,10 +402,12 @@ contains
     integer, intent(in) :: source
     type(io_configuration_registered_monc_type), intent(inout) :: monc_defn
 
-    type(data_sizing_description_type) :: data_description(io_configuration%number_of_distinct_data_fields+3)
+    type(data_sizing_description_type) :: data_description(io_configuration%number_of_distinct_data_fields+4)
     integer :: created_mpi_type, data_size, recv_count, i
+    type(data_sizing_description_type) :: field_description
+    logical :: field_found
     
-    recv_count=data_receive(mpi_type_data_sizing_description, io_configuration%number_of_distinct_data_fields+3, &
+    recv_count=data_receive(mpi_type_data_sizing_description, io_configuration%number_of_distinct_data_fields+4, &
          source, description_data=data_description)
 
     call handle_monc_dimension_information(data_description, monc_defn)
@@ -395,6 +422,8 @@ contains
     end do
     if (.not. initialised_present_data) then
       initialised_present_data=.true.
+      field_found=get_data_description_from_name(data_description, NUMBER_Q_INDICIES_KEY, field_description)
+      call c_put_integer(io_configuration%dimension_sizing, "active_q_indicies", field_description%dim_sizes(1))
       call register_present_field_names_to_federators(data_description, recv_count)
     end if
     call get_monc_information_data(source)
@@ -451,7 +480,8 @@ contains
     type(data_sizing_description_type), dimension(:), intent(in) :: data_description
     integer, intent(in) :: recv_count
 
-    type(hashset_type) :: present_field_names, diagnostics_field_names
+    type(hashset_type) :: present_field_names
+    type(hashmap_type) :: diagnostics_field_names_and_roots
     integer :: i, j
 
     do i=1, recv_count
@@ -468,10 +498,10 @@ contains
     call c_add_string(present_field_names, "time")
     call c_add_string(present_field_names, "timestep")
     call inform_writer_federator_fields_present(io_configuration, present_field_names)
-    diagnostics_field_names=determine_diagnostics_fields_available(present_field_names)
-    call inform_writer_federator_fields_present(io_configuration, diagnostics_field_names)
+    diagnostics_field_names_and_roots=determine_diagnostics_fields_available(present_field_names)
+    call inform_writer_federator_fields_present(io_configuration, diag_field_names_and_roots=diagnostics_field_names_and_roots)
     call c_free(present_field_names)
-    call c_free(diagnostics_field_names)
+    call c_free(diagnostics_field_names_and_roots)
   end subroutine register_present_field_names_to_federators  
 
   !> Handles the provided local MONC dimension and data layout information

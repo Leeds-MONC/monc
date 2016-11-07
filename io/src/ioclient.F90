@@ -26,6 +26,7 @@ module io_server_client_mod
 
   type definition_description_type
      character(len=STRING_LENGTH) :: definition_name
+     logical :: send_on_terminate
      integer :: number_fields, frequency
   end type definition_description_type  
 
@@ -40,11 +41,11 @@ module io_server_client_mod
        DOUBLE_DATA_TYPE=5
 
   character(len=STRING_LENGTH), parameter :: LOCAL_SIZES_KEY="local_sizes", LOCAL_START_POINTS_KEY="local_start_points", &
-       LOCAL_END_POINTS_KEY="local_end_points"
+       LOCAL_END_POINTS_KEY="local_end_points", NUMBER_Q_INDICIES_KEY="num_q_indicies"
 
   public COMMAND_TAG, DATA_TAG, REGISTER_COMMAND, DEREGISTER_COMMAND, DATA_COMMAND_START, INTER_IO_COMMUNICATION, &
        SCALAR_FIELD_TYPE, ARRAY_FIELD_TYPE, MAP_FIELD_TYPE, INTEGER_DATA_TYPE, BOOLEAN_DATA_TYPE, &
-       STRING_DATA_TYPE, FLOAT_DATA_TYPE, LOCAL_SIZES_KEY, LOCAL_START_POINTS_KEY, LOCAL_END_POINTS_KEY, &
+       STRING_DATA_TYPE, FLOAT_DATA_TYPE, LOCAL_SIZES_KEY, LOCAL_START_POINTS_KEY, LOCAL_END_POINTS_KEY, NUMBER_Q_INDICIES_KEY, &
        DOUBLE_DATA_TYPE, data_sizing_description_type, populate_mpi_type_extents, append_mpi_datatype, &
        get_mpi_datatype_from_internal_representation, definition_description_type, field_description_type, &
        build_mpi_type_data_sizing_description, build_mpi_type_field_description, build_mpi_type_definition_description, &
@@ -72,7 +73,7 @@ contains
 
   !> Builds the MPI data type for sending data descriptions to registree MONCs
   integer function build_mpi_type_definition_description()
-    integer :: new_type, ierr, block_counts(3), old_types(3), offsets(3)
+    integer :: new_type, ierr, block_counts(4), old_types(4), offsets(4)
     integer(MPI_ADDRESS_KIND) :: num_addr, base_addr
 
     type(definition_description_type) :: basic_type
@@ -82,17 +83,22 @@ contains
     block_counts(1) = STRING_LENGTH
     offsets(1)=0
 
-    call mpi_get_address(basic_type%number_fields, num_addr, ierr)
-    old_types(2) = MPI_INT
+    call mpi_get_address(basic_type%send_on_terminate, num_addr, ierr)
+    old_types(2) = MPI_LOGICAL
     block_counts(2) = 1
     offsets(2)=int(num_addr-base_addr)
 
-    call mpi_get_address(basic_type%frequency, num_addr, ierr)
+    call mpi_get_address(basic_type%number_fields, num_addr, ierr)
     old_types(3) = MPI_INT
     block_counts(3) = 1
     offsets(3)=int(num_addr-base_addr)
 
-    call mpi_type_struct(3, block_counts, offsets, old_types, new_type, ierr) 
+    call mpi_get_address(basic_type%frequency, num_addr, ierr)
+    old_types(4) = MPI_INT
+    block_counts(4) = 1
+    offsets(4)=int(num_addr-base_addr)
+
+    call mpi_type_struct(4, block_counts, offsets, old_types, new_type, ierr) 
     call mpi_type_commit(new_type, ierr)
     build_mpi_type_definition_description=new_type
   end function build_mpi_type_definition_description
@@ -240,7 +246,9 @@ contains
       select type (raw_data)
       type is(integer)
         temp_string=conv_to_string(raw_data)
-      type is(real)
+      type is(real(4))
+        temp_string=conv_to_string(raw_data)
+      type is (real(8))
         temp_string=conv_to_string(raw_data)
       type is(logical)
         temp_string=conv_to_string(raw_data)
@@ -300,7 +308,7 @@ contains
   !! @param double_real_value (Optional) double precision real scalar value to pack
   !! @returns The next location in the buffer to write to (next start offset)
   integer function pack_scalar_field(buffer, start_offset, int_value, real_value, single_real_value, double_real_value, &
-       string_value)
+       string_value, logical_value)
     character, dimension(:), intent(inout) :: buffer
     integer, intent(in) :: start_offset
     integer, intent(in), optional :: int_value
@@ -308,6 +316,7 @@ contains
     real(kind=SINGLE_PRECISION), intent(in), optional :: single_real_value
     real(kind=DOUBLE_PRECISION), intent(in), optional :: double_real_value
     character(len=*), intent(in), optional :: string_value
+    logical, intent(in), optional :: logical_value
 
     integer :: target_end
     character(len=STRING_LENGTH) :: string_to_insert
@@ -328,6 +337,9 @@ contains
       target_end=start_offset+STRING_LENGTH-1
       string_to_insert=string_value
       buffer(start_offset:target_end) = transfer(string_to_insert, buffer(start_offset:target_end))
+    else if (present(logical_value)) then
+      target_end=start_offset+kind(logical_value)-1
+      buffer(start_offset:target_end) = transfer(logical_value, buffer(start_offset:target_end))
     else 
       target_end=start_offset-1
     end if

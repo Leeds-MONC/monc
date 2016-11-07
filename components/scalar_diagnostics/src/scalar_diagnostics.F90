@@ -160,7 +160,7 @@ contains
                      current_y_index, current_x_index)
              enddo
           end if
-       end if
+        end if
 
        ! surface flux diagnostics
        if (current_state%use_surface_boundary_conditions) then
@@ -181,13 +181,10 @@ contains
                    - current_state%global_grid%configuration%vertical%dthref(1))) &
                    * current_state%global_grid%configuration%vertical%rhon(1)*cp
           endif
-       endif
-       
+       endif      
        wmax(target_y_index, target_x_index)=maxval(current_state%w%data(:, current_y_index, current_x_index))
        wmin(target_y_index, target_x_index)=minval(current_state%w%data(:, current_y_index, current_x_index))
-
     end if
-
   end subroutine timestep_callback  
 
   !> Field information retrieval callback, this returns information for a specific components published field
@@ -204,7 +201,24 @@ contains
     field_information%dimension_sizes(1)=current_state%local_grid%size(Y_INDEX)
     field_information%dimension_sizes(2)=current_state%local_grid%size(X_INDEX)
     field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
-    field_information%enabled=.true.
+
+    if (name .eq. "senhf_local") then
+      field_information%enabled=current_state%use_surface_boundary_conditions .and. current_state%th%active
+    else if (name .eq. "lathf_local") then
+      field_information%enabled=current_state%use_surface_boundary_conditions .and. &
+           current_state%water_vapour_mixing_ratio_index .gt. 0 .and. &
+           current_state%number_q_fields .ge. current_state%water_vapour_mixing_ratio_index
+    else if (name .eq. "cltop_local" .or. name .eq. "clbas_local") then
+      field_information%enabled=current_state%number_q_fields .gt. 0
+    else if (name .eq. "qlmax_local") then
+      field_information%enabled=current_state%number_q_fields .gt. 0 .and. current_state%liquid_water_mixing_ratio_index .gt. 0 &
+           .and. current_state%number_q_fields .ge. current_state%liquid_water_mixing_ratio_index
+    else if (name .eq. "vwp_local" .or. name .eq. "lwp_local") then
+      field_information%enabled=current_state%number_q_fields .gt. 0 .and. current_state%water_vapour_mixing_ratio_index .gt. 0 &
+           .and. current_state%number_q_fields .ge. current_state%water_vapour_mixing_ratio_index
+    else
+      field_information%enabled=.true.
+    end if    
  
   end subroutine field_information_retrieval_callback
 

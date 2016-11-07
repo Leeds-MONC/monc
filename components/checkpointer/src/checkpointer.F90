@@ -42,10 +42,20 @@ contains
   subroutine initialisation_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
+    character(len=STRING_LENGTH) :: internal_write_mode
+
     checkpoint_frequency=options_get_integer(current_state%options_database, "checkpoint_frequency")
     checkpoint_file=options_get_string(current_state%options_database, "checkpoint_file")
     unique_per_dump=options_get_logical(current_state%options_database, "checkpoint_unique_per_dump")
-    enable_write=options_get_logical(current_state%options_database, "checkpoint_enable_write")
+    internal_write_mode=options_get_string(current_state%options_database, "checkpoint_internal_write")
+    if (trim(internal_write_mode) .eq. "always") then
+      enable_write=.true.
+    else if (trim(internal_write_mode) .eq. "never") then
+      enable_write=.false.
+    else
+      ! Auto mode
+      enable_write=.not. current_state%io_server_enabled
+    end if
 
     if (options_has_key(current_state%options_database, "checkpoint")) then
       call read_checkpoint_file(current_state, options_get_string(current_state%options_database, "checkpoint"))
@@ -57,8 +67,8 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    if (enable_write .and. mod(current_state%timestep, checkpoint_frequency) == 0) then
-      call perform_checkpoint_dump(current_state)
+    if (enable_write .and. checkpoint_frequency .gt. 0) then
+      if (mod(current_state%timestep, checkpoint_frequency) == 0) call perform_checkpoint_dump(current_state)
     end if
   end subroutine timestep_callback
 
@@ -88,7 +98,7 @@ contains
       call write_checkpoint_file(current_state, checkpoint_file)
     end if
     ! Barrier here to ensure all processes dumped before log_log stats (is there a better way?)
-    call MPI_Barrier(current_state%parallel%monc_communicator, ierr)
+    call mpi_barrier(current_state%parallel%monc_communicator, ierr)
     call cpu_time(end_dump_time)
     call log_dump_stats(current_state, start_dump_time, end_dump_time)
   end subroutine perform_checkpoint_dump

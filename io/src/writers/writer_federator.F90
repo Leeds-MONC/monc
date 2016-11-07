@@ -2,18 +2,19 @@
 !! of fields and groups.
 module writer_federator_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
-  use configuration_parser_mod, only : TIME_AVERAGED_TYPE, INSTANTANEOUS_TYPE, GROUP_TYPE, FIELD_TYPE, io_configuration_type, &
-       io_configuration_field_type, io_configuration_diagnostic_field_type, io_configuration_data_definition_type, &
-       data_values_type, get_data_value_by_field_name, get_diagnostic_field_configuration, get_prognostic_field_configuration, &
-       get_monc_location
+  use configuration_parser_mod, only : TIME_AVERAGED_TYPE, INSTANTANEOUS_TYPE, NONE_TYPE, GROUP_TYPE, FIELD_TYPE, IO_STATE_TYPE, &
+       io_configuration_type, io_configuration_field_type, io_configuration_diagnostic_field_type, &
+       io_configuration_data_definition_type, data_values_type, get_data_value_by_field_name, get_diagnostic_field_configuration, &
+       get_prognostic_field_configuration, get_monc_location
+  use none_time_manipulation_mod, only : perform_none_time_manipulation, is_none_time_manipulation_ready_to_write
   use instantaneous_time_manipulation_mod, only : init_instantaneous_manipulation, finalise_instantaneous_manipulation, &
-       perform_instantaneous_time_manipulation
+       perform_instantaneous_time_manipulation, is_instantaneous_time_manipulation_ready_to_write
   use timeaveraged_time_manipulation_mod, only : init_time_averaged_manipulation, finalise_time_averaged_manipulation, &
-       perform_timeaveraged_time_manipulation
+       perform_timeaveraged_time_manipulation, is_time_averaged_time_manipulation_ready_to_write
   use collections_mod, only : queue_type, list_type, map_type, hashmap_type, hashset_type, iterator_type, mapentry_type, &
        c_contains, c_size, c_get_string, c_get_generic, c_get_integer, c_add_string, c_free, c_put_real, c_put_generic, &
        c_key_at, c_is_empty, c_remove, c_push_generic, c_pop_generic, c_real_at, c_get_real, c_get_iterator, &
-       c_has_next, c_next_mapentry, c_next_string, c_get_real, c_put_integer
+       c_has_next, c_next_mapentry, c_next_string, c_get_real, c_put_integer, c_add_generic
   use conversions_mod, only : conv_to_string, conv_single_real_to_double, conv_to_integer, conv_to_real
   use io_server_client_mod, only : ARRAY_FIELD_TYPE
   use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_unlock, forthread_mutex_destroy, &
@@ -21,11 +22,19 @@ module writer_federator_mod
   use threadpool_mod, only : check_thread_status
   use logging_mod, only : LOG_DEBUG, LOG_ERROR, LOG_WARN, log_log, log_master_log, log_get_logging_level, log_is_master
   use writer_types_mod, only : writer_type, writer_field_type, write_field_collective_values_type, pending_write_type, &
-       collective_q_field_representation_type
+       collective_q_field_representation_type, write_field_collective_descriptor_type, write_field_collective_monc_info_type
   use netcdf_filetype_writer_mod, only : initialise_netcdf_filetype, finalise_netcdf_filetype, define_netcdf_file, &
-       write_variable, close_netcdf_file  
+       write_variable, close_netcdf_file, store_io_server_state, get_writer_entry_from_netcdf
   use global_callback_inter_io_mod, only : perform_global_callback
-  use data_utils_mod, only : get_scalar_integer_from_monc, get_scalar_real_from_monc, is_field_present 
+  use data_utils_mod, only : get_scalar_integer_from_monc, get_scalar_real_from_monc, get_scalar_logical_from_monc, &
+       is_field_present
+  use io_server_client_mod, only : ARRAY_FIELD_TYPE, MAP_FIELD_TYPE, DOUBLE_DATA_TYPE, STRING_DATA_TYPE
+  use io_server_state_writer_mod, only : package_io_server_state, is_io_server_state_writer_ready
+  use io_server_state_reader_mod, only : restart_writer_state_from_checkpoint, restart_timeaveraged_state_from_checkpoint, &
+       restart_instantaneous_state_from_checkpoint, restart_writer_state_timepoints
+  use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
+  use mpi, only : MPI_INT, MPI_MAX
+  use mpi_communication_mod, only : lock_mpi, unlock_mpi
   implicit none
 
 #ifndef TEST_MODE
@@ -36,7 +45,8 @@ module writer_federator_mod
   type(hashset_type), volatile :: used_field_names, q_field_names
   type(hashmap_type), volatile :: time_points, q_field_splits, collective_q_field_dims
 
-  integer, volatile :: time_points_rwlock
+  integer, volatile :: time_points_rwlock, collective_contiguous_initialisation_mutex, currently_writing_mutex
+  logical, volatile :: currently_writing
 
   public initialise_writer_federator, finalise_writer_federator, provide_ordered_field_to_writer_federator, &
        check_writer_for_trigger, issue_actual_write, is_field_used_by_writer_federator, inform_writer_federator_fields_present, &
@@ -45,14 +55,19 @@ contains
 
   !> Initialises the write federator and configures it based on the user configuration. Also initialises the time manipulations
   !! @param io_configuration The IO server configuration
-  subroutine initialise_writer_federator(io_configuration, diagnostic_generation_frequency)
+  subroutine initialise_writer_federator(io_configuration, diagnostic_generation_frequency, continuation_run)
     type(io_configuration_type), intent(inout) :: io_configuration
     type(hashmap_type), intent(inout) :: diagnostic_generation_frequency
+    logical, intent(in) :: continuation_run
 
     integer :: i, j, number_contents, current_field_index
     type(hashset_type) :: writer_field_names, duplicate_field_names
     
     call check_thread_status(forthread_rwlock_init(time_points_rwlock, -1))
+    call check_thread_status(forthread_mutex_init(collective_contiguous_initialisation_mutex, -1))
+    call check_thread_status(forthread_mutex_init(currently_writing_mutex, -1))    
+
+    currently_writing=.false.
 
     call init_time_averaged_manipulation()
     call init_instantaneous_manipulation()
@@ -64,33 +79,53 @@ contains
       number_contents=io_configuration%file_writers(i)%number_of_contents
       allocate(writer_entries(i)%contents(get_total_number_writer_fields(io_configuration, i)))
       writer_entries(i)%filename=io_configuration%file_writers(i)%file_name
+      writer_entries(i)%title=io_configuration%file_writers(i)%title
+      writer_entries(i)%write_on_terminate=io_configuration%file_writers(i)%write_on_terminate
       call check_thread_status(forthread_mutex_init(writer_entries(i)%trigger_and_write_mutex, -1))
       call check_thread_status(forthread_mutex_init(writer_entries(i)%num_fields_to_write_mutex, -1))
       call check_thread_status(forthread_mutex_init(writer_entries(i)%pending_writes_mutex, -1))
-      writer_entries(i)%write_time_frequency=io_configuration%file_writers(i)%write_time_frequency
+      writer_entries(i)%write_on_model_time=io_configuration%file_writers(i)%write_on_model_time
+      if (writer_entries(i)%write_on_model_time) then
+        writer_entries(i)%write_timestep_frequency=0
+        writer_entries(i)%write_time_frequency=io_configuration%file_writers(i)%write_time_frequency
+      else
+        writer_entries(i)%write_time_frequency=0
+        writer_entries(i)%write_timestep_frequency=io_configuration%file_writers(i)%write_timestep_frequency
+      end if
       writer_entries(i)%previous_write_time=0
       writer_entries(i)%defined_write_time=io_configuration%file_writers(i)%write_time_frequency
       writer_entries(i)%latest_pending_write_time=0
-      writer_entries(i)%currently_writing=.false.
+      writer_entries(i)%latest_pending_write_timestep=0      
+      writer_entries(i)%contains_io_status_dump=.false.
       do j=1, number_contents
         if (io_configuration%file_writers(i)%contents(j)%facet_type == GROUP_TYPE) then
           current_field_index=add_group_of_fields_to_writer_entry(io_configuration, i, j, current_field_index, &
                writer_field_names, duplicate_field_names, diagnostic_generation_frequency)
         else if (io_configuration%file_writers(i)%contents(j)%facet_type == FIELD_TYPE) then
           current_field_index=current_field_index+add_field_to_writer_entry(io_configuration, &
-           i, j, current_field_index, io_configuration%file_writers(i)%contents(j)%facet_name, writer_field_names, &
+           i, j, current_field_index, io_configuration%file_writers(i)%contents(j)%facet_name, "", writer_field_names, &
            duplicate_field_names, diagnostic_generation_frequency)
+        else if (io_configuration%file_writers(i)%contents(j)%facet_type == IO_STATE_TYPE) then
+          writer_entries(i)%contains_io_status_dump=.true.
         end if
       end do
       if (.not. c_is_empty(duplicate_field_names)) call handle_duplicate_field_names(writer_entries(i), duplicate_field_names)
       call c_free(writer_field_names)
       call c_free(duplicate_field_names)
     end do
+    if (continuation_run) then
+      call restart_writer_state_from_checkpoint(writer_entries)
+      call restart_writer_state_timepoints(time_points)
+      call restart_timeaveraged_state_from_checkpoint()
+      call restart_instantaneous_state_from_checkpoint()
+    end if    
   end subroutine initialise_writer_federator
 
   !> Finalises the write federator and the manipulations
   subroutine finalise_writer_federator()
     call check_thread_status(forthread_rwlock_destroy(time_points_rwlock))
+    call check_thread_status(forthread_mutex_destroy(collective_contiguous_initialisation_mutex))
+    call check_thread_status(forthread_mutex_destroy(currently_writing_mutex))    
     call finalise_time_averaged_manipulation()
     call finalise_instantaneous_manipulation()
     call finalise_netcdf_filetype()
@@ -126,31 +161,58 @@ contains
 
   !> Informs the writer federator that specific fields are present and should be reflected in the diagnostics output
   !! @param field_names The set of field names that are present
-  subroutine inform_writer_federator_fields_present(io_configuration, field_names)
+  subroutine inform_writer_federator_fields_present(io_configuration, field_names, diag_field_names_and_roots)
     type(io_configuration_type), intent(inout) :: io_configuration
-    type(hashset_type), intent(inout) :: field_names
+    type(hashset_type), intent(inout), optional :: field_names
+    type(hashmap_type), intent(inout), optional :: diag_field_names_and_roots
 
     type(iterator_type) :: iterator
     character(len=STRING_LENGTH) :: specific_name
-    integer :: i, number_q_fields
+    integer :: i, number_q_fields, expected_io
+    logical :: field_found, expected_here, diagnostics_mode
 
     iterator=c_get_iterator(used_field_names)
+    expected_io=-1
     do while (c_has_next(iterator))
       specific_name=c_next_string(iterator)
-      if (c_contains(field_names, specific_name)) then
-        call enable_specific_field_by_name(specific_name)      
+      if (present(field_names)) then
+        field_found=c_contains(field_names, specific_name)
+        diagnostics_mode=.false.
+      else if (present(diag_field_names_and_roots)) then
+        field_found=c_contains(diag_field_names_and_roots, specific_name)
+        if (field_found) expected_io=c_get_integer(diag_field_names_and_roots, specific_name)
+        diagnostics_mode=.true.
+      else
+        field_found=.false.
+      end if
+      if (field_found) then
+        expected_here=expected_io == -1 .or. expected_io == io_configuration%my_io_rank
+        call enable_specific_field_by_name(specific_name, diagnostics_mode, expected_here)      
       end if
     end do
     iterator=c_get_iterator(q_field_names)
     do while (c_has_next(iterator))
       specific_name=c_next_string(iterator)
-      if (c_contains(field_names, specific_name)) then
+      if (present(field_names)) then
+        field_found=c_contains(field_names, specific_name)
+        diagnostics_mode=.false.
+      else if (present(diag_field_names_and_roots)) then
+        field_found=c_contains(diag_field_names_and_roots, specific_name)
+        if (field_found) expected_io=c_get_integer(diag_field_names_and_roots, specific_name)
+        diagnostics_mode=.true.
+      else
+        field_found=.false.
+      end if
+      if (field_found) then
+        expected_here=expected_io == -1 .or. expected_io == io_configuration%my_io_rank
         number_q_fields=c_get_integer(io_configuration%dimension_sizing, "qfields")
         do i=1, number_q_fields
           if (c_size(io_configuration%q_field_names) .ge. i) then
-            call enable_specific_field_by_name(trim(specific_name)//"_"//trim(c_get_string(io_configuration%q_field_names, i)))
+            call enable_specific_field_by_name(trim(specific_name)//"_"//trim(c_get_string(io_configuration%q_field_names, i)), &
+                 diagnostics_mode, expected_here)
           else
-            call enable_specific_field_by_name(trim(specific_name)//"_udef"//trim(conv_to_string(i)))
+            call enable_specific_field_by_name(trim(specific_name)//"_udef"//trim(conv_to_string(i)), &
+                 diagnostics_mode, expected_here)
           end if
         end do
       end if
@@ -160,10 +222,18 @@ contains
   !> Determines whether a field is used by the writer federator or not
   !! @param field_name The field name to check whether it is being used or not
   !! @returns Whether this field is used or not
-  logical function is_field_used_by_writer_federator(field_name)
-    character(len=*), intent(in) :: field_name
+  logical function is_field_used_by_writer_federator(field_name, field_namespace)
+    character(len=*), intent(in) :: field_name, field_namespace
 
-    is_field_used_by_writer_federator=c_contains(used_field_names, field_name)
+    integer :: writer_index, contents_index
+
+    writer_index=1
+    contents_index=1
+    if (c_contains(used_field_names, field_name)) then      
+      is_field_used_by_writer_federator=get_next_applicable_writer_entry(field_name, field_namespace, writer_index, contents_index)
+    else
+      is_field_used_by_writer_federator=.false.
+    end if
   end function is_field_used_by_writer_federator
 
   !> Determines whether a field is split on Q or not
@@ -177,8 +247,10 @@ contains
 
   !> Enables a specific field by its name, this will locate all the fields with this name and enable them
   !! @param field_name The name of the field to enable
-  subroutine enable_specific_field_by_name(field_name)
+  subroutine enable_specific_field_by_name(field_name, diagnostics_mode, expected_here)
     character(len=*), intent(in) :: field_name
+    logical, intent(in) :: diagnostics_mode
+    logical, intent(in), optional :: expected_here
 
     logical :: continue_search
     integer :: writer_index, contents_index
@@ -188,9 +260,16 @@ contains
     contents_index=0
     do while (continue_search)
       contents_index=contents_index+1
-      continue_search=get_next_applicable_writer_entry(field_name, writer_index, contents_index)
+      continue_search=get_next_applicable_writer_entry(field_name, writer_index_point=writer_index, &
+           contents_index_point=contents_index)
       if (continue_search) then
-        writer_entries(writer_index)%contents(contents_index)%enabled=.true.
+        if ((writer_entries(writer_index)%contents(contents_index)%diagnostic_field .and. diagnostics_mode) .or. &
+             (writer_entries(writer_index)%contents(contents_index)%prognostic_field .and. .not. diagnostics_mode)) then
+          writer_entries(writer_index)%contents(contents_index)%enabled=.true.
+          if (present(expected_here)) then
+            writer_entries(writer_index)%contents(contents_index)%expected_here=expected_here
+          end if
+        end if
       end if      
     end do    
   end subroutine enable_specific_field_by_name
@@ -219,7 +298,8 @@ contains
         contents_index=0
         do while (continue_search)
           contents_index=contents_index+1
-          continue_search=get_next_applicable_writer_entry(search_field, writer_index, contents_index)
+          continue_search=get_next_applicable_writer_entry(search_field, writer_index_point=writer_index, &
+               contents_index_point=contents_index)
           if (continue_search) then
             writer_entries(writer_index)%contents(contents_index)%field_name=field_name
           end if
@@ -231,6 +311,58 @@ contains
     end do    
   end subroutine provide_q_field_names_to_writer_federator
 
+  subroutine provide_ordered_field_to_writer_federator(io_configuration, field_name, field_namespace, field_values, &
+       timestep, time, source)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    character(len=*), intent(in) :: field_name, field_namespace
+    integer, intent(in) :: timestep, source
+    type(data_values_type), target :: field_values
+    real(kind=DEFAULT_PRECISION), intent(in) :: time
+
+    integer :: writer_index, contents_index
+    logical :: continue_search
+    type(data_values_type), pointer :: result_values
+    type(hashmap_type) :: typed_result_values
+    class(*), pointer :: generic
+
+    if (field_values%data_type == DOUBLE_DATA_TYPE) then
+      call provide_ordered_field_to_writer_federator_real_values(io_configuration, field_name, field_namespace, &
+           field_values%values, timestep, time, source)
+    else if (field_values%data_type == STRING_DATA_TYPE) then
+      continue_search=.true.
+      writer_index=1
+      contents_index=0
+      allocate(result_values, source=field_values)
+      generic=>result_values
+      if (c_contains(used_field_names, field_name)) then
+        do while (continue_search)
+          contents_index=contents_index+1
+          continue_search=get_next_applicable_writer_entry(field_name, field_namespace, writer_index, contents_index)
+          if (continue_search) then
+            if (.not. writer_entries(writer_index)%contents(contents_index)%enabled) then
+              call log_log(LOG_WARN, "Received data for previously un-enabled field '"//&
+                   writer_entries(writer_index)%contents(contents_index)%field_name//"'")
+            end if
+            writer_entries(writer_index)%contents(contents_index)%enabled=.true.          
+            writer_entries(writer_index)%contents(contents_index)%latest_timestep_values=timestep
+            if (log_get_logging_level() .ge. LOG_DEBUG) then
+              call log_log(LOG_DEBUG, "[WRITE FED VALUE STORE] Storing value for field "//trim(field_name)//" ts="//&
+                   trim(conv_to_string(timestep))// " t="//trim(conv_to_string(time)))
+            end if
+            call check_thread_status(forthread_mutex_lock(writer_entries(writer_index)%contents(contents_index)%values_mutex))           
+            call c_put_generic(writer_entries(writer_index)%contents(contents_index)%values_to_write, conv_to_string(time), &
+                 generic, .false.)
+            call check_thread_status(forthread_mutex_unlock(writer_entries(writer_index)%contents(contents_index)%values_mutex))
+            if (writer_entries(writer_index)%contents(contents_index)%pending_to_write) then
+              call determine_if_outstanding_field_can_be_written(io_configuration, writer_entries(writer_index), &
+                   writer_entries(writer_index)%contents(contents_index))
+            end if
+          end if
+        end do
+      end if
+    end if
+  end subroutine provide_ordered_field_to_writer_federator  
+
   !> Provides fields (either diagnostics or prognostics) to the write federator which will action these as appropriate. This will
   !! split Q fields up if appropriate
   !! @param io_configuration The IO server configuration
@@ -239,10 +371,10 @@ contains
   !! @param timestep Corresponding MONC timestep
   !! @param time Corresponding MONC model time
   !! @param source Optional MONC source for the communicated fields
-  subroutine provide_ordered_field_to_writer_federator(io_configuration, field_name, field_values, &
+  subroutine provide_ordered_field_to_writer_federator_real_values(io_configuration, field_name, field_namespace, field_values, &
        timestep, time, source)
     type(io_configuration_type), intent(inout) :: io_configuration
-    character(len=*), intent(in) :: field_name
+    character(len=*), intent(in) :: field_name, field_namespace
     integer, intent(in) :: timestep, source
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: field_values
     real(kind=DEFAULT_PRECISION), intent(in) :: time
@@ -251,7 +383,7 @@ contains
     integer :: individual_size, index
     
     if (c_contains(used_field_names, field_name)) then
-      call provide_ordered_single_field_to_writer_federator(io_configuration, field_name, field_values, &
+      call provide_ordered_single_field_to_writer_federator(io_configuration, field_name, field_namespace, field_values, &
            timestep, time, source)
     else if (c_contains(q_field_names, field_name)) then
       if (c_contains(q_field_splits, field_name)) then
@@ -266,12 +398,12 @@ contains
       index=1
       do while (c_has_next(iterator))
         call provide_ordered_single_field_to_writer_federator(io_configuration, &
-             trim(field_name)//"_"//trim(c_next_string(iterator)), field_values(index:index+individual_size-1), &
+             trim(field_name)//"_"//trim(c_next_string(iterator)), field_namespace, field_values(index:index+individual_size-1), &
              timestep, time, source)
         index=index+individual_size
       end do
     end if
-  end subroutine provide_ordered_field_to_writer_federator
+  end subroutine provide_ordered_field_to_writer_federator_real_values
 
   !> Retrieves the data size for each Q entry of a collective Q field for the specific source MONC that has sent data
   !! @param io_configuration The IO server configuration
@@ -305,10 +437,10 @@ contains
   !! @param timestep Corresponding MONC timestep
   !! @param time Corresponding MONC model time
   !! @param source Optional MONC source for the communicated fields
-  subroutine provide_ordered_single_field_to_writer_federator(io_configuration, field_name, field_values, &
+  subroutine provide_ordered_single_field_to_writer_federator(io_configuration, field_name, field_namespace, field_values, &
        timestep, time, source)
     type(io_configuration_type), intent(inout) :: io_configuration
-    character(len=*), intent(in) :: field_name
+    character(len=*), intent(in) :: field_name, field_namespace
     integer, intent(in) :: timestep, source
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: field_values
     real(kind=DEFAULT_PRECISION), intent(in) :: time
@@ -325,7 +457,7 @@ contains
     if (c_contains(used_field_names, field_name)) then
       do while (continue_search)
         contents_index=contents_index+1
-        continue_search=get_next_applicable_writer_entry(field_name, writer_index, contents_index)
+        continue_search=get_next_applicable_writer_entry(field_name, field_namespace, writer_index, contents_index)
         if (continue_search) then
           if (.not. writer_entries(writer_index)%contents(contents_index)%enabled) then
             call log_log(LOG_WARN, "Received data for previously un-enabled field '"//&
@@ -352,6 +484,7 @@ contains
                  writer_entries(writer_index)%contents(contents_index)%time_manipulation_type))            
           end if
           if (allocated(result_values%values)) then
+            writer_entries(writer_index)%contents(contents_index)%latest_timestep_values=timestep
             if (log_get_logging_level() .ge. LOG_DEBUG) then
               call log_log(LOG_DEBUG, "[WRITE FED VALUE STORE] Storing value for field "//trim(field_name)//" ts="//&
                    trim(conv_to_string(timestep))// " t="//trim(conv_to_string(time)))
@@ -417,7 +550,7 @@ contains
 
     if (specific_field%pending_to_write) then    
       call determine_if_field_can_be_written(io_configuration, writer_entry, specific_field, writer_entry%write_timestep, &
-           writer_entry%write_time, writer_entry%previous_write_time, field_write_success)
+           writer_entry%previous_write_timestep, writer_entry%write_time, writer_entry%previous_write_time, field_write_success)
       if (field_write_success) then
         if (log_get_logging_level() .ge. LOG_DEBUG) then
           call log_log(LOG_DEBUG, "Flushed outstanding field ts="//conv_to_string(writer_entry%write_timestep)//&
@@ -441,11 +574,11 @@ contains
   !! @param write_time The current time that we are at for this write
   !! @param field_written An optional output logical representing whether a write was performed or not
   subroutine determine_if_field_can_be_written(io_configuration, writer_entry, specific_field, &
-       timestep, write_time, previous_write_time, field_written)
+       timestep, previous_write_timestep, write_time, previous_write_time, field_written)
     type(io_configuration_type), intent(inout) :: io_configuration
     type(writer_type), intent(inout) :: writer_entry
     type(writer_field_type), intent(inout) :: specific_field
-    integer, intent(in) :: timestep
+    integer, intent(in) :: timestep, previous_write_timestep
     real, intent(in) :: write_time, previous_write_time
     logical, intent(out), optional :: field_written
 
@@ -453,24 +586,40 @@ contains
     integer :: num_matching
     type(iterator_type) :: iterator
     type(mapentry_type) :: map_entry
+    type(write_field_collective_values_type), pointer :: multi_monc_entries
+    class(*), pointer :: generic
         
     num_matching=0
     largest_value_found=0.0
     call check_thread_status(forthread_mutex_lock(specific_field%values_mutex))
     if (.not. c_is_empty(specific_field%values_to_write)) then
-      iterator=c_get_iterator(specific_field%values_to_write)      
+      iterator=c_get_iterator(specific_field%values_to_write)
       do while (c_has_next(iterator))
         map_entry=c_next_mapentry(iterator)
         value_to_test=conv_to_real(map_entry%key)
+        if (specific_field%collective_write) then
+          generic=>c_get_generic(map_entry)
+          select type(generic)
+          type is(write_field_collective_values_type)
+            multi_monc_entries=>generic
+          end select
+          if (c_size(multi_monc_entries%monc_values) .ne. io_configuration%number_of_moncs) cycle
+        end if
         if (value_to_test .le. write_time .and. value_to_test .gt. previous_write_time) then        
           num_matching=num_matching+1
           if (largest_value_found .lt. value_to_test) largest_value_found=value_to_test
         end if
       end do
     end if
-    if (largest_value_found + specific_field%output_frequency .gt. write_time)  then
-      if (num_matching .gt. 0) call write_variable(io_configuration, specific_field, writer_entry%filename, timestep, write_time)
-      specific_field%previous_write_time=write_time
+
+    if (num_matching .gt. 0 .and. specific_field%ready_to_write(largest_value_found, specific_field%output_frequency, write_time, &
+         specific_field%latest_timestep_values, timestep)) then
+      if (.not. specific_field%collective_write .or. .not. specific_field%collective_contiguous_optimisation) then
+        if (specific_field%issue_write) then
+          call write_variable(io_configuration, specific_field, writer_entry%filename, timestep, write_time)
+        end if
+        specific_field%previous_write_time=writer_entry%write_time
+      end if      
       specific_field%pending_to_write=.false.
       if (present(field_written)) field_written=.true.
     else
@@ -497,14 +646,20 @@ contains
 
     integer :: i, timestep
     real(kind=DEFAULT_PRECISION) :: time
+    logical :: terminated
 
     if (is_field_present(io_configuration, source, data_id, "timestep") .and. &
          is_field_present(io_configuration, source, data_id, "time")) then
       timestep=get_scalar_integer_from_monc(io_configuration, source, data_id, data_dump, "timestep")
       time=get_scalar_real_from_monc(io_configuration, source, data_id, data_dump, "time")
 
+      if (is_field_present(io_configuration, source, data_id, "terminated")) then
+        terminated=get_scalar_logical_from_monc(io_configuration, source, data_id, data_dump, "terminated")
+      else
+        terminated=.false.
+      end if
       do i=1, size(writer_entries)
-        call check_writer_trigger(io_configuration, i, timestep, real(time, kind=4))
+        call check_writer_trigger(io_configuration, i, timestep, real(time, kind=4), terminated)
       end do
     end if
   end subroutine check_writer_for_trigger
@@ -516,28 +671,53 @@ contains
   !! @param writer_entry_index Index of the writer we are concerned with
   !! @param timestep The corresponding timestep
   !! @param time The corresponding model time
-  subroutine check_writer_trigger(io_configuration, writer_entry_index, timestep, time)
+  subroutine check_writer_trigger(io_configuration, writer_entry_index, timestep, time, terminated)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: writer_entry_index, timestep
     real, intent(in) :: time
+    logical, intent(in) :: terminated
 
     real :: time_difference
+    integer :: i
+    logical :: issue_write, issue_terminated_write
     
     call check_thread_status(forthread_mutex_lock(writer_entries(writer_entry_index)%trigger_and_write_mutex))
-    time_difference=time-writer_entries(writer_entry_index)%latest_pending_write_time
-    if (time_difference .ge. writer_entries(writer_entry_index)%write_time_frequency) then
-      writer_entries(writer_entry_index)%latest_pending_write_time=time      
-      if (writer_entries(writer_entry_index)%currently_writing) then
-        call check_thread_status(forthread_mutex_unlock(writer_entries(writer_entry_index)%trigger_and_write_mutex))
-        call register_pending_file_write(writer_entry_index, timestep, time)
+    issue_terminated_write=writer_entries(writer_entry_index)%write_on_terminate .and. terminated
+    if (writer_entries(writer_entry_index)%write_on_model_time) then
+      time_difference=time-writer_entries(writer_entry_index)%latest_pending_write_time
+      issue_write=time_difference .ge. writer_entries(writer_entry_index)%write_time_frequency      
+    else
+      if (writer_entries(writer_entry_index)%write_timestep_frequency .gt. 0) then
+        issue_write=writer_entries(writer_entry_index)%latest_pending_write_timestep .ne. timestep .and. &
+             mod(timestep, writer_entries(writer_entry_index)%write_timestep_frequency) == 0
       else
-        writer_entries(writer_entry_index)%currently_writing=.true.
+        issue_write=.false.
+      end if
+      issue_terminated_write=issue_terminated_write .and. &
+           writer_entries(writer_entry_index)%latest_pending_write_timestep .ne. timestep
+    end if
+
+    if (issue_write .or. issue_terminated_write) then
+      writer_entries(writer_entry_index)%latest_pending_write_time=time
+      writer_entries(writer_entry_index)%latest_pending_write_timestep=timestep
+
+      call check_thread_status(forthread_mutex_lock(currently_writing_mutex))    
+
+      if (currently_writing) then
+        call check_thread_status(forthread_mutex_unlock(currently_writing_mutex))
         call check_thread_status(forthread_mutex_unlock(writer_entries(writer_entry_index)%trigger_and_write_mutex))
-        call issue_actual_write(io_configuration, writer_entries(writer_entry_index), timestep, time)
+        call register_pending_file_write(writer_entry_index, timestep, time, &
+             writer_entries(writer_entry_index)%write_on_terminate .and. terminated)
+      else
+        currently_writing=.true.
+        call check_thread_status(forthread_mutex_unlock(currently_writing_mutex))
+        call check_thread_status(forthread_mutex_unlock(writer_entries(writer_entry_index)%trigger_and_write_mutex))
+        call issue_actual_write(io_configuration, writer_entries(writer_entry_index), timestep, time, &
+             writer_entries(writer_entry_index)%write_on_terminate .and. terminated)
       end if
     else
       call check_thread_status(forthread_mutex_unlock(writer_entries(writer_entry_index)%trigger_and_write_mutex))
-    end if    
+    end if
   end subroutine check_writer_trigger
 
   !> Issues the actual file creation, write of available fields and closure if all completed. 
@@ -545,33 +725,42 @@ contains
   !! @param writer_entry_index Index of the writer we are concerned with
   !! @param timestep The corresponding timestep
   !! @param time The corresponding model time
-  subroutine issue_actual_write(io_configuration, writer_entry, timestep, time)
+  subroutine issue_actual_write(io_configuration, writer_entry, timestep, time, terminated_write)
     type(io_configuration_type), intent(inout) :: io_configuration
     type(writer_type), intent(inout) :: writer_entry
     integer, intent(in) :: timestep
     real, intent(in) :: time
+    logical, intent(in) :: terminated_write
 
-    integer :: j, total_outstanding, num_written, total_flds
-    logical :: empty_contents_here, field_written
+    integer :: i, j, total_outstanding, num_written, total_flds
+    logical :: field_written
     type(map_type) :: applicable_time_points
+
+    call check_thread_status(forthread_mutex_lock(collective_contiguous_initialisation_mutex))
+    do i=1, size(writer_entry%contents)
+      if (writer_entry%contents(i)%enabled .and. writer_entry%contents(i)%collective_write) then
+        if (.not. writer_entry%contents(i)%collective_initialised) then
+          call determine_collective_type_and_optimise_if_possible(io_configuration, writer_entry%contents(i))
+        end if
+      end if
+    end do
+    call check_thread_status(forthread_mutex_unlock(collective_contiguous_initialisation_mutex))
     
     writer_entry%write_time=time
     writer_entry%write_timestep=timestep
-    applicable_time_points=extract_applicable_time_points(writer_entry%previous_write_time, time)
-    call define_netcdf_file(io_configuration, writer_entry, timestep, time, applicable_time_points)
+    applicable_time_points=extract_applicable_time_points(writer_entry%previous_write_time, time)    
+    call define_netcdf_file(io_configuration, writer_entry, timestep, time, applicable_time_points, terminated_write)
     call c_free(applicable_time_points)
-    empty_contents_here=.true.
     total_outstanding=0
     total_flds=0
     num_written=0
     call check_thread_status(forthread_mutex_lock(writer_entry%num_fields_to_write_mutex))
-    do j=1, size(writer_entry%contents)      
-      if (.not. c_is_empty(writer_entry%contents(j)%values_to_write)) then
-        empty_contents_here=.false.
+    do j=1, size(writer_entry%contents)  
+      if (writer_entry%contents(j)%enabled .and. writer_entry%contents(j)%expected_here) then
         total_flds=total_flds+1
-        call determine_if_field_can_be_written(io_configuration, writer_entry, writer_entry%contents(j), timestep, time, &
-             writer_entry%contents(j)%previous_write_time, field_written)
-        if (.not. field_written) then
+        call determine_if_field_can_be_written(io_configuration, writer_entry, writer_entry%contents(j), timestep, &
+             writer_entry%previous_write_timestep, time, writer_entry%contents(j)%previous_write_time, field_written)
+        if (.not. field_written) then          
           total_outstanding=total_outstanding+1
         else
           num_written=num_written+1
@@ -585,7 +774,7 @@ contains
            //" total="//trim(conv_to_string(total_flds))//" written="//trim(conv_to_string(num_written))//&
            " outstanding="//trim(conv_to_string(total_outstanding)))
     end if
-    if (empty_contents_here .or. total_outstanding == 0) then
+    if (total_outstanding == 0) then
       call close_diagnostics_file(io_configuration, writer_entry, timestep, time)
     end if    
   end subroutine issue_actual_write
@@ -676,16 +865,72 @@ contains
     real(DEFAULT_PRECISION), dimension(:) :: values
     character(len=STRING_LENGTH) :: field_name
     integer :: timestep
+    
+    type(writer_type), pointer :: writer_entry
+    integer :: i
+    logical :: terminated, done_chain_run
+
+    writer_entry=>get_writer_entry_from_netcdf(field_name, timestep, terminated)    
+
+    do i=1, size(writer_entry%contents)
+      if (writer_entry%contents(i)%enabled .and. writer_entry%contents(i)%collective_write .and. &
+           writer_entry%contents(i)%collective_contiguous_optimisation) then        
+        call check_thread_status(forthread_mutex_lock(writer_entry%contents(i)%values_mutex))
+        call write_variable(io_configuration, writer_entry%contents(i), writer_entry%filename, timestep, writer_entry%write_time)
+        writer_entry%contents(i)%previous_write_time=writer_entry%write_time
+        call check_thread_status(forthread_mutex_unlock(writer_entry%contents(i)%values_mutex))
+      end if      
+    end do
+
+    writer_entry%previous_write_time=writer_entry%write_time
+    writer_entry%previous_write_timestep=writer_entry%write_timestep
+    writer_entry%defined_write_time=writer_entry%defined_write_time+writer_entry%write_time_frequency
+
+    if (writer_entry%contains_io_status_dump) then
+      if (.not. terminated) then
+        do while (.not. is_io_server_state_writer_ready(timestep))
+        end do
+      end if
+      call check_thread_status(forthread_rwlock_rdlock(time_points_rwlock))
+      call package_io_server_state(io_configuration, writer_entries, time_points)
+      call check_thread_status(forthread_rwlock_unlock(time_points_rwlock))
+      call store_io_server_state(io_configuration, writer_entry, timestep)
+    end if
+
+    call close_netcdf_file(io_configuration, field_name, timestep)
+
+    done_chain_run=.false.
+    do i=1, size(writer_entries)
+      if (writer_entries(i)%filename .ne. writer_entry%filename) then
+        done_chain_run=check_for_and_issue_chain_write(io_configuration, writer_entries(i))
+        if (done_chain_run) exit
+      end if
+    end do
+    if (.not. done_chain_run) done_chain_run=check_for_and_issue_chain_write(io_configuration, writer_entry)
+
+    if (.not. done_chain_run) then
+      call check_thread_status(forthread_mutex_lock(currently_writing_mutex))
+      currently_writing=.false.
+      call check_thread_status(forthread_mutex_unlock(currently_writing_mutex))
+      if (log_get_logging_level() .ge. LOG_DEBUG) then
+        call log_log(LOG_DEBUG, "No more pending entries to chain to at ts= "//trim(conv_to_string(timestep)))
+      end if
+    end if
+  end subroutine handle_close_diagnostics_globalcallback
+
+  !> Will check whether there are any pending writes and if so will issue a chain write for this
+  !! @param io_configuration The IO server configuration
+  !! @param writer_entry The specific writer entry
+  !! @returns Whether a chain write was issued or not
+  logical function check_for_and_issue_chain_write(io_configuration, writer_entry)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    type(writer_type), intent(inout) :: writer_entry
 
     class(*), pointer :: generic
-    type(writer_type), pointer :: writer_entry
 
-    writer_entry=>close_netcdf_file(io_configuration, field_name, timestep)
-
-    writer_entry%previous_write_time=writer_entry%write_time   
-    writer_entry%defined_write_time=writer_entry%defined_write_time+writer_entry%write_time_frequency
     call check_thread_status(forthread_mutex_lock(writer_entry%pending_writes_mutex))
-    if (.not. c_is_empty(writer_entry%pending_writes)) then      
+    if (.not. c_is_empty(writer_entry%pending_writes)) then
+      check_for_and_issue_chain_write=.true.
       generic=>c_pop_generic(writer_entry%pending_writes)    
       call check_thread_status(forthread_mutex_unlock(writer_entry%pending_writes_mutex))
       select type(generic)
@@ -693,25 +938,24 @@ contains
         if (log_get_logging_level() .ge. LOG_DEBUG) then
           call log_log(LOG_DEBUG, "Chain to next pending entry ts= "//trim(conv_to_string(generic%timestep)))
         end if
-        call issue_actual_write(io_configuration, writer_entry, generic%timestep, generic%write_time)
+        call issue_actual_write(io_configuration, writer_entry, generic%timestep, &
+             generic%write_time, generic%terminated_write)
         deallocate(generic)
       end select
     else
+      check_for_and_issue_chain_write=.false.
       call check_thread_status(forthread_mutex_unlock(writer_entry%pending_writes_mutex))
-      writer_entry%currently_writing=.false.
-      if (log_get_logging_level() .ge. LOG_DEBUG) then
-        call log_log(LOG_DEBUG, "No more pending entries to chain to at ts= "//trim(conv_to_string(timestep)))
-      end if
-    end if
-  end subroutine handle_close_diagnostics_globalcallback
+    end if    
+  end function check_for_and_issue_chain_write
   
   !> Registers a pending file write which will be actioned later on
   !! @param writer_entry_index Index of the writer entry
   !! @param timestep The timestep that the pending write represents
   !! @param time The time of the pending write
-  subroutine register_pending_file_write(writer_entry_index, timestep, time)
+  subroutine register_pending_file_write(writer_entry_index, timestep, time, terminated_write)
     integer, intent(in) :: writer_entry_index, timestep
     real, intent(in) :: time
+    logical, intent(in) :: terminated_write
 
     type(pending_write_type), pointer :: pending_write
     class(*), pointer :: generic
@@ -719,6 +963,7 @@ contains
     allocate(pending_write)
     pending_write%write_time=time
     pending_write%timestep=timestep
+    pending_write%terminated_write=terminated_write
 
     generic=>pending_write
     call check_thread_status(forthread_mutex_lock(writer_entries(writer_entry_index)%pending_writes_mutex))
@@ -732,8 +977,9 @@ contains
   !! @param result_writer The index of the (next) writer that requires this field is written in here
   !! @param result_contents The index of the contents in the next writer that corresponds to this field
   !! @returns Whether or not a next entry has been found
-  logical function get_next_applicable_writer_entry(field_name, writer_index_point, contents_index_point)
+  logical function get_next_applicable_writer_entry(field_name, field_namespace, writer_index_point, contents_index_point)
     character(len=*), intent(in) :: field_name
+    character(len=*), intent(in), optional :: field_namespace
     integer, intent(inout) :: writer_index_point, contents_index_point
 
     integer :: i, j
@@ -743,6 +989,9 @@ contains
         if (contents_index_point .le. size(writer_entries(i)%contents)) then
           do j=contents_index_point, size(writer_entries(i)%contents)           
             if (writer_entries(i)%contents(j)%field_name==field_name) then
+              if (present(field_namespace)) then                
+                if (writer_entries(i)%contents(j)%field_namespace .ne. field_namespace) cycle
+              end if
               writer_index_point=i
               contents_index_point=j
               get_next_applicable_writer_entry=.true.
@@ -778,10 +1027,12 @@ contains
         if (group_index == 0) call log_log(LOG_ERROR, "Can not find group '"//trim(&
              io_configuration%file_writers(writer_entry_index)%contents(i)%facet_name)//"'")
         get_total_number_writer_fields=get_total_number_writer_fields+&
-             get_group_number_of_fields(io_configuration, io_configuration%groups(group_index)%members, number_q_fields)
+             get_group_number_of_fields(io_configuration, io_configuration%groups(group_index)%members, number_q_fields, &
+             io_configuration%groups(group_index)%namespace)
       else if (io_configuration%file_writers(writer_entry_index)%contents(i)%facet_type == FIELD_TYPE) then
+        ! NSE
         get_total_number_writer_fields=get_total_number_writer_fields+get_field_number_of_fields(io_configuration, &
-             io_configuration%file_writers(writer_entry_index)%contents(i)%facet_name, number_q_fields)
+             io_configuration%file_writers(writer_entry_index)%contents(i)%facet_name, "", number_q_fields)
       end if
     end do
   end function get_total_number_writer_fields
@@ -791,10 +1042,11 @@ contains
   !! @param group_members The members of the group
   !! @param num_q_fields The number of Q fields
   !! @returns The number of fields that make up this group
-  integer function get_group_number_of_fields(io_configuration, group_members, num_q_fields)
+  integer function get_group_number_of_fields(io_configuration, group_members, num_q_fields, namespace)
     type(io_configuration_type), intent(inout) :: io_configuration
     type(list_type) :: group_members
     integer, intent(in) :: num_q_fields
+    character(len=STRING_LENGTH), intent(in) :: namespace
 
     type(iterator_type) :: iterator
     character(len=STRING_LENGTH) :: field_name
@@ -803,7 +1055,8 @@ contains
     iterator=c_get_iterator(group_members)
     do while (c_has_next(iterator))
       field_name=c_next_string(iterator)
-      get_group_number_of_fields=get_group_number_of_fields+get_field_number_of_fields(io_configuration, field_name, num_q_fields)
+      get_group_number_of_fields=get_group_number_of_fields+get_field_number_of_fields(io_configuration, field_name, namespace, &
+           num_q_fields)
     end do
   end function get_group_number_of_fields
 
@@ -813,16 +1066,16 @@ contains
   !! @param field_name The name of the field
   !! @param num_q_fields The number of Q fields
   !! @returns The number of fields that make up this field
-  integer function get_field_number_of_fields(io_configuration, field_name, num_q_fields)
+  integer function get_field_number_of_fields(io_configuration, field_name, field_namespace, num_q_fields)
     type(io_configuration_type), intent(inout) :: io_configuration
-    character(len=STRING_LENGTH), intent(in) :: field_name
+    character(len=STRING_LENGTH), intent(in) :: field_name, field_namespace
     integer, intent(in) :: num_q_fields
 
     type(io_configuration_field_type) :: prognostic_field_configuration
     type(io_configuration_data_definition_type) :: prognostic_containing_data_defn
     type(io_configuration_diagnostic_field_type) :: diagnostic_field_configuration
     
-    if (get_diagnostic_field_configuration(io_configuration, field_name, diagnostic_field_configuration)) then
+    if (get_diagnostic_field_configuration(io_configuration, field_name, field_namespace, diagnostic_field_configuration)) then
       if (diagnostic_field_configuration%field_type == ARRAY_FIELD_TYPE) then
         if (diagnostic_field_configuration%dim_size_defns(diagnostic_field_configuration%dimensions) .eq. "qfields") then
           get_field_number_of_fields=num_q_fields
@@ -830,7 +1083,7 @@ contains
         end if
       end if
       get_field_number_of_fields=1
-    else if (get_prognostic_field_configuration(io_configuration, field_name, &
+    else if (get_prognostic_field_configuration(io_configuration, field_name, field_namespace, &
          prognostic_field_configuration, prognostic_containing_data_defn)) then
       if (prognostic_field_configuration%field_type == ARRAY_FIELD_TYPE) then
         if (prognostic_field_configuration%dim_size_defns(prognostic_field_configuration%dimensions) .eq. "qfields") then
@@ -871,8 +1124,9 @@ contains
     do while (c_has_next(iterator))
       field_name=c_next_string(iterator)
       add_group_of_fields_to_writer_entry=add_group_of_fields_to_writer_entry+add_field_to_writer_entry(io_configuration, &
-           writer_entry_index, facet_index, add_group_of_fields_to_writer_entry, field_name, writer_field_names, &
-           duplicate_field_names, diagnostic_generation_frequency)
+           writer_entry_index, facet_index, add_group_of_fields_to_writer_entry, field_name, &
+           io_configuration%groups(group_index)%namespace, writer_field_names, duplicate_field_names, &
+           diagnostic_generation_frequency)
     end do    
   end function add_group_of_fields_to_writer_entry
 
@@ -888,10 +1142,10 @@ contains
   !! @param diagnostic_generation_frequency Generation frequency of the diagnostics
   !! @returns Location for next field to be written to
   integer function add_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
-       my_facet_index, field_name, writer_field_names, duplicate_field_names, diagnostic_generation_frequency)
+       my_facet_index, field_name, field_namespace, writer_field_names, duplicate_field_names, diagnostic_generation_frequency)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: writer_entry_index, io_config_facet_index, my_facet_index
-    character(len=*), intent(in) :: field_name
+    character(len=*), intent(in) :: field_name, field_namespace
     type(hashset_type), intent(inout) :: writer_field_names, duplicate_field_names
     type(hashmap_type), intent(inout) :: diagnostic_generation_frequency
 
@@ -902,13 +1156,13 @@ contains
     type(collective_q_field_representation_type), pointer :: collective_q_field
     class(*), pointer :: generic
     
-    if (get_diagnostic_field_configuration(io_configuration, field_name, diagnostic_field_configuration)) then
+    if (get_diagnostic_field_configuration(io_configuration, field_name, field_namespace, diagnostic_field_configuration)) then
       if (diagnostic_field_configuration%field_type == ARRAY_FIELD_TYPE) then
         if (diagnostic_field_configuration%dim_size_defns(diagnostic_field_configuration%dimensions) .eq. "qfields") then  
           number_q_fields=c_get_integer(io_configuration%dimension_sizing, "qfields")
           do i=1, number_q_fields
             call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
-                 my_facet_index+i, trim(field_name)//"_udef"//trim(conv_to_string(i)), writer_field_names, &
+                 my_facet_index+i, trim(field_name)//"_udef"//trim(conv_to_string(i)), field_namespace, writer_field_names, &
                  duplicate_field_names, c_get_integer(diagnostic_generation_frequency, field_name), diagnostic_field_configuration)
           end do
           tot_size=1
@@ -921,17 +1175,17 @@ contains
         end if
       end if
       call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
-           my_facet_index+1, field_name, writer_field_names, duplicate_field_names, &
+           my_facet_index+1, field_name, field_namespace, writer_field_names, duplicate_field_names, &
            c_get_integer(diagnostic_generation_frequency, field_name), diagnostic_field_configuration)
       add_field_to_writer_entry=1      
-    else if (get_prognostic_field_configuration(io_configuration, field_name, &
+    else if (get_prognostic_field_configuration(io_configuration, field_name, field_namespace, &
          prognostic_field_configuration, prognostic_containing_data_defn)) then
       if (prognostic_field_configuration%field_type == ARRAY_FIELD_TYPE) then
         if (prognostic_field_configuration%dim_size_defns(prognostic_field_configuration%dimensions) .eq. "qfields") then  
           number_q_fields=c_get_integer(io_configuration%dimension_sizing, "qfields")
           do i=1, number_q_fields
             call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
-                 my_facet_index+i, trim(field_name)//"_udef"//trim(conv_to_string(i)), writer_field_names, &
+                 my_facet_index+i, trim(field_name)//"_udef"//trim(conv_to_string(i)), field_namespace, writer_field_names, &
                  duplicate_field_names, prognostic_containing_data_defn%frequency, &
                  prognostic_field_configuration=prognostic_field_configuration)
           end do
@@ -965,8 +1219,8 @@ contains
         end if     
       end if
       call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
-           my_facet_index+1, field_name, writer_field_names, duplicate_field_names, prognostic_containing_data_defn%frequency, &
-           prognostic_field_configuration=prognostic_field_configuration)
+           my_facet_index+1, field_name, field_namespace, writer_field_names, duplicate_field_names, &
+           prognostic_containing_data_defn%frequency, prognostic_field_configuration=prognostic_field_configuration)
       add_field_to_writer_entry=1
     else
       call log_log(LOG_ERROR, "Field '"//trim(field_name)//&
@@ -986,11 +1240,11 @@ contains
   !! @param diagnostic_field_configuration The diagnostic field configuration (optional)
   !! @param prognostic_field_configuration The prognostic field configuration (optional)
   subroutine add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
-       my_facet_index, field_name, writer_field_names, duplicate_field_names, timestep_frequency, &
+       my_facet_index, field_name, field_namespace, writer_field_names, duplicate_field_names, timestep_frequency, &
        diagnostic_field_configuration, prognostic_field_configuration)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: writer_entry_index, io_config_facet_index, my_facet_index, timestep_frequency
-    character(len=*), intent(in) :: field_name
+    character(len=*), intent(in) :: field_name, field_namespace
     type(hashset_type), intent(inout) :: writer_field_names, duplicate_field_names
     type(io_configuration_diagnostic_field_type), intent(inout), optional :: diagnostic_field_configuration
     type(io_configuration_field_type), intent(inout), optional :: prognostic_field_configuration
@@ -998,6 +1252,7 @@ contains
     integer :: i
 
     writer_entries(writer_entry_index)%contents(my_facet_index)%field_name=field_name
+    writer_entries(writer_entry_index)%contents(my_facet_index)%field_namespace=field_namespace
 
     call c_add_string(used_field_names, field_name)
     
@@ -1010,9 +1265,15 @@ contains
     if (io_configuration%file_writers(writer_entry_index)%contents(io_config_facet_index)%time_manipulation_type == &
          INSTANTANEOUS_TYPE) then
       writer_entries(writer_entry_index)%contents(my_facet_index)%time_manipulation=>perform_instantaneous_time_manipulation
+      writer_entries(writer_entry_index)%contents(my_facet_index)%ready_to_write=>is_instantaneous_time_manipulation_ready_to_write
     else if (io_configuration%file_writers(writer_entry_index)%contents(io_config_facet_index)%time_manipulation_type == &
          TIME_AVERAGED_TYPE) then        
       writer_entries(writer_entry_index)%contents(my_facet_index)%time_manipulation=>perform_timeaveraged_time_manipulation
+      writer_entries(writer_entry_index)%contents(my_facet_index)%ready_to_write=>is_time_averaged_time_manipulation_ready_to_write
+    else if (io_configuration%file_writers(writer_entry_index)%contents(io_config_facet_index)%time_manipulation_type == &
+         NONE_TYPE) then        
+      writer_entries(writer_entry_index)%contents(my_facet_index)%time_manipulation=>perform_none_time_manipulation
+      writer_entries(writer_entry_index)%contents(my_facet_index)%ready_to_write=>is_none_time_manipulation_ready_to_write
     end if
     writer_entries(writer_entry_index)%contents(my_facet_index)%time_manipulation_type=&
          io_configuration%file_writers(writer_entry_index)%contents(io_config_facet_index)%time_manipulation_type
@@ -1023,6 +1284,9 @@ contains
     writer_entries(writer_entry_index)%contents(my_facet_index)%duplicate_field_name=.false.
     writer_entries(writer_entry_index)%contents(my_facet_index)%pending_to_write=.false.
     writer_entries(writer_entry_index)%contents(my_facet_index)%enabled=.false.
+    writer_entries(writer_entry_index)%contents(my_facet_index)%expected_here=.true.
+    writer_entries(writer_entry_index)%contents(my_facet_index)%prognostic_field=.false.
+    writer_entries(writer_entry_index)%contents(my_facet_index)%diagnostic_field=.false.
 
     if (present(diagnostic_field_configuration)) then
       writer_entries(writer_entry_index)%contents(my_facet_index)%timestep_frequency=timestep_frequency
@@ -1032,6 +1296,9 @@ contains
       writer_entries(writer_entry_index)%contents(my_facet_index)%dim_size_defns=diagnostic_field_configuration%dim_size_defns
       writer_entries(writer_entry_index)%contents(my_facet_index)%units=diagnostic_field_configuration%units
       writer_entries(writer_entry_index)%contents(my_facet_index)%collective_write=diagnostic_field_configuration%collective
+      writer_entries(writer_entry_index)%contents(my_facet_index)%collective_initialised=.false.
+      writer_entries(writer_entry_index)%contents(my_facet_index)%issue_write=.true.
+      writer_entries(writer_entry_index)%contents(my_facet_index)%diagnostic_field=.true.
     else if (present(prognostic_field_configuration)) then
       writer_entries(writer_entry_index)%contents(my_facet_index)%timestep_frequency=timestep_frequency
       writer_entries(writer_entry_index)%contents(my_facet_index)%data_type=prognostic_field_configuration%data_type
@@ -1039,7 +1306,15 @@ contains
       writer_entries(writer_entry_index)%contents(my_facet_index)%units=prognostic_field_configuration%units
       writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions=prognostic_field_configuration%dimensions
       writer_entries(writer_entry_index)%contents(my_facet_index)%collective_write=prognostic_field_configuration%collective
-      if (prognostic_field_configuration%field_type == ARRAY_FIELD_TYPE) then
+      writer_entries(writer_entry_index)%contents(my_facet_index)%collective_initialised=.false.
+      writer_entries(writer_entry_index)%contents(my_facet_index)%prognostic_field=.true.
+      if (.not. prognostic_field_configuration%collective) then
+        writer_entries(writer_entry_index)%contents(my_facet_index)%issue_write=io_configuration%my_io_rank==0
+      else
+        writer_entries(writer_entry_index)%contents(my_facet_index)%issue_write=.true.
+      end if      
+      if (prognostic_field_configuration%field_type == ARRAY_FIELD_TYPE .or. &
+           prognostic_field_configuration%field_type == MAP_FIELD_TYPE) then
         if (prognostic_field_configuration%dimensions .gt. 0) then
           writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions=prognostic_field_configuration%dimensions
           writer_entries(writer_entry_index)%contents(my_facet_index)%dim_size_defns=&
@@ -1101,5 +1376,182 @@ contains
       end if
     end do
     get_index_of_group=0
-  end function get_index_of_group  
+  end function get_index_of_group
+
+  !> Determines whether it can optimise a specific collective field. If the field fits into certain limited parameters
+  !! then it will optimise it. These parameters are very common, hence most fields can be optimised. Basically, it is looking
+  !! to contiguous blocks of data from different MONCs so that the number of writes to the NetCDF file is limited
+  !! @param io_configuration The IO server configuration
+  !! @param field_to_write_information Description of the the specific field that we are looking at here
+  subroutine determine_collective_type_and_optimise_if_possible(io_configuration, field_to_write_information)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    type(writer_field_type), intent(inout) :: field_to_write_information
+
+    if (field_to_write_information%dimensions .eq. 3 .and. &
+         get_dimension_identifier(field_to_write_information%dim_size_defns(1)) == Z_INDEX .and. &
+         get_dimension_identifier(field_to_write_information%dim_size_defns(2)) == Y_INDEX .and. &
+         get_dimension_identifier(field_to_write_information%dim_size_defns(3)) == X_INDEX) then
+      field_to_write_information%collective_contiguous_optimisation=.true.
+      call initialise_contiguous_data_regions(io_configuration, field_to_write_information)
+    else
+      field_to_write_information%collective_contiguous_optimisation=.false.
+    end if
+    field_to_write_information%collective_initialised=.true.
+  end subroutine determine_collective_type_and_optimise_if_possible  
+
+  !> Will initialise the collective data regions that form contiguous blocks within the data. This is quite an expensive
+  !! operation so only done once for each field, but has the potential for very significant performance advantages for the
+  !! fields that match it
+  !! @param io_configuration The IO server configuration
+  !! @param field_to_write_information The specific field that is being looked at and identified for contiguous data
+  subroutine initialise_contiguous_data_regions(io_configuration, field_to_write_information)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    type(writer_field_type), intent(inout) :: field_to_write_information
+
+    integer :: start(field_to_write_information%dimensions, io_configuration%number_of_moncs), &
+         count(field_to_write_information%dimensions, io_configuration%number_of_moncs), &
+         common_starters(io_configuration%number_of_moncs), num_common, num_current_contents, active_dim, other_dim, &
+         j, k, i, dim_identifier, number_distinct_writes, start_blocks(io_configuration%number_of_moncs), ierr, &
+         count_blocks(io_configuration%number_of_moncs), current_contents(io_configuration%number_of_moncs), &
+         monc_write_start_offset_per_dim(field_to_write_information%dimensions,io_configuration%number_of_moncs)
+    logical :: processed(io_configuration%number_of_moncs)
+
+    type(write_field_collective_descriptor_type), pointer :: collective_descriptor
+    type(write_field_collective_monc_info_type), pointer :: specific_monc_collective
+    class(*), pointer :: generic  
+
+    processed=.false.
+    number_distinct_writes=0
+    do j=1, io_configuration%number_of_moncs
+      do k=1, field_to_write_information%dimensions
+        dim_identifier=get_dimension_identifier(field_to_write_information%dim_size_defns(k))
+        start(k, j)=io_configuration%registered_moncs(j)%local_dim_starts(dim_identifier)
+        count(k, j)=io_configuration%registered_moncs(j)%local_dim_sizes(dim_identifier)
+      end do
+    end do
+
+    do j=1, io_configuration%number_of_moncs
+      if (.not. processed(j)) then
+        call get_common_starts(Y_INDEX, start(Y_INDEX, j), start, common_starters, num_common)
+        if (num_common == 0) then
+          call get_common_starts(X_INDEX, start(X_INDEX, j), start, common_starters, num_common)
+          if (num_common .gt. 0) then
+            active_dim=X_INDEX
+            other_dim=Y_INDEX
+          end if
+        else
+          active_dim=Y_INDEX
+          other_dim=X_INDEX
+        end if
+          number_distinct_writes=number_distinct_writes+1
+          allocate(collective_descriptor)
+          allocate(collective_descriptor%absolute_start(field_to_write_information%dimensions), &
+               collective_descriptor%count(field_to_write_information%dimensions))
+          start_blocks(number_distinct_writes)=start(other_dim, j)
+          count_blocks(number_distinct_writes)=count(other_dim, j)
+          num_current_contents=1
+          current_contents(num_current_contents)=j
+          processed(j)=.true.
+          if (num_common .gt. 0) then
+            do k=1, num_common
+              do i=1, num_common
+                if (.not. processed(common_starters(i)) .and. count(active_dim, j) == count(active_dim, i)) then
+                  if (start(other_dim, common_starters(i)) .lt. start_blocks(number_distinct_writes) .and. &
+                       start(other_dim, common_starters(i)) + count(other_dim, common_starters(i)) &
+                       == start_blocks(number_distinct_writes)) then
+                    start_blocks(number_distinct_writes)=start(other_dim, common_starters(i))
+                    count_blocks(number_distinct_writes)=count_blocks(number_distinct_writes)+count(other_dim, common_starters(i))
+                    processed(common_starters(i))=.true.                    
+                    num_current_contents=num_current_contents+1
+                    current_contents(num_current_contents)=common_starters(i)
+                  else if (start(other_dim, common_starters(i)) .gt. start_blocks(number_distinct_writes) .and. &
+                       start_blocks(number_distinct_writes) + count_blocks(number_distinct_writes) &
+                       == start(other_dim, common_starters(i))) then
+                    count_blocks(number_distinct_writes)=count_blocks(number_distinct_writes)+count(other_dim, common_starters(i))
+                    processed(common_starters(i))=.true.                    
+                    num_current_contents=num_current_contents+1
+                    current_contents(num_current_contents)=common_starters(i)
+                  end if
+                end if
+              end do
+            end do
+          end if
+          collective_descriptor%absolute_start=start(:,j)
+          collective_descriptor%count=count(:,j)
+          collective_descriptor%absolute_start(other_dim)=start_blocks(number_distinct_writes)
+          collective_descriptor%count(other_dim)=count_blocks(number_distinct_writes)
+          collective_descriptor%split_dim=other_dim
+          if (num_current_contents .gt. 0) then
+            do k=1, num_current_contents
+              allocate(specific_monc_collective)                          
+              specific_monc_collective%relative_dimension_start=(start(other_dim,current_contents(k))-&
+                   start_blocks(number_distinct_writes)) + 1              
+              specific_monc_collective%counts=count(:, current_contents(k))
+              specific_monc_collective%monc_location=current_contents(k)
+              specific_monc_collective%monc_source=io_configuration%registered_moncs(current_contents(k))%source_id
+              generic=>specific_monc_collective
+              call c_add_generic(collective_descriptor%specific_monc_info, generic, .false.)
+            end do
+          end if
+          generic=>collective_descriptor
+          call c_add_generic(field_to_write_information%collective_descriptors, generic, .false.)
+      end if
+    end do
+    call lock_mpi()
+    call mpi_iallreduce(number_distinct_writes, field_to_write_information%max_num_collective_writes, 1, MPI_INT, MPI_MAX, &
+         io_configuration%io_communicator, field_to_write_information%max_num_collective_writes_request_handle, ierr)
+    call unlock_mpi()
+  end subroutine initialise_contiguous_data_regions
+
+  !> Retrieves the number of common starting points that match a specific input value
+  !! @param dim The dimension we are searching in
+  !! @param val The value that we are looking to match against
+  !! @param vals All the other dimensions information to search against
+  !! @param common_starters The common starting point locations
+  !! @param num_common The number of common starting points identified
+  subroutine get_common_starts(dim, val, vals, common_starters, num_common)
+    integer, intent(in) :: dim, val
+    integer, dimension(:,:), intent(in) :: vals
+    integer, dimension(:), intent(out) :: common_starters
+    integer, intent(out) :: num_common
+
+    integer :: i
+
+    num_common=0
+    do i=1, size(vals, 2)
+      if (vals(dim, i) == val) then
+        num_common=num_common+1
+        common_starters(num_common)=i
+      end if      
+    end do    
+  end subroutine get_common_starts
+
+  !> Translates a dimension name to its numeric corresponding identifier
+  !! @param dim_name The name of the dimension to look up
+  !! @param is_auto_dimension Optional parameter determining whether dimension is auto or not
+  !! @returns Corresponding identifier
+  integer function get_dimension_identifier(dim_name, is_auto_dimension)
+    character(len=*), intent(in) :: dim_name
+    logical, intent(out), optional :: is_auto_dimension
+
+    integer :: dash_idx
+    logical :: is_modified_size
+
+    dash_idx=index(dim_name, "_")
+    dash_idx=dash_idx-1
+    is_modified_size=dash_idx .ne. -1
+    if (.not. is_modified_size) dash_idx=len_trim(dim_name)
+
+    if (dim_name(:dash_idx) .eq. "z" .or. dim_name(:dash_idx) .eq. "zn") then
+      get_dimension_identifier=Z_INDEX
+    else if (dim_name(:dash_idx) .eq. "y") then
+      get_dimension_identifier=Y_INDEX
+    else if (dim_name(:dash_idx) .eq. "x") then
+      get_dimension_identifier=X_INDEX
+    else
+      get_dimension_identifier=-1
+    end if
+
+    if (present(is_auto_dimension)) is_auto_dimension=is_modified_size
+  end function get_dimension_identifier
 end module writer_federator_mod

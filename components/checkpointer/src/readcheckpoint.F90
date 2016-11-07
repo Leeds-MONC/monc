@@ -7,19 +7,22 @@ module checkpointer_read_checkpoint_mod
   use dummy_netcdf_mod, only : nf90_global, nf90_nowrite, nf90_inquire_attribute, nf90_open, nf90_inq_dimid, &
        nf90_inquire_dimension, nf90_inq_varid, nf90_get_var, nf90_get_att, nf90_close
 #endif
+  use datadefn_mod, only : STRING_LENGTH
   use state_mod, only : model_state_type
   use grids_mod, only : local_grid_type, global_grid_type, X_INDEX, Y_INDEX, Z_INDEX, PRIMAL_GRID, DUAL_GRID
   use prognostics_mod, only : prognostic_field_type
   use logging_mod, only : LOG_INFO, LOG_ERROR, log_log, log_master_log
-  use conversions_mod, only : conv_is_integer, conv_to_integer, conv_is_real, conv_to_real, conv_is_logical, conv_to_logical
+  use conversions_mod, only : conv_is_integer, conv_to_integer, conv_is_real, conv_to_real, conv_is_logical, conv_to_logical, &
+       conv_to_string
   use optionsdatabase_mod, only : options_add
   use checkpointer_common_mod, only : EMPTY_DIM_KEY, STRING_DIM_KEY, X_DIM_KEY, Y_DIM_KEY, &
        Z_DIM_KEY, Q_DIM_KEY, Q_KEY, ZQ_KEY, TH_KEY, ZTH_KEY, P_KEY, U_KEY, V_KEY, W_KEY, ZU_KEY, ZV_KEY, ZW_KEY, X_KEY, Y_KEY, &
-       Z_KEY, NQFIELDS, UGAL, VGAL, TIME_KEY, TIMESTEP, CREATED_ATTRIBUTE_KEY, TITLE_ATTRIBUTE_KEY, &
-       ABSOLUTE_NEW_DTM_KEY, DTM_KEY, DTM_NEW_KEY, Q_INDICES_KEY, check_status, remove_null_terminator_from_string, &
-       MAX_STRING_LENGTH
+       Z_KEY, ZN_KEY, NQFIELDS, UGAL, VGAL, TIME_KEY, TIMESTEP, CREATED_ATTRIBUTE_KEY, TITLE_ATTRIBUTE_KEY, ABSOLUTE_NEW_DTM_KEY, &
+       DTM_KEY, DTM_NEW_KEY, Q_INDICES_DIM_KEY, Q_INDICES_KEY, Q_FIELD_ANONYMOUS_NAME, ZQ_FIELD_ANONYMOUS_NAME, &
+       MAX_STRING_LENGTH, THREF, OLUBAR, OLZUBAR, OLVBAR, OLZVBAR, OLTHBAR, OLZTHBAR, OLQBAR, OLZQBAR, OLQBAR_ANONYMOUS_NAME, &
+       OLZQBAR_ANONYMOUS_NAME, check_status, remove_null_terminator_from_string
   use datadefn_mod, only : DEFAULT_PRECISION
-  use q_indices_mod, only : set_q_index
+  use q_indices_mod, only : q_metadata_type, set_q_index, get_q_index, get_indices_descriptor, standard_q_names
   implicit none
 
 #ifndef TEST_MODE
@@ -44,15 +47,22 @@ contains
     call check_status(nf90_open(path = filename, mode = nf90_nowrite, ncid = ncid))
     attribute_value=read_specific_global_attribute(ncid, "created")
     call read_dimensions(ncid, z_dim, y_dim, x_dim, z_found, y_found, x_found)
-    call load_global_grid(current_state, ncid, z_dim, y_dim, x_dim, z_found, y_found, x_found)
+    call load_global_grid(current_state, ncid, z_dim, y_dim, x_dim, z_found, y_found, x_found)    
 
     call decompose_grid(current_state)
 
-    call load_q_indices(ncid)
+    call load_q_indices(ncid)    
     call load_misc(current_state, ncid)
     call load_all_fields(current_state, ncid)
     call initalise_source_and_sav_fields(current_state)  
+    call load_mean_profiles(current_state, ncid, z_dim)
     call check_status(nf90_close(ncid))
+
+    if (current_state%number_q_fields .gt. 0) then
+      ! Retrieve standard q indices
+      current_state%water_vapour_mixing_ratio_index=get_q_index(standard_q_names%VAPOUR, 'checkpoint')
+      current_state%liquid_water_mixing_ratio_index=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'checkpoint')
+    end if
 
     call log_master_log(LOG_INFO, "Restarted configuration from checkpoint file `"//trim(filename)//"` created at "&
          //attribute_value)
@@ -86,26 +96,34 @@ contains
 #ifdef U_ACTIVE
     allocate(current_state%su%data(z_size, y_size, x_size))
     current_state%su%data(:,:,:) = 0.
+    current_state%su%active=.true.
     allocate(current_state%savu%data(z_size, y_size, x_size))
     current_state%savu%data(:,:,:) = 0.
+    current_state%savu%active=.true.
 #endif
 #ifdef V_ACTIVE
     allocate(current_state%sv%data(z_size, y_size, x_size))
     current_state%sv%data(:,:,:) = 0.
+    current_state%sv%active=.true.
     allocate(current_state%savv%data(z_size, y_size, x_size))
     current_state%savv%data(:,:,:) = 0.
+    current_state%savv%active=.true.
 #endif
 #ifdef W_ACTIVE
     allocate(current_state%sw%data(z_size, y_size, x_size))
     current_state%sw%data(:,:,:) = 0.
+    current_state%sw%active=.true.
     allocate(current_state%savw%data(z_size, y_size, x_size))
     current_state%savw%data(:,:,:) = 0.
+    current_state%savw%active=.true.
 #endif
     if (current_state%th%active) then
       allocate(current_state%sth%data(z_size, y_size, x_size))
       current_state%sth%data(:,:,:) = 0.
+      current_state%sth%active=.true.
     end if
     do i=1,current_state%number_q_fields
+      current_state%sq(i)%active=.true.
       allocate(current_state%sq(i)%data(z_size, y_size, x_size))
       current_state%sq(i)%data(:,:,:) = 0.
     end do
@@ -173,6 +191,8 @@ contains
 
     integer :: i
     logical :: multi_process
+    type(q_metadata_type) :: q_metadata
+    character(len=STRING_LENGTH) :: q_field_name, zq_field_name
 
     multi_process = current_state%parallel%processes .gt. 1
 
@@ -206,12 +226,34 @@ contains
     end if    
     allocate(current_state%q(current_state%number_q_fields), current_state%zq(current_state%number_q_fields), &
          current_state%sq(current_state%number_q_fields))
-    do i=1,current_state%number_q_fields
-      call load_single_3d_field(ncid, current_state%local_grid, current_state%q(i), DUAL_GRID, &
-           DUAL_GRID, DUAL_GRID, Q_KEY, multi_process, i)
-      call load_single_3d_field(ncid, current_state%local_grid, current_state%zq(i), DUAL_GRID, &
-           DUAL_GRID, DUAL_GRID, ZQ_KEY, multi_process, i)
-    end do
+    if (does_field_exist(ncid, Q_KEY)) then
+      do i=1,current_state%number_q_fields
+        call load_single_3d_field(ncid, current_state%local_grid, current_state%q(i), DUAL_GRID, &
+             DUAL_GRID, DUAL_GRID, Q_KEY, multi_process, i)
+        call load_single_3d_field(ncid, current_state%local_grid, current_state%zq(i), DUAL_GRID, &
+             DUAL_GRID, DUAL_GRID, ZQ_KEY, multi_process, i)
+      end do
+    else
+      do i=1,current_state%number_q_fields
+        q_metadata=get_indices_descriptor(i)
+        q_field_name=trim(Q_KEY)//"_"//trim(q_metadata%name)
+        zq_field_name=trim(ZQ_KEY)//"_"//trim(q_metadata%name)
+        if (.not. does_field_exist(ncid, q_field_name)) then
+          q_field_name=trim(Q_FIELD_ANONYMOUS_NAME)//"_"//trim(conv_to_string(i))
+          zq_field_name=trim(ZQ_FIELD_ANONYMOUS_NAME)//"_"//trim(conv_to_string(i))
+          if (.not. does_field_exist(ncid, q_field_name)) then
+            call log_log(LOG_ERROR, "No entry in checkpoint file for Q field "//trim(conv_to_string(i)))
+          end if          
+        end if
+        if (.not. does_field_exist(ncid, zq_field_name)) then
+          call log_log(LOG_ERROR, "Missmatch between q and zq field name in the checkpoint file")
+        end if
+        call load_single_3d_field(ncid, current_state%local_grid, current_state%q(i), DUAL_GRID, &
+             DUAL_GRID, DUAL_GRID, q_field_name, multi_process)
+        call load_single_3d_field(ncid, current_state%local_grid, current_state%zq(i), DUAL_GRID, &
+             DUAL_GRID, DUAL_GRID, zq_field_name, multi_process)
+      end do      
+    end if
   end subroutine load_all_fields
 
   !> Determines whether a variable (field) exists within the NetCDF checkpoint file
@@ -255,7 +297,7 @@ contains
     integer :: q_indices_dimid, q_indices_dim
     logical :: found_flag
 
-    call check_status(nf90_inq_dimid(ncid, Q_INDICES_KEY, q_indices_dimid), found_flag)
+    call check_status(nf90_inq_dimid(ncid, Q_INDICES_DIM_KEY, q_indices_dimid), found_flag)
     if (found_flag) then
       call check_status(nf90_inquire_dimension(ncid, q_indices_dimid, len=q_indices_dim))
       get_number_q_indices=q_indices_dim
@@ -281,7 +323,8 @@ contains
     logical, intent(in) :: multi_process
     integer, optional, intent(in) :: fourth_dim_loc
 
-    integer :: start(4), count(4), i, map(4)
+    integer :: start(5), count(5), i, map(5)
+ integer :: variable_id, nd
 
     if (allocated(field%data)) deallocate(field%data)
     allocate(field%data(local_grid%size(Z_INDEX) + local_grid%halo_size(Z_INDEX) * 2, local_grid%size(Y_INDEX) + &
@@ -302,6 +345,14 @@ contains
         start(4) = fourth_dim_loc
         count(4) = 1
         map(4)=map(3)*local_grid%size(3)
+
+        start(5)=1
+        count(5)=1
+        map(5)=map(4)
+      else
+        start(4)=1
+        map(4)=map(3)*local_grid%size(3)
+        count(4)=1
       end if
 
       call read_single_variable(ncid, variable_key, real_data_3d=field%data(local_grid%local_domain_start_index(Z_INDEX):&
@@ -340,35 +391,115 @@ contains
     if (z_found) then
       call read_dimension_of_grid(ncid, current_state%global_grid, Z_KEY, Z_INDEX, z_dim)
       call define_vertical_levels(ncid, current_state, Z_KEY, z_dim)
+      
     end if
     if (y_found) call read_dimension_of_grid(ncid, current_state%global_grid, Y_KEY, Y_INDEX, y_dim)
     if (x_found) call read_dimension_of_grid(ncid, current_state%global_grid, X_KEY, X_INDEX, x_dim)
   end subroutine load_global_grid
+
+  subroutine load_mean_profiles(current_state, ncid, z_dim_id)
+    type(model_state_type), intent(inout) :: current_state
+    integer, intent(in) :: ncid, z_dim_id
+
+    integer :: z_size, i
+    type(q_metadata_type) :: q_metadata
+    character(len=STRING_LENGTH) :: q_field_name, zq_field_name
+
+    call check_status(nf90_inquire_dimension(ncid, z_dim_id, len=z_size))
+    if (does_field_exist(ncid, OLUBAR)) then
+      allocate(current_state%global_grid%configuration%vertical%olubar(z_size))
+      call read_single_variable(ncid, OLUBAR, real_data_1d_double=current_state%global_grid%configuration%vertical%olubar)
+    end if
+    if (does_field_exist(ncid, OLZUBAR)) then
+      allocate(current_state%global_grid%configuration%vertical%olzubar(z_size))
+      call read_single_variable(ncid, OLZUBAR, real_data_1d_double=current_state%global_grid%configuration%vertical%olzubar)
+    end if
+    if (does_field_exist(ncid, OLVBAR)) then
+      allocate(current_state%global_grid%configuration%vertical%olvbar(z_size))
+      call read_single_variable(ncid, OLVBAR, real_data_1d_double=current_state%global_grid%configuration%vertical%olvbar)
+    end if
+    if (does_field_exist(ncid, OLZVBAR)) then
+      allocate(current_state%global_grid%configuration%vertical%olzvbar(z_size))
+      call read_single_variable(ncid, OLZVBAR, real_data_1d_double=current_state%global_grid%configuration%vertical%olzvbar)
+    end if
+    if (does_field_exist(ncid, OLTHBAR)) then
+      allocate(current_state%global_grid%configuration%vertical%olthbar(z_size))
+      call read_single_variable(ncid, OLTHBAR, real_data_1d_double=current_state%global_grid%configuration%vertical%olthbar)
+    end if
+    if (does_field_exist(ncid, OLZTHBAR)) then
+      allocate(current_state%global_grid%configuration%vertical%olzthbar(z_size))
+      call read_single_variable(ncid, OLZTHBAR, real_data_1d_double=current_state%global_grid%configuration%vertical%olzthbar)
+    end if
+   if (does_field_exist(ncid, OLQBAR)) then
+     allocate(current_state%global_grid%configuration%vertical%olqbar(z_size, current_state%number_q_fields))
+     call read_single_variable(ncid, OLQBAR, real_data_2d_double=current_state%global_grid%configuration%vertical%olqbar)
+   else if (current_state%number_q_fields .gt. 0) then
+     do i=1,current_state%number_q_fields
+        q_metadata=get_indices_descriptor(i)
+        q_field_name=trim(OLQBAR)//"_"//trim(q_metadata%name)
+        if (.not. does_field_exist(ncid, q_field_name)) then
+          q_field_name=trim(OLQBAR_ANONYMOUS_NAME)//"_"//trim(conv_to_string(i))          
+          if (.not. does_field_exist(ncid, q_field_name)) then
+            cycle
+          end if        
+        end if
+        if (.not. allocated(current_state%global_grid%configuration%vertical%olqbar)) then
+          allocate(current_state%global_grid%configuration%vertical%olqbar(z_size, current_state%number_q_fields))
+        end if
+        call read_single_variable(ncid, q_field_name, &
+             real_data_1d_double=current_state%global_grid%configuration%vertical%olqbar(:, i))        
+      end do
+    end if
+   if (does_field_exist(ncid, OLZQBAR)) then
+     allocate(current_state%global_grid%configuration%vertical%olzqbar(z_size, current_state%number_q_fields))
+     call read_single_variable(ncid, OLZQBAR, real_data_2d_double=current_state%global_grid%configuration%vertical%olzqbar)
+   else if (current_state%number_q_fields .gt. 0) then
+     do i=1,current_state%number_q_fields
+        q_metadata=get_indices_descriptor(i)
+        q_field_name=trim(OLZQBAR)//"_"//trim(q_metadata%name)
+        if (.not. does_field_exist(ncid, q_field_name)) then
+          q_field_name=trim(OLZQBAR_ANONYMOUS_NAME)//"_"//trim(conv_to_string(i))          
+          if (.not. does_field_exist(ncid, q_field_name)) then
+            cycle
+          end if        
+        end if
+        if (.not. allocated(current_state%global_grid%configuration%vertical%olzqbar)) then
+          allocate(current_state%global_grid%configuration%vertical%olzqbar(z_size, current_state%number_q_fields))
+        end if
+        call read_single_variable(ncid, q_field_name, &
+             real_data_1d_double=current_state%global_grid%configuration%vertical%olzqbar(:, i))        
+      end do
+    end if
+  end subroutine load_mean_profiles  
 
   !> Defines the vertical levels of the grid. This is both the grid points and corresponding height
   !! for each point in metres
   !! @param current_state The current model state_mod
   !! @param z_key Key of the Z grid points in the NetCDF
   !! @param z_size Number of grid points
-  subroutine define_vertical_levels(ncid, current_state, z_key, z_size)
+  subroutine define_vertical_levels(ncid, current_state, z_key, z_dim_id)
     type(model_state_type), intent(inout) :: current_state
     character(len=*), intent(in) :: z_key
-    integer, intent(in) :: z_size, ncid
+    integer, intent(in) :: z_dim_id, ncid
 
-    integer :: i
+    integer :: i, z_size
     real, dimension(:), allocatable :: data
 
+    call check_status(nf90_inquire_dimension(ncid, z_dim_id, len=z_size))
     allocate(data(z_size))
     call read_single_variable(ncid, z_key, real_data_1d=data)
 
     allocate(current_state%global_grid%configuration%vertical%kgd(z_size), &
-         current_state%global_grid%configuration%vertical%hgd(z_size))
+         current_state%global_grid%configuration%vertical%hgd(z_size), &
+         current_state%global_grid%configuration%vertical%thref(z_size))
+
+    call read_single_variable(ncid, THREF, real_data_1d_double=current_state%global_grid%configuration%vertical%thref)
 
     do i=1,z_size
       current_state%global_grid%configuration%vertical%kgd(i) = i
       current_state%global_grid%configuration%vertical%hgd(i) = real(data(i))
     end do
-    deallocate(data)
+    deallocate(data)    
   end subroutine define_vertical_levels
 
   !> Reads a specific dimension of the grid from the NetCDF and sets this up in the state_mod
@@ -377,24 +508,32 @@ contains
   !! @param variable_key The NetCDF variable name that we are reading
   !! @param dimension The dimension corresponding to the definition in the grids_mod module
   !! @param dimension_size Number of grid points in this dimension
-  subroutine read_dimension_of_grid(ncid, grid, variable_key, dimension, dimension_size)
-    integer, intent(in) :: ncid, dimension_size, dimension
+  subroutine read_dimension_of_grid(ncid, grid, variable_key, dimension, dimension_id)
+    integer, intent(in) :: ncid, dimension_id, dimension
     character(len=*), intent(in) :: variable_key
     type(global_grid_type), intent(inout) :: grid
 
-    real, dimension(:), allocatable :: data
+    integer :: dim_size
 
-    allocate(data(dimension_size))
-    call read_single_variable(ncid, variable_key, real_data_1d=data)
-    grid%top(dimension) = data(dimension_size)
-    grid%resolution(dimension) = (data(2) - data(1))
-    ! For now hard code the bottom of the grid in each dimension as 0, first element is the 0th + size
-    ! I.e. if dxx=100, start=0 then first point is 100 rather than 0 (in x and y), is correct in z in CP file
-    grid%bottom(dimension) = 0
-    grid%size(dimension) = dimension_size
+    call check_status(nf90_inquire_dimension(ncid, dimension_id, len=dim_size))
+
+    if (variable_key .eq. "x" .or. variable_key .eq. "y") then
+      call read_single_variable(ncid, trim(variable_key)//"_resolution", real_data=grid%resolution(dimension))
+      call read_single_variable(ncid, trim(variable_key)//"_top", real_data=grid%top(dimension))
+      call read_single_variable(ncid, trim(variable_key)//"_bottom", real_data=grid%bottom(dimension))
+    else if (variable_key .eq. "z") then
+      allocate(grid%configuration%vertical%z(dim_size), grid%configuration%vertical%zn(dim_size))
+      call read_single_variable(ncid, Z_KEY, real_data_1d_double=grid%configuration%vertical%z)
+      call read_single_variable(ncid, ZN_KEY, real_data_1d_double=grid%configuration%vertical%zn)
+      grid%top(dimension) = int(grid%configuration%vertical%z(dim_size))
+      grid%resolution(dimension) = int(grid%configuration%vertical%z(2) - grid%configuration%vertical%z(1))
+      ! For now hard code the bottom of the grid in each dimension as 0, first element is the 0th + size
+      ! I.e. if dxx=100, start=0 then first point is 100 rather than 0 (in x and y), is correct in z in CP file
+      grid%bottom(dimension) = 0
+    end if            
+    grid%size(dimension) = dim_size
     grid%dimensions = grid%dimensions + 1
-    grid%active(dimension) = .true.
-    deallocate(data)
+    grid%active(dimension) = .true.    
   end subroutine read_dimension_of_grid
 
   !> Reads in a single variable and sets the values of the data based upon this. Handles reading in
@@ -404,11 +543,15 @@ contains
   !! @param realData1D Vector of 1D real data to read (optional)
   !! @param realData3D Vector of 3D real data to read (optional)
   !! @param integerData1D Vector of 1D integer data to read (optional)
-  subroutine read_single_variable(ncid, key, real_data_1d, real_data_1d_double, real_data_3d, integer_data_1d, start, count, map)
+  subroutine read_single_variable(ncid, key, int_data, real_data, real_data_1d, real_data_1d_double, real_data_2d_double, &
+       real_data_3d, integer_data_1d, start, count, map)
     integer, intent(in) :: ncid
     character(len=*), intent(in) :: key
+    integer, intent(inout), optional :: int_data
+    real(kind=DEFAULT_PRECISION) , intent(inout), optional :: real_data
     real, dimension(:), intent(inout), optional :: real_data_1d
     real(kind=DEFAULT_PRECISION), dimension(:), intent(inout), optional :: real_data_1d_double
+    real(kind=DEFAULT_PRECISION), dimension(:,:), intent(inout), optional :: real_data_2d_double
     real(kind=DEFAULT_PRECISION), dimension(:,:,:), intent(inout), optional :: real_data_3d
     integer, dimension(:), intent(inout), optional :: integer_data_1d
     integer, dimension(:), intent(in), optional :: start, count, map
@@ -417,30 +560,57 @@ contains
 
     call check_status(nf90_inq_varid(ncid, key, variable_id))
 
-    if (.not. present(real_data_1d) .and. .not. present(real_data_1d_double) .and. &
+    if (.not. present(int_data) .and. .not. present(real_data) .and. .not. present(real_data_1d) .and. &
+         .not. present(real_data_1d_double) .and. .not. present(real_data_2d_double) .and. &
          .not. present(real_data_3d) .and. .not. present(integer_data_1d)) return
+
+    if (present(int_data)) then
+      call check_status(nf90_get_var(ncid, variable_id, int_data))
+      return
+    end if  
+
+    if (present(real_data)) then
+      call check_status(nf90_get_var(ncid, variable_id, real_data))
+      return
+    end if
 
     if (present(real_data_1d)) then
       if (present(start) .and. present(count) .and. present(map)) then
         call check_status(nf90_get_var(ncid, variable_id, real_data_1d, start=start, count=count, map=map))
+      else if (present(start) .and. present(count)) then
+        call check_status(nf90_get_var(ncid, variable_id, real_data_1d, start=start, count=count))
       else
         call check_status(nf90_get_var(ncid, variable_id, real_data_1d))
       end if
     else if (present(real_data_1d_double)) then
       if (present(start) .and. present(count) .and. present(map)) then
         call check_status(nf90_get_var(ncid, variable_id, real_data_1d_double, start=start, count=count, map=map))
+      else if (present(start) .and. present(count)) then
+        call check_status(nf90_get_var(ncid, variable_id, real_data_1d_double, start=start, count=count))
       else
         call check_status(nf90_get_var(ncid, variable_id, real_data_1d_double))
+      end if
+    else if (present(real_data_2d_double)) then
+      if (present(start) .and. present(count) .and. present(map)) then
+        call check_status(nf90_get_var(ncid, variable_id, real_data_2d_double, start=start, count=count, map=map))
+      else if (present(start) .and. present(count)) then
+        call check_status(nf90_get_var(ncid, variable_id, real_data_2d_double, start=start, count=count))
+      else
+        call check_status(nf90_get_var(ncid, variable_id, real_data_2d_double))
       end if
     else if (present(real_data_3d)) then
       if (present(start) .and. present(count) .and. present(map)) then
         call check_status(nf90_get_var(ncid, variable_id, real_data_3d, start=start, count=count, map=map))
+      else if (present(start) .and. present(count)) then
+        call check_status(nf90_get_var(ncid, variable_id, real_data_3d, start=start, count=count))
       else
         call check_status(nf90_get_var(ncid, variable_id, real_data_3d))
       end if
     else if (present(integer_data_1d)) then
       if (present(start) .and. present(count) .and. present(map)) then
         call check_status(nf90_get_var(ncid, variable_id, integer_data_1d, start, count, map))
+      else if (present(start) .and. present(count)) then
+        call check_status(nf90_get_var(ncid, variable_id, integer_data_1d, start, count))
       else
         call check_status(nf90_get_var(ncid, variable_id, integer_data_1d))
       end if
@@ -464,29 +634,8 @@ contains
     integer, intent(out) :: z_dim, y_dim, x_dim
     logical, intent(out) :: z_found, y_found, x_found
 
-    integer ::  z_dimid, y_dimid, x_dimid, empty_dimid, empty_dim
-
-    call check_status(nf90_inq_dimid(ncid, Z_DIM_KEY, z_dimid), z_found)
-    call check_status(nf90_inq_dimid(ncid, Y_DIM_KEY, y_dimid), y_found)
-    call check_status(nf90_inq_dimid(ncid, X_DIM_KEY, x_dimid), x_found)
-    call check_status(nf90_inq_dimid(ncid, EMPTY_DIM_KEY, empty_dimid))
-
-    call check_status(nf90_inquire_dimension(ncid, empty_dimid, len=empty_dim))
-
-    if (z_found) then
-      call check_status(nf90_inquire_dimension(ncid, z_dimid, len=z_dim))
-    else
-      z_dim = empty_dim
-    end if
-    if (y_found) then
-      call check_status(nf90_inquire_dimension(ncid, y_dimid, len=y_dim))
-    else
-      y_dim = empty_dim
-    end if
-    if (x_found) then
-      call check_status(nf90_inquire_dimension(ncid, x_dimid, len=x_dim))
-    else
-      x_dim = empty_dim
-    end if
+    call check_status(nf90_inq_dimid(ncid, Z_DIM_KEY, z_dim), z_found)
+    call check_status(nf90_inq_dimid(ncid, Y_DIM_KEY, y_dim), y_found)
+    call check_status(nf90_inq_dimid(ncid, X_DIM_KEY, x_dim), x_found)
   end subroutine read_dimensions
 end module checkpointer_read_checkpoint_mod

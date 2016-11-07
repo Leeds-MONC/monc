@@ -33,7 +33,7 @@ initialisation_stage_ordering+=tank_experiments
 dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, tank_experiments, lwrad_exponential, simplecloud, casim,diverr, psrce, flux_budget, diagnostics, profile_diagnostics, scalar_diagnostics, stepfields
 
 # IO server configuration
-ioserver_configuration_file="io/io_cfg_files/data_write_no_qfields_1file.xml"
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 moncs_per_io_server=3
 sampling_frequency=1
 mm=5.0

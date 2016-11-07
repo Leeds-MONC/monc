@@ -1,25 +1,32 @@
 # Global configuration
 global_configuration=global_config
 
-# Enable the tank setup
-tank_experiments_enabled=.true.
-
 # Override global component defaults
+cfltest_enabled=.true.
 fftsolver_enabled=.true.
 iterativesolver_enabled=.false.
-iobridge_enabled=.true.
-flux_budget_enabled=.true.
-pw_advection_enabled=.false.
+pw_advection_enabled=.true.
+tvd_advection_enabled=.true.
 simplesetup_enabled=.true.
-smagorinsky_enabled=.false.
+smagorinsky_enabled=.true.
 lower_bc_enabled=.false.
-setfluxlook_enabled=.false.
-viscosity_enabled=.false.
-diffusion_enabled=.false.
-mean_profiles_enabled=.true.
+setfluxlook_enabled=.false. #This must be set to true if running with lower_bc
+viscosity_enabled=.true.
+diffusion_enabled=.true.
 simplecloud_enabled=.true.
+coriolis_enabled=.false.
+damping_enabled=.false.
+forcing_enabled=.false. 
+galilean_transformation=.true. # Needs debugging
+randomnoise_enabled=.true.
+mean_profiles_enabled=.true. #This must be set to true if running with damping
+th_advection_enabled=.true.
+iobridge_enabled=.true.
 scalar_diagnostics_enabled=.true.
 profile_diagnostics_enabled=.true.
+
+# Test case source code
+tank_experiments_enabled=.true.
 
 # Add bubble to initialisatio
 initialisation_stage_ordering+=tank_experiments
@@ -27,34 +34,39 @@ dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, 
 finalisation_stage_ordering+=tank_experiments
 
 # Control configuration
-nn_modeldump=1
-display_synopsis_frequency=1
-cfl_frequency=2
-nn_consolidation=1
-termination_time=20.
+display_synopsis_frequency=50
+termination_time=3660.
 dtm=1.
+nsmth=20
 
 # IO server configuration
-ioserver_configuration_file="io/io_cfg_files/data_write_incl_qfields_1file.xml"
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 moncs_per_io_server=16
 sampling_frequency=2
-mm=5.0
-mm1=5.0
-diag_write_freq=10.0
+mm=600.0
+mm1=30.0
+diag_write_freq=3600.0
+
+# CFL configuration
+cfl_frequency=1000
+cfl_cvismax=0.2
+cfl_cvelmax=0.2
+cfl_dtmmax=2.0
+cfl_dtmmin=0.1
 
 # Simple setup configuration
 rhobous=1.0
 thref0=300.0
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=32
-y_size=32
-z_size=61
-dxx=500
-dyy=500
-zztop=6000.0
-kgd=1,61
-hgd=0.0, 6000.0
+x_size=64
+y_size=64
+z_size=100
+dxx=150
+dyy=150
+zztop=10000.0
+kgd=1,100
+hgd=0.0, 10000.0
 rmlmax=15.0
 enable_theta=.true.
 number_q_fields=5
@@ -64,7 +76,7 @@ passive_th=.false.
 passive_q=.false.
 backscatter=.false.
 use_viscosity_and_diffusion=.true.
-use_surface_fluxes=.true.
+use_surface_fluxes=.false.
 use_time_varying_surface_values=.false.
 type_of_surface_boundary_conditions=0
 
@@ -94,11 +106,10 @@ l_splittank=.false.
 l_sources=.false.
 
 # Checkpoint configuration
-checkpoint_frequency=100
+checkpoint_frequency=0
 checkpoint_file="bubble_simple_dump.nc"
-checkpoint_unique_per_dump=.true.
-checkpoint_enable_write=.false.
-
+checkpoint_walltime_frequency=10
+walltime_limit=03:00:00
 
 # water loading - this should be interfaced properly
 cq=0.608, -1.,-1.,0.0,0.0

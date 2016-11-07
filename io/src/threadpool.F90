@@ -38,7 +38,7 @@ module threadpool_mod
   type(threaded_procedure_container_type), volatile, dimension(:), allocatable :: thread_entry_containers
   integer, volatile :: netcdfmutex !< Mutex used for controling NetCDF access
   integer, volatile :: next_suggested_idle_thread
-  logical, volatile :: threadpool_active, threadpool_serial_mode
+  logical, volatile :: threadpool_active
 
   integer, volatile :: active_threads, total_number_of_threads, active_scalar_mutex
 
@@ -47,52 +47,41 @@ module threadpool_mod
 contains
 
   !> Initialises the thread pool and marks each thread as idle
-  subroutine threadpool_init(io_configuration, provided_threading)
+  subroutine threadpool_init(io_configuration)
     type(io_configuration_type), intent(inout) :: io_configuration
-    integer, intent(in) :: provided_threading
 
     integer :: n
 
     call check_thread_status(forthread_init())
-    if (provided_threading == MPI_THREAD_MULTIPLE) then      
-      threadpool_serial_mode=.false.
+    call check_thread_status(forthread_mutex_init(netcdfmutex, -1))
+    if (io_configuration%number_of_threads .ge. 1) then
+      total_number_of_threads=io_configuration%number_of_threads
     else
-      threadpool_serial_mode=.true.
-      call log_log(LOG_WARN, "MPI is incapable of running in multiple threaded mode, the IO server is not running threaded")
-    end if
-
-    if (.not. threadpool_serial_mode) then
-      call check_thread_status(forthread_mutex_init(netcdfmutex, -1))
-      if (io_configuration%number_of_threads .ge. 1) then
-        total_number_of_threads=io_configuration%number_of_threads
-      else
-        if (io_configuration%my_io_rank==0) then
-          call log_log(LOG_WARN, "No setting for IO server thread pool size which must be 1 or more so using default size")
-        end if
-        total_number_of_threads=DEFAULT_THREAD_POOL_SIZE
+      if (io_configuration%my_io_rank==0) then
+        call log_log(LOG_WARN, "No setting for IO server thread pool size which must be 1 or more so using default size")
       end if
-      allocate(thread_busy(total_number_of_threads), thread_start(total_number_of_threads), &
-           thread_ids(total_number_of_threads), thread_pass_data(total_number_of_threads), &
-           activate_thread_condition_variables(total_number_of_threads), activate_thread_mutex(total_number_of_threads), &
-           thread_entry_containers(total_number_of_threads))
-      threadpool_active=.true.
-      active_threads=total_number_of_threads
-      next_suggested_idle_thread=1
-      call check_thread_status(forthread_mutex_init(active_scalar_mutex, -1))
-      do n=1, total_number_of_threads
-        call check_thread_status(forthread_cond_init(activate_thread_condition_variables(n), -1))
-        call check_thread_status(forthread_mutex_init(activate_thread_mutex(n), -1))
-        thread_busy(n)=.false.
-        thread_start(n)=.false.        
-        thread_pass_data(n)=n
-        call check_thread_status(forthread_create(thread_ids(n), -1, threadpool_thread_entry_procedure, thread_pass_data(n)))
-      end do      
+      total_number_of_threads=DEFAULT_THREAD_POOL_SIZE
     end if
+    allocate(thread_busy(total_number_of_threads), thread_start(total_number_of_threads), &
+         thread_ids(total_number_of_threads), thread_pass_data(total_number_of_threads), &
+         activate_thread_condition_variables(total_number_of_threads), activate_thread_mutex(total_number_of_threads), &
+         thread_entry_containers(total_number_of_threads))
+    threadpool_active=.true.
+    active_threads=total_number_of_threads
+    next_suggested_idle_thread=1
+    call check_thread_status(forthread_mutex_init(active_scalar_mutex, -1))
+    do n=1, total_number_of_threads
+      call check_thread_status(forthread_cond_init(activate_thread_condition_variables(n), -1))
+      call check_thread_status(forthread_mutex_init(activate_thread_mutex(n), -1))
+      thread_busy(n)=.false.
+      thread_start(n)=.false.        
+      thread_pass_data(n)=n
+      call check_thread_status(forthread_create(thread_ids(n), -1, threadpool_thread_entry_procedure, thread_pass_data(n)))
+    end do
   end subroutine threadpool_init
 
   !> Aquires the NetCDF thread lock, NetCDF is not thread safe so we need to manage thread calls to it
   subroutine threadpool_lock_netcdf_access()
-    if (threadpool_serial_mode) return
 #ifdef ENFORCE_THREAD_SAFETY
     call check_thread_status(forthread_mutex_lock(netcdfmutex))
 #endif
@@ -100,7 +89,6 @@ contains
 
   !> Releases the NetCDF thread lock, NetCDF is not thread safe so we need to manage thread calls to it
   subroutine threadpool_unlock_netcdf_access()
-    if (threadpool_serial_mode) return
 #ifdef ENFORCE_THREAD_SAFETY
     call check_thread_status(forthread_mutex_unlock(netcdfmutex))
 #endif
@@ -119,23 +107,19 @@ contains
 
     if (.not. threadpool_active) call log_log(LOG_ERROR, "Attemping to start IO thread on deactivated thread pool")
 
-    if (threadpool_serial_mode) then
-      call proc(arguments)
-    else      
-      idle_thread_id=find_idle_thread()
-      if (idle_thread_id .ne. -1) then
-        thread_busy(idle_thread_id)=.true.              
-        thread_entry_containers(idle_thread_id)%proc=>proc
-        allocate(thread_entry_containers(idle_thread_id)%arguments(size(arguments)))
-        thread_entry_containers(idle_thread_id)%arguments=arguments
-        if (present(data_buffer)) allocate(thread_entry_containers(idle_thread_id)%data_buffer(size(data_buffer)), &
-             source=data_buffer)
-        ! Send the signal to the thread to wake up and start
-        call check_thread_status(forthread_mutex_lock(activate_thread_mutex(idle_thread_id)))
-        thread_start(idle_thread_id)=.true.
-        call check_thread_status(forthread_cond_signal(activate_thread_condition_variables(idle_thread_id)))
-        call check_thread_status(forthread_mutex_unlock(activate_thread_mutex(idle_thread_id)))      
-      end if
+    idle_thread_id=find_idle_thread()
+    if (idle_thread_id .ne. -1) then
+      thread_busy(idle_thread_id)=.true.              
+      thread_entry_containers(idle_thread_id)%proc=>proc
+      allocate(thread_entry_containers(idle_thread_id)%arguments(size(arguments)))
+      thread_entry_containers(idle_thread_id)%arguments=arguments
+      if (present(data_buffer)) allocate(thread_entry_containers(idle_thread_id)%data_buffer(size(data_buffer)), &
+           source=data_buffer)
+      ! Send the signal to the thread to wake up and start
+      call check_thread_status(forthread_mutex_lock(activate_thread_mutex(idle_thread_id)))
+      thread_start(idle_thread_id)=.true.
+      call check_thread_status(forthread_cond_signal(activate_thread_condition_variables(idle_thread_id)))
+      call check_thread_status(forthread_mutex_unlock(activate_thread_mutex(idle_thread_id)))      
     end if
   end subroutine threadpool_start_thread
 
@@ -178,7 +162,9 @@ contains
   !! @returns Whether the thread pool is idle
   logical function threadpool_is_idle()
 
+    call check_thread_status(forthread_mutex_lock(active_scalar_mutex))
     threadpool_is_idle = active_threads==total_number_of_threads
+    call check_thread_status(forthread_mutex_unlock(active_scalar_mutex))
   end function threadpool_is_idle  
 
   !> This waits for all busy threads to complete and then shuts all the pthreads down. The deactivation and finalisation
@@ -191,7 +177,6 @@ contains
     allocate(retval)
 
     threadpool_active=.false.
-    if (threadpool_serial_mode) return
     do i=1, total_number_of_threads
       call check_thread_status(forthread_mutex_lock(activate_thread_mutex(i)))
       call check_thread_status(forthread_cond_signal(activate_thread_condition_variables(i)))
@@ -204,12 +189,10 @@ contains
 
   !> Finalises the thread pool
   subroutine threadpool_finalise()
-    if (.not. threadpool_serial_mode) then
       call check_thread_status(forthread_mutex_destroy(netcdfmutex))
       call check_thread_status(forthread_mutex_destroy(active_scalar_mutex))
       deallocate(thread_busy, thread_start, thread_ids, thread_pass_data, activate_thread_condition_variables, &
            activate_thread_mutex, thread_entry_containers)
-    end if
     call check_thread_status(forthread_destroy())
   end subroutine threadpool_finalise
 

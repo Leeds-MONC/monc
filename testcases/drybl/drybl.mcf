@@ -22,12 +22,13 @@ termination_time=32410.
 dtm=0.5
 
 # IO server configuration
-ioserver_configuration_file="io/io_cfg_files/data_write_no_th_qfields_1file.xml"
+ioserver_configuration_file="testcases/drybl/dry_bl.xml"
 moncs_per_io_server=16
 sampling_frequency=1
 mm=3600.0
 mm1=60.0
 diag_write_freq=32400.0
+checkpoint_freq=1000
 
 # Checkpoint configuration
 checkpoint_frequency=1000

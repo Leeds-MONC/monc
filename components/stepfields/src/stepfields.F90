@@ -97,10 +97,14 @@ contains
   subroutine step_all_fields(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    integer :: x_prev, y_prev, i
+    integer :: x_prev, y_prev, i, k
+    real(kind=DEFAULT_PRECISION) :: c1, c2
 
     x_prev = current_state%column_local_x-2
     y_prev = current_state%column_local_y-1
+
+    c1 = 1.0_DEFAULT_PRECISION - 2.0_DEFAULT_PRECISION*current_state%tsmth                                               
+    c2 = current_state%tsmth
 
 #ifdef U_ACTIVE   
     call step_single_field(current_state%column_local_x,  current_state%column_local_y, &
@@ -117,11 +121,29 @@ contains
          x_prev, y_prev, current_state%w, current_state%zw, current_state%sw, current_state%local_grid, .false., &
          current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION), current_state%savw)
 #endif
-    if (current_state%th%active) call step_single_field(current_state%column_local_x,  current_state%column_local_y, &
+    if (current_state%th%active) then
+       if (current_state%field_stepping == CENTRED_STEPPING) then
+          ! initial timesmooth of theta using Robert filter - smoothing finished in swapsmooth
+          do k=1,current_state%local_grid%size(Z_INDEX) 
+             current_state%th%data(k,current_state%column_local_y, current_state%column_local_x) = &
+                  c1*current_state%th%data(k, current_state%column_local_y,  current_state%column_local_x)+ &
+                  c2*current_state%zth%data(k,  current_state%column_local_y,  current_state%column_local_x)
+          enddo
+       endif
+       call step_single_field(current_state%column_local_x,  current_state%column_local_y, &
          x_prev, y_prev, current_state%th, current_state%zth, current_state%sth, current_state%local_grid, .false., &
          current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION))
+    endif
     do i=1,current_state%number_q_fields
       if (current_state%q(i)%active) then
+         if (current_state%field_stepping == CENTRED_STEPPING) then
+          ! initial timesmooth of q using Robert filter - smoothing finished in swapsmooth
+            do k=1,current_state%local_grid%size(Z_INDEX) 
+               current_state%q(i)%data(k,  current_state%column_local_y,  current_state%column_local_x) = &
+                    c1*current_state%q(i)%data(k, current_state%column_local_y,  current_state%column_local_x) + &
+                    c2*current_state%zq(i)%data(k,  current_state%column_local_y,  current_state%column_local_x)
+            enddo
+         endif
         call step_single_field(current_state%column_local_x,  current_state%column_local_y, x_prev, y_prev, &
              current_state%q(i), current_state%zq(i), current_state%sq(i), current_state%local_grid, .false., &
              current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION))

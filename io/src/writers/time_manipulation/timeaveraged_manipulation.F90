@@ -2,12 +2,16 @@
 module timeaveraged_time_manipulation_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : io_configuration_type
-  use collections_mod, only : hashmap_type, c_put_generic, c_get_generic
+  use collections_mod, only : mapentry_type, iterator_type, hashmap_type, c_get_generic, c_size, &
+       c_next_mapentry, c_has_next, c_get_iterator, c_put_generic
   use forthread_mod, only : forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_unlock, &
        forthread_rwlock_init, forthread_rwlock_destroy, forthread_mutex_init, forthread_mutex_lock, &
        forthread_mutex_unlock, forthread_mutex_destroy
   use threadpool_mod, only : check_thread_status
   use configuration_parser_mod, only : data_values_type
+  use io_server_client_mod, only : pack_scalar_field, pack_array_field
+  use data_utils_mod, only : unpack_scalar_integer_from_bytedata, unpack_scalar_dp_real_from_bytedata, &
+       unpack_scalar_logical_from_bytedata
   implicit none
 
 #ifndef TEST_MODE
@@ -26,8 +30,9 @@ module timeaveraged_time_manipulation_mod
   type(hashmap_type), volatile :: timeaveraged_values
   integer, volatile :: timeaveraged_value_rw_lock
 
-  public init_time_averaged_manipulation, finalise_time_averaged_manipulation, perform_timeaveraged_time_manipulation
-contains
+  public init_time_averaged_manipulation, finalise_time_averaged_manipulation, perform_timeaveraged_time_manipulation, &
+       is_time_averaged_time_manipulation_ready_to_write, serialise_time_averaged_state, unserialise_time_averaged_state
+contains  
 
    !> Initialises the reduction action
   subroutine init_time_averaged_manipulation()
@@ -39,6 +44,14 @@ contains
   subroutine finalise_time_averaged_manipulation()
     call check_thread_status(forthread_rwlock_destroy(timeaveraged_value_rw_lock))
   end subroutine finalise_time_averaged_manipulation
+
+  logical function is_time_averaged_time_manipulation_ready_to_write(latest_time, output_frequency, write_time, &
+       latest_timestep, write_timestep)
+    real, intent(in) :: latest_time, output_frequency, write_time
+    integer, intent(in) :: latest_timestep, write_timestep
+
+    is_time_averaged_time_manipulation_ready_to_write=latest_time + output_frequency .gt. write_time
+  end function is_time_averaged_time_manipulation_ready_to_write
 
   !> Performs the time averaged manipulation and only returns values if these are to be stored (i.e. past an output frequency)
   !! @param instant_values The instantaneous values to work with
@@ -106,7 +119,132 @@ contains
     end if
     
     timeaveraged_value%previous_time=time
-  end subroutine time_average  
+  end subroutine time_average
+
+  !> Serialises the state of this manipulator so that it can be restarted later on
+  !! @param byte_data The byte data that represents the serialised state
+  subroutine serialise_time_averaged_state(byte_data)
+    character, dimension(:), allocatable, intent(out) :: byte_data
+
+    integer :: current_data_point
+    character, dimension(:), allocatable :: dvt_byte_data, temp
+    type(mapentry_type) :: map_entry
+    type(iterator_type) :: iterator
+    class(*), pointer :: generic
+
+    call check_thread_status(forthread_rwlock_rdlock(timeaveraged_value_rw_lock))
+
+    allocate(byte_data(kind(current_data_point)))
+    current_data_point=1
+    current_data_point=pack_scalar_field(byte_data, current_data_point, c_size(timeaveraged_values))
+
+    iterator=c_get_iterator(timeaveraged_values)
+    do while (c_has_next(iterator))
+       map_entry=c_next_mapentry(iterator)
+       generic=>c_get_generic(map_entry)
+      if (associated(generic)) then
+        select type(generic)
+        type is (time_averaged_completed_type)
+          call serialise_time_averaged_completed_value(generic, dvt_byte_data)
+          allocate(temp(size(byte_data) + size(dvt_byte_data) + (kind(current_data_point)*2)+len(trim(map_entry%key))))
+          temp(1:size(byte_data)) = byte_data
+          current_data_point=size(byte_data)+1
+          call move_alloc(from=temp, to=byte_data)
+          current_data_point=pack_scalar_field(byte_data, current_data_point, len(trim(map_entry%key)))
+          byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1) = transfer(trim(map_entry%key), &
+               byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1))
+          current_data_point=current_data_point+len(trim(map_entry%key))
+          current_data_point=pack_scalar_field(byte_data, current_data_point, size(dvt_byte_data))
+          byte_data(current_data_point:current_data_point+size(dvt_byte_data)-1)=dvt_byte_data
+          deallocate(dvt_byte_data)
+        end select
+      end if      
+    end do
+    call check_thread_status(forthread_rwlock_unlock(timeaveraged_value_rw_lock))
+  end subroutine serialise_time_averaged_state
+
+  !> Unserialises some byte data to initialise the state from some previous version
+  !! @param byte_data The byte data to read from and initialise from
+  subroutine unserialise_time_averaged_state(byte_data)
+    character, dimension(:), intent(in) :: byte_data
+
+    integer :: current_data_point, number_entries, i, key_size, byte_size
+    character(len=STRING_LENGTH) :: value_key
+    class(*), pointer :: generic
+
+    current_data_point=1
+    number_entries=unpack_scalar_integer_from_bytedata(byte_data, current_data_point)
+    if (number_entries .gt. 0) then
+      do i=1, number_entries
+        key_size=unpack_scalar_integer_from_bytedata(byte_data, current_data_point)
+        value_key=transfer(byte_data(current_data_point:current_data_point+key_size-1), value_key)
+        value_key(key_size+1:)=" "
+        current_data_point=current_data_point+key_size
+        byte_size=unpack_scalar_integer_from_bytedata(byte_data, current_data_point)
+        generic=>unserialise_time_averaged_completed_value(byte_data(current_data_point:current_data_point+byte_size-1))
+        call c_put_generic(timeaveraged_values, value_key, generic, .false.)
+        current_data_point=current_data_point+byte_size
+      end do
+    end if
+  end subroutine unserialise_time_averaged_state  
+
+  !> Serialises a specific time averaged completed value
+  !! @param time_av_value The time averaged completed value to serialise
+  !! @param byte_data Resulting byte data that holds a representation of this
+  subroutine serialise_time_averaged_completed_value(time_av_value, byte_data)
+    type(time_averaged_completed_type), intent(inout) :: time_av_value
+    character, dimension(:), allocatable, intent(out) :: byte_data
+
+    integer :: byte_size, current_data_point, i
+
+    call check_thread_status(forthread_mutex_lock(time_av_value%mutex))
+
+    byte_size=(kind(time_av_value%start_time) * 3) + kind(time_av_value%empty_values) + &
+         (size(time_av_value%time_averaged_values) * kind(time_av_value%time_averaged_values)) + &
+         (kind(i) * 2) + len(time_av_value%field_name)
+    allocate(byte_data(byte_size))
+    current_data_point=1
+    current_data_point=pack_scalar_field(byte_data, current_data_point, double_real_value=time_av_value%start_time)
+    current_data_point=pack_scalar_field(byte_data, current_data_point, double_real_value=time_av_value%previous_time)
+    current_data_point=pack_scalar_field(byte_data, current_data_point, double_real_value=time_av_value%previous_output_time)
+    current_data_point=pack_scalar_field(byte_data, current_data_point, logical_value=time_av_value%empty_values)
+    current_data_point=pack_scalar_field(byte_data, current_data_point, len(trim(time_av_value%field_name)))
+    byte_data(current_data_point:current_data_point+len(trim(time_av_value%field_name))-1) = transfer(&
+         trim(time_av_value%field_name), byte_data(current_data_point:current_data_point+len(trim(time_av_value%field_name))-1))
+    current_data_point=current_data_point+len(trim(time_av_value%field_name))
+    current_data_point=pack_scalar_field(byte_data, current_data_point, size(time_av_value%time_averaged_values))
+    current_data_point=pack_array_field(byte_data, current_data_point, real_array_1d=time_av_value%time_averaged_values)
+    call check_thread_status(forthread_mutex_unlock(time_av_value%mutex))
+  end subroutine serialise_time_averaged_completed_value
+
+  !> Will create a specific time averaged completed value based upon the provided serialised data
+  !! @param byte_data The serialised byte data to read and initialise from
+  function unserialise_time_averaged_completed_value(byte_data)
+    character, dimension(:), intent(in) :: byte_data
+    type(time_averaged_completed_type), pointer :: unserialise_time_averaged_completed_value
+
+    integer :: current_data_point, i, values_size, byte_size, str_size
+
+    allocate(unserialise_time_averaged_completed_value)
+    current_data_point=1
+    unserialise_time_averaged_completed_value%start_time=unpack_scalar_dp_real_from_bytedata(byte_data, current_data_point)
+    unserialise_time_averaged_completed_value%previous_time=unpack_scalar_dp_real_from_bytedata(byte_data, current_data_point)
+    unserialise_time_averaged_completed_value%previous_output_time=&
+         unpack_scalar_dp_real_from_bytedata(byte_data, current_data_point)
+    unserialise_time_averaged_completed_value%empty_values=unpack_scalar_logical_from_bytedata(byte_data, current_data_point)
+    str_size=unpack_scalar_integer_from_bytedata(byte_data, current_data_point)
+    unserialise_time_averaged_completed_value%field_name=&
+         transfer(byte_data(current_data_point:current_data_point+str_size-1), &
+         unserialise_time_averaged_completed_value%field_name)
+    unserialise_time_averaged_completed_value%field_name(str_size+1:)=" "
+    current_data_point=current_data_point+str_size
+    values_size=unpack_scalar_integer_from_bytedata(byte_data, current_data_point)
+    allocate(unserialise_time_averaged_completed_value%time_averaged_values(values_size))
+    byte_size=values_size*kind(unserialise_time_averaged_completed_value%time_averaged_values)
+    unserialise_time_averaged_completed_value%time_averaged_values=transfer(byte_data(current_data_point:&
+         current_data_point+byte_size-1), unserialise_time_averaged_completed_value%time_averaged_values)
+    call check_thread_status(forthread_mutex_init(unserialise_time_averaged_completed_value%mutex, -1))
+  end function unserialise_time_averaged_completed_value
 
   !> Retrieves or creates (and retrieves) a time averaged value based upon the information provided
   !! @param timestep The corresponding timestep

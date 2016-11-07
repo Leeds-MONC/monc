@@ -268,6 +268,7 @@ contains
 
     allocate(zgrid(current_state%local_grid%size(Z_INDEX)))
 
+
     ! Subsidence forcing initialization
     l_subs_pl_theta=options_get_logical(current_state%options_database, "l_subs_pl_theta")
     l_subs_pl_q=options_get_logical(current_state%options_database, "l_subs_pl_q")
@@ -279,7 +280,7 @@ contains
     if ((l_subs_pl_theta .and. .not. l_subs_local_theta) .or. &
        (l_subs_pl_q .and. .not. l_subs_local_q))then
       if (.not. is_component_enabled(current_state%options_database, "mean_profiles")) then
-        call log_master_log(LOG_ERROR, "Damping requires the mean profiles component to be enabled")
+        call log_master_log(LOG_ERROR, "Subsidence requires the mean profiles component to be enabled")
       end if
     end if
 

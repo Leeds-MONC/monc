@@ -28,7 +28,7 @@ contains
     type(model_state_type), intent(inout), target :: current_state
 
     ! Only generate the dry boundary layer if starting from fresh, otherwise this is loaded in
-    if (current_state%timestep == 1) call generate_drybl(current_state)
+    if (.not. current_state%continuation_run) call generate_drybl(current_state)
   end subroutine initialisation_callback
 
   !> Generates the dry boundary layer

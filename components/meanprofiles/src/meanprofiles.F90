@@ -44,32 +44,40 @@ contains
     end_y=current_state%local_grid%local_domain_end_index(Y_INDEX)
 
 #ifdef U_ACTIVE
-    allocate(current_state%global_grid%configuration%vertical%olubar(current_state%local_grid%size(Z_INDEX)),&
-         current_state%global_grid%configuration%vertical%olzubar(current_state%local_grid%size(Z_INDEX)),&
-         current_state%global_grid%configuration%vertical%savolubar(current_state%local_grid%size(Z_INDEX)))
+    if (.not. current_state%continuation_run) then
+      allocate(current_state%global_grid%configuration%vertical%olubar(current_state%local_grid%size(Z_INDEX)),&
+           current_state%global_grid%configuration%vertical%olzubar(current_state%local_grid%size(Z_INDEX)))
+    end if
+    allocate(current_state%global_grid%configuration%vertical%savolubar(current_state%local_grid%size(Z_INDEX)))
     bar_fields=bar_fields+2
 #endif
 #ifdef V_ACTIVE
-    allocate(current_state%global_grid%configuration%vertical%olvbar(current_state%local_grid%size(Z_INDEX)),&
-         current_state%global_grid%configuration%vertical%olzvbar(current_state%local_grid%size(Z_INDEX)),&
-         current_state%global_grid%configuration%vertical%savolvbar(current_state%local_grid%size(Z_INDEX)))
+    if (.not. current_state%continuation_run) then
+      allocate(current_state%global_grid%configuration%vertical%olvbar(current_state%local_grid%size(Z_INDEX)),&
+           current_state%global_grid%configuration%vertical%olzvbar(current_state%local_grid%size(Z_INDEX)))
+    end if
+    allocate(current_state%global_grid%configuration%vertical%savolvbar(current_state%local_grid%size(Z_INDEX)))
     bar_fields=bar_fields+2
 #endif
     if (current_state%th%active) then
-      allocate(current_state%global_grid%configuration%vertical%olthbar(current_state%local_grid%size(Z_INDEX)),&
-           current_state%global_grid%configuration%vertical%olzthbar(current_state%local_grid%size(Z_INDEX)))
-          bar_fields=bar_fields+2
+      if (.not. current_state%continuation_run) then
+        allocate(current_state%global_grid%configuration%vertical%olthbar(current_state%local_grid%size(Z_INDEX)),&
+             current_state%global_grid%configuration%vertical%olzthbar(current_state%local_grid%size(Z_INDEX)))
+      end if
+      bar_fields=bar_fields+2
     end if
     if (current_state%number_q_fields .gt. 0) then
-          bar_fields=bar_fields+(current_state%number_q_fields*2)
-      allocate(current_state%global_grid%configuration%vertical%olqbar(current_state%local_grid%size(Z_INDEX), &
-           current_state%number_q_fields), current_state%global_grid%configuration%vertical%olzqbar(&
-           current_state%local_grid%size(Z_INDEX), current_state%number_q_fields))
+      bar_fields=bar_fields+(current_state%number_q_fields*2)
+      if (.not. current_state%continuation_run) then
+        allocate(current_state%global_grid%configuration%vertical%olqbar(current_state%local_grid%size(Z_INDEX), &
+             current_state%number_q_fields), current_state%global_grid%configuration%vertical%olzqbar(&
+             current_state%local_grid%size(Z_INDEX), current_state%number_q_fields))
+      end if
     end if
     allocate(bartmp(current_state%local_grid%size(Z_INDEX), bar_fields))
 
     ! Do the initial calculation for the first timestep
-    call calculate_mean_profiles(current_state)
+    if (.not. current_state%continuation_run) call calculate_mean_profiles(current_state)
   end subroutine init_callback
 
   !> Will recalculate the mean profiles of each prognostic when called (for the entire local domain)

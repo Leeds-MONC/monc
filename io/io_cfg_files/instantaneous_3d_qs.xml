@@ -1,7 +1,0 @@
-<data-definition name="instant_fields_qs" frequency="{sampling_frequency}">
-	<field name="q" type="array" data_type="double" size="z,y,x,qfields" collective=true />
-</data-definition>
-
-<group name="instantaneous_qs">
-	<member name="q"/>
-</group>

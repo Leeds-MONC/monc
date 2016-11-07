@@ -15,6 +15,7 @@ module broadcast_inter_io_mod
   use inter_io_specifics_mod, only : handle_completion, register_inter_io_communication, find_inter_io_from_name, &
        package_inter_io_communication_message, unpackage_inter_io_communication_message
   use mpi, only : MPI_DOUBLE_PRECISION, MPI_INT, MPI_ANY_SOURCE, MPI_REQUEST_NULL, MPI_STATUSES_IGNORE, MPI_CHARACTER, MPI_BYTE
+  use mpi_communication_mod, only : lock_mpi, unlock_mpi, waitall_for_mpi_requests
   implicit none
 
 #ifndef TEST_MODE
@@ -34,9 +35,18 @@ module broadcast_inter_io_mod
      procedure(handle_completion), pointer, nopass :: completion_procedure
   end type inter_io_broadcast
 
-  type(hashmap_type), volatile :: broadcast_statuses
+  !< Holds state values for calling completion procedure in a thread
+  type threaded_callback_parameters_type
+     integer :: timestep
+     character(len=STRING_LENGTH) :: field_name
+     real(DEFAULT_PRECISION), dimension(:), allocatable :: values
+     procedure(handle_completion), pointer, nopass :: completion_procedure
+  end type threaded_callback_parameters_type
+
+  type(io_configuration_type), pointer :: stored_io_configuration
+  type(hashmap_type), volatile :: broadcast_statuses, thread_callback_params
   integer, volatile :: broadcast_statuses_rwlock, inter_io_description_mutex, clean_progress_mutex, &
-       bcast_count_mutex, bcast_clean_reduction_count, bcast_count
+       bcast_count_mutex, bcast_clean_reduction_count, bcast_count, thread_callback_params_id, thread_callback_params_mutex
   logical, volatile :: initialised=.false.
 
   public init_broadcast_inter_io, perform_inter_io_broadcast, finalise_broadcast_inter_io, check_broadcast_inter_io_for_completion
@@ -45,14 +55,17 @@ contains
   !> Initialises the broadcast inter IO functionality
   !! @param io_configuration The IO server configuration
   subroutine init_broadcast_inter_io(io_configuration)
-    type(io_configuration_type), intent(inout) :: io_configuration
+    type(io_configuration_type), intent(inout), target :: io_configuration
 
     if (.not. initialised) then
+      stored_io_configuration=>io_configuration
       initialised=.true.
       bcast_count=0
+      thread_callback_params_id=0
       bcast_clean_reduction_count=0
       call check_thread_status(forthread_rwlock_init(broadcast_statuses_rwlock, -1))
       call check_thread_status(forthread_mutex_init(inter_io_description_mutex, -1))
+      call check_thread_status(forthread_mutex_init(thread_callback_params_mutex, -1))
       call check_thread_status(forthread_mutex_init(clean_progress_mutex, -1))
       call check_thread_status(forthread_mutex_init(bcast_count_mutex, -1))
       call register_inter_io_communication(io_configuration, MY_INTER_IO_TAG, handle_recv_data_from_io_server, MY_INTER_IO_NAME)
@@ -61,7 +74,6 @@ contains
 
   !> Finalises the broadcast inter IO functionality
   subroutine finalise_broadcast_inter_io()
-    integer :: ierr
     type(inter_io_broadcast), pointer :: broadcast_item
     type(iterator_type) :: iterator
 
@@ -73,7 +85,7 @@ contains
           broadcast_item=>retrieve_broadcast_item(c_next_mapentry(iterator))
           call check_thread_status(forthread_mutex_lock(broadcast_item%mutex))
           if (allocated(broadcast_item%send_requests)) then
-            call mpi_waitall(size(broadcast_item%send_requests), broadcast_item%send_requests, MPI_STATUSES_IGNORE, ierr)
+            call waitall_for_mpi_requests(broadcast_item%send_requests, size(broadcast_item%send_requests))
             deallocate(broadcast_item%send_requests)
             if (allocated(broadcast_item%send_buffer)) deallocate(broadcast_item%send_buffer)
           end if
@@ -84,6 +96,7 @@ contains
       call check_thread_status(forthread_rwlock_unlock(broadcast_statuses_rwlock))
       call check_thread_status(forthread_rwlock_destroy(broadcast_statuses_rwlock))
       call check_thread_status(forthread_mutex_destroy(inter_io_description_mutex))
+      call check_thread_status(forthread_mutex_destroy(thread_callback_params_mutex))
       call check_thread_status(forthread_mutex_destroy(clean_progress_mutex))
       call check_thread_status(forthread_mutex_destroy(bcast_count_mutex))
       initialised=.false.
@@ -138,7 +151,7 @@ contains
       call check_thread_status(forthread_mutex_lock(broadcast_item%mutex))
       broadcast_item%handled=.true.
       call check_thread_status(forthread_mutex_unlock(broadcast_item%mutex))
-      call broadcast_item%completion_procedure(io_configuration, data_values, field_name, timestep)      
+      call issue_thread_call_to_completion(field_name, timestep, data_values, broadcast_item%completion_procedure)
     else
       call check_thread_status(forthread_mutex_lock(broadcast_item%mutex))
       allocate(broadcast_item%cached_values(size(data_values)), source=data_values)
@@ -182,24 +195,84 @@ contains
 
       do i=0, io_configuration%number_of_io_servers-1
         if (i .ne. io_configuration%my_io_rank) then
+          call lock_mpi()
           call mpi_isend(broadcast_item%send_buffer, size(broadcast_item%send_buffer), MPI_BYTE, i, &
                io_configuration%inter_io_communications(inter_io_comm_index)%message_tag, &
                io_configuration%io_communicator, broadcast_item%send_requests(i+1), ierr)
+          call unlock_mpi()
         else
           broadcast_item%send_requests(i+1)=MPI_REQUEST_NULL
         end if
       end do
-      ! Still call the completion procedure on the root      
-      call completion_procedure(io_configuration, field_values, field_name, timestep)
+      ! Still call the completion procedure on the root
+      call issue_thread_call_to_completion(field_name, timestep, field_values, completion_procedure)
     else
       if (allocated(broadcast_item%cached_values) .and. .not. broadcast_item%handled) then
-        broadcast_item%handled=.true.       
-        call completion_procedure(io_configuration, broadcast_item%cached_values, field_name, timestep)
+        broadcast_item%handled=.true.
+        call issue_thread_call_to_completion(field_name, timestep, broadcast_item%cached_values, completion_procedure)
         if (allocated(broadcast_item%cached_values)) deallocate(broadcast_item%cached_values)
       end if
     end if
     call check_thread_status(forthread_mutex_unlock(broadcast_item%mutex))
   end subroutine perform_inter_io_broadcast
+
+  !> Issues the call into the thread pool to call the completion procedure, this runs in a seperate thread and ensures the 
+  !! semantics of one IO server or many with message ordering are independent
+  !! @param field_name The name of the field
+  !! @param timestep The timestep
+  !! @param values Data values
+  !! @param completion_procedure The completion procedure to call
+  subroutine issue_thread_call_to_completion(field_name, timestep, values, completion_procedure)
+    integer, intent(in) :: timestep
+    character(len=*), intent(in) :: field_name
+    real(DEFAULT_PRECISION), dimension(:), intent(in) :: values
+    procedure(handle_completion) :: completion_procedure
+
+    type(threaded_callback_parameters_type), pointer :: threaded_callback_state
+    class(*), pointer :: generic
+
+    allocate(threaded_callback_state)
+
+    threaded_callback_state%field_name=field_name
+    threaded_callback_state%timestep=timestep
+    allocate(threaded_callback_state%values(size(values)), source=values)
+    threaded_callback_state%completion_procedure=>completion_procedure
+
+    call check_thread_status(forthread_mutex_lock(thread_callback_params_mutex))
+    generic=>threaded_callback_state
+    call c_put_generic(thread_callback_params, trim(conv_to_string(thread_callback_params_id)), generic, .false.)
+    thread_callback_params_id=thread_callback_params_id+1
+    call check_thread_status(forthread_mutex_unlock(thread_callback_params_mutex))
+
+    call threadpool_start_thread(thread_call_to_completion, (/ thread_callback_params_id-1 /))
+  end subroutine issue_thread_call_to_completion
+
+  !> Called by the thread pool, this will call onto the completion procedure before cleaning up
+  !! @arguments Integer arguments, this is the ID of the entry in the state
+  !! @data_buffer Unused here
+  subroutine thread_call_to_completion(arguments, data_buffer)
+    integer, dimension(:), intent(in) :: arguments
+    character, dimension(:), allocatable, intent(inout), optional :: data_buffer
+
+    class(*), pointer :: generic
+    type(threaded_callback_parameters_type), pointer :: threaded_callback_state
+
+    call check_thread_status(forthread_mutex_lock(thread_callback_params_mutex))
+    generic=>c_get_generic(thread_callback_params, trim(conv_to_string(arguments(1))))
+    select type(generic)
+    type is (threaded_callback_parameters_type)
+      threaded_callback_state=>generic
+      call c_remove(thread_callback_params, trim(conv_to_string(arguments(1))))
+    end select
+    call check_thread_status(forthread_mutex_unlock(thread_callback_params_mutex))
+
+    if (associated(threaded_callback_state)) then
+      call threaded_callback_state%completion_procedure(stored_io_configuration, threaded_callback_state%values, &
+           threaded_callback_state%field_name, threaded_callback_state%timestep)
+      deallocate(threaded_callback_state%values)
+      deallocate(threaded_callback_state)
+    end if
+  end subroutine thread_call_to_completion
 
   !> Calls out to do a broadcast progress clean if needed (i.e. every n steps.)
   subroutine clean_broadcast_progress_if_needed()
@@ -235,8 +308,10 @@ contains
         specific_broadcast_item_at_index=>retrieve_broadcast_item(mapentry)
         call check_thread_status(forthread_mutex_lock(specific_broadcast_item_at_index%mutex))
         if (allocated(specific_broadcast_item_at_index%send_requests)) then
+          call lock_mpi()
           call mpi_testall(size(specific_broadcast_item_at_index%send_requests), specific_broadcast_item_at_index%send_requests, &
                completion_flag, MPI_STATUSES_IGNORE, ierr)
+          call unlock_mpi()
           if (completion_flag == 1) then
             deallocate(specific_broadcast_item_at_index%send_requests)
             if (allocated(specific_broadcast_item_at_index%send_buffer)) deallocate(specific_broadcast_item_at_index%send_buffer)

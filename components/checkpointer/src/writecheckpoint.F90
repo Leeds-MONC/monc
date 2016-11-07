@@ -3,7 +3,7 @@ module checkpointer_write_checkpoint_mod
 #ifndef TEST_MODE
   use netcdf, only : NF90_DOUBLE, NF90_REAL, NF90_INT, NF90_CHAR, NF90_GLOBAL, NF90_CLOBBER, NF90_NETCDF4, NF90_MPIIO, &
        NF90_COLLECTIVE, nf90_def_var, nf90_var_par_access, nf90_def_var_fill, nf90_put_att, nf90_create, nf90_put_var, &
-       nf90_def_dim, nf90_enddef, nf90_close
+       nf90_def_dim, nf90_enddef, nf90_close, nf90_inq_dimid, nf90_inq_varid
 #else
   use dummy_netcdf_mod, only : NF90_DOUBLE, NF90_REAL, NF90_INT, NF90_CHAR, NF90_GLOBAL, NF90_CLOBBER, NF90_NETCDF4, NF90_MPIIO, &
        nf90_def_var, nf90_put_att, nf90_create, nf90_put_var, nf90_def_dim, nf90_enddef, nf90_close
@@ -14,9 +14,11 @@ module checkpointer_write_checkpoint_mod
   use conversions_mod, only : conv_to_string
   use optionsdatabase_mod, only : options_size, options_value_at, options_key_at
   use checkpointer_common_mod, only : EMPTY_DIM_KEY, KEY_VALUE_PAIR_KEY, OPTIONS_DIM_KEY, OPTIONS_KEY, STRING_DIM_KEY, &
-       X_DIM_KEY, Y_DIM_KEY, Z_DIM_KEY, Q_DIM_KEY, Q_KEY, ZQ_KEY, TH_KEY, ZTH_KEY, P_KEY, U_KEY, V_KEY, W_KEY, ZU_KEY, ZV_KEY, &
-       ZW_KEY, X_KEY, Y_KEY, Z_KEY, NQFIELDS, UGAL, VGAL, TIME_KEY, TIMESTEP, MAX_STRING_LENGTH, CREATED_ATTRIBUTE_KEY, &
-       TITLE_ATTRIBUTE_KEY, ABSOLUTE_NEW_DTM_KEY, DTM_KEY, DTM_NEW_KEY, Q_INDICES_KEY, check_status
+       X_DIM_KEY, Y_DIM_KEY, Z_DIM_KEY, ZN_DIM_KEY, Q_DIM_KEY, Q_KEY, ZQ_KEY, TH_KEY, ZTH_KEY, P_KEY, U_KEY, V_KEY, W_KEY, &
+       ZU_KEY, ZV_KEY, ZW_KEY, X_KEY, Y_KEY, Z_KEY, ZN_KEY, NQFIELDS, UGAL, VGAL, TIME_KEY, TIMESTEP, MAX_STRING_LENGTH, &
+       CREATED_ATTRIBUTE_KEY, TITLE_ATTRIBUTE_KEY, ABSOLUTE_NEW_DTM_KEY, DTM_KEY, DTM_NEW_KEY, Q_INDICES_KEY, &
+       Q_INDICES_DIM_KEY, X_RESOLUTION, Y_RESOLUTION,X_TOP, Y_TOP, X_BOTTOM, Y_BOTTOM, THREF, OLUBAR, OLZUBAR, OLVBAR, &
+       OLZVBAR, OLTHBAR, OLZTHBAR, OLQBAR, OLZQBAR, check_status
   use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use q_indices_mod, only : q_metadata_type, get_max_number_q_indices, get_indices_descriptor, get_number_active_q_indices
   use mpi, only : MPI_INFO_NULL
@@ -53,12 +55,13 @@ contains
       call check_status(nf90_create(filename, NF90_CLOBBER, ncid))
     end if
     call write_out_global_attributes(ncid)
-    call define_grid_dimensions(current_state, ncid, z_dim_id, y_dim_id, x_dim_id)
+    call define_grid_dimensions(current_state, ncid, z_dim_id, y_dim_id, x_dim_id)    
     if (current_state%number_q_fields .gt. 0) call define_q_field_dimension(current_state, ncid, q_dim_id)
 
     call define_options_variable(current_state, ncid, string_dim_id, key_value_dim_id, options_id)
     q_indices_declared=define_q_indices_variable(ncid, string_dim_id, key_value_dim_id, q_indices_id)
-    call define_grid_variables(current_state, ncid, z_dim_id, y_dim_id, x_dim_id, x_id, y_id, z_id)
+    call define_grid_variables(current_state, ncid)
+    call define_mean_fields(current_state, ncid)
     if (current_state%number_q_fields .gt. 0) call define_q_variable(ncid, current_state%parallel%processes .gt. 1, &
          q_dim_id, z_dim_id, y_dim_id, x_dim_id, q_id, zq_id)
     call define_prognostic_variables(current_state, current_state%parallel%processes .gt. 1, ncid, z_dim_id, y_dim_id, &
@@ -68,7 +71,8 @@ contains
 
     call check_status(nf90_enddef(ncid))
 
-    if (current_state%parallel%my_rank==0) call write_out_grid(ncid, current_state%global_grid, z_id, y_id, x_id)
+    if (current_state%parallel%my_rank==0) call write_out_grid(ncid, current_state%global_grid)
+    if (current_state%parallel%my_rank==0) call write_out_mean_fields(ncid, current_state%global_grid)
     call write_out_all_fields(current_state, ncid, u_id, v_id, w_id, zu_id, zv_id, zw_id, th_id, zth_id, q_id, zq_id, p_id)
     if (current_state%parallel%my_rank==0) then
       call write_out_options(current_state, ncid, options_id)
@@ -236,53 +240,90 @@ contains
   !! @param z_id The NetCDF z variable id
   !! @param y_id The NetCDF y variable id
   !! @param x_id The NetCDF x variable id
-  subroutine write_out_grid(ncid, grid, z_id, y_id, x_id)
-    integer, intent(in) :: ncid, z_id, y_id, x_id
+  subroutine write_out_grid(ncid, grid)
+    integer, intent(in) :: ncid
     type(global_grid_type), intent(in) :: grid
 
+    integer :: var_id
+
     if (grid%active(Z_INDEX)) then
-      call write_z_grid_gimension(ncid, grid%configuration%vertical, z_id)
+      call write_z_grid_gimension(ncid, grid%configuration%vertical)
     end if
     if (grid%active(Y_INDEX)) then
-      call write_grid_dimension(ncid, grid%size(Y_INDEX), grid%bottom(Y_INDEX), grid%resolution(Y_INDEX), y_id)
+      call check_status(nf90_inq_varid(ncid, Y_RESOLUTION, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%resolution(Y_INDEX)))
+      call check_status(nf90_inq_varid(ncid, Y_TOP, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%top(Y_INDEX)))
+      call check_status(nf90_inq_varid(ncid, Y_BOTTOM, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%bottom(Y_INDEX)))
     end if
     if (grid%active(X_INDEX)) then
-      call write_grid_dimension(ncid, grid%size(X_INDEX), grid%bottom(X_INDEX), grid%resolution(X_INDEX), x_id)
+      call check_status(nf90_inq_varid(ncid, X_RESOLUTION, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%resolution(X_INDEX)))
+      call check_status(nf90_inq_varid(ncid, X_TOP, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%top(X_INDEX)))
+      call check_status(nf90_inq_varid(ncid, X_BOTTOM, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%bottom(X_INDEX)))
     end if
   end subroutine write_out_grid
+
+  subroutine write_out_mean_fields(ncid, grid)
+    integer, intent(in) :: ncid
+    type(global_grid_type), intent(in) :: grid
+
+    integer :: var_id
+
+    if (allocated(grid%configuration%vertical%olubar)) then
+      call check_status(nf90_inq_varid(ncid, OLUBAR, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%configuration%vertical%olubar))
+    end if
+    if (allocated(grid%configuration%vertical%olzubar)) then
+      call check_status(nf90_inq_varid(ncid, OLZUBAR, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%configuration%vertical%olzubar))
+    end if
+    if (allocated(grid%configuration%vertical%olvbar)) then
+      call check_status(nf90_inq_varid(ncid, OLVBAR, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%configuration%vertical%olvbar))
+    end if    
+    if (allocated(grid%configuration%vertical%olzvbar)) then
+      call check_status(nf90_inq_varid(ncid, OLZVBAR, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%configuration%vertical%olzvbar))
+    end if
+    if (allocated(grid%configuration%vertical%olthbar)) then
+      call check_status(nf90_inq_varid(ncid, OLTHBAR, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%configuration%vertical%olthbar))
+    end if
+    if (allocated(grid%configuration%vertical%olzthbar)) then
+      call check_status(nf90_inq_varid(ncid, OLZTHBAR, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%configuration%vertical%olzthbar))
+    end if    
+    if (allocated(grid%configuration%vertical%olqbar)) then
+      call check_status(nf90_inq_varid(ncid, OLQBAR, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%configuration%vertical%olqbar))
+    end if
+    if (allocated(grid%configuration%vertical%olzqbar)) then
+      call check_status(nf90_inq_varid(ncid, OLZQBAR, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%configuration%vertical%olzqbar))
+    end if    
+  end subroutine write_out_mean_fields  
 
   !> Writes out the Z dimension of the grids_mod points which are explicitly calculated
   !! @param ncid The NetCDF file id
   !! @param verticalGrid The vertical grid configuration
   !! @param z_id The NetCDF id of the z field
-  subroutine write_z_grid_gimension(ncid, vertical_grid, z_id)
+  subroutine write_z_grid_gimension(ncid, vertical_grid)
     type(vertical_grid_configuration_type), intent(in) :: vertical_grid
-    integer, intent(in) :: ncid, z_id
+    integer, intent(in) :: ncid
 
-    call check_status(nf90_put_var(ncid, z_id, vertical_grid%z))
+    integer :: z_var_id, zn_var_id, thref_var_id
+
+    call check_status(nf90_inq_varid(ncid, Z_KEY, z_var_id))
+    call check_status(nf90_put_var(ncid, z_var_id, vertical_grid%z))
+    call check_status(nf90_inq_varid(ncid, ZN_KEY, zn_var_id))
+    call check_status(nf90_put_var(ncid, zn_var_id, vertical_grid%zn))
+    call check_status(nf90_inq_varid(ncid, THREF, thref_var_id))
+    call check_status(nf90_put_var(ncid, thref_var_id, vertical_grid%thref))
   end subroutine write_z_grid_gimension
-
-  !> Will write out a specific dimension of a grid to the checkpoint file. In the checkpoint we are currently
-  !! dumping out the entire grid which is reconstructed from the model parameters (probably want to change this
-  !! and write out only the parameters.)
-  !! @param ncid The NetCDF file id
-  !! @param grids_modize The size of the grid (number of points)
-  !! @param gridbottom The smallest point in the grid
-  !! @param gridresolution The resolution of the grid
-  !! @param dimension_id The NetCDF id of the grid variable to write to
-  subroutine write_grid_dimension(ncid, grids_modize, gridbottom, gridresolution, dimension_id)
-    integer, intent(in) :: ncid, grids_modize, dimension_id
-    real(kind=DEFAULT_PRECISION), intent(in) :: gridbottom, gridresolution
-    real, dimension(:), allocatable :: data
-    integer :: i
-
-    allocate(data(grids_modize))
-    do i=1,grids_modize
-      data(i) = gridbottom + gridresolution * i
-    end do
-    call check_status(nf90_put_var(ncid, dimension_id, data))
-    deallocate(data)
-  end subroutine write_grid_dimension
 
   !> Defines the NetCDF options variable which is basically a 3D character array to form key-value
   !! pair strings for each entry
@@ -323,7 +364,7 @@ contains
     if (number_active_q == 0) then
       define_q_indices_variable=.false.
     else
-      call check_status(nf90_def_dim(ncid, Q_INDICES_KEY, number_active_q, q_indices_dim_id))
+      call check_status(nf90_def_dim(ncid, Q_INDICES_DIM_KEY, number_active_q, q_indices_dim_id))
 
       command_dimensions = (/ string_dim_id, key_value_dim_id, q_indices_dim_id /)
 
@@ -361,6 +402,7 @@ contains
 
     if (current_state%global_grid%active(Z_INDEX)) then
       call check_status(nf90_def_dim(ncid, Z_DIM_KEY, current_state%global_grid%size(Z_INDEX), z_dim_id))
+      call check_status(nf90_def_dim(ncid, ZN_DIM_KEY, current_state%global_grid%size(Z_INDEX), z_dim_id))
     else
       z_dim_id = empty_dim_id
     end if
@@ -385,24 +427,78 @@ contains
   !! @param x_id The NetCDF x variable id provided by this procedure
   !! @param y_id The NetCDF y variable id provided by this procedure
   !! @param z_id The NetCDF z variable id provided by this procedure
-  subroutine define_grid_variables(current_state, ncid, z_dim_id, y_dim_id, x_dim_id, x_id, y_id, z_id)
+  subroutine define_grid_variables(current_state, ncid)
     type(model_state_type), intent(inout) :: current_state
-    integer, intent(in) :: ncid, z_dim_id, y_dim_id, x_dim_id
-    integer, intent(out) :: x_id, y_id, z_id
+    integer, intent(in) :: ncid
+
+    integer :: var_id, z_dim_id
 
     if (current_state%global_grid%active(X_INDEX)) then
-      call check_status(nf90_def_var(ncid, X_KEY, NF90_REAL, x_dim_id, x_id))
-      call check_status(nf90_put_att(ncid, x_id, "units", "m"))
+      call check_status(nf90_def_var(ncid, X_RESOLUTION, NF90_DOUBLE, var_id))
+      call check_status(nf90_put_att(ncid, var_id, "units", "m"))
+      call check_status(nf90_def_var(ncid, X_TOP, NF90_DOUBLE, var_id))
+      call check_status(nf90_put_att(ncid, var_id, "units", "m"))
+      call check_status(nf90_def_var(ncid, X_BOTTOM, NF90_DOUBLE, var_id))
+      call check_status(nf90_put_att(ncid, var_id, "units", "m"))
     end if
     if (current_state%global_grid%active(Y_INDEX)) then
-      call check_status(nf90_def_var(ncid, Y_KEY, NF90_REAL, y_dim_id, y_id))
-      call check_status(nf90_put_att(ncid, y_id, "units", "m"))
+      call check_status(nf90_def_var(ncid, Y_RESOLUTION, NF90_DOUBLE, var_id))
+      call check_status(nf90_put_att(ncid, var_id, "units", "m"))
+      call check_status(nf90_def_var(ncid, Y_TOP, NF90_DOUBLE, var_id))
+      call check_status(nf90_put_att(ncid, var_id, "units", "m"))
+      call check_status(nf90_def_var(ncid, Y_BOTTOM, NF90_DOUBLE, var_id))
+      call check_status(nf90_put_att(ncid, var_id, "units", "m"))
     end if
     if (current_state%global_grid%active(Z_INDEX)) then
-      call check_status(nf90_def_var(ncid, Z_KEY, NF90_REAL, z_dim_id, z_id))
-      call check_status(nf90_put_att(ncid, z_id, "units", "m"))
+      call check_status(nf90_inq_dimid(ncid, Z_DIM_KEY, z_dim_id))
+      call check_status(nf90_def_var(ncid, Z_KEY, NF90_DOUBLE, z_dim_id, var_id))
+      call check_status(nf90_put_att(ncid, var_id, "units", "m"))
+      call check_status(nf90_inq_dimid(ncid, ZN_DIM_KEY, z_dim_id))
+      call check_status(nf90_def_var(ncid, ZN_KEY, NF90_DOUBLE, z_dim_id, var_id))
+      call check_status(nf90_put_att(ncid, var_id, "units", "m"))
     end if
+    call check_status(nf90_inq_dimid(ncid, Z_DIM_KEY, z_dim_id))
+    call check_status(nf90_def_var(ncid, THREF, NF90_DOUBLE, z_dim_id, var_id))
   end subroutine define_grid_variables
+
+  subroutine define_mean_fields(current_state, ncid)
+    type(model_state_type), intent(inout) :: current_state
+    integer, intent(in) :: ncid
+
+    integer :: var_id, z_dim_id, q_dim_id, qdimids(2)
+
+    call check_status(nf90_inq_dimid(ncid, Z_DIM_KEY, z_dim_id))
+
+    if (allocated(current_state%global_grid%configuration%vertical%olubar)) then
+      call check_status(nf90_def_var(ncid, OLUBAR, NF90_DOUBLE, z_dim_id, var_id))
+    end if    
+    if (allocated(current_state%global_grid%configuration%vertical%olzubar)) then
+      call check_status(nf90_def_var(ncid, OLZUBAR, NF90_DOUBLE, z_dim_id, var_id))
+    end if
+    if (allocated(current_state%global_grid%configuration%vertical%olvbar)) then
+      call check_status(nf90_def_var(ncid, OLVBAR, NF90_DOUBLE, z_dim_id, var_id))
+    end if
+    if (allocated(current_state%global_grid%configuration%vertical%olzvbar)) then
+      call check_status(nf90_def_var(ncid, OLZVBAR, NF90_DOUBLE, z_dim_id, var_id))
+    end if
+    if (allocated(current_state%global_grid%configuration%vertical%olthbar)) then
+      call check_status(nf90_def_var(ncid, OLTHBAR, NF90_DOUBLE, z_dim_id, var_id))
+    end if    
+    if (allocated(current_state%global_grid%configuration%vertical%olzthbar)) then
+      call check_status(nf90_def_var(ncid, OLZTHBAR, NF90_DOUBLE, z_dim_id, var_id))
+    end if
+    if (allocated(current_state%global_grid%configuration%vertical%olqbar) .or. &
+         allocated(current_state%global_grid%configuration%vertical%olzqbar)) then
+      call check_status(nf90_inq_dimid(ncid, Q_DIM_KEY, q_dim_id))
+      qdimids=(/ z_dim_id, q_dim_id /)
+      if (allocated(current_state%global_grid%configuration%vertical%olqbar)) then
+        call check_status(nf90_def_var(ncid, OLQBAR, NF90_DOUBLE, qdimids, var_id))
+      end if
+      if (allocated(current_state%global_grid%configuration%vertical%olzqbar)) then
+        call check_status(nf90_def_var(ncid, OLZQBAR, NF90_DOUBLE, qdimids, var_id))
+      end if
+    end if
+  end subroutine define_mean_fields  
 
   !> Defines the Q variable in the checkpoint file
   !! @param ncid The NetCDF file id

@@ -3,8 +3,8 @@
 module iobridge_mod
   use monc_component_mod, only : COMPONENT_DOUBLE_DATA_TYPE, COMPONENT_INTEGER_DATA_TYPE, component_descriptor_type, &
        component_field_value_type, component_field_information_type
-  use collections_mod, only : map_type, list_type, c_contains, c_get_generic, c_get_string, c_put_generic, c_put_integer, &
-       c_size, c_key_at
+  use collections_mod, only : hashmap_type, map_type, list_type, c_contains, c_get_generic, c_get_string, c_put_generic, &
+       c_put_integer, c_size, c_key_at, c_free
   use conversions_mod, only : conv_to_string
   use state_mod, only : model_state_type
   use grids_mod, only : X_INDEX, Y_INDEX, Z_INDEX, local_grid_type
@@ -16,12 +16,13 @@ module iobridge_mod
   use q_indices_mod, only : q_metadata_type, get_indices_descriptor
   use registry_mod, only : get_all_component_published_fields, get_component_field_value, get_component_field_information
   use io_server_client_mod, only : COMMAND_TAG, DATA_TAG, REGISTER_COMMAND, DEREGISTER_COMMAND, DATA_COMMAND_START, &
-       ARRAY_FIELD_TYPE, SCALAR_FIELD_TYPE, MAP_FIELD_TYPE, INTEGER_DATA_TYPE, BOOLEAN_DATA_TYPE, &
-       STRING_DATA_TYPE, FLOAT_DATA_TYPE, DOUBLE_DATA_TYPE, LOCAL_SIZES_KEY, LOCAL_START_POINTS_KEY, LOCAL_END_POINTS_KEY, &
+       ARRAY_FIELD_TYPE, SCALAR_FIELD_TYPE, MAP_FIELD_TYPE, INTEGER_DATA_TYPE, BOOLEAN_DATA_TYPE, STRING_DATA_TYPE, &
+       FLOAT_DATA_TYPE, DOUBLE_DATA_TYPE, LOCAL_SIZES_KEY, LOCAL_START_POINTS_KEY, LOCAL_END_POINTS_KEY, NUMBER_Q_INDICIES_KEY, &
        data_sizing_description_type, definition_description_type, field_description_type, build_mpi_type_data_sizing_description,&
        build_mpi_type_field_description, build_mpi_type_definition_description, populate_mpi_type_extents, append_mpi_datatype, &
        get_mpi_datatype_from_internal_representation, pack_scalar_field, pack_array_field, pack_map_field
   use mpi, only : MPI_COMM_WORLD, MPI_INT, MPI_BYTE, MPI_REQUEST_NULL, MPI_STATUSES_IGNORE, MPI_STATUS_IGNORE, MPI_STATUS_SIZE
+  use q_indices_mod, only : q_metadata_type, get_max_number_q_indices, get_indices_descriptor, get_number_active_q_indices
   implicit none
 
 #ifndef TEST_MODE
@@ -40,6 +41,7 @@ module iobridge_mod
 
   type io_configuration_data_definition_type
      character(len=STRING_LENGTH) :: name
+     logical :: send_on_terminate
      integer :: number_of_data_fields, frequency, mpi_datatype
      type(io_configuration_field_type), dimension(:), allocatable :: fields
      integer :: dump_requests(2) !< Dump non blocking send request handles
@@ -48,7 +50,7 @@ module iobridge_mod
 
   type(io_configuration_data_definition_type), dimension(:), allocatable :: data_definitions
   type(map_type) :: unique_field_names, sendable_fields, component_field_descriptions
-  logical :: io_server_enabled
+  logical :: io_server_enabled, in_finalisation_callback
 
   public iobridge_get_descriptor
 
@@ -76,6 +78,7 @@ contains
     end if
 
     io_server_enabled=.true.
+    in_finalisation_callback=.false.
 
     call populate_sendable_fields(current_state)
 
@@ -98,29 +101,44 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    integer :: ierr, i, command_to_send
+    integer :: i
 
     if (.not. io_server_enabled) return
 
     do i=1, size(data_definitions)
-      if (mod(current_state%timestep, data_definitions(i)%frequency) == 0) then
-        if (data_definitions(i)%dump_requests(1) .ne. MPI_REQUEST_NULL .or. &
-             data_definitions(i)%dump_requests(2) .ne. MPI_REQUEST_NULL) then
-          ! Here wait for previous data dump to complete (consider extending to using buffers for performance)
-          call mpi_waitall(2, data_definitions(i)%dump_requests, MPI_STATUSES_IGNORE, ierr)
+      if (data_definitions(i)%frequency .gt. 0) then
+        if (mod(current_state%timestep, data_definitions(i)%frequency) == 0) then
+          call send_data_to_io_server(current_state, i)
         end if
-        ! Pack the send buffer and send it to the IO server
-        call pack_send_buffer(current_state, data_definitions(i))
-
-        command_to_send=DATA_COMMAND_START+i
-        call mpi_issend(command_to_send, 1, MPI_INT, current_state%parallel%corresponding_io_server_process, &
-             COMMAND_TAG, MPI_COMM_WORLD, data_definitions(i)%dump_requests(1), ierr)
-        call mpi_issend(data_definitions(i)%send_buffer, 1, data_definitions(i)%mpi_datatype, &
-             current_state%parallel%corresponding_io_server_process, DATA_TAG+i, MPI_COMM_WORLD, &
-             data_definitions(i)%dump_requests(2), ierr)
       end if
     end do
   end subroutine timestep_callback
+
+  !> Sends data to the IO server
+  !! @param current_state The current model state
+  !! @param data_index The specific data index to send over
+  subroutine send_data_to_io_server(current_state, data_index)
+    type(model_state_type), target, intent(inout) :: current_state
+    integer, intent(in) :: data_index
+
+    integer :: command_to_send, ierr
+
+    if (data_definitions(data_index)%dump_requests(1) .ne. MPI_REQUEST_NULL .or. &
+         data_definitions(data_index)%dump_requests(2) .ne. MPI_REQUEST_NULL) then
+      ! Here wait for previous data dump to complete (consider extending to using buffers for performance)
+      call mpi_waitall(2, data_definitions(data_index)%dump_requests, MPI_STATUSES_IGNORE, ierr)
+    end if
+
+    ! Pack the send buffer and send it to the IO server
+    call pack_send_buffer(current_state, data_definitions(data_index))
+
+    command_to_send=DATA_COMMAND_START+data_index
+    call mpi_issend(command_to_send, 1, MPI_INT, current_state%parallel%corresponding_io_server_process, &
+         COMMAND_TAG, MPI_COMM_WORLD, data_definitions(data_index)%dump_requests(1), ierr)
+    call mpi_issend(data_definitions(data_index)%send_buffer, 1, data_definitions(data_index)%mpi_datatype, &
+         current_state%parallel%corresponding_io_server_process, DATA_TAG+data_index, MPI_COMM_WORLD, &
+         data_definitions(data_index)%dump_requests(2), ierr)
+  end subroutine send_data_to_io_server  
 
   !> Finalisation call back, called at the end of the model run
   !! @param current_state The current model state
@@ -130,8 +148,12 @@ contains
     integer :: ierr, i
 
     if (.not. io_server_enabled) return
+    in_finalisation_callback=.true.
 
-    do i=1, size(data_definitions)
+    do i=1, size(data_definitions)      
+      if (data_definitions(i)%send_on_terminate) then
+        call send_data_to_io_server(current_state, i)
+      end if
       if (data_definitions(i)%dump_requests(1) .ne. MPI_REQUEST_NULL .or. &
            data_definitions(i)%dump_requests(2) .ne. MPI_REQUEST_NULL) then
         call mpi_waitall(2, data_definitions(i)%dump_requests, MPI_STATUSES_IGNORE, ierr)
@@ -140,7 +162,7 @@ contains
       call mpi_type_free(data_definitions(i)%mpi_datatype, ierr)
     end do
     call mpi_send(DEREGISTER_COMMAND, 1, MPI_INT, current_state%parallel%corresponding_io_server_process, &
-         COMMAND_TAG, MPI_COMM_WORLD, ierr)    
+         COMMAND_TAG, MPI_COMM_WORLD, ierr)
   end subroutine finalisation_callback
 
   !> Builds the MPI data types that correspond to the field descriptions and sizings
@@ -290,6 +312,10 @@ contains
 
     raw_generic=>generate_sendable_description(options_size(current_state%options_database))
     call c_put_generic(sendable_fields, "options_database", raw_generic, .false.)
+    if (get_number_active_q_indices() .gt. 0) then
+      raw_generic=>generate_sendable_description(get_number_active_q_indices())
+      call c_put_generic(sendable_fields, "q_indicies", raw_generic, .false.)
+    end if
     raw_generic=>generate_sendable_description(3)
     call c_put_generic(sendable_fields, "local_grid_size", raw_generic, .false.)
     call c_put_generic(sendable_fields, "local_grid_start", raw_generic, .false.)
@@ -300,7 +326,13 @@ contains
     call c_put_generic(sendable_fields, "x_resolution", raw_generic, .false.)
     raw_generic=>generate_sendable_description(z_size, y_size, x_size)
     call c_put_generic(sendable_fields, "u", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "u_nogal", raw_generic, .false.)
     call c_put_generic(sendable_fields, "zu", raw_generic, .false.)
+    if (allocated(current_state%global_grid%configuration%vertical%olubar)) then
+      raw_generic=>generate_sendable_description(z_size)
+      call c_put_generic(sendable_fields, "olubar", raw_generic, .false.)
+      call c_put_generic(sendable_fields, "olzubar", raw_generic, .false.)
+    end if
 #endif
 #ifdef V_ACTIVE
     raw_generic=>generate_sendable_description()
@@ -309,24 +341,41 @@ contains
     call c_put_generic(sendable_fields, "y_resolution", raw_generic, .false.)
     raw_generic=>generate_sendable_description(z_size, y_size, x_size)
     call c_put_generic(sendable_fields, "v", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "v_nogal", raw_generic, .false.)
     call c_put_generic(sendable_fields, "zv", raw_generic, .false.)
+    if (allocated(current_state%global_grid%configuration%vertical%olvbar)) then
+      raw_generic=>generate_sendable_description(z_size)
+      call c_put_generic(sendable_fields, "olvbar", raw_generic, .false.)
+      call c_put_generic(sendable_fields, "olzvbar", raw_generic, .false.)
+    end if
 #endif
 #ifdef W_ACTIVE
     raw_generic=>generate_sendable_description(z_size)
     call c_put_generic(sendable_fields, "z", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "thref", raw_generic, .false.)
     raw_generic=>generate_sendable_description(z_size, y_size, x_size)
     call c_put_generic(sendable_fields, "w", raw_generic, .false.)
     call c_put_generic(sendable_fields, "zw", raw_generic, .false.)
-#endif
+#endif          
     if (current_state%number_q_fields .gt. 0) then
       raw_generic=>generate_sendable_description(z_size, y_size, x_size, current_state%number_q_fields)
       call c_put_generic(sendable_fields, "q", raw_generic, .false.)
       call c_put_generic(sendable_fields, "zq", raw_generic, .false.)
+      if (allocated(current_state%global_grid%configuration%vertical%olqbar)) then
+        raw_generic=>generate_sendable_description(z_size, current_state%number_q_fields)
+        call c_put_generic(sendable_fields, "olqbar", raw_generic, .false.)
+        call c_put_generic(sendable_fields, "olzqbar", raw_generic, .false.)
+      end if
     end if
     if (current_state%th%active) then
       raw_generic=>generate_sendable_description(z_size, y_size, x_size)
       call c_put_generic(sendable_fields, "th", raw_generic, .false.)
       call c_put_generic(sendable_fields, "zth", raw_generic, .false.)
+      if (allocated(current_state%global_grid%configuration%vertical%olthbar)) then
+        raw_generic=>generate_sendable_description(z_size)
+        call c_put_generic(sendable_fields, "olthbar", raw_generic, .false.)
+        call c_put_generic(sendable_fields, "olzthbar", raw_generic, .false.)
+      end if
     end if
     if (current_state%p%active) then
       raw_generic=>generate_sendable_description(z_size, y_size, x_size)
@@ -385,7 +434,7 @@ contains
     real(kind=DEFAULT_PRECISION) :: dreal
 
     number_unique_fields=c_size(unique_field_names)
-    allocate(data_description(number_unique_fields+3))
+    allocate(data_description(number_unique_fields+4))
     request_handles(1)=send_data_field_sizes_to_server(current_state, mpi_type_data_sizing_description, &
        data_description, number_unique_fields)
     buffer_size=(kind(dreal)*current_state%local_grid%size(Z_INDEX)) + (STRING_LENGTH * current_state%number_q_fields)
@@ -411,7 +460,7 @@ contains
     character(len=STRING_LENGTH) :: field_name
     
     call package_local_monc_decomposition_into_descriptions(current_state, data_description)
-    next_index=4
+    next_index=5
     do i=1, number_unique_fields
       field_name=c_key_at(unique_field_names, i)
       if (c_contains(sendable_fields, field_name)) then
@@ -477,6 +526,9 @@ contains
     sizing_info%dimensions(Y_INDEX)=current_state%local_grid%end(Y_INDEX)
     sizing_info%dimensions(X_INDEX)=current_state%local_grid%end(X_INDEX)
     call assemble_individual_description(data_description, 3, LOCAL_END_POINTS_KEY, sizing_info)
+    sizing_info%number_dimensions=1
+    sizing_info%dimensions(1)=get_number_active_q_indices()
+    call assemble_individual_description(data_description, 4, NUMBER_Q_INDICIES_KEY, sizing_info)
   end subroutine package_local_monc_decomposition_into_descriptions  
 
   !> Retrieves the sizing information associated with a specific field
@@ -599,6 +651,7 @@ contains
     allocate(data_definitions(number_defns))
     do i=1, number_defns
       data_definitions(i)%name=definition_descriptions(i)%definition_name
+      data_definitions(i)%send_on_terminate=definition_descriptions(i)%send_on_terminate
       data_definitions(i)%number_of_data_fields=0 ! Will increment this for each field
       data_definitions(i)%frequency=definition_descriptions(i)%frequency
       allocate(data_definitions(i)%fields(definition_descriptions(i)%number_fields))
@@ -677,6 +730,9 @@ contains
     if (field%name .eq. "timestep") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
            int_value=current_state%timestep)
+    else if (field%name .eq. "terminated") then
+      pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
+           logical_value=.not. current_state%continue_timestep .and. in_finalisation_callback)
     else if (field%name .eq. "z_size") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
            int_value=current_state%global_grid%size(Z_INDEX))
@@ -686,6 +742,9 @@ contains
     else if (field%name .eq. "y_bottom") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
            real_value=current_state%global_grid%bottom(Y_INDEX))
+    else if (field%name .eq. "y_top") then
+      pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
+           real_value=current_state%global_grid%top(Y_INDEX))
     else if (field%name .eq. "y_resolution") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
            real_value=current_state%global_grid%resolution(Y_INDEX))
@@ -695,6 +754,9 @@ contains
     else if (field%name .eq. "x_bottom") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
            real_value=current_state%global_grid%bottom(X_INDEX))
+    else if (field%name .eq. "x_top") then
+      pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
+           real_value=current_state%global_grid%top(X_INDEX))
     else if (field%name .eq. "x_resolution") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
            real_value=current_state%global_grid%resolution(X_INDEX))
@@ -767,8 +829,21 @@ contains
     type(io_configuration_field_type), intent(in) :: field
     integer, intent(in) :: current_buffer_point
 
+    integer :: i
+    type(q_metadata_type) :: specific_q_data
+    type(hashmap_type) :: q_indicies_map
+
     if (field%name .eq. "options_database") then
       pack_map_into_send_buffer=pack_map_field(data_definition%send_buffer, current_buffer_point, current_state%options_database)
+    else if (field%name .eq. "q_indicies") then
+      do i=1, get_max_number_q_indices()
+        specific_q_data=get_indices_descriptor(i)
+        if (specific_q_data%l_used) then
+          call c_put_integer(q_indicies_map, specific_q_data%name, i)
+        end if
+      end do
+      pack_map_into_send_buffer=pack_map_field(data_definition%send_buffer, current_buffer_point, q_indicies_map)
+      call c_free(q_indicies_map)
     end if    
   end function pack_map_into_send_buffer  
 
@@ -793,19 +868,52 @@ contains
     else if (field%name .eq. "z") then
       pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
            real_array_1d=current_state%global_grid%configuration%vertical%z)
+    else if (field%name .eq. "olubar") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_1d=current_state%global_grid%configuration%vertical%olubar)
+    else if (field%name .eq. "olzubar") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_1d=current_state%global_grid%configuration%vertical%olzubar)
+    else if (field%name .eq. "olvbar") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_1d=current_state%global_grid%configuration%vertical%olvbar)
+    else if (field%name .eq. "olzvbar") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_1d=current_state%global_grid%configuration%vertical%olzvbar)
+    else if (field%name .eq. "olthbar") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_1d=current_state%global_grid%configuration%vertical%olthbar)
+    else if (field%name .eq. "olzthbar") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_1d=current_state%global_grid%configuration%vertical%olzthbar)
+    else if (field%name .eq. "olqbar") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_2d=current_state%global_grid%configuration%vertical%olqbar)
+    else if (field%name .eq. "olzqbar") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_2d=current_state%global_grid%configuration%vertical%olzqbar)
+    else if (field%name .eq. "thref") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_1d=current_state%global_grid%configuration%vertical%thref)
     else if (field%name .eq. "u") then
-      if (current_state%ugal .ne. 0.0) current_state%u%data = current_state%u%data + current_state%ugal
+      current_state%u%data=current_state%u%data+current_state%ugal
+      pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer, current_state%u, &
+           current_buffer_point, current_state%local_grid)
+      current_state%u%data=current_state%u%data-current_state%ugal
+    else if (field%name .eq. "u_nogal") then
       pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer, current_state%u, current_buffer_point, &
            current_state%local_grid)
-      if (current_state%ugal .ne. 0.0) current_state%u%data = current_state%u%data - current_state%ugal
     else if (field%name .eq. "zu") then
       pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer, current_state%zu, current_buffer_point,&
            current_state%local_grid)
     else if (field%name .eq. "v") then
-      if (current_state%vgal .ne. 0.0) current_state%v%data = current_state%v%data + current_state%vgal
+      current_state%v%data=current_state%v%data+current_state%vgal
       pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer, current_state%v, current_buffer_point, &
            current_state%local_grid)
-      if (current_state%vgal .ne. 0.0) current_state%v%data = current_state%v%data - current_state%vgal
+      current_state%v%data=current_state%v%data-current_state%vgal
+    else if (field%name .eq. "v_nogal") then
+      pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer, current_state%v, current_buffer_point, &
+           current_state%local_grid)
     else if (field%name .eq. "zv") then
       pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer, current_state%zv, current_buffer_point,&
            current_state%local_grid)

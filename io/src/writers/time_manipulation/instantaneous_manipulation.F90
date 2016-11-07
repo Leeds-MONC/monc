@@ -1,11 +1,15 @@
 !> Performs instantaneous time manipulation and only returns a value if the output frequency determines one should be
 module instantaneous_time_manipulation_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
-  use collections_mod, only : hashmap_type, c_put_real, c_get_real, c_contains
+  use collections_mod, only : hashmap_type, mapentry_type, iterator_type, c_get_iterator, c_next_mapentry, c_put_real, &
+       c_get_real, c_contains, c_size, c_has_next
   use conversions_mod, only : conv_single_real_to_double
   use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_unlock, forthread_mutex_destroy
   use threadpool_mod, only : check_thread_status 
   use configuration_parser_mod, only : data_values_type
+  use data_utils_mod, only : unpack_scalar_integer_from_bytedata, unpack_scalar_string_from_bytedata, &
+       unpack_scalar_dp_real_from_bytedata
+  use io_server_client_mod, only : pack_scalar_field
   implicit none
 
 #ifndef TEST_MODE
@@ -15,7 +19,8 @@ module instantaneous_time_manipulation_mod
   integer, volatile ::  existing_instantaneous_writes_mutex
   type(hashmap_type), volatile :: existing_instantaneous_writes
 
-  public init_instantaneous_manipulation, finalise_instantaneous_manipulation, perform_instantaneous_time_manipulation
+  public init_instantaneous_manipulation, finalise_instantaneous_manipulation, perform_instantaneous_time_manipulation, &
+       is_instantaneous_time_manipulation_ready_to_write, serialise_instantaneous_state, unserialise_instantaneous_state
 contains
 
   !> Initialises the instantaneous time manipulation
@@ -27,6 +32,14 @@ contains
   subroutine finalise_instantaneous_manipulation()
     call check_thread_status(forthread_mutex_destroy(existing_instantaneous_writes_mutex))
   end subroutine finalise_instantaneous_manipulation
+
+  logical function is_instantaneous_time_manipulation_ready_to_write(latest_time, output_frequency, write_time, &
+       latest_timestep, write_timestep)
+    real, intent(in) :: latest_time, output_frequency, write_time
+    integer, intent(in) :: latest_timestep, write_timestep
+
+    is_instantaneous_time_manipulation_ready_to_write=latest_time + output_frequency .gt. write_time
+  end function is_instantaneous_time_manipulation_ready_to_write
 
   !> Performs the instantaneous time manipulation and returns data only if this is to be written to the 
   !! storage. Internally a state is maintained which tracks when the write was last done to allow for flexibility in the
@@ -78,5 +91,48 @@ contains
       deduce_whether_to_issue_values=.false.
     end if
     call check_thread_status(forthread_mutex_unlock(existing_instantaneous_writes_mutex))
-  end function deduce_whether_to_issue_values  
+  end function deduce_whether_to_issue_values
+
+  !> Will serialise the state of this manipulator so that it can be later restarted
+  !! @param byte_data The state of this manipulator is written into here, this is allocated in this call
+  subroutine serialise_instantaneous_state(byte_data)
+    character, dimension(:), allocatable, intent(out) :: byte_data
+
+    integer :: byte_size, current_data_point
+    real(kind=DEFAULT_PRECISION) :: a
+    type(mapentry_type) :: map_entry
+    type(iterator_type) :: iterator
+
+    call check_thread_status(forthread_mutex_lock(existing_instantaneous_writes_mutex))
+
+    byte_size=kind(byte_size) + ((STRING_LENGTH + kind(a)) * c_size(existing_instantaneous_writes))
+
+    allocate(byte_data(byte_size))
+    current_data_point=1
+    current_data_point=pack_scalar_field(byte_data, current_data_point, c_size(existing_instantaneous_writes))
+    iterator=c_get_iterator(existing_instantaneous_writes)
+    do while (c_has_next(iterator))
+      map_entry=c_next_mapentry(iterator)
+      current_data_point=pack_scalar_field(byte_data, current_data_point, string_value=map_entry%key)
+      current_data_point=pack_scalar_field(byte_data, current_data_point, double_real_value=c_get_real(map_entry))
+    end do
+    call check_thread_status(forthread_mutex_unlock(existing_instantaneous_writes_mutex))
+  end subroutine serialise_instantaneous_state
+
+  !> Unpacks some serialised byte data to initialise this manipulator to some previous state
+  !! @param byte_data The byte data to unpack and reinitialise from
+  subroutine unserialise_instantaneous_state(byte_data)
+    character, dimension(:), allocatable, intent(in) :: byte_data
+
+    integer :: current_data_point, number_entries, i
+
+    current_data_point=1
+    number_entries=unpack_scalar_integer_from_bytedata(byte_data, current_data_point)
+    if (number_entries .gt. 0) then
+      do i=1, number_entries
+        call c_put_real(existing_instantaneous_writes, unpack_scalar_string_from_bytedata(byte_data, current_data_point), &
+             unpack_scalar_dp_real_from_bytedata(byte_data, current_data_point))        
+      end do
+    end if    
+  end subroutine unserialise_instantaneous_state
 end module instantaneous_time_manipulation_mod

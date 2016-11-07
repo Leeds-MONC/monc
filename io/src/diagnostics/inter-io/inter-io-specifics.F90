@@ -5,11 +5,9 @@ module inter_io_specifics_mod
   use configuration_parser_mod, only : DATA_SIZE_STRIDE, handle_recv_data_from_io_server, io_configuration_type, &
        io_configuration_data_definition_type, io_configuration_inter_communication_description, extend_inter_io_comm_array       
   use io_server_client_mod, only : data_sizing_description_type, pack_scalar_field, pack_array_field
-  use mpi_communication_mod, only : build_mpi_datatype
   use forthread_mod, only : forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_unlock, &
        forthread_rwlock_init, forthread_rwlock_destroy, forthread_mutex_init
   use threadpool_mod, only : check_thread_status
-  use mpi, only : MPI_REQUEST_NULL
   implicit none
 
 #ifndef TEST_MODE

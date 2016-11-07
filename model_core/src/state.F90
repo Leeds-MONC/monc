@@ -14,7 +14,8 @@ module state_mod
   !> Stepping parameter values which determine centred or forward stepping
   integer, parameter, public :: CENTRED_STEPPING=0, FORWARD_STEPPING=1, PRESCRIBED_SURFACE_FLUXES=0, PRESCRIBED_SURFACE_VALUES=1
   !> The constants defining the reason why the model has terminated
-  integer, parameter, public :: TIME_TERMINATION_REASON=0, TIMESTEP_TERMINATION_REASON=1, MESSAGE_TERMINATION_REASON=2
+  integer, parameter, public :: TIME_TERMINATION_REASON=0, TIMESTEP_TERMINATION_REASON=1, MESSAGE_TERMINATION_REASON=2, &
+       WALLTIME_TERMINATION_REASON=3
 
   !> Information about the parallel aspects of the system
   type, public :: parallel_state_type
@@ -73,8 +74,10 @@ module state_mod
     logical :: first_timestep_column, last_timestep_column, halo_column, first_nonhalo_timestep_column, &
          passive_q=.false., passive_th=.false., &
          use_time_varying_surface_values, use_anelastic_equations, & ! use_anelastic_equations or use Boussinesq
-         saturated_surface, update_dtm=.false., calculate_th_and_q_init, origional_vertical_grid_setup=.true.
+         saturated_surface, update_dtm=.false., calculate_th_and_q_init, origional_vertical_grid_setup=.true., &
+         io_server_enabled
     logical, allocatable :: l_forceq(:)
+    double precision :: model_start_wtime
 
     logical :: galilean_transformation=.true., fix_ugal=.false., fix_vgal=.false.
     real(kind=DEFAULT_PRECISION) :: ugal=0.,vgal=0.

@@ -45,6 +45,8 @@ contains
 
     case_number=options_get_integer(current_state%options_database, "case_number") 
 
+    if (current_state%continuation_run) return
+
     select case(case_number)
     case(CASE_CU)
       call set_Cu_profiles(current_state)     

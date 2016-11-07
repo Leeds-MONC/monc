@@ -60,7 +60,6 @@ contains
         current_state%global_grid%configuration%vertical%dmpcoz(K)=dmptim*(exp((&
              current_state%global_grid%configuration%vertical%z(K)-zdmp)/hdmp)-1.0)
       end if
-      
       if(current_state%global_grid%configuration%vertical%zn(k).lt. zdmp) exit
     end do
   end subroutine init_callback
@@ -93,6 +92,7 @@ contains
              current_state%global_grid%configuration%vertical%dmpco(k)*(current_state%zth%data(k, current_state%column_local_y, &
              current_state%column_local_x)-current_state%global_grid%configuration%vertical%olzthbar(k))
       end if
+      
       do i=1,current_state%number_q_fields
         if (current_state%q(i)%active) then
           current_state%sq(i)%data(k, current_state%column_local_y, current_state%column_local_x)=current_state%sq(i)%data(k, &

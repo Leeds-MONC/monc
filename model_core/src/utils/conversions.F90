@@ -124,8 +124,12 @@ contains
 
     integer :: integer_value, ierr
 
-    read(string, '(i10)', iostat=ierr ) integer_value
-    string_is_integer = ierr == 0
+    if (len(trim(string)) .ne. 0) then
+      read(string, '(i10)', iostat=ierr ) integer_value
+      string_is_integer = ierr == 0
+    else
+      string_is_integer=.false.
+    end if
   end function string_is_integer
 
   !> Determines whether a string is a real or not
@@ -137,8 +141,12 @@ contains
     integer :: ierr
     real :: real_value
 
-    read(string, '(f10.2)', iostat=ierr ) real_value
-    string_is_real = ierr == 0
+    if (len(trim(string)) .ne. 0) then
+      read(string, '(f10.2)', iostat=ierr ) real_value
+      string_is_real = ierr == 0
+    else
+      string_is_real=.false.
+    end if
   end function string_is_real
 
   !> Determines whether a string is a logical or not

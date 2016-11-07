@@ -16,13 +16,83 @@ module data_utils_mod
 
   integer, parameter :: ARRAY_STEP_THRESHOLD=204800
 
-  public is_field_present, get_map, get_map_from_monc, get_scalar_integer, get_scalar_integer_from_monc, get_scalar_real, &
-       get_scalar_real_from_monc, get_array_double, get_array_double_from_monc, get_3darray_double, &
-       get_3darray_double_from_monc, get_4darray_double, get_4darray_double_from_monc, get_2darray_double, &
+  public is_field_present, get_map, get_map_from_monc, get_scalar_integer, get_scalar_integer_from_monc, get_scalar_logical, &
+       get_scalar_logical_from_monc, get_scalar_real, get_scalar_real_from_monc, get_array_double, get_array_double_from_monc, &
+       get_3darray_double, get_3darray_double_from_monc, get_4darray_double, get_4darray_double_from_monc, get_2darray_double, &
        get_2darray_double_from_monc, get_array_integer, get_array_integer_from_monc, &
        get_string, get_string_from_monc, get_field_size, get_action_attribute_string, get_action_attribute_logical, &
-       get_action_attribute_integer
+       get_action_attribute_integer, unpack_scalar_integer_from_bytedata, unpack_scalar_real_from_bytedata, &
+       unpack_scalar_dp_real_from_bytedata, unpack_scalar_logical_from_bytedata, unpack_scalar_string_from_bytedata
 contains
+
+  !> Unpacks a scalar integer from some byte data, this is a very simple unpack routine wrapping the transfer and updating the
+  !! current point
+  !! @param data The byte data to read from
+  !! @param start_point Starting point, which is then updated to point to the next item in the byte data
+  !! @returns An integer held at the specific location
+  integer function unpack_scalar_integer_from_bytedata(data, start_point)
+    character, dimension(:), intent(in) :: data
+    integer, intent(inout) :: start_point
+
+    unpack_scalar_integer_from_bytedata=transfer(data(start_point:start_point+&
+         kind(unpack_scalar_integer_from_bytedata)-1), unpack_scalar_integer_from_bytedata)
+    start_point=start_point+kind(unpack_scalar_integer_from_bytedata)
+  end function unpack_scalar_integer_from_bytedata
+
+  !> Unpacks a scalar logical from some byte data, this is a very simple unpack routine wrapping the transfer and updating the
+  !! current point
+  !! @param data The byte data to read from
+  !! @param start_point Starting point, which is then updated to point to the next item in the byte data
+  !! @returns A logical held at the specific location
+  logical function unpack_scalar_logical_from_bytedata(data, start_point)
+    character, dimension(:), intent(in) :: data
+    integer, intent(inout) :: start_point
+
+    unpack_scalar_logical_from_bytedata=transfer(data(start_point:start_point+&
+         kind(unpack_scalar_logical_from_bytedata)-1), unpack_scalar_logical_from_bytedata)
+    start_point=start_point+kind(unpack_scalar_logical_from_bytedata)
+  end function unpack_scalar_logical_from_bytedata
+
+  !> Unpacks a string from some byte data with default length, this is a very simple unpack routine wrapping 
+  !! the transfer and updating the current point
+  !! @param data The byte data to read from
+  !! @param start_point Starting point, which is then updated to point to the next item in the byte data
+  !! @returns A string held at the specific location
+  character(len=STRING_LENGTH) function unpack_scalar_string_from_bytedata(data, start_point)
+    character, dimension(:), intent(in) :: data
+    integer, intent(inout) :: start_point
+
+    unpack_scalar_string_from_bytedata=transfer(data(start_point:start_point+STRING_LENGTH-1), unpack_scalar_string_from_bytedata)
+    start_point=start_point+STRING_LENGTH
+  end function unpack_scalar_string_from_bytedata
+
+  !> Unpacks a scalar real from some byte data, this is a very simple unpack routine wrapping the transfer and updating the
+  !! current point
+  !! @param data The byte data to read from
+  !! @param start_point Starting point, which is then updated to point to the next item in the byte data
+  !! @returns A single precision real held at the specific location
+  real function unpack_scalar_real_from_bytedata(data, start_point)
+    character, dimension(:), intent(in) :: data
+    integer, intent(inout) :: start_point
+
+    unpack_scalar_real_from_bytedata=transfer(data(start_point:start_point+&
+         kind(unpack_scalar_real_from_bytedata)-1), unpack_scalar_real_from_bytedata)
+    start_point=start_point+kind(unpack_scalar_real_from_bytedata)
+  end function unpack_scalar_real_from_bytedata
+
+  !> Unpacks a double precision scalar real from some byte data, this is a very simple unpack routine 
+  !! wrapping the transfer and updating the current point
+  !! @param data The byte data to read from
+  !! @param start_point Starting point, which is then updated to point to the next item in the byte data
+  !! @returns A double precision real held at the specific location
+  real(kind=DOUBLE_PRECISION) function unpack_scalar_dp_real_from_bytedata(data, start_point)
+    character, dimension(:), intent(in) :: data
+    integer, intent(inout) :: start_point
+
+    unpack_scalar_dp_real_from_bytedata=transfer(data(start_point:start_point+&
+         kind(unpack_scalar_dp_real_from_bytedata)-1), unpack_scalar_dp_real_from_bytedata)
+    start_point=start_point+kind(unpack_scalar_dp_real_from_bytedata)
+  end function unpack_scalar_dp_real_from_bytedata
 
   !> Retrieves the name of a field from the attributes specified in the configuration
   !! @param action_attributes Action attributes from the IO server configuration
@@ -224,6 +294,50 @@ contains
     get_string_from_monc=get_string(io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), &
          io_configuration%registered_moncs(monc_location)%field_end_locations(data_id), data_dump, key)
   end function get_string_from_monc  
+
+  !> Retrieves a single logical element (scalar) from the data dump
+  !! @param field_starts Field starting locations
+  !! @param field_ends Field ending locations
+  !! @param data_dump Raw data that MONC has sent to us
+  !! @param key Key of the field to retrieve
+  !! @returns Corresponding logical
+  logical function get_scalar_logical(field_starts, field_ends, data_dump, key)
+    type(map_type), intent(inout) :: field_starts, field_ends
+    character, dimension(:), allocatable, intent(in) :: data_dump
+    character(len=*), intent(in) :: key
+
+    integer :: start_index, end_index
+
+    if (.not. c_contains(field_starts, key) .or. .not. c_contains(field_ends, key)) &
+         call log_log(LOG_ERROR, "Field name `"//key//"` not found in the data definition")
+
+    start_index=c_get_integer(field_starts, key)
+    end_index=c_get_integer(field_ends, key)
+
+    get_scalar_logical=transfer(data_dump(start_index:end_index), get_scalar_logical)
+  end function get_scalar_logical
+
+  !> Retrieves a single logical element (scalar) from the data dump
+  !! @param io_configuration Configuration of the IO server
+  !! @param source PID of the MONC process
+  !! @param data_dump Raw data that MONC has sent to us
+  !! @param data_id The ID of the data definition that is represented by the dump
+  !! @param key Key of the field to retrieve
+  !! @returns Corresponding logical
+  logical function get_scalar_logical_from_monc(io_configuration, source, data_id, data_dump, key)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    integer, intent(in) :: source, data_id
+    character, dimension(:), allocatable, intent(in) :: data_dump
+    character(len=*), intent(in) :: key
+
+    integer :: monc_location
+
+    monc_location=c_get_integer(io_configuration%monc_to_index, conv_to_string(source))
+
+    get_scalar_logical_from_monc=get_scalar_logical(&
+         io_configuration%registered_moncs(monc_location)%field_start_locations(data_id), &
+         io_configuration%registered_moncs(monc_location)%field_end_locations(data_id), data_dump, key)
+  end function get_scalar_logical_from_monc
 
   !> Retrieves a single integer element (scalar) from the data dump
   !! @param field_starts Field starting locations
