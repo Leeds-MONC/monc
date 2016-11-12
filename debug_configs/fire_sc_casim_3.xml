@@ -1,6 +1,6 @@
 <io-configuration>
 	<server-configuration>
-		<thread_pool number=100/>
+		<thread_pool number=10/>
 	</server-configuration>
 
 #include "io/io_cfg_files/scalar_fields.xml"
@@ -9,10 +9,10 @@
 #include "io/io_cfg_files/checkpoint.xml"
 
 <data-writing>
-  <file name="RCE_ts.nc" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+  <file name="debug_configs/fire_sc_casim_3_diagnostics.nc" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
     <include group="profile_timeseries" time_manipulation="averaged" output_frequency="{mm}"/>
      <include group="scalar_timeseries" time_manipulation="instantaneous" output_frequency="{mm1}"/>
-     <!include group="3d_fields" time_manipulation="instantaneous" output_frequency="{mm}"/>
+     <include group="3d_fields" time_manipulation="instantaneous" output_frequency="{mm}"/>
   </file>
 </data-writing>
 

@@ -7,6 +7,7 @@ module profile_diagnostics_mod
   use state_mod, only : model_state_type
   use datadefn_mod, only : DEFAULT_PRECISION
   use q_indices_mod, only: get_q_index, standard_q_names
+  use saturation_mod, only: qsaturation
 
   implicit none
 
@@ -17,7 +18,8 @@ module profile_diagnostics_mod
   integer :: total_points, iqv, iql
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable ::     &
        tempfac, u_wind_tot, uprime_tot, v_wind_tot, vprime_tot,  &
-       ww_tot, theta_tot, qv_tot, ql_tot, w_wind_tot
+       ww_tot, theta_tot, qv_tot, ql_tot, w_wind_tot, rh_tot,    &
+       thref, prefn, rho, rhon, thinit
   real(kind=DEFAULT_PRECISION) :: qlcrit
 
   public profile_diagnostics_get_descriptor
@@ -35,7 +37,7 @@ contains
 
     profile_diagnostics_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     profile_diagnostics_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
-    allocate(profile_diagnostics_get_descriptor%published_fields(9))
+    allocate(profile_diagnostics_get_descriptor%published_fields(15))
 
     profile_diagnostics_get_descriptor%published_fields(1)="theta_total_local"
     profile_diagnostics_get_descriptor%published_fields(2)="vapour_mmr_total_local"
@@ -46,6 +48,12 @@ contains
     profile_diagnostics_get_descriptor%published_fields(7)="vv_total_local"
     profile_diagnostics_get_descriptor%published_fields(8)="ww_total_local"
     profile_diagnostics_get_descriptor%published_fields(9)="w_wind_total_local"
+    profile_diagnostics_get_descriptor%published_fields(10)="rh_total_local"
+    profile_diagnostics_get_descriptor%published_fields(11)="thref_local"
+    profile_diagnostics_get_descriptor%published_fields(12)="prefn_local"
+    profile_diagnostics_get_descriptor%published_fields(13)="rho_local"
+    profile_diagnostics_get_descriptor%published_fields(14)="rhon_local" 
+    profile_diagnostics_get_descriptor%published_fields(15)="thinit_local"
 
   end function profile_diagnostics_get_descriptor
 
@@ -59,19 +67,24 @@ contains
     ! allocate local arrays for the horizontal wind averages
     allocate(u_wind_tot(current_state%local_grid%size(Z_INDEX)) &
          , v_wind_tot(current_state%local_grid%size(Z_INDEX))   &
-         , ww_tot(current_state%local_grid%size(Z_INDEX)) &
-         , w_wind_tot(current_state%local_grid%size(Z_INDEX)))
-
+         , ww_tot(current_state%local_grid%size(Z_INDEX))       &
+         , w_wind_tot(current_state%local_grid%size(Z_INDEX))   &
+         , prefn(current_state%local_grid%size(Z_INDEX))        &
+         , rho(current_state%local_grid%size(Z_INDEX))          &
+         , rhon(current_state%local_grid%size(Z_INDEX)) )
+    
     if (allocated(current_state%global_grid%configuration%vertical%olubar)) then
       allocate(uprime_tot(current_state%local_grid%size(Z_INDEX)))
     end if
     
     if (allocated(current_state%global_grid%configuration%vertical%olvbar)) then
       allocate(vprime_tot(current_state%local_grid%size(Z_INDEX)))
-    end if    
-    
+    end if        
+
     if (current_state%th%active) then
-        allocate(theta_tot(current_state%local_grid%size(Z_INDEX))) 
+        allocate(theta_tot(current_state%local_grid%size(Z_INDEX)) &
+             , thref(current_state%local_grid%size(Z_INDEX))       &
+             , thinit(current_state%local_grid%size(Z_INDEX)))
      endif
         
     if (.not. current_state%passive_q .and. current_state%number_q_fields .gt. 0) then                                     
@@ -79,23 +92,27 @@ contains
        iql=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'profile_diags')                                                     
        qlcrit=options_get_real(current_state%options_database, "qlcrit")                                                         
        allocate(qv_tot(current_state%local_grid%size(Z_INDEX))  &
-         , ql_tot(current_state%local_grid%size(Z_INDEX)))
-    endif   
+         , ql_tot(current_state%local_grid%size(Z_INDEX)) ) 
+       if (current_state%th%active) &
+            allocate(rh_tot(current_state%local_grid%size(Z_INDEX)))
+    endif
+   
   end subroutine initialisation_callback  
 
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
     integer :: k, i
-    real(kind=DEFAULT_PRECISION) :: cltop_col, clbas_col
+    real(kind=DEFAULT_PRECISION) :: cltop_col, clbas_col, qv, qc, TdegK, Pmb &
+         , qs, exner
 
     if (current_state%first_timestep_column) then
-       u_wind_tot(:) = 0.0
-       if (allocated(uprime_tot)) uprime_tot(:) = 0.0
-       v_wind_tot(:) = 0.0
-       if (allocated(vprime_tot)) vprime_tot(:) = 0.0
-       w_wind_tot(:) = 0.0
-       ww_tot(:) = 0.0
+       u_wind_tot(:) = 0.0_DEFAULT_PRECISION
+       uprime_tot(:) = 0.0_DEFAULT_PRECISION
+       v_wind_tot(:) = 0.0_DEFAULT_PRECISION
+       vprime_tot(:) = 0.0_DEFAULT_PRECISION
+       w_wind_tot(:) = 0.0_DEFAULT_PRECISION
+       ww_tot(:) = 0.0_DEFAULT_PRECISION
 
        if (current_state%th%active) then 
           theta_tot(:)=0.0_DEFAULT_PRECISION
@@ -104,10 +121,12 @@ contains
             current_state%number_q_fields .gt. 0) then 
           qv_tot(:)=0.0_DEFAULT_PRECISION
           ql_tot(:)=0.0_DEFAULT_PRECISION
+          if (current_state%th%active) &
+               rh_tot(:) = 0.0_DEFAULT_PRECISION
        endif
     end if
     if (.not. current_state%halo_column) then
-       ! work out the sum of u and v wind over local domain
+       ! work out the sum of u and v wind over local domaini
        do k=1, current_state%local_grid%size(Z_INDEX)
           u_wind_tot(k) = u_wind_tot(k) + & 
                (current_state%u%data(k,current_state%column_local_y,current_state%column_local_x)  &
@@ -137,10 +156,19 @@ contains
                   + current_state%global_grid%configuration%vertical%thref(k))
           enddo
        endif
-       if (.not. current_state%passive_q .and. current_state%number_q_fields .gt. 0) then
+       if (current_state%th%active .and. .not. current_state%passive_q .and. current_state%number_q_fields .gt. 0) then
           do k=1, current_state%local_grid%size(Z_INDEX)
              qv_tot(k) = qv_tot(k) + (current_state%q(iqv)%data(k,current_state%column_local_y,current_state%column_local_x))   
              ql_tot(k) = ql_tot(k) + (current_state%q(iql)%data(k,current_state%column_local_y,current_state%column_local_x))
+             ! temporary code for RH calculation
+             exner = current_state%global_grid%configuration%vertical%rprefrcp(k)
+             Pmb   = (current_state%global_grid%configuration%vertical%prefn(k)/100.)
+             qv    = current_state%q(iqv)%data(k, current_state%column_local_y,current_state%column_local_x) 
+             qc    = current_state%q(iql)%data(k, current_state%column_local_y,current_state%column_local_x)
+             TdegK = (current_state%th%data(k,current_state%column_local_y,current_state%column_local_x) &
+                  + current_state%global_grid%configuration%vertical%thref(k))*exner
+             qs = qsaturation(TdegK, Pmb)
+             rh_tot(k) = rh_tot(k) + (qv/qs)
           enddo
        endif
     endif
@@ -163,6 +191,9 @@ contains
       field_information%enabled=current_state%th%active
     else if (name .eq. "vapour_mmr_total_local" .or. name .eq. "liquid_mmr_total_local") then
       field_information%enabled=.not. current_state%passive_q .and. current_state%number_q_fields .gt. 0
+    else if (name .eq. "rh_total_local") then
+      field_information%enabled=current_state%th%active .and. .not. current_state%passive_q .and. &
+           current_state%number_q_fields .gt. 0
     else if (name .eq. "uu_total_local") then
       field_information%enabled=allocated(uprime_tot)
     else if (name .eq. "vv_total_local") then
@@ -182,8 +213,33 @@ contains
     type(component_field_value_type), intent(out) :: field_value
     
     integer :: k
-
-    if (name .eq. "u_wind_total_local") then
+    
+    if (name .eq. "prefn_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=current_state%global_grid%configuration%vertical%prefn(k)
+       enddo
+    else if (name .eq. "rho_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=current_state%global_grid%configuration%vertical%rho(k)
+       enddo
+    else if (name .eq. "rhon_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=current_state%global_grid%configuration%vertical%rhon(k)
+       enddo 
+    else if (name .eq. "thref_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=current_state%global_grid%configuration%vertical%thref(k)
+       enddo   
+    else if (name .eq. "thinit_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=current_state%global_grid%configuration%vertical%theta_init(k)
+       enddo    
+    elseif (name .eq. "u_wind_total_local") then
        allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
        do k = 1, current_state%local_grid%size(Z_INDEX)
           field_value%real_1d_array(k)=u_wind_tot(k)
@@ -207,7 +263,7 @@ contains
        allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
        do k = 1, current_state%local_grid%size(Z_INDEX)
           field_value%real_1d_array(k)=ww_tot(k)
-       enddo   
+       enddo 
     else if (name .eq. "theta_total_local") then
        allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
        do k = 1, current_state%local_grid%size(Z_INDEX)
@@ -227,6 +283,11 @@ contains
        allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
        do k = 1, current_state%local_grid%size(Z_INDEX)
           field_value%real_1d_array(k)=w_wind_tot(k)
+       enddo
+    else if (name .eq. "rh_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=rh_tot(k)
        enddo
     end if
   end subroutine field_value_retrieval_callback

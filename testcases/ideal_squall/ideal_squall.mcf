@@ -26,7 +26,6 @@ profile_diagnostics_enabled=.true.
 # Test case source code
 ideal_squall_enabled=.true.
 
-
 # Add bubble to initialisation
 initialisation_stage_ordering+=ideal_squall
 dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, tank_experiments, lwrad_exponential, ideal_squall, simplecloud, casim,diverr, psrce, flux_budget, diagnostics, profile_diagnostics, scalar_diagnostics, stepfields
@@ -38,28 +37,28 @@ advection_q_fields=tvd
 
 # Control configuration
 display_synopsis_frequency=20
-nn_consolidation=1
 termination_time=10800.
-dtm=1.1
+dtm=1.0
 
 # IO server configuration
-ioserver_configuration_file="add_ioconfig_file_path"
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 moncs_per_io_server=16
-sampling_frequency=1
-mm=60.0
-mm1=5.0
-diag_write_freq=3600.0
+sampling_frequency=10
+3d_sampling_frequency=100
+mm=300.0
+mm1=60.0
+diag_write_freq=600.0
 
 # Checkpoint configuration
-checkpoint_frequency=9000
+checkpoint_frequency=0
 checkpoint_file="ideal_squall_dump.nc"
-checkpoint_unique_per_dump=.true.
-
+checkpoint_walltime_frequency=10
+walltime_limit=00:30:00
 
 # CFL configuration
 cfl_frequency=10
-cfl_cvismax=0.2
-cfl_cvelmax=0.2
+cfl_cvismax=0.4
+cfl_cvelmax=0.4
 cfl_dtmmax=5.
 cfl_dtmmin=0.001
 
@@ -77,11 +76,6 @@ kgd=1,41,141,200
 hgd=0.0, 2000., 12000.,24000.0
 nsmth=80
 galilean_transformation=.true. 
-fix_ugal=.true.
-ugal=17.0
-fix_vgal=.true.
-vgal=0.0
-
 
 enable_theta=.true.
 number_q_fields=2

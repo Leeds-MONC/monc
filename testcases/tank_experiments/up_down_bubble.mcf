@@ -10,8 +10,8 @@ simplesetup_enabled=.true.
 smagorinsky_enabled=.false.
 lower_bc_enabled=.false.
 setfluxlook_enabled=.false. #This must be set to true if running with lower_bc
-viscosity_enabled=.false.
-diffusion_enabled=.false.
+viscosity_enabled=.true.
+diffusion_enabled=.true.
 simplecloud_enabled=.false.
 coriolis_enabled=.false.
 damping_enabled=.false.
@@ -32,25 +32,26 @@ initialisation_stage_ordering+=tank_experiments
 dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, tank_experiments, lwrad_exponential, simplecloud, casim,diverr, psrce, flux_budget, diagnostics, profile_diagnostics, scalar_diagnostics, stepfields
 
 #Advection
-advection_flow_fields=tvd
+advection_flow_fields=pw
 advection_theta_field=tvd
 advection_q_fields=tvd
 
 # Control configuration
 display_synopsis_frequency=20
-nn_consolidation=1
 termination_time=1800.
 dtm=0.1
 
 # Checkpoint configuration
-checkpoint_frequency=50
+checkpoint_frequency=0
 checkpoint_file="up_down_bubble_dump.nc"
-checkpoint_unique_per_dump=.true.
+checkpoint_walltime_frequency=10
+walltime_limit=00:30:00
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 moncs_per_io_server=16
-sampling_frequency=1
+sampling_frequency=5
+3d_sampling_frequency=100
 mm=300.0
 mm1=10.0
 diag_write_freq=1800.0

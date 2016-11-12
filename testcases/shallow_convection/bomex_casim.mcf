@@ -10,7 +10,8 @@ lower_bc_enabled=.true.
 setfluxlook_enabled=.true. #This must be set to true if running with lower_bc
 viscosity_enabled=.true.
 diffusion_enabled=.true.
-simplecloud_enabled=.true.
+simplecloud_enabled=.false.
+casim_enabled=.true.
 coriolis_enabled=.true.
 damping_enabled=.true.
 forcing_enabled=.true. 
@@ -37,7 +38,7 @@ diag_write_freq=7200.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
-checkpoint_file="bomex_dump.nc"
+checkpoint_file="bomex_casim_dump.nc"
 checkpoint_walltime_frequency=10
 walltime_limit=00:30:00
 
@@ -69,9 +70,7 @@ hgd=0.0,3000.0
 nsmth=80
 galilean_transformation=.true.
 
-
 enable_theta=.true.
-number_q_fields=2
 use_anelastic_equations=.true.
 origional_vertical_grid_setup=.true.
 passive_th=.false.
@@ -164,3 +163,14 @@ type_of_surface_boundary_conditions = 0
 surface_boundary_input_times = 0
 surface_latent_heat_flux   = 130.052
 surface_sensible_heat_flux = 8.04
+
+#CASIM options
+number_q_fields=11
+option=22222
+l_warm=.false.
+
+aerosol_option=0
+iopt_act=0
+iopt_inuc=0
+process_level=0
+l_override_checks = .true.

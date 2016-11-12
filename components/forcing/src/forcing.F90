@@ -54,6 +54,12 @@ module forcing_mod
   integer :: constant_forcing_type_u=RELAXATION   ! Method for large-scale forcing of u
   integer :: constant_forcing_type_v=RELAXATION   ! Method for large-scale forcing of v
 
+  logical :: l_constant_forcing_theta_z2pressure  ! profile is a function of pressure not height
+
+  logical :: relax_to_initial_u_profile ! For relaxation, use initial profile as the target 
+  logical :: relax_to_initial_v_profile ! For relaxation, use initial profile as the target 
+  logical :: relax_to_initial_theta_profile ! For relaxation, use initial profile as the target 
+
   logical :: l_subs_pl_theta ! if .true. then subsidence applied to theta field
   logical :: l_subs_pl_q     ! if .true. then subsidence applied to q fields
   
@@ -207,7 +213,7 @@ contains
       field_value%real_1d_array=get_averaged_diagnostics(current_state, dv_profile_diag)
     else if (name .eq. "th_large_scale") then
       allocate(field_value%real_1d_array(column_size))
-      field_value%real_1d_array=get_averaged_diagnostics(current_state, dtheta_profile_diag)
+      field_value%real_1d_array=dtheta_profile_diag
     else if (name .eq. "q_large_scale") then
       allocate(field_value%real_2d_array(column_size, current_state%number_q_fields))
       do n=1, current_state%number_q_fields
@@ -252,6 +258,8 @@ contains
     logical :: convert_input_theta_from_temperature=.false. ! If .true. input forcing data is for temperature and should
                                                             ! be converted to theta (potential temerature).
 
+   integer :: k
+
     allocate(theta_profile(current_state%local_grid%size(Z_INDEX)), &
        q_profile(current_state%local_grid%size(Z_INDEX)),           &
        u_profile(current_state%local_grid%size(Z_INDEX)),           &
@@ -268,8 +276,8 @@ contains
 
     allocate(zgrid(current_state%local_grid%size(Z_INDEX)))
 
-
     ! Subsidence forcing initialization
+
     l_subs_pl_theta=options_get_logical(current_state%options_database, "l_subs_pl_theta")
     l_subs_pl_q=options_get_logical(current_state%options_database, "l_subs_pl_q")
     subsidence_input_type=options_get_integer(current_state%options_database, "subsidence_input_type")
@@ -280,7 +288,7 @@ contains
     if ((l_subs_pl_theta .and. .not. l_subs_local_theta) .or. &
        (l_subs_pl_q .and. .not. l_subs_local_q))then
       if (.not. is_component_enabled(current_state%options_database, "mean_profiles")) then
-        call log_master_log(LOG_ERROR, "Subsidence requires the mean profiles component to be enabled")
+        call log_master_log(LOG_ERROR, "Damping requires the mean profiles component to be enabled")
       end if
     end if
 
@@ -319,79 +327,119 @@ contains
     end if
     
     if (l_constant_forcing_theta)then
+      constant_forcing_type_theta=options_get_integer(current_state%options_database, "constant_forcing_type_theta")
+      forcing_timescale_theta=options_get_real(current_state%options_database, "forcing_timescale_theta")
+      l_constant_forcing_theta_z2pressure=options_get_logical(current_state%options_database, "l_constant_forcing_theta_z2pressure")
+
       allocate(z_force_pl_theta(options_get_array_size(current_state%options_database, "z_force_pl_theta")), &
            f_force_pl_theta(options_get_array_size(current_state%options_database, "f_force_pl_theta")))
       call options_get_real_array(current_state%options_database, "z_force_pl_theta", z_force_pl_theta)
       call options_get_real_array(current_state%options_database, "f_force_pl_theta", f_force_pl_theta)
       ! Get profiles
-      zgrid=current_state%global_grid%configuration%vertical%zn(:)
-      call piecewise_linear_1d(z_force_pl_theta(1:size(z_force_pl_theta)), f_force_pl_theta(1:size(f_force_pl_theta)), zgrid, &
-         current_state%global_grid%configuration%vertical%theta_force)
-
+      relax_to_initial_theta_profile=options_get_logical(current_state%options_database, "relax_to_initial_theta_profile")
+      if (relax_to_initial_theta_profile)then
+        current_state%global_grid%configuration%vertical%theta_force(:) = &
+           current_state%global_grid%configuration%vertical%theta_init(:)
+      else
+        if (l_constant_forcing_theta_z2pressure)then
+          zgrid=current_state%global_grid%configuration%vertical%zn(:)
+        else
+          zgrid=current_state%global_grid%configuration%vertical%prefn(:)
+        end if
+        call piecewise_linear_1d(z_force_pl_theta(1:size(z_force_pl_theta)), f_force_pl_theta(1:size(f_force_pl_theta)), zgrid, &
+           current_state%global_grid%configuration%vertical%theta_force)
+      end if
+      
       ! Unit conversions...
       if (convert_input_theta_from_temperature)then ! Input is temperature not theta
         current_state%global_grid%configuration%vertical%theta_force(:) =   &
            current_state%global_grid%configuration%vertical%theta_force(:)* &
            current_state%global_grid%configuration%vertical%prefrcp(:)
       end if
-
-      units_theta_force=options_get_string(current_state%options_database, "units_theta_force")
-      select case(trim(units_theta_force))
-      case(k_per_day)
-        current_state%global_grid%configuration%vertical%theta_force(:) = &
-           current_state%global_grid%configuration%vertical%theta_force(:)/seconds_in_a_day
-      case default !(k_per_second)
-      end select
+      
+      if (constant_forcing_type_theta==TENDENCY)then
+        units_theta_force=options_get_string(current_state%options_database, "units_theta_force")
+        select case(trim(units_theta_force))
+        case(k_per_day)
+          current_state%global_grid%configuration%vertical%theta_force(:) = &
+             current_state%global_grid%configuration%vertical%theta_force(:)/seconds_in_a_day
+        case default !(k_per_second)
+        end select
+      end if
       deallocate(z_force_pl_theta, f_force_pl_theta)
-    end if
+   end if
                                                            
 #ifdef U_ACTIVE
     if (l_constant_forcing_u)then
-      allocate(z_force_pl_u(options_get_array_size(current_state%options_database, "z_force_pl_u")), &
-           f_force_pl_u(options_get_array_size(current_state%options_database, "f_force_pl_u")))
-      call options_get_real_array(current_state%options_database, "z_force_pl_u", z_force_pl_u)
-      call options_get_real_array(current_state%options_database, "f_force_pl_u", f_force_pl_u)
-      ! Get profiles
-      zgrid=current_state%global_grid%configuration%vertical%zn(:)
-      call piecewise_linear_1d(z_force_pl_u(1:size(z_force_pl_u)), f_force_pl_u(1:size(f_force_pl_u)), zgrid, &
-         current_state%global_grid%configuration%vertical%u_force)
-
-      ! Unit conversions...
-      units_u_force=options_get_string(current_state%options_database, "units_u_force")
-      select case(trim(units_u_force))
-      case(m_per_second_per_day)
+      constant_forcing_type_u=options_get_integer(current_state%options_database, "constant_forcing_type_u")
+      forcing_timescale_u=options_get_real(current_state%options_database, "forcing_timescale_u")
+      relax_to_initial_u_profile=options_get_logical(current_state%options_database, "relax_to_initial_u_profile")
+      if (relax_to_initial_u_profile)then
         current_state%global_grid%configuration%vertical%u_force(:) = &
-           current_state%global_grid%configuration%vertical%u_force(:)/seconds_in_a_day
-      case default  !(m_per_second_per_second)
-      end select
-      deallocate(z_force_pl_u, f_force_pl_u)
+           current_state%global_grid%configuration%vertical%u_init(:)
+      else
+        allocate(z_force_pl_u(options_get_array_size(current_state%options_database, "z_force_pl_u")), &
+           f_force_pl_u(options_get_array_size(current_state%options_database, "f_force_pl_u")))
+        call options_get_real_array(current_state%options_database, "z_force_pl_u", z_force_pl_u)
+        call options_get_real_array(current_state%options_database, "f_force_pl_u", f_force_pl_u)
+        ! Get profiles
+        zgrid=current_state%global_grid%configuration%vertical%zn(:)
+        call piecewise_linear_1d(z_force_pl_u(1:size(z_force_pl_u)), f_force_pl_u(1:size(f_force_pl_u)), zgrid, &
+           current_state%global_grid%configuration%vertical%u_force)
+        deallocate(z_force_pl_u, f_force_pl_u)
+      end if
+
+
+      if (constant_forcing_type_u==TENDENCY)then
+        ! Unit conversions...
+        units_u_force=options_get_string(current_state%options_database, "units_u_force")
+        select case(trim(units_u_force))
+        case(m_per_second_per_day)
+          current_state%global_grid%configuration%vertical%u_force(:) = &
+             current_state%global_grid%configuration%vertical%u_force(:)/seconds_in_a_day
+        case default  !(m_per_second_per_second)
+        end select
+      end if
     end if
 #endif
                                                            
 #ifdef V_ACTIVE
     if (l_constant_forcing_v)then
-      allocate(z_force_pl_v(options_get_array_size(current_state%options_database, "z_force_pl_v")), &
-           f_force_pl_v(options_get_array_size(current_state%options_database, "f_force_pl_v")))
-      call options_get_real_array(current_state%options_database, "z_force_pl_v", z_force_pl_v)
-      call options_get_real_array(current_state%options_database, "f_force_pl_v", f_force_pl_v)
-      ! Get profiles
-      zgrid=current_state%global_grid%configuration%vertical%zn(:)
-      call piecewise_linear_1d(z_force_pl_v(1:size(z_force_pl_v)), f_force_pl_v(1:size(f_force_pl_v)), zgrid, &
-         current_state%global_grid%configuration%vertical%u_force)
-
-      ! Unit conversions...
-      units_v_force=options_get_string(current_state%options_database, "units_v_force")
-      select case(trim(units_v_force))
-      case(m_per_second_per_day)
+      constant_forcing_type_v=options_get_integer(current_state%options_database, "constant_forcing_type_v")
+      forcing_timescale_v=options_get_real(current_state%options_database, "forcing_timescale_v")
+      relax_to_initial_v_profile=options_get_logical(current_state%options_database, "relax_to_initial_v_profile")
+      if (relax_to_initial_v_profile)then
         current_state%global_grid%configuration%vertical%v_force(:) = &
-           current_state%global_grid%configuration%vertical%v_force(:)/seconds_in_a_day
-      case default !(m_per_second_per_second)
-      end select
-      deallocate(z_force_pl_v, f_force_pl_v)
+           current_state%global_grid%configuration%vertical%v_init(:)
+      else
+        allocate(z_force_pl_v(options_get_array_size(current_state%options_database, "z_force_pl_v")), &
+           f_force_pl_v(options_get_array_size(current_state%options_database, "f_force_pl_v")))
+        call options_get_real_array(current_state%options_database, "z_force_pl_v", z_force_pl_v)
+        call options_get_real_array(current_state%options_database, "f_force_pl_v", f_force_pl_v)
+        ! Get profiles
+        zgrid=current_state%global_grid%configuration%vertical%zn(:)
+        call piecewise_linear_1d(z_force_pl_v(1:size(z_force_pl_v)), f_force_pl_v(1:size(f_force_pl_v)), zgrid, &
+           current_state%global_grid%configuration%vertical%v_force)
+        deallocate(z_force_pl_v, f_force_pl_v)
+      end if
+
+
+      if (constant_forcing_type_v==TENDENCY)then
+        ! Unit conversions...
+        units_v_force=options_get_string(current_state%options_database, "units_v_force")
+        select case(trim(units_v_force))
+        case(m_per_second_per_day)
+          current_state%global_grid%configuration%vertical%v_force(:) = &
+             current_state%global_grid%configuration%vertical%v_force(:)/seconds_in_a_day
+        case default !(m_per_second_per_second)
+        end select
+      end if
     end if 
 #endif   
         
     if (l_constant_forcing_q) then
+      constant_forcing_type_q=options_get_integer(current_state%options_database, "constant_forcing_type_q")
+      forcing_timescale_q=options_get_real(current_state%options_database, "forcing_timescale_q")
       nq_force=size(names_force_pl_q)
       allocate(z_force_pl_q(options_get_array_size(current_state%options_database, "z_force_pl_q")))
       call options_get_real_array(current_state%options_database, "z_force_pl_q", z_force_pl_q)
@@ -412,21 +460,24 @@ contains
         current_state%l_forceq(iq)=.true.
 
         ! Unit conversions...
-        select case(trim(units_q_force(n)))
-        case(kg_per_kg_per_day)
-          current_state%global_grid%configuration%vertical%q_force(:,iq) = &
-             current_state%global_grid%configuration%vertical%q_force(:,iq)/seconds_in_a_day
-        case(g_per_kg_per_day)
-          current_state%global_grid%configuration%vertical%q_force(:,iq) = &
-             0.001*current_state%global_grid%configuration%vertical%q_force(:,iq)/seconds_in_a_day
-        case(g_per_kg_per_second)
-          current_state%global_grid%configuration%vertical%q_force(:,iq) = &
-             0.001*current_state%global_grid%configuration%vertical%q_force(:,iq)
-        case default !(kg_per_kg_per_second)
-        end select
+        if (constant_forcing_type_u==TENDENCY)then
+          select case(trim(units_q_force(n)))
+          case(kg_per_kg_per_day)
+            current_state%global_grid%configuration%vertical%q_force(:,iq) = &
+               current_state%global_grid%configuration%vertical%q_force(:,iq)/seconds_in_a_day
+          case(g_per_kg_per_day)
+            current_state%global_grid%configuration%vertical%q_force(:,iq) = &
+               0.001*current_state%global_grid%configuration%vertical%q_force(:,iq)/seconds_in_a_day
+          case(g_per_kg_per_second)
+            current_state%global_grid%configuration%vertical%q_force(:,iq) = &
+               0.001*current_state%global_grid%configuration%vertical%q_force(:,iq)
+          case default !(kg_per_kg_per_second)
+          end select
+        end if
       end do
       deallocate(f_force_pl_q_tmp, units_q_force, f_force_pl_q, z_force_pl_q)  
     end if
+
     deallocate(zgrid)
   end subroutine init_callBack
 
@@ -577,9 +628,9 @@ contains
     real(kind=DEFAULT_PRECISION) :: dtm_scale
 
     if (constant_forcing_type_theta==TENDENCY)then
-      dtm_scale=current_state%dtm
+      dtm_scale=1.0_DEFAULT_PRECISION
     else !  constant_forcing_type_theta==(RELAXATION or INCREMENT)
-      dtm_scale=current_state%dtm/forcing_timescale_theta
+      dtm_scale=1.0_DEFAULT_PRECISION/forcing_timescale_theta
     end if
     
     if (constant_forcing_type_theta==RELAXATION)then
@@ -588,15 +639,16 @@ contains
          current_state%global_grid%configuration%vertical%thref(:))
     else !  constant_forcing_type_theta==(TENDENCY or INCREMENT)
       dtheta_profile(:)=dtm_scale * current_state%global_grid%configuration%vertical%theta_force(:)
-    end if
+   end if
 
-    dtheta_profile_diag=dtheta_profile_diag+dtheta_profile
+
+    dtheta_profile_diag=dtheta_profile_diag+(dtheta_profile)
 
     do k=2,current_state%local_grid%size(Z_INDEX)-1
       current_state%sth%data(k,current_state%column_local_y,current_state%column_local_x) = &
            current_state%sth%data(k,current_state%column_local_y,current_state%column_local_x) &
            + dtheta_profile(k)
-    end do
+    end do 
 
   end subroutine apply_time_independent_forcing_to_theta
 
@@ -609,9 +661,9 @@ contains
     do n=1,current_state%number_q_fields
       if (current_state%l_forceq(n))then
         if (constant_forcing_type_q==TENDENCY)then
-          dtm_scale=current_state%dtm
+          dtm_scale=1.0_DEFAULT_PRECISION
         else !  constant_forcing_type_q==(RELAXATION or INCREMENT)
-          dtm_scale=current_state%dtm/forcing_timescale_q
+          dtm_scale=1.0_DEFAULT_PRECISION/forcing_timescale_q
         end if
         
         if (constant_forcing_type_q==RELAXATION)then
@@ -640,14 +692,14 @@ contains
     real(kind=DEFAULT_PRECISION) :: dtm_scale
 
     if (constant_forcing_type_u==TENDENCY)then
-      dtm_scale=current_state%dtm
+      dtm_scale=1.0_DEFAULT_PRECISION
     else !  constant_forcing_type_u==(RELAXATION or INCREMENT)
-      dtm_scale=current_state%dtm/forcing_timescale_u
+      dtm_scale=1.0_DEFAULT_PRECISION/forcing_timescale_u
     end if
     
     if (constant_forcing_type_u==RELAXATION)then
       du_profile(:)=dtm_scale * (current_state%global_grid%configuration%vertical%u_force(:) - &
-         current_state%zu%data(:,current_state%column_local_y,current_state%column_local_x))
+           current_state%global_grid%configuration%vertical%olzubar(:))
     else !  constant_forcing_type_u==(TENDENCY or INCREMENT)
       du_profile(:)=dtm_scale * current_state%global_grid%configuration%vertical%u_force(:)
     end if
@@ -669,14 +721,14 @@ contains
     real(kind=DEFAULT_PRECISION) :: dtm_scale
 
     if (constant_forcing_type_v==TENDENCY)then
-      dtm_scale=current_state%dtm
+      dtm_scale=1.0_DEFAULT_PRECISION
     else !  constant_forcing_type_v==(RELAXATION or INCREMENT)
-      dtm_scale=current_state%dtm/forcing_timescale_v
+      dtm_scale=1.0_DEFAULT_PRECISION/forcing_timescale_v
     end if
     
     if (constant_forcing_type_v==RELAXATION)then
       dv_profile(:)=dtm_scale * (current_state%global_grid%configuration%vertical%v_force(:) - &
-         current_state%zv%data(:,current_state%column_local_y,current_state%column_local_x))
+           current_state%global_grid%configuration%vertical%olzvbar(:) )
     else !  constant_forcing_type_v==(TENDENCY or INCREMENT)
       dv_profile(:)=dtm_scale * current_state%global_grid%configuration%vertical%v_force(:)
     end if

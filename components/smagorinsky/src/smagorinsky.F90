@@ -4,6 +4,7 @@ module smagorinsky_mod
   use monc_component_mod, only : component_descriptor_type
   use state_mod, only : FORWARD_STEPPING, model_state_type
   use grids_mod, only : Z_INDEX
+  use optionsdatabase_mod, only : options_get_real
   use prognostics_mod, only : prognostic_field_type
   use science_constants_mod, only : smallp, rlvap_over_cp, ratio_mol_wts, G, cp
   use communication_types_mod, only : halo_communication_type, neighbour_description_type, field_data_wrapper_type
@@ -59,8 +60,9 @@ contains
     thconb=thcona-current_state%thref0
     thconap1=thcona
 
-    subb=40.0_DEFAULT_PRECISION
-    subc=16.0_DEFAULT_PRECISION
+    subb=options_get_real(current_state%options_database, "smag-subb")
+    subc=options_get_real(current_state%options_database, "smag-subc")
+
     subg=1.2_DEFAULT_PRECISION
     subh=0.0_DEFAULT_PRECISION
     subr=4.0_DEFAULT_PRECISION
@@ -104,7 +106,9 @@ contains
           richardson_number=calculate_richardson_number(current_state, ssq, current_state%zth, current_state%zq)
         end if
         call setfri(current_state, richardson_number, ssq)
-        call update_viscous_number(current_state)
+        if (is_component_enabled(current_state%options_database, "cfltest")) then
+           call update_viscous_number(current_state)
+        endif
       end if
     end if
     if (current_state%last_timestep_column) then

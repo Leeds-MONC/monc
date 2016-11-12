@@ -22,18 +22,19 @@ termination_time=32410.
 dtm=0.5
 
 # IO server configuration
-ioserver_configuration_file="testcases/drybl/dry_bl.xml"
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 moncs_per_io_server=16
-sampling_frequency=1
+sampling_frequency=10
+3d_sampling_frequency=600
 mm=3600.0
 mm1=60.0
 diag_write_freq=32400.0
-checkpoint_freq=1000
 
 # Checkpoint configuration
-checkpoint_frequency=1000
+checkpoint_frequency=0
 checkpoint_file="drybl_dump.nc"
-checkpoint_unique_per_dump=.true.
+checkpoint_walltime_frequency=10
+walltime_limit=00:30:00
 
 # Advection choices
 advection_flow_fields=pw

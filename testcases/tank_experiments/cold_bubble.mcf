@@ -50,15 +50,17 @@ nsmth=20
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 moncs_per_io_server=16
-sampling_frequency=1
+sampling_frequency=5
+3d_sampling_frequency=100
 mm=600.0
 mm1=20.0
 diag_write_freq=3600.0
 
 # Checkpoint configuration
-checkpoint_frequency=900
+checkpoint_frequency=0
 checkpoint_file="cold_bubble_dump.nc"
-checkpoint_unique_per_dump=.true.
+checkpoint_walltime_frequency=10
+walltime_limit=00:30:00
 
 # iterative solver
 tolerance=1.e-5

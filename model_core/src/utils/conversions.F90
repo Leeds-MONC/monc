@@ -201,11 +201,11 @@ contains
   !> Converts a single precision real to a string
   !! @param input The real to convert into a string
   !! @returns The string of length 30 characters
-  function real_single_to_string(input, decimal_places, exponent)
+  function real_single_to_string(input, decimal_places, exponent, exponent_small_numbers)
     real(kind=SINGLE_PRECISION), intent(in) :: input
     character(len=30) :: real_single_to_string
     integer, optional :: decimal_places
-    logical, optional :: exponent
+    logical, optional :: exponent, exponent_small_numbers
 
     logical :: transformed
     transformed=.false.
@@ -213,6 +213,12 @@ contains
     if (present(exponent)) then
       if (exponent) then
         write(real_single_to_string, '(es30.10)' ) input
+        transformed=.true.
+      end if
+    end if
+    if (present(exponent_small_numbers)) then
+      if (exponent_small_numbers) then
+        write(real_single_to_string, '(g30.10)' ) input
         transformed=.true.
       end if
     end if
@@ -229,11 +235,11 @@ contains
   !> Converts a double precision real to a string
   !! @param input The real to convert into a string
   !! @returns The string of length 30 characters
-  function real_double_to_string(input, decimal_places, exponent)
+  function real_double_to_string(input, decimal_places, exponent, exponent_small_numbers)
     real(kind=DOUBLE_PRECISION), intent(in) :: input
     character(len=30) :: real_double_to_string
     integer, optional :: decimal_places
-    logical, optional :: exponent
+    logical, optional :: exponent, exponent_small_numbers
 
     logical :: transformed
     transformed=.false.
@@ -241,6 +247,12 @@ contains
     if (present(exponent)) then
       if (exponent) then
         write(real_double_to_string, '(es30.10)' ) input
+        transformed=.true.
+      end if
+    end if
+    if (present(exponent_small_numbers)) then
+      if (exponent_small_numbers) then
+        write(real_double_to_string, '(g30.10)' ) input
         transformed=.true.
       end if
     end if

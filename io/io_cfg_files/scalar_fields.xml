@@ -8,6 +8,7 @@
   <field name="wmin_local" type="array" data_type="double" optional=true/>
   <field name="senhf_local" type="array" data_type="double" optional=true/>
   <field name="lathf_local" type="array" data_type="double" optional=true/>
+  <field name="surface_precip_local" type="array" data_type="double" optional=true/>
 </data-definition>
 
 <data-handling namespace="scalar_fields">
@@ -99,6 +100,19 @@
 	<communication name="reduction" operator="sum" result="lathf_mean_g" field="lathf_mean_loc_reduced" root="auto"/>
 	<operator name="localreduce" operator="sum" result="lathf_mean_loc_reduced" field="lathf_local"/>
   </diagnostic>
+    <diagnostic field="surface_precip_mean"  type="scalar" data_type="double" units="m">
+    <operator name="arithmetic" result="surface_precip_mean" equation="surface_precip_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="surface_precip_mean_g" field="surface_precip_mean_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="sum" result="surface_precip_mean_loc_reduced" field="surface_precip_local"/>
+  </diagnostic>
+  <diagnostic field="surface_precip_min"  type="scalar" data_type="double" units="m">
+	<communication name="reduction" operator="min" result="surface_precip_min" field="surface_precip_min_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="min" result="surface_precip_min_loc_reduced" field="surface_precip_local"/>
+  </diagnostic> 
+  <diagnostic field="surface_precip_max"  type="scalar" data_type="double" units="m">
+	<communication name="reduction" operator="max" result="surface_precip_max" field="surface_precip_max_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="max" result="surface_precip_max_loc_reduced" field="surface_precip_local"/>
+  </diagnostic> 
 </data-handling>
 
 <group name="scalar_timeseries" namespace="scalar_fields">
@@ -122,4 +136,7 @@
   <member name="lathf_max"/>
   <member name="senhf_min"/>
   <member name="lathf_min"/>
+  <member name="surface_precip_mean"/>
+  <member name="surface_precip_min"/>
+  <member name="surface_precip_max"/>
 </group>

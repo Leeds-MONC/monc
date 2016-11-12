@@ -1,7 +1,7 @@
 #!/bin/bash --login
 #PBS -N MONC
 #PBS -l select=1
-#PBS -l walltime=00:20:00
+#PBS -l walltime=00:45:00
 #PBS -j oe
 #PBS -P monc
 #PBS -q normal
@@ -12,16 +12,19 @@ export PBS_O_WORKDIR=$(readlink -f $PBS_O_WORKDIR)
 # Change to the direcotry that the job was submitted from 
 cd $PBS_O_WORKDIR
 
-export SUBMISSION_SCRIPT_NAME=submonc.pbs
+export SUBMISSION_SCRIPT_NAME=debug_configs/submonc_fire_sc_casim_3
 export MONC_EXEC=./build/bin/monc_driver.exe
 
-export TESTCASE=testcases/radiative_convective_equilibrium/RCE_MO_cray.mcf
-export RUN_NAME=RCE_dump
-export MAX_CONTINUATION_RUNS=4
+export TESTCASE=debug_configs/fire_sc_casim_3.mcf
+export STDOUT_DIR=debug_configs/
+export CP_DIR=debug_configs/
+export RUN_NAME=fire_sc_casim_3_
+export NPES=3
+export MAX_CONTINUATION_RUNS=20
 
 ulimit -c unlimited
 
-. misc/continuation.sh
+. test_suite/checkpoint_test_suite/continuation.sh
 
 run_monc
 

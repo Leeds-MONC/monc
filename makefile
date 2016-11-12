@@ -11,10 +11,22 @@ TESTCASE_DIR=testcases
 IO_SERVER_DIR=io
 BUILD_DIR=build
 
-export NETCDF_DIR=$(NETCDF_ROOT)
-export HDF5_DIR=$(HDF5_ROOT)
-export FFTW_DIR=$(FFTW_ROOT)
-export CASIM_DIR=$(CASIM_ROOT)
+ifndef NETCDF_DIR
+	export NETCDF_DIR=$(NETCDF_ROOT)
+endif
+ifndef HDF5_DIR
+	export HDF5_DIR=$(HDF5_ROOT)
+endif
+ifndef FFTW_DIR
+	export FFTW_DIR=$(FFTW_ROOT)
+endif
+ifndef CASIM_DIR
+	export CASIM_DIR=$(CASIM_ROOT)
+endif
+ifndef PETSC_DIR
+	export PETSC_DIR=$(PETSC_ROOT)
+endif
+
 FTN=ftn
 
 ifeq ($(strip $(CASIM_DIR)),)
@@ -23,13 +35,21 @@ else
 	CASIM_BUILD_LOC=$(CASIM_DIR)/$(BUILD_DIR)/*.o
 endif
 
+ifeq ($(strip $(PETSC_DIR)),)
+	PETSC_LIB_PATH=
+	PETSC_LIBS=
+else
+	PETSC_LIB_PATH=-L $(PETSC_DIR)/lib
+	PETSC_LIBS=-lpetsc
+endif
+
 COMPILERFFLAGS=-O3
 COMPILERRECURSIVE=
 ACTIVE=-DU_ACTIVE -DV_ACTIVE -DW_ACTIVE -DUSE_MAKE
 DEBUG_FLAGS=-g -fcheck=all -ffpe-trap=invalid,zero,overflow -fbacktrace -DDEBUG_MODE
 
 FFLAGS=-I $(CORE_DIR)/$(BUILD_DIR) -I $(COMPONENTS_DIR)/$(BUILD_DIR) -I $(TESTCASE_DIR)/$(BUILD_DIR) -I $(IO_SERVER_DIR)/$(BUILD_DIR) $(COMPILERFFLAGS)
-LFLAGS=-L$(NETCDF_DIR)/lib -L./io -L misc/forthreads -L$(FFTW_DIR)/lib -L$(HDF5_DIR)/lib -lnetcdff -lnetcdf -lhdf5 -lhdf5_hl -lz -lfftw3 -lpthread
+LFLAGS=-L$(NETCDF_DIR)/lib -L./io -L misc/forthreads -L$(FFTW_DIR)/lib -L$(HDF5_DIR)/lib $(PETSC_LIB_PATH) -lnetcdff -lnetcdf -lhdf5 -lhdf5_hl -lz -lfftw3 -lpthread $(PETSC_LIBS)
 EXEC_NAME=monc
 
 local: FTN=mpif90

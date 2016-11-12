@@ -19,6 +19,9 @@ setfluxlook_enabled=.false.
 viscosity_enabled=.false.
 diffusion_enabled=.false.
 simplecloud_enabled=.true.
+iobridge_enabled=.true.
+scalar_diagnostics_enabled=.false.
+profile_diagnostics_enabled=.false.
 
 # Add to initialisation
 initialisation_stage_ordering+=kid_testcase
@@ -26,12 +29,24 @@ start_group_contents+=kid_testcase
 #finalisation_stage_ordering+=kid_testcase
 
 # Control configuration
-nn_timesteps=200
 display_synopsis_frequency=100
-cfl_frequency=2
-nn_consolidation=1
-termination_time=3600.
+termination_time=660.
 dtm=1.
+
+# IO server configuration
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
+moncs_per_io_server=16
+sampling_frequency=2
+3d_sampling_frequency=30
+mm=60.0
+mm1=5.0
+diag_write_freq=600.0
+
+# Checkpoint configuration
+checkpoint_frequency=0
+checkpoint_file="kid_squall_dump.nc"
+checkpoint_walltime_frequency=10
+walltime_limit=00:30:00
 
 # Simple setup configuration
 rhobous=1.0
@@ -63,10 +78,7 @@ type_of_surface_boundary_conditions=0
 l_init_pl_theta=.false.
 l_init_pl_rh=.false.
 
-# Checkpoint configuration
-checkpoint_frequency=100
-checkpoint_file="kid_testcase.nc"
-checkpoint_unique_per_dump=.true.
+
 
 advection_flow_fields=pw
 

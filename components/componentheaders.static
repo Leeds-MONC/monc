@@ -20,6 +20,7 @@ use kidreader_mod, only : kidreader_get_descriptor
 use lowerbc_mod, only : lowerbc_get_descriptor
 use meanprofiles_mod, only : meanprofiles_get_descriptor
 use modelsynopsis_mod, only : modelsynopsis_get_descriptor
+use petsc_solver_mod, only : petsc_solver_get_descriptor
 use pressuresource_mod, only : pressuresource_get_descriptor
 use profile_diagnostics_mod, only : profile_diagnostics_get_descriptor
 use pstep_mod, only : pstep_get_descriptor

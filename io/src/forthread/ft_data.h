@@ -6,7 +6,7 @@
 
 
 
-#ifdef __DARWIN
+#if defined(__DARWIN) && !defined(CLOCKID_ALREADY_DECLARED) 
 typedef int clockid_t;
 #endif
 

@@ -32,6 +32,7 @@ iterativesolver_enabled=.false.
 kidreader_enabled=.false.
 lower_bc_enabled=.false.
 mean_profiles_enabled=.false.
+petsc_solver_enabled=.false.
 physicsa_enabled=.false.
 profile_diagnostics_enabled=.false.
 psrce_enabled=.true.
@@ -70,14 +71,14 @@ start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral
 subgrid_group_contents=lower_bc, smagorinsky
 dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, lwrad_exponential, simplecloud, casim,diverr, psrce, flux_budget, diagnostics, profile_diagnostics, scalar_diagnostics, stepfields
 
-solver_group_contents=mean_profiles, fftsolver, iterativesolver, cfltest
+solver_group_contents=mean_profiles, fftsolver, iterativesolver, petsc_solver, cfltest
 pressure-terms_group_contents=pstep, swap_smooth
 last_group_contents=checkpointer, model_synopsis, termination_check, iobridge
 
 # Component ordering for other stages
 
-initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iobridge, iterativesolver, setfluxlook, lower_bc, physicsa, psrce, pw_advection, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, lwrad_exponential, simplecloud, casim,th_advection, randomnoise, forcing, flux_budget, diagnostics, profile_diagnostics, scalar_diagnostics, lateral_bcs
-finalisation_stage_ordering=iobridge, checkpointer, diverr, fftsolver, grid_manager, halo_swapper, iterativesolver, physicsa, psrce, smagorinsky, tvd_advection,lwrad_exponential, model_synopsis, mean_profiles, forcing, stepfields, flux_budget
+initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iterativesolver, setfluxlook, lower_bc, physicsa, psrce, pw_advection, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, lwrad_exponential, simplecloud, casim,th_advection, randomnoise, forcing, flux_budget, diagnostics, profile_diagnostics, scalar_diagnostics, lateral_bcs, petsc_solver, pstep, diffusion, set_consistent_lowbc, viscosity, iobridge
+finalisation_stage_ordering=iobridge, checkpointer, diverr, fftsolver, grid_manager, halo_swapper, iterativesolver, physicsa, psrce, smagorinsky, tvd_advection,lwrad_exponential, model_synopsis, mean_profiles, forcing, stepfields, flux_budget, buoyancy, diffusion, lower_bc, viscosity
 
 # Control configuration
 nn_timesteps=-1
@@ -134,11 +135,14 @@ wmfcrit=0.0
 qlcrit=0.0
 
 # Iterative solver configuration
-tolerance=1.e-5
+tolerance=1.e-4
 max_iterations=500
 preconditioner_iterations=1
 include_top_level=.true.
 symm_prob=.false.
+solver_type=cg
+preconditioner_type=auto
+norm_type=auto
 
 # Lower BC configuration
 ntmhf=0
@@ -202,7 +206,17 @@ l_matchthref=.false.
 l_thref=.false.
 l_thref_zero_buoy=.false.
 
+# Smagorinsky configuration
+# Default values for the smagorinsky subgrid constants
+smag-subb=40.0
+smag-subc=16.0
+# The subgrid constant values for the 'conventional' subgrid model 
+# of Brown (1999)
+# smag-subb=1.43
+# smag-subc=1.43
+
 # Random noise setup
+l_rand_bit_reproducible=.true.
 l_rand_pl_theta=.false.
 l_rand_pl_q=.false.
 l_rand_pl_w=.false.

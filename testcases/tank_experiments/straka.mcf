@@ -35,7 +35,8 @@ dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 moncs_per_io_server=3
-sampling_frequency=1
+sampling_frequency=4
+3d_sampling_frequency=20
 mm=5.0
 mm1=5.0
 diag_write_freq=900.0
@@ -52,9 +53,10 @@ termination_time=900.
 dtm=.25
 
 # Checkpoint configuration
-checkpoint_frequency=600
-checkpoint_file="monc_straka_dump.nc"
-checkpoint_unique_per_dump=.true.
+checkpoint_frequency=0
+checkpoint_file="straka_dump.nc"
+checkpoint_walltime_frequency=10
+walltime_limit=00:30:00
 
 # iterative solver
 tolerance=1.e-5

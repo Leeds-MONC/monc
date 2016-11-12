@@ -35,15 +35,17 @@ dtm=0.4
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 moncs_per_io_server=16
-sampling_frequency=2
+sampling_frequency=10
+3d_sampling_frequency=600
 mm=600.0
 mm1=5.0
 diag_write_freq=3600.0
 
 # Checkpoint configuration
-checkpoint_frequency=9000
+checkpoint_frequency=0
 checkpoint_file="fire_sc_dump.nc"
-checkpoint_unique_per_dump=.true.
+checkpoint_walltime_frequency=10
+walltime_limit=00:30:00
 
 # Advection choices
 advection_flow_fields=pw
@@ -54,7 +56,7 @@ advection_q_fields=tvd
 cfl_frequency=1000
 cfl_cvismax=0.4
 cfl_cvelmax=0.4
-cfl_dtmmax=10.0
+cfl_dtmmax=5.0
 cfl_dtmmin=0.001
 
 # Simple setup configuration

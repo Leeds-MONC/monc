@@ -1,7 +1,9 @@
 !> Implimentation of CASIM microphysics
 module casim_mod
   use datadefn_mod, only : DEFAULT_PRECISION
-  use monc_component_mod, only : component_descriptor_type
+  use monc_component_mod, only : component_descriptor_type, &
+       COMPONENT_ARRAY_FIELD_TYPE, COMPONENT_DOUBLE_DATA_TYPE, &
+       component_field_value_type, component_field_information_type
   use state_mod, only : FORWARD_STEPPING, model_state_type
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
   use science_constants_mod
@@ -29,6 +31,8 @@ module casim_mod
 #ifndef TEST_MODE
   private
 #endif
+
+  real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: surface_precip
 
   REAL(wp), allocatable :: theta(:,:,:), pressure(:,:,:),  &
      z_half(:,:,:), z_centre(:,:,:), dz(:,:,:), qv(:,:,:),qc(:,:,:) &
@@ -108,12 +112,58 @@ contains
     casim_get_descriptor%version=0.1
     casim_get_descriptor%initialisation=>initialisation_callback
     casim_get_descriptor%timestep=>timestep_callback
+    
+    casim_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
+    casim_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
+    
+    allocate(casim_get_descriptor%published_fields(1))
+
+    casim_get_descriptor%published_fields(1)="surface_precip_local" 
+
   end function casim_get_descriptor
+
+  subroutine field_information_retrieval_callback(current_state, name, field_information)
+    type(model_state_type), target, intent(inout) :: current_state
+    character(len=*), intent(in) :: name
+    type(component_field_information_type), intent(out) :: field_information
+
+    field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
+    field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
+    field_information%number_dimensions=2
+    field_information%dimension_sizes(1)=current_state%local_grid%size(Y_INDEX)
+    field_information%dimension_sizes(2)=current_state%local_grid%size(X_INDEX)
+
+    field_information%enabled=.true.    
+ 
+  end subroutine field_information_retrieval_callback
+
+  !> Field value retrieval callback, this returns the value of a specific published field
+  !! @param current_state Current model state
+  !! @param name The name of the field to retrieve the value for
+  !! @param field_value Populated with the value of the field
+  subroutine field_value_retrieval_callback(current_state, name, field_value)
+    type(model_state_type), target, intent(inout) :: current_state
+    character(len=*), intent(in) :: name
+    type(component_field_value_type), intent(out) :: field_value
+    
+    integer :: i
+
+    if (name .eq. "surface_precip_local") then
+      allocate(field_value%real_2d_array(current_state%local_grid%size(Y_INDEX), &
+           current_state%local_grid%size(X_INDEX)))
+       field_value%real_2d_array(:,:)=surface_precip(:,:) 
+    end if
+    
+  end subroutine field_value_retrieval_callback
 
   !> The initialisation callback sets up the microphysics
   !! @param current_state The current model state
   subroutine initialisation_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
+
+    integer :: y_size_local, x_size_local
+    y_size_local = current_state%local_grid%size(Y_INDEX)
+    x_size_local = current_state%local_grid%size(X_INDEX)
 
     call read_configuration(current_state)   
 
@@ -208,6 +258,8 @@ contains
     allocate(dAccumInsolNumber(kte,1,1))
     allocate(dActiveSolNumber(kte,1,1))
     allocate(dActiveInsolNumber(kte,1,1))
+
+    allocate(surface_precip(y_size_local, x_size_local))
 
     call set_mphys_switches(option,aerosol_option)
     call mphys_init
@@ -364,6 +416,9 @@ contains
     dActiveSolNumber = 0.0
     ActiveInsolNumber = 0.0
     dActiveInsolNumber = 0.0
+
+    ! initialise surface precip to zero...
+    surface_precip = 0.0
 
     i_here=icol
     j_here=jcol

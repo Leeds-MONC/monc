@@ -94,22 +94,33 @@ contains
 
     type(data_values_type), pointer :: variable_data
     type(iterator_type) :: iterator
+    integer :: temp_size, prev_size
 
     get_size_of_data_being_operated_on=-1
     if (.not. c_is_empty(cached_equation%required_fields)) then
       iterator=c_get_iterator(cached_equation%required_fields)
       do while (c_has_next(iterator))
         variable_data=>get_data_value_by_field_name(field_values, c_next_string(iterator))
+
         if (get_size_of_data_being_operated_on == -1) then
           get_size_of_data_being_operated_on=size(variable_data%values)
         else
-          if (get_size_of_data_being_operated_on .ne. size(variable_data%values)) then
-            call log_log(LOG_ERROR, "Can only perform arithmetic on variables with the same array sizes")
-          end if          
+          temp_size=size(variable_data%values)
+          if (get_size_of_data_being_operated_on .ne. temp_size) then
+            if (temp_size .gt. get_size_of_data_being_operated_on) then
+              prev_size=get_size_of_data_being_operated_on
+              get_size_of_data_being_operated_on=temp_size
+              temp_size=prev_size
+            end if            
+            if (mod(get_size_of_data_being_operated_on, temp_size) .ne. 0) then
+              call log_log(LOG_ERROR, &
+                   "Can only perform arithmetic on variables with the same array sizes or sizes that divide evenly")
+            end if
+          end if
         end if
       end do
     end if
-  end function get_size_of_data_being_operated_on  
+  end function get_size_of_data_being_operated_on
 
   !> Executes an equation tree by doing a post order traversal of the tree. If a node is a terminal then either the variable
   !! is looked up for its value or the constant is returned. If a node is a non terminal then the operator is performed on 
@@ -134,7 +145,13 @@ contains
         result_value=conv_to_real(conv_to_integer(equation_tree%variable))
       else
         variable_data=>get_data_value_by_field_name(field_values, equation_tree%variable)
-        result_value=variable_data%values
+        if (size(variable_data%values) .lt. n) then
+          do i=1, n, size(variable_data%values)
+            result_value(i:i+size(variable_data%values)-1)=variable_data%values
+          end do
+        else
+          result_value=variable_data%values
+        end if        
       end if
     else
       left_value=execute_equation_tree(equation_tree%left, field_values, n)
