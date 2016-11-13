@@ -1,0 +1,11 @@
+
+  ! The following modules are required...
+  use datadefn_mod, only : DEFAULT_PRECISION     
+  use state_mod, only : FORWARD_STEPPING, CENTRED_STEPPING, model_state_type  
+  use monc_component_mod, only : component_descriptor_type
+  use optionsdatabase_mod, only :  options_get_real_array, options_get_real, &
+     options_get_logical, options_get_array_size, options_get_string
+  use grids_mod, only : local_grid_type, X_INDEX, Y_INDEX, Z_INDEX
+  use science_constants_mod, only : pi, r_over_cp
+  use logging_mod, only : LOG_ERROR, log_master_log
+  use netcdf

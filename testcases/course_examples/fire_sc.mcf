@@ -14,7 +14,7 @@ viscosity_enabled=.true.
 diffusion_enabled=.true.
 simplecloud_enabled=.true.
 coriolis_enabled=.true.
-damping_enabled=.false.
+damping_enabled=.true.
 forcing_enabled=.true. 
 galilean_transformation=.true. # Needs debugging
 randomnoise_enabled=.true.
@@ -34,13 +34,16 @@ dtm=0.2
 ioserver_configuration_file="testcases/course_examples/test_description.xml"
 moncs_per_io_server=4
 sampling_frequency=2
-mm=60.0
+3d_sampling_frequency=20
+mm=600.0
+mm1=60.0
 diag_write_freq=7200.0
 
 # Checkpoint configuration
-checkpoint_frequency=9000
-checkpoint_file="fire_sc.nc"
-checkpoint_unique_per_dump=.false.
+checkpoint_frequency=0
+checkpoint_file="fire_sc_dump.nc"
+checkpoint_walltime_frequency=10
+walltime_limit=00:30:00
 
 # Advection choices
 advection_flow_fields=pw
@@ -51,7 +54,7 @@ advection_q_fields=tvd
 cfl_frequency=10
 cfl_cvismax=0.4
 cfl_cvelmax=0.4
-cfl_dtmmax=100.0
+cfl_dtmmax=2.0
 cfl_dtmmin=0.001
 
 # Simple setup configuration

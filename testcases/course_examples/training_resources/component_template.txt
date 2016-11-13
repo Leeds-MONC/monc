@@ -1,0 +1,46 @@
+!> Description of what the component does.
+!! Add as much information as is sensible.
+module <TEMPLATE>_mod
+
+  !> Template source code for a new component
+       
+  use monc_component_mod, only : component_descriptor_type
+  use state_mod, only : model_state_type
+  implicit none
+
+#ifndef TEST_MODE
+  private
+#endif
+
+  public <TEMPLATE>_get_descriptor
+contains
+
+  !> Provides a description of this component for the core to register
+  !! @returns The descriptor containing registration information for this component
+  type(component_descriptor_type) function <TEMPLATE>_get_descriptor()
+    <TEMPLATE>_get_descriptor%name="template"
+    <TEMPLATE>_get_descriptor%version=0.1
+    <TEMPLATE>_get_descriptor%initialisation=>initialisation_callback
+    <TEMPLATE>_get_descriptor%timestep=>timestep_callback
+    <TEMPLATE>_get_descriptor%finalisation=>finalisation_callback
+  end function <TEMPLATE>_get_descriptor
+
+  !> Initialisation callback hook which will <DO WHAT?>
+  !! @param current_state The current model state
+  subroutine initialisation_callback(current_state)
+    type(model_state_type), intent(inout), target :: current_state
+  end subroutine initialisation_callback
+
+  !> Timestep callback hook which will <DO WHAT?>
+  !! @param current_state The current model state
+  subroutine timestep_callback(current_state)
+    type(model_state_type), intent(inout), target :: current_state
+  end subroutine timestep_callback
+
+  !> Finalisation callback hook which will <DO WHAT?>
+  !! @param current_state The current model state
+  subroutine finalisation_callback(current_state)
+    type(model_state_type), intent(inout), target :: current_state
+  end subroutine finalisation_callback
+  
+end module <TEMPLATE>_mod

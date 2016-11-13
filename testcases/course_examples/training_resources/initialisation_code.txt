@@ -1,0 +1,33 @@
+  !> Initialisation callback hook which will read in location and 
+  !! temperature 
+  !! @param current_state The current model state
+  subroutine initialisation_callback(current_state)
+    type(model_state_type), intent(inout), target :: current_state
+
+    ! Local variables
+    integer :: nxloc, nyloc
+
+    nxloc=options_get_array_size(current_state%options_database, "island_xloc")
+    nyloc=options_get_array_size(current_state%options_database, "island_yloc")
+
+    if (nxloc /= nyloc)then
+      call log_master_log(LOG_ERROR, "Islands component requires the same number of x and y locations")
+    end if
+
+    n_islands=nxloc
+
+      ! Allocations
+      allocate(island_xloc(n_islands), island_yloc(n_islands),     &
+         island_semimajor(n_islands), island_semiminor(n_islands), &
+         island_angle(n_islands), island_temperature(n_islands)    & 
+         )
+      ! Read in parameters from options database
+      call options_get_real_array(current_state%options_database, "island_xloc", island_xloc) 
+      call options_get_real_array(current_state%options_database, "island_yloc", island_yloc) 
+      call options_get_real_array(current_state%options_database, "island_semimajor", island_semimajor) 
+      call options_get_real_array(current_state%options_database, "island_semiminor", island_semiminor) 
+      call options_get_real_array(current_state%options_database, "island_angle", island_angle) 
+      call options_get_real_array(current_state%options_database, "island_temperature", island_temperature) 
+
+  end subroutine initialisation_callback
+

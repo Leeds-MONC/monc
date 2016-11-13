@@ -1,0 +1,70 @@
+  !> Timestep callback hook which will relax back temperature at the lowest level above
+  !! ground to the island temperature
+  !! @param current_state The current model state
+  subroutine timestep_callback(current_state)
+    type(model_state_type), intent(inout), target :: current_state
+
+    ! Some local variables
+    integer :: i,j,k,i0, j0, iglobal, jglobal
+    integer :: i_island
+
+    integer :: local_i_start, local_i_end, local_j_start, local_j_end
+    real(DEFAULT_PRECISION) :: x, y, x0, y0, dx, dy, dt_adj, rad
+    real(DEFAULT_PRECISION) :: one_over_exner
+    real(DEFAULT_PRECISION) :: island_theta_pert
+
+    ! local grid location
+    local_i_start = current_state%local_grid%local_domain_start_index(X_INDEX)
+    local_i_end   = current_state%local_grid%local_domain_end_index(X_INDEX)
+    local_j_start = current_state%local_grid%local_domain_start_index(Y_INDEX)
+    local_j_end   = current_state%local_grid%local_domain_end_index(Y_INDEX)
+    dx = current_state%global_grid%configuration%horizontal%dx
+    dy = current_state%global_grid%configuration%horizontal%dy
+    i0 = current_state%local_grid%start(X_INDEX)
+    j0 = current_state%local_grid%start(Y_INDEX)
+    x0 = (i0 - 1)*dx
+    y0 = (j0 - 1)*dy
+
+
+    ! If we're using forward stepping then we need to use a different adjustment timescale.
+    if (current_state%field_stepping == FORWARD_STEPPING)then
+      dt_adj = current_state%dtm
+    else
+      dt_adj = 2.0*current_state%dtm
+    end if
+
+    ! Let's just adjust things in the lowest level above ground, i.e. k=2
+    k=2
+    
+    one_over_exner=(current_state%global_grid%configuration%vertical%prefn(k)/100000.)**(-r_over_cp)
+
+
+      do i_island=1,n_islands
+
+      ! Convert temperature to potential temperature
+        island_theta_pert = island_temperature(i_island)*one_over_exner - current_state%global_grid%configuration%vertical%thref(k)
+
+        do i=local_i_start, local_i_end
+          x = x0 + (i - local_i_start)*dx
+          
+          do j=local_j_start, local_j_end
+            y = y0 + (j - local_j_start)*dy
+            rad = (((x-island_xloc(i_island)) * cos(island_angle(i_island)) +  &
+               (y - island_yloc(i_island)) * sin(island_angle(i_island))  )    & 
+               /island_semimajor(i_island) )**2  +                             &
+               (((x-island_xloc(i_island)) * sin(island_angle(i_island)) -     &
+               (y - island_yloc(i_island)) * cos(island_angle(i_island))  )    & 
+               /island_semiminor(i_island) )**2 
+            
+            if (rad < 1.0)then
+              ! Calculate an increment to theta which will adjust back over a timestep
+              current_state%sth%data(k,j,i) = (island_theta_pert - current_state%zth%data(k,j,i))/dt_adj
+            end if
+
+          end do
+          
+        end do
+
+      end do
+
+  end subroutine timestep_callback
