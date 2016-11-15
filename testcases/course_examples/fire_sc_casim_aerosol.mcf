@@ -90,9 +90,9 @@ z_init_pl_u=0.0, 1601.0
 f_init_pl_u=5.0, 5.0
 l_init_pl_v=.false.
 l_init_pl_q=.true.
-names_init_pl_q=vapour
+names_init_pl_q=vapour, accum_sol_mass, accum_sol_number
 z_init_pl_q=0.0, 600.0, 601.0, 1600.0
-f_init_pl_q=9.2e-3, 9.2e-3, 6.2e-3, 6.2e-3
+f_init_pl_q=9.2e-3, 9.2e-3, 6.2e-3, 6.2e-3, 1.e-8, 1.e-8, 1.e-8, 1.e-8, 300.e6, 300.e6, 300.e6, 300.e6
   
 l_matchthref=.false.
 
@@ -151,12 +151,12 @@ cltop_longwave_flux = 70.0 # cloud top longwave flux (Wm-2)
 clbase_longwave_flux = 0.0 # cloud base longwave flux (Wm-2)
 
 #CASIM options
-number_q_fields=5
+number_q_fields=9
 option=22000
 l_warm=.true.
 
-aerosol_option=0
-iopt_act=0
+aerosol_option=1
+iopt_act=3
 iopt_inuc=0
 process_level=0
 l_override_checks = .true.
