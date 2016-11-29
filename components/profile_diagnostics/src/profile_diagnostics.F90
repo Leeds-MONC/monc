@@ -108,9 +108,9 @@ contains
 
     if (current_state%first_timestep_column) then
        u_wind_tot(:) = 0.0_DEFAULT_PRECISION
-       uprime_tot(:) = 0.0_DEFAULT_PRECISION
+       if (allocated(uprime_tot)) uprime_tot(:) = 0.0_DEFAULT_PRECISION
        v_wind_tot(:) = 0.0_DEFAULT_PRECISION
-       vprime_tot(:) = 0.0_DEFAULT_PRECISION
+       if (allocated(vprime_tot)) vprime_tot(:) = 0.0_DEFAULT_PRECISION
        w_wind_tot(:) = 0.0_DEFAULT_PRECISION
        ww_tot(:) = 0.0_DEFAULT_PRECISION
 
