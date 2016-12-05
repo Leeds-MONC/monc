@@ -1,0 +1,37 @@
+#!/bin/bash --login
+#PBS -N MONC
+#PBS -l select=6
+#PBS -l walltime=03:00:00
+#PBS -j oe
+#PBS -P monc
+#PBS -q normal
+
+##############################################################
+#### THIS IS AN EXAMPLE SCRIPT TO DEMONSTRATE HOW TO      ####
+#### SUBMIT A STANDARD monc JOB WITHOUT A RESTART         ####
+#### Script assumes that there are directories called     ####
+#### monc_stdout , checkpoint_files and diagnostic_files  ####
+#### If these do not exist, MONC will fail                ####
+##############################################################
+
+echo Starting job
+
+# Allow multi-threading on cray
+export MPICH_MAX_THREAD_SAFETY=multiple
+
+# Make sure any symbolic links are resolved to absolute path
+export PBS_O_WORKDIR=$(readlink -f $PBS_O_WORKDIR)
+
+# Change to the direcotry that the job was submitted from
+cd $PBS_O_WORKDIR
+
+# Set the number of threads to 1
+#   This prevents any system libraries from automatically  
+#   using threading.
+export OMP_NUM_THREADS=1
+
+# set env variables for submission command
+config_path='testcases/radiative_convective_equilibrium/RCE_MO_cray.mcf'
+checkpoint_fn="checkpoint_files/RCE_dump.nc"
+
+aprun -n 192 -N 32 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_RCE_dump_1

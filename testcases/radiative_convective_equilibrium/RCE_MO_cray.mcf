@@ -39,7 +39,7 @@ diag_write_freq=10800.
 checkpoint_frequency=0   
 checkpoint_file="RCE_dump.nc" 
 checkpoint_walltime_frequency=10 
-walltime_limit=00:30:00  
+walltime_limit=00:40:00  
 
 # limit for defining cloud
 qlcrit = 1.e-5

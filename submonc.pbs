@@ -1,10 +1,18 @@
 #!/bin/bash --login
 #PBS -N MONC
-#PBS -l select=1
+#PBS -l select=6
 #PBS -l walltime=00:20:00
 #PBS -j oe
 #PBS -P monc
 #PBS -q normal
+
+##############################################################
+#### THIS IS AN EXAMPLE SCRIPT TO DEMONSTRATE HOW TO      ####
+#### SUBMIT A CHECKPOINT JOB WITH THE CONTINUATION SCRIPT ####
+#### Script assumes that there are directories called     ####
+#### monc_stdout , checkpoint_files and diagnostic_files  ####
+#### If these do not exist, MONC will fail                ####
+##############################################################
 
 # Make sure any symbolic links are resolved to absolute path 
 export PBS_O_WORKDIR=$(readlink -f $PBS_O_WORKDIR)
@@ -16,12 +24,14 @@ export SUBMISSION_SCRIPT_NAME=submonc.pbs
 export MONC_EXEC=./build/bin/monc_driver.exe
 
 export TESTCASE=testcases/radiative_convective_equilibrium/RCE_MO_cray.mcf
-export RUN_NAME=RCE_dump
-export MAX_CONTINUATION_RUNS=4
+export STDOUT_DIR=monc_stdout
+export CP_DIR=checkpoint_files
+export RUN_NAME=RCE_dump_
+export NPES=np
+export MAX_CONTINUATION_RUNS=100
 
 ulimit -c unlimited
 
 . misc/continuation.sh
 
 run_monc
-
