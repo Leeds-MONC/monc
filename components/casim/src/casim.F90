@@ -704,7 +704,7 @@ contains
        , l_aaut, l_aacc, l_aevp, l_ased, l_warm            &
        , l_inuc, iopt_rcrit, iopt_inuc, l_iaut, l_iacw                &
        , l_rain, l_boussinesq, diag_mu_option   &
-       , l_sed_3mdiff, l_cons, l_abelshipway         &
+       , l_sed_3mdiff, l_cons, l_abelshipway, l_sed_icecloud_as_1m         &
        , l_active_inarg2000, process_level, l_separate_rain, l_idep    &
        , max_step_length, max_sed_length, l_sg, l_g, l_passive        &
        , l_passive3m, l_limit_psd, l_override_checks &
@@ -797,6 +797,7 @@ contains
     l_cons          = options_get_logical(current_state%options_database, 'l_cons')
     l_rain          = options_get_logical(current_state%options_database, 'l_rain')
     l_sed_3mdiff    = options_get_logical(current_state%options_database, 'l_sed_3mdiff')
+    l_sed_icecloud_as_1m = options_get_logical(current_state%options_database, 'l_sed_icecloud_as_1m')
     l_tidy_conserve_E = options_get_logical(current_state%options_database, 'l_tidy_conserve_E')
     l_tidy_conserve_q = options_get_logical(current_state%options_database, 'l_tidy_conserve_q')
 

@@ -377,6 +377,7 @@ l_abelshipway   = .false.
 l_cons          = .false. 
 l_rain          = .true.
 l_sed_3mdiff    = .false.
+l_sed_icecloud_as_1m = .true.
 l_inhom_revp    = .true.
 l_pcond         = .true.
 l_praut         = .true.
