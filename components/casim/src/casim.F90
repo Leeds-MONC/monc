@@ -24,7 +24,7 @@ module casim_mod
      isol, iinsol, option, aerosol_option
 
   Use diaghelp_monc, only: i_here, j_here, mype, time
-  use micro_main, only: initialise_casim, shipway_microphysics
+  use micro_main, only: shipway_microphysics
 
   implicit none
 
@@ -262,7 +262,7 @@ contains
     allocate(surface_precip(y_size_local, x_size_local))
 
     call set_mphys_switches(option,aerosol_option)
-    call mphys_init
+    call mphys_init(its, ite, jts, jte, kts, kte, ils, ile, jls, jle, kls, kle, l_tendency=.true.)
 
     ! Need to allocate the appropriate indices, e.g. iqv, iql...
     ! This needs to be compatible with the rest of the model
@@ -356,9 +356,6 @@ contains
 
     ! For debugging in the microphysics code
     mype = current_state%parallel%my_rank
-
-    call initialise_casim(its, ite, jts, jte, kts, kte, ils, ile, jls, jle, kls, kle, l_tendency=.true.)
-
   end subroutine initialisation_callback
 
   !> Called for each column per timestep this will calculate the microphysical tendencies
