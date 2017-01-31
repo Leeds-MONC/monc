@@ -4,7 +4,7 @@ module writer_federator_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use configuration_parser_mod, only : TIME_AVERAGED_TYPE, INSTANTANEOUS_TYPE, NONE_TYPE, GROUP_TYPE, FIELD_TYPE, IO_STATE_TYPE, &
        io_configuration_type, io_configuration_field_type, io_configuration_diagnostic_field_type, &
-       io_configuration_data_definition_type, data_values_type, get_data_value_by_field_name, get_diagnostic_field_configuration, &
+       io_configuration_data_definition_type, data_values_type, get_data_value_by_field_name, get_diagnostic_field_configuration,&
        get_prognostic_field_configuration, get_monc_location
   use none_time_manipulation_mod, only : perform_none_time_manipulation, is_none_time_manipulation_ready_to_write
   use instantaneous_time_manipulation_mod, only : init_instantaneous_manipulation, finalise_instantaneous_manipulation, &
@@ -29,9 +29,8 @@ module writer_federator_mod
   use data_utils_mod, only : get_scalar_integer_from_monc, get_scalar_real_from_monc, get_scalar_logical_from_monc, &
        is_field_present
   use io_server_client_mod, only : ARRAY_FIELD_TYPE, MAP_FIELD_TYPE, DOUBLE_DATA_TYPE, STRING_DATA_TYPE
-  use io_server_state_writer_mod, only : package_io_server_state, is_io_server_state_writer_ready
-  use io_server_state_reader_mod, only : restart_writer_state_from_checkpoint, restart_timeaveraged_state_from_checkpoint, &
-       restart_instantaneous_state_from_checkpoint, restart_writer_state_timepoints
+  use io_server_state_writer_mod, only : is_io_server_state_writer_ready
+  use io_server_state_reader_mod, only : reactivate_writer_federator_state
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
   use mpi, only : MPI_INT, MPI_MAX
   use mpi_communication_mod, only : lock_mpi, unlock_mpi
@@ -81,6 +80,7 @@ contains
       writer_entries(i)%filename=io_configuration%file_writers(i)%file_name
       writer_entries(i)%title=io_configuration%file_writers(i)%title
       writer_entries(i)%write_on_terminate=io_configuration%file_writers(i)%write_on_terminate
+      writer_entries(i)%include_in_io_state_write=io_configuration%file_writers(i)%include_in_io_state_write
       call check_thread_status(forthread_mutex_init(writer_entries(i)%trigger_and_write_mutex, -1))
       call check_thread_status(forthread_mutex_init(writer_entries(i)%num_fields_to_write_mutex, -1))
       call check_thread_status(forthread_mutex_init(writer_entries(i)%pending_writes_mutex, -1))
@@ -114,10 +114,7 @@ contains
       call c_free(duplicate_field_names)
     end do
     if (continuation_run) then
-      call restart_writer_state_from_checkpoint(writer_entries)
-      call restart_writer_state_timepoints(time_points)
-      call restart_timeaveraged_state_from_checkpoint()
-      call restart_instantaneous_state_from_checkpoint()
+      call reactivate_writer_federator_state(io_configuration, writer_entries, time_points)
     end if    
   end subroutine initialise_writer_federator
 
@@ -892,9 +889,8 @@ contains
         end do
       end if
       call check_thread_status(forthread_rwlock_rdlock(time_points_rwlock))
-      call package_io_server_state(io_configuration, writer_entries, time_points)
+      call store_io_server_state(io_configuration, writer_entries, time_points, writer_entry, timestep)
       call check_thread_status(forthread_rwlock_unlock(time_points_rwlock))
-      call store_io_server_state(io_configuration, writer_entry, timestep)
     end if
 
     call close_netcdf_file(io_configuration, field_name, timestep)

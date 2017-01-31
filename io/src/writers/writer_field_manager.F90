@@ -18,10 +18,10 @@ module writer_field_manager_mod
   use logging_mod, only : LOG_WARN, LOG_ERROR, log_log
   use writer_federator_mod, only : is_field_used_by_writer_federator, provide_ordered_field_to_writer_federator, &
        is_field_split_on_q
-  use writer_types_mod, only : serialise_data_values_type, unserialise_data_values_type
+  use writer_types_mod, only : prepare_to_serialise_data_values_type, serialise_data_values_type, unserialise_data_values_type
   use io_server_client_mod, only : pack_scalar_field
   use io_server_state_writer_mod, only : set_serialise_write_field_manager_state
-  use io_server_state_reader_mod, only : restart_writer_field_manager_from_checkpoint
+  use io_server_state_reader_mod, only : reactivate_writer_field_manager_state
   implicit none
 
 #ifndef TEST_MODE
@@ -60,9 +60,10 @@ contains
     logical, intent(in) :: continuation_run
 
     call check_thread_status(forthread_rwlock_init(field_lock, -1))
-    call set_serialise_write_field_manager_state(serialise_field_manager_state, is_write_field_manager_up_to_date)
+    call set_serialise_write_field_manager_state(serialise_field_manager_state, prepare_to_serialise_field_manager_state, &
+         is_write_field_manager_up_to_date)
     if (continuation_run) then
-      call restart_writer_field_manager_from_checkpoint(unserialise_field_manager_state)
+      call reactivate_writer_field_manager_state(io_configuration, unserialise_field_manager_state)
     end if
   end subroutine initialise_writer_field_manager
 
@@ -447,20 +448,41 @@ contains
     end if
   end function get_field_ordering
 
-  !> Serialises the current field manager
-  !> @param byte_data Target serialises bytes, this is allocated here
-  subroutine serialise_field_manager_state(byte_data)
-    character, dimension(:), allocatable, intent(out) :: byte_data
-
-    integer :: current_data_point
-    character, dimension(:), allocatable :: dvt_byte_data, temp
+  !> Prepares to serialise the field manager state, both determines storage needed and also issues any locks
+  !! @returns The number of bytes needed to store the serialised state
+  integer(kind=8) function prepare_to_serialise_field_manager_state()
     type(mapentry_type) :: map_entry
     type(iterator_type) :: iterator
     class(*), pointer :: generic
 
     call check_thread_status(forthread_rwlock_rdlock(field_lock))
+    prepare_to_serialise_field_manager_state=kind(prepare_to_serialise_field_manager_state)
 
-    allocate(byte_data(kind(current_data_point)))
+    iterator=c_get_iterator(field_orderings)
+    do while (c_has_next(iterator))
+      map_entry=c_next_mapentry(iterator)
+      generic=>c_get_generic(map_entry)
+      if (associated(generic)) then
+        select type(generic)
+        type is (field_ordering_type)
+          prepare_to_serialise_field_manager_state=prepare_to_serialise_field_manager_state+&
+               prepare_to_serialise_specific_field_ordering(generic)+&
+               (kind(prepare_to_serialise_field_manager_state)*2)+len(trim(map_entry%key))
+        end select
+      end if
+    end do
+  end function prepare_to_serialise_field_manager_state
+
+  !> Serialises the current field manager, releases any locks issued during preparation
+  !> @param byte_data Packaged field manager serialised state.
+  subroutine serialise_field_manager_state(byte_data)
+    character, dimension(:), allocatable, intent(inout) :: byte_data
+
+    integer :: current_data_point, prev_pt
+    type(mapentry_type) :: map_entry
+    type(iterator_type) :: iterator
+    class(*), pointer :: generic
+ 
     current_data_point=1
     current_data_point=pack_scalar_field(byte_data, current_data_point, c_size(field_orderings))
 
@@ -471,18 +493,15 @@ contains
       if (associated(generic)) then
         select type(generic)
         type is (field_ordering_type)
-          call serialise_specific_field_ordering(generic, dvt_byte_data)
-          allocate(temp(size(byte_data) + size(dvt_byte_data) + (kind(current_data_point)*2)+len(trim(map_entry%key))))
-          temp(1:size(byte_data)) = byte_data
-          current_data_point=size(byte_data)+1
-          call move_alloc(from=temp, to=byte_data)
           current_data_point=pack_scalar_field(byte_data, current_data_point, len(trim(map_entry%key)))
           byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1) = transfer(trim(map_entry%key), &
                byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1))
           current_data_point=current_data_point+len(trim(map_entry%key))
-          current_data_point=pack_scalar_field(byte_data, current_data_point, size(dvt_byte_data))
-          byte_data(current_data_point:current_data_point+size(dvt_byte_data)-1)=dvt_byte_data
-          deallocate(dvt_byte_data)
+
+          prev_pt=current_data_point
+          current_data_point=current_data_point+kind(current_data_point)
+          call serialise_specific_field_ordering(generic, byte_data, current_data_point)          
+          prev_pt=pack_scalar_field(byte_data, prev_pt, (current_data_point-kind(current_data_point))-prev_pt)
         end select
       end if
     end do    
@@ -514,25 +533,51 @@ contains
         current_data_point=current_data_point+byte_size
       end do
     end if
-  end subroutine unserialise_field_manager_state  
+  end subroutine unserialise_field_manager_state
 
-  !> Serialises a specific fields ordering
-  !! @param specific_field_ordering The field ordering to serialise
-  !! @param byte_data Target byte data which is allocated here
-  subroutine serialise_specific_field_ordering(specific_field_ordering, byte_data)
+  !> Prepares to serialise a specific field ordering, both determines storage size and issues locks
+  !! @param specific_field_ordering The field ordering to prepare for serialisation
+  !! @returns The number of bytes needed to store the serialised state
+  integer(kind=8) function prepare_to_serialise_specific_field_ordering(specific_field_ordering)
     type(field_ordering_type), intent(inout) :: specific_field_ordering
-    character, dimension(:), allocatable, intent(out) :: byte_data
 
-    integer :: current_data_point
-    character, dimension(:), allocatable :: dvt_byte_data, temp
     type(mapentry_type) :: map_entry
     type(iterator_type) :: iterator
     class(*), pointer :: generic
 
     call check_thread_status(forthread_mutex_lock(specific_field_ordering%access_mutex))
 
-    allocate(byte_data(kind(current_data_point) * 3))
-    current_data_point=1
+    prepare_to_serialise_specific_field_ordering=kind(prepare_to_serialise_specific_field_ordering) * 3
+
+    iterator=c_get_iterator(specific_field_ordering%timestep_to_value)
+    do while (c_has_next(iterator))
+      map_entry=c_next_mapentry(iterator)
+      generic=>c_get_generic(map_entry)
+      if (associated(generic)) then
+        select type(generic)
+        type is (field_ordering_value_type)
+          prepare_to_serialise_specific_field_ordering=prepare_to_serialise_specific_field_ordering+&
+               prepare_to_serialise_field_ordering_value(generic)+(kind(prepare_to_serialise_specific_field_ordering)*2)+&
+               len(trim(map_entry%key))
+        end select
+      end if
+    end do
+  end function prepare_to_serialise_specific_field_ordering  
+
+  !> Serialises a specific fields ordering and releases any locks issued during preparation
+  !! @param specific_field_ordering The field ordering to serialise
+  !! @param byte_data Byte data which contains the packaged state of the field ordering
+  !! @param current_data_point The current write point in the byte data, is updated during call so represents next point on return
+  subroutine serialise_specific_field_ordering(specific_field_ordering, byte_data, current_data_point)
+    type(field_ordering_type), intent(inout) :: specific_field_ordering
+    character, dimension(:), allocatable, intent(inout) :: byte_data
+    integer, intent(inout) :: current_data_point
+
+    integer :: prev_pt
+    type(mapentry_type) :: map_entry
+    type(iterator_type) :: iterator
+    class(*), pointer :: generic
+    
     current_data_point=pack_scalar_field(byte_data, current_data_point, specific_field_ordering%last_timestep_access)
     current_data_point=pack_scalar_field(byte_data, current_data_point, specific_field_ordering%frequency)
     current_data_point=pack_scalar_field(byte_data, current_data_point, c_size(specific_field_ordering%timestep_to_value))
@@ -544,18 +589,15 @@ contains
       if (associated(generic)) then
         select type(generic)
         type is (field_ordering_value_type)
-          call serialise_field_ordering_value(generic, dvt_byte_data)
-          allocate(temp(size(byte_data) + size(dvt_byte_data) + (kind(current_data_point)*2)+len(trim(map_entry%key))))
-          temp(1:size(byte_data)) = byte_data
-          current_data_point=size(byte_data)+1
-          call move_alloc(from=temp, to=byte_data)
           current_data_point=pack_scalar_field(byte_data, current_data_point, len(trim(map_entry%key)))
           byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1) = transfer(trim(map_entry%key), &
                byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1))
           current_data_point=current_data_point+len(trim(map_entry%key))
-          current_data_point=pack_scalar_field(byte_data, current_data_point, size(dvt_byte_data))
-          byte_data(current_data_point:current_data_point+size(dvt_byte_data)-1)=dvt_byte_data
-          deallocate(dvt_byte_data)
+
+          prev_pt=current_data_point
+          current_data_point=current_data_point+kind(current_data_point)
+          call serialise_field_ordering_value(generic, byte_data, current_data_point)          
+          prev_pt=pack_scalar_field(byte_data, prev_pt, (current_data_point-kind(current_data_point))-prev_pt)
         end select
       end if
     end do
@@ -594,25 +636,31 @@ contains
       end do
     end if
     call check_thread_status(forthread_mutex_init(unserialise_specific_field_ordering%access_mutex, -1))
-  end function unserialise_specific_field_ordering  
+  end function unserialise_specific_field_ordering
 
-  !> Serialises a field ordering value
+  !> Prepares to serialise a specific field ordering value, determines both the storage size and issues locks
+  !! @param specific_field_value The specific value to prepare for serialisation
+  !! @returns The number of bytes needed to store the serialised state
+  integer(kind=8) function prepare_to_serialise_field_ordering_value(specific_field_value)
+    type(field_ordering_value_type), intent(inout) :: specific_field_value
+
+    prepare_to_serialise_field_ordering_value=prepare_to_serialise_data_values_type(specific_field_value%field_values)
+    prepare_to_serialise_field_ordering_value=prepare_to_serialise_field_ordering_value+&
+         (kind(specific_field_value%timestep) * 6) + len(trim(specific_field_value%field_name)) + &
+         len(trim(specific_field_value%field_namespace)) + kind(specific_field_value%time)
+  end function prepare_to_serialise_field_ordering_value
+
+  !> Serialises a field ordering value and releases any issued locks
   !! @param specific_field_value The specific value to serialise
   !! @param byte_data Target byte data whihc is allocated here
-  subroutine serialise_field_ordering_value(specific_field_value, byte_data)
+  !! @param current_data_point The current write point in the byte data, is updated during call so represents next point on return
+  subroutine serialise_field_ordering_value(specific_field_value, byte_data, current_data_point)
     type(field_ordering_value_type), intent(inout) :: specific_field_value
-    character, dimension(:), allocatable, intent(out) :: byte_data
+    character, dimension(:), allocatable, intent(inout) :: byte_data
+    integer, intent(inout) :: current_data_point
 
-    integer :: byte_size, current_data_point
-    character, dimension(:), allocatable :: dvt_byte_data
-
-    call serialise_data_values_type(specific_field_value%field_values, dvt_byte_data)
-
-    byte_size=(kind(specific_field_value%timestep) * 6) + len(trim(specific_field_value%field_name)) + &
-         len(trim(specific_field_value%field_namespace)) + kind(specific_field_value%time) + size(dvt_byte_data)
-    allocate(byte_data(byte_size))
+    integer :: prev_pt    
     
-    current_data_point=1
     current_data_point=pack_scalar_field(byte_data, current_data_point, specific_field_value%timestep)
     current_data_point=pack_scalar_field(byte_data, current_data_point, specific_field_value%frequency)
     current_data_point=pack_scalar_field(byte_data, current_data_point, specific_field_value%source)
@@ -627,9 +675,11 @@ contains
          len(trim(specific_field_value%field_namespace))-1))
     current_data_point=current_data_point+len(trim(specific_field_value%field_namespace))
     current_data_point=pack_scalar_field(byte_data, current_data_point, double_real_value=specific_field_value%time)
-    current_data_point=pack_scalar_field(byte_data, current_data_point, size(dvt_byte_data))        
-    byte_data(current_data_point:current_data_point+size(dvt_byte_data)-1)=dvt_byte_data
-    deallocate(dvt_byte_data)
+
+    prev_pt=current_data_point
+    current_data_point=current_data_point+kind(current_data_point)
+    call serialise_data_values_type(specific_field_value%field_values, byte_data, current_data_point)    
+    prev_pt=pack_scalar_field(byte_data, prev_pt, (current_data_point-kind(current_data_point))-prev_pt)
   end subroutine serialise_field_ordering_value
 
   !> Unseralises some field ordering from its byte representation

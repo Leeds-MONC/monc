@@ -31,7 +31,8 @@ module timeaveraged_time_manipulation_mod
   integer, volatile :: timeaveraged_value_rw_lock
 
   public init_time_averaged_manipulation, finalise_time_averaged_manipulation, perform_timeaveraged_time_manipulation, &
-       is_time_averaged_time_manipulation_ready_to_write, serialise_time_averaged_state, unserialise_time_averaged_state
+       is_time_averaged_time_manipulation_ready_to_write, serialise_time_averaged_state, unserialise_time_averaged_state, &
+       prepare_to_serialise_time_averaged_state
 contains  
 
    !> Initialises the reduction action
@@ -121,20 +122,41 @@ contains
     timeaveraged_value%previous_time=time
   end subroutine time_average
 
-  !> Serialises the state of this manipulator so that it can be restarted later on
-  !! @param byte_data The byte data that represents the serialised state
-  subroutine serialise_time_averaged_state(byte_data)
-    character, dimension(:), allocatable, intent(out) :: byte_data
-
-    integer :: current_data_point
-    character, dimension(:), allocatable :: dvt_byte_data, temp
+  !> Prepares to serialise the time averaged state values. Both determines the storage size required and also issue locks
+  !! @returns The number of bytes needed to store the serialised state
+  integer(kind=8) function prepare_to_serialise_time_averaged_state()
     type(mapentry_type) :: map_entry
     type(iterator_type) :: iterator
     class(*), pointer :: generic
-
+    
     call check_thread_status(forthread_rwlock_rdlock(timeaveraged_value_rw_lock))
+    
+    prepare_to_serialise_time_averaged_state=kind(prepare_to_serialise_time_averaged_state)
+    iterator=c_get_iterator(timeaveraged_values)
+    do while (c_has_next(iterator))
+       map_entry=c_next_mapentry(iterator)
+       generic=>c_get_generic(map_entry)
+      if (associated(generic)) then
+        select type(generic)
+        type is (time_averaged_completed_type)
+          prepare_to_serialise_time_averaged_state=prepare_to_serialise_time_averaged_state+&
+               prepare_to_serialise_time_averaged_completed_value(generic)+&
+               (kind(prepare_to_serialise_time_averaged_state)*2)+len(trim(map_entry%key))
+        end select
+      end if      
+    end do
+  end function prepare_to_serialise_time_averaged_state
 
-    allocate(byte_data(kind(current_data_point)))
+  !> Serialises the state of this manipulator so that it can be restarted later on. Releases any locks issue during preparation.
+  !! @param byte_data The byte data that represents the serialised state
+  subroutine serialise_time_averaged_state(byte_data)
+    character, dimension(:), allocatable, intent(inout) :: byte_data
+
+    integer :: current_data_point, prev_pt
+    type(mapentry_type) :: map_entry
+    type(iterator_type) :: iterator
+    class(*), pointer :: generic
+    
     current_data_point=1
     current_data_point=pack_scalar_field(byte_data, current_data_point, c_size(timeaveraged_values))
 
@@ -145,18 +167,15 @@ contains
       if (associated(generic)) then
         select type(generic)
         type is (time_averaged_completed_type)
-          call serialise_time_averaged_completed_value(generic, dvt_byte_data)
-          allocate(temp(size(byte_data) + size(dvt_byte_data) + (kind(current_data_point)*2)+len(trim(map_entry%key))))
-          temp(1:size(byte_data)) = byte_data
-          current_data_point=size(byte_data)+1
-          call move_alloc(from=temp, to=byte_data)
           current_data_point=pack_scalar_field(byte_data, current_data_point, len(trim(map_entry%key)))
           byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1) = transfer(trim(map_entry%key), &
                byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1))
           current_data_point=current_data_point+len(trim(map_entry%key))
-          current_data_point=pack_scalar_field(byte_data, current_data_point, size(dvt_byte_data))
-          byte_data(current_data_point:current_data_point+size(dvt_byte_data)-1)=dvt_byte_data
-          deallocate(dvt_byte_data)
+
+          prev_pt=current_data_point
+          current_data_point=current_data_point+kind(current_data_point)
+          call serialise_time_averaged_completed_value(generic, byte_data, current_data_point)          
+          prev_pt=pack_scalar_field(byte_data, prev_pt, (current_data_point-kind(current_data_point)) - prev_pt)
         end select
       end if      
     end do
@@ -186,24 +205,32 @@ contains
         current_data_point=current_data_point+byte_size
       end do
     end if
-  end subroutine unserialise_time_averaged_state  
+  end subroutine unserialise_time_averaged_state
 
-  !> Serialises a specific time averaged completed value
-  !! @param time_av_value The time averaged completed value to serialise
-  !! @param byte_data Resulting byte data that holds a representation of this
-  subroutine serialise_time_averaged_completed_value(time_av_value, byte_data)
+  !> Prepares to serialise a time averaged completed value, both determines the storage size and also issue any locks
+  !! @param time_av_value The time averaged completed value to prepare for serialisation
+  !! @returns The number of bytes needed to store the serialised state
+  integer(kind=8) function prepare_to_serialise_time_averaged_completed_value(time_av_value)
     type(time_averaged_completed_type), intent(inout) :: time_av_value
-    character, dimension(:), allocatable, intent(out) :: byte_data
-
-    integer :: byte_size, current_data_point, i
 
     call check_thread_status(forthread_mutex_lock(time_av_value%mutex))
 
-    byte_size=(kind(time_av_value%start_time) * 3) + kind(time_av_value%empty_values) + &
+    prepare_to_serialise_time_averaged_completed_value=(kind(time_av_value%start_time) * 3) + kind(time_av_value%empty_values) + &
          (size(time_av_value%time_averaged_values) * kind(time_av_value%time_averaged_values)) + &
-         (kind(i) * 2) + len(time_av_value%field_name)
-    allocate(byte_data(byte_size))
-    current_data_point=1
+         (kind(prepare_to_serialise_time_averaged_completed_value) * 2) + len(time_av_value%field_name)
+  end function prepare_to_serialise_time_averaged_completed_value
+
+  !> Serialises a specific time averaged completed value, releases any locks issued during preparation
+  !! @param time_av_value The time averaged completed value to serialise
+  !! @param byte_data Resulting byte data that holds a representation of this
+  !! @param current_data_point The current write point in the byte data, is updated during call so represents next point on return
+  subroutine serialise_time_averaged_completed_value(time_av_value, byte_data, current_data_point)
+    type(time_averaged_completed_type), intent(inout) :: time_av_value
+    character, dimension(:), allocatable, intent(inout) :: byte_data
+    integer, intent(inout) :: current_data_point
+
+    integer :: i
+
     current_data_point=pack_scalar_field(byte_data, current_data_point, double_real_value=time_av_value%start_time)
     current_data_point=pack_scalar_field(byte_data, current_data_point, double_real_value=time_av_value%previous_time)
     current_data_point=pack_scalar_field(byte_data, current_data_point, double_real_value=time_av_value%previous_output_time)

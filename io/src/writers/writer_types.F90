@@ -79,7 +79,7 @@ module writer_types_mod
      integer :: trigger_and_write_mutex, write_timestep, previous_write_timestep, num_fields_to_write, &
           num_fields_to_write_mutex, pending_writes_mutex, write_timestep_frequency, latest_pending_write_timestep
      real :: write_time_frequency, previous_write_time, latest_pending_write_time, write_time, defined_write_time
-     logical :: write_on_model_time, contains_io_status_dump, write_on_terminate
+     logical :: write_on_model_time, contains_io_status_dump, write_on_terminate, include_in_io_state_write
      type(queue_type) :: pending_writes
   end type writer_type
 
@@ -106,29 +106,48 @@ module writer_types_mod
   public writer_type, writer_field_type, write_field_collective_values_type, pending_write_type, &
        perform_time_manipulation, collective_q_field_representation_type, netcdf_diagnostics_timeseries_type, &
        netcdf_diagnostics_type, serialise_writer_type, unserialise_writer_type, serialise_data_values_type, &
-       unserialise_data_values_type, write_field_collective_descriptor_type, write_field_collective_monc_info_type
+       unserialise_data_values_type, write_field_collective_descriptor_type, write_field_collective_monc_info_type, &
+       prepare_to_serialise_data_values_type, prepare_to_serialise_writer_type
 contains
 
-  !> Serialises a specific writer type into byte data (for storage or transmission)
+  !> Prepares to serialise the writer type by issuing locks and determining the size of serialised bytes needed
+  !! @param writer_to_serialise Writer type to serialise
+  !! @returns The number of bytes needed to store the serialised state
+  integer(kind=8) function prepare_to_serialise_writer_type(writer_to_serialise)
+    type(writer_type), intent(inout) :: writer_to_serialise
+
+    integer :: i
+
+    prepare_to_serialise_writer_type=(kind(writer_to_serialise%write_timestep) * 6) + &
+         (kind(writer_to_serialise%previous_write_time) * 4) + &
+         c_size(writer_to_serialise%pending_writes) * (kind(writer_to_serialise%write_timestep) + &
+         kind(writer_to_serialise%previous_write_time))
+
+    call check_thread_status(forthread_mutex_lock(writer_to_serialise%num_fields_to_write_mutex))
+
+    if (size(writer_to_serialise%contents) .gt. 0) then
+      do i=1, size(writer_to_serialise%contents)
+        prepare_to_serialise_writer_type=prepare_to_serialise_writer_type+&
+             prepare_to_serialise_writer_field_type(writer_to_serialise%contents(i))+kind(prepare_to_serialise_writer_type)
+      end do
+    end if
+  end function prepare_to_serialise_writer_type
+
+  !> Serialises a specific writer type into byte data (for storage or transmission.) Releases any locks issued during preparation
   !! @param writer_to_serialise The writer type to serialise
-  !! @param byte_data The byte data which contains the serialised type
+  !! @param byte_data The byte data which will be packed with the serialised data
   subroutine serialise_writer_type(writer_to_serialise, byte_data)
     type(writer_type), intent(inout) :: writer_to_serialise
-    character, dimension(:), allocatable, intent(out) :: byte_data
+    character, dimension(:), allocatable, intent(inout) :: byte_data
 
-    integer :: byte_size, current_data_point, i
-    character, dimension(:), allocatable :: dvt_byte_data, temp
+    integer :: prev_pt, i, current_data_point
 
     type(iterator_type) :: iterator
     class(*), pointer :: generic
 
-    byte_size=(kind(writer_to_serialise%write_timestep) * 6) + (kind(writer_to_serialise%previous_write_time) * 4) + &
-         c_size(writer_to_serialise%pending_writes) * (kind(writer_to_serialise%write_timestep) + &
-         kind(writer_to_serialise%previous_write_time))
-    allocate(byte_data(byte_size))
     current_data_point=1
+
     current_data_point=pack_scalar_field(byte_data, current_data_point, writer_to_serialise%write_timestep)
-    call check_thread_status(forthread_mutex_lock(writer_to_serialise%num_fields_to_write_mutex))
     current_data_point=pack_scalar_field(byte_data, current_data_point, writer_to_serialise%num_fields_to_write)
     call check_thread_status(forthread_mutex_unlock(writer_to_serialise%num_fields_to_write_mutex))
     current_data_point=pack_scalar_field(byte_data, current_data_point, writer_to_serialise%previous_write_timestep)
@@ -155,14 +174,10 @@ contains
     
     if (size(writer_to_serialise%contents) .gt. 0) then
       do i=1, size(writer_to_serialise%contents)
-        call serialise_writer_field_type(writer_to_serialise%contents(i), dvt_byte_data)
-        allocate(temp(size(byte_data) + size(dvt_byte_data) + kind(byte_size)))
-        temp(1:size(byte_data)) = byte_data
-        current_data_point=size(byte_data)+1
-        call move_alloc(from=temp, to=byte_data)
-        current_data_point=pack_scalar_field(byte_data, current_data_point, size(dvt_byte_data))
-        byte_data(current_data_point:current_data_point+size(dvt_byte_data)-1)=dvt_byte_data
-        deallocate(dvt_byte_data)
+        prev_pt=current_data_point
+        current_data_point=current_data_point+kind(current_data_point)
+        call serialise_writer_field_type(writer_to_serialise%contents(i), byte_data, current_data_point)
+        prev_pt=pack_scalar_field(byte_data, prev_pt, (current_data_point-prev_pt)-kind(current_data_point))
       end do
     end if   
   end subroutine serialise_writer_type
@@ -212,27 +227,57 @@ contains
         current_data_point=current_data_point+byte_size
       end do
     end if
-  end subroutine unserialise_writer_type  
+  end subroutine unserialise_writer_type
 
-  !> Serialises a specific writer field type for storage or transmission
-  !! @param writer_field_to_serialise The writer field type to serialise
-  !! @param byte_data The byte data which contains the serialised type
-  subroutine serialise_writer_field_type(writer_field_to_serialise, byte_data)
+  !> Prepares to serialise a specific writer field, both determines the data size and issues any locks
+  !! @param writer_field_to_serialise The writer field type to prepare for serialisation
+  !! @returns The number of bytes needed to store the serialised state
+  integer(kind=8) function prepare_to_serialise_writer_field_type(writer_field_to_serialise)
     type(writer_field_type), intent(inout) :: writer_field_to_serialise
-    character, dimension(:), allocatable, intent(out) :: byte_data
 
-    integer :: byte_size, current_data_point, entry_type
-    character, dimension(:), allocatable :: dvt_byte_data, temp
+    type(iterator_type) :: iterator
+    class(*), pointer :: generic
+    type(mapentry_type) :: map_entry
+
+    call check_thread_status(forthread_mutex_lock(writer_field_to_serialise%values_mutex))
+    prepare_to_serialise_writer_field_type=(kind(writer_field_to_serialise%latest_timestep_values) * 2) + &
+         (kind(writer_field_to_serialise%previous_write_time) * 2)
+
+    iterator=c_get_iterator(writer_field_to_serialise%values_to_write)
+    do while (c_has_next(iterator))
+      map_entry=c_next_mapentry(iterator)
+      generic=>c_get_generic(map_entry)
+      if (associated(generic)) then
+        select type(generic)
+        type is (data_values_type)
+          prepare_to_serialise_writer_field_type=prepare_to_serialise_writer_field_type+&
+               prepare_to_serialise_data_values_type(generic)+&
+               (kind(prepare_to_serialise_writer_field_type)*3)+len(trim(map_entry%key))          
+        type is (write_field_collective_values_type)
+          prepare_to_serialise_writer_field_type=prepare_to_serialise_writer_field_type+&
+               prepare_to_serialise_collective_values_type(generic)+&
+               (kind(prepare_to_serialise_writer_field_type)*3)+len(trim(map_entry%key))          
+        class default
+          call log_log(LOG_ERROR, "Unknown data type in writer field type")
+        end select        
+      end if
+    end do
+  end function prepare_to_serialise_writer_field_type
+
+  !> Serialises a specific writer field type for storage or transmission. This releases any locks issued during preparation
+  !! @param writer_field_to_serialise The writer field type to serialise
+  !! @param byte_data The byte data to pack with the serialised data
+  !! @param current_data_point The current write point in the byte data, is updated during call so represents next point on return
+  subroutine serialise_writer_field_type(writer_field_to_serialise, byte_data, current_data_point)
+    type(writer_field_type), intent(inout) :: writer_field_to_serialise
+    character, dimension(:), allocatable, intent(inout) :: byte_data
+    integer, intent(inout) :: current_data_point
+
+    integer :: prev_pt, byte_size, entry_type
     class(*), pointer :: generic
     type(mapentry_type) :: map_entry
     type(iterator_type) :: iterator
-
-    call check_thread_status(forthread_mutex_lock(writer_field_to_serialise%values_mutex))
-    
-    byte_size=(kind(writer_field_to_serialise%latest_timestep_values) * 2) + &
-         (kind(writer_field_to_serialise%previous_write_time) * 2)
-    allocate(byte_data(byte_size))
-    current_data_point=1
+        
     current_data_point=pack_scalar_field(byte_data, current_data_point, writer_field_to_serialise%latest_timestep_values)
     current_data_point=pack_scalar_field(byte_data, current_data_point, &
          single_real_value=writer_field_to_serialise%previous_write_time)
@@ -246,29 +291,24 @@ contains
       map_entry=c_next_mapentry(iterator)
       generic=>c_get_generic(map_entry)
       if (associated(generic)) then
-        select type(generic)
-        type is (data_values_type)
-          call serialise_data_values_type(generic, dvt_byte_data)
-          entry_type=1
-        type is (write_field_collective_values_type)
-          call serialise_collective_values_type(generic, dvt_byte_data)
-          entry_type=2
-        class default
-          call log_log(LOG_ERROR, "Unknown data type in writer field type")
-        end select
-        allocate(temp(size(byte_data) + size(dvt_byte_data) + (kind(byte_size)*3)+len(trim(map_entry%key))))
-        temp(1:size(byte_data)) = byte_data
-        current_data_point=size(byte_data)+1
-        deallocate(byte_data)
-        call move_alloc(from=temp, to=byte_data)
         current_data_point=pack_scalar_field(byte_data, current_data_point, len(trim(map_entry%key)))
         byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1) = transfer(trim(map_entry%key), &
              byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1))          
         current_data_point=current_data_point+len(trim(map_entry%key))
-        current_data_point=pack_scalar_field(byte_data, current_data_point, size(dvt_byte_data))
-        current_data_point=pack_scalar_field(byte_data, current_data_point, entry_type)
-        byte_data(current_data_point:current_data_point+size(dvt_byte_data)-1)=dvt_byte_data
-        deallocate(dvt_byte_data)
+        prev_pt=current_data_point
+        current_data_point=current_data_point+(kind(current_data_point)*2)
+        select type(generic)
+        type is (data_values_type)
+          call serialise_data_values_type(generic, byte_data, current_data_point)
+          entry_type=1
+        type is (write_field_collective_values_type)
+          call serialise_collective_values_type(generic, byte_data, current_data_point)
+          entry_type=2
+        class default
+          call log_log(LOG_ERROR, "Unknown data type in writer field type")
+        end select        
+        prev_pt=pack_scalar_field(byte_data, prev_pt, (current_data_point-(kind(current_data_point)*2)) - prev_pt)
+        prev_pt=pack_scalar_field(byte_data, prev_pt, entry_type)        
       end if
     end do
     call check_thread_status(forthread_mutex_unlock(writer_field_to_serialise%values_mutex))
@@ -312,21 +352,50 @@ contains
     end if
   end subroutine unserialise_writer_field_type
 
-  !> Serialises collective values
-  !! @param collective_values_to_serialise The collective values to serialise
-  !! @param byte_data The byte data whihc contains the serialised data, this is allocated here
-  subroutine serialise_collective_values_type(collective_values_to_serialise, byte_data)
+  !> Prepares to serialise a specific collective value, both determines the required byte storate size and issues any locks
+  !! @param collective_values_to_serialise The collective values to prepare for serialisation
+  !! @returns The number of bytes needed to store the serialised state
+  integer(kind=8) function prepare_to_serialise_collective_values_type(collective_values_to_serialise)
     type(write_field_collective_values_type), intent(inout) :: collective_values_to_serialise
-    character, dimension(:), allocatable, intent(out) :: byte_data
 
-    integer :: current_data_point
     class(*), pointer :: generic
     type(mapentry_type) :: map_entry
     type(iterator_type) :: iterator
-    character, dimension(:), allocatable :: dvt_byte_data, temp
 
-    allocate(byte_data(kind(current_data_point)))
-    current_data_point=1
+    prepare_to_serialise_collective_values_type=kind(prepare_to_serialise_collective_values_type)
+    if (c_size(collective_values_to_serialise%monc_values) .gt. 0) then
+      iterator=c_get_iterator(collective_values_to_serialise%monc_values)
+      do while (c_has_next(iterator))
+        map_entry=c_next_mapentry(iterator)
+        generic=>c_get_generic(map_entry)
+        if (associated(generic)) then
+          select type(generic)
+          type is (data_values_type)
+            prepare_to_serialise_collective_values_type=prepare_to_serialise_collective_values_type+&
+                 prepare_to_serialise_data_values_type(generic)+&
+                 (kind(prepare_to_serialise_collective_values_type)*2)+len(trim(map_entry%key))         
+          class default
+            call log_log(LOG_ERROR, "Unknown data type in collective values type")
+          end select
+        end if
+      end do
+    end if
+  end function prepare_to_serialise_collective_values_type
+
+  !> Serialises collective values. This releases any locks issued during preparation
+  !! @param collective_values_to_serialise The collective values to serialise
+  !! @param byte_data The byte data which will be packed with the serialised byte code
+  !! @param current_data_point The current write point in the byte data, is updated during call so represents next point on return
+  subroutine serialise_collective_values_type(collective_values_to_serialise, byte_data, current_data_point)
+    type(write_field_collective_values_type), intent(inout) :: collective_values_to_serialise
+    character, dimension(:), allocatable, intent(inout) :: byte_data
+    integer, intent(inout) :: current_data_point
+
+    integer :: prev_pt
+    class(*), pointer :: generic
+    type(mapentry_type) :: map_entry
+    type(iterator_type) :: iterator
+
     current_data_point=pack_scalar_field(byte_data, current_data_point, c_size(collective_values_to_serialise%monc_values))
 
     if (c_size(collective_values_to_serialise%monc_values) .gt. 0) then
@@ -337,21 +406,16 @@ contains
         if (associated(generic)) then
           select type(generic)
           type is (data_values_type)
-            call serialise_data_values_type(generic, dvt_byte_data)
-            allocate(temp(size(dvt_byte_data) + size(byte_data)+ (kind(current_data_point)*2)+len(trim(map_entry%key))))
-
-            temp(1:size(byte_data)) = byte_data
-            current_data_point=size(byte_data)+1
-            deallocate(byte_data)
-
-            call move_alloc(from=temp, to=byte_data)
             current_data_point=pack_scalar_field(byte_data, current_data_point, len(trim(map_entry%key)))
             byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1) = transfer(trim(map_entry%key), &
                  byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1))          
             current_data_point=current_data_point+len(trim(map_entry%key))
-            current_data_point=pack_scalar_field(byte_data, current_data_point, size(dvt_byte_data))
-            byte_data(current_data_point:current_data_point+size(dvt_byte_data)-1)=dvt_byte_data
-            deallocate(dvt_byte_data)
+
+            prev_pt=current_data_point
+            current_data_point=current_data_point+kind(current_data_point)
+            call serialise_data_values_type(generic, byte_data, current_data_point)            
+            
+            prev_pt=pack_scalar_field(byte_data, prev_pt, (current_data_point-kind(current_data_point))-prev_pt)
             class default
             call log_log(LOG_ERROR, "Unknown data type in collective values type")
           end select
@@ -388,16 +452,40 @@ contains
         current_data_point=current_data_point+byte_size
       end do
     end if
-  end function unserialise_collective_values_type  
-  
-  !> Serialises some data values to store or transmit
-  !! @param data_values_to_serialise The data values to serialise
-  !! @param byte_data The byte data which contains the serialised type
-  subroutine serialise_data_values_type(data_values_to_serialise, byte_data)
-    type(data_values_type), intent(inout) :: data_values_to_serialise
-    character, dimension(:), allocatable, intent(out) :: byte_data
+  end function unserialise_collective_values_type
 
-    integer :: current_data_point, values_size
+  !> Prepares to serialise a specific data values type, both determines the byte size required and also issues any locks
+  !! @param data_values_to_serialise The data values to prepare for serialisation
+  !! @returns The number of bytes needed to store the serialised state
+  integer(kind=8) function prepare_to_serialise_data_values_type(data_values_to_serialise)
+    type(data_values_type), intent(inout) :: data_values_to_serialise
+
+    integer :: values_size
+
+    prepare_to_serialise_data_values_type=kind(prepare_to_serialise_data_values_type) * 8
+    
+    if (allocated(data_values_to_serialise%values)) then
+      prepare_to_serialise_data_values_type=prepare_to_serialise_data_values_type+&
+           (kind(data_values_to_serialise%values)*size(data_values_to_serialise%values))
+    else if (allocated(data_values_to_serialise%string_values)) then
+      prepare_to_serialise_data_values_type=prepare_to_serialise_data_values_type+&
+           (size(data_values_to_serialise%string_values) * STRING_LENGTH)
+    else
+      prepare_to_serialise_data_values_type=prepare_to_serialise_data_values_type+&
+           prepare_to_serialise_string_map(data_values_to_serialise%map_values)
+    end if        
+  end function prepare_to_serialise_data_values_type
+  
+  !> Serialises some data values to store or transmit. This releases any locks issued during preparation
+  !! @param data_values_to_serialise The data values to serialise
+  !! @param byte_data The byte data which will be packaged with the serialised byte code
+  !! @param current_data_point The current write point in the byte data, is updated during call so represents next point on return
+  subroutine serialise_data_values_type(data_values_to_serialise, byte_data, current_data_point)
+    type(data_values_type), intent(inout) :: data_values_to_serialise
+    character, dimension(:), allocatable, intent(inout) :: byte_data
+    integer, intent(inout) :: current_data_point
+
+    integer :: values_size, prev_pt
     character, dimension(:), allocatable :: dvt_byte_data, temp
 
     if (allocated(data_values_to_serialise%values)) then
@@ -408,8 +496,6 @@ contains
       values_size=0
     end if
     
-    allocate(byte_data((kind(current_data_point) * 8) + values_size))
-    current_data_point=1
     current_data_point=pack_scalar_field(byte_data, current_data_point, data_values_to_serialise%data_type)
     current_data_point=pack_scalar_field(byte_data, current_data_point, data_values_to_serialise%dimensions)
     current_data_point=pack_array_field(byte_data, current_data_point, data_values_to_serialise%dim_sizes)
@@ -425,18 +511,9 @@ contains
            transfer(data_values_to_serialise%string_values, &
            byte_data(current_data_point:current_data_point+(size(data_values_to_serialise%string_values) * STRING_LENGTH)-1))
     else
-      current_data_point=pack_scalar_field(byte_data, current_data_point, 3)
-      call serialise_string_map(data_values_to_serialise%map_values, dvt_byte_data)
-      current_data_point=pack_scalar_field(byte_data, current_data_point, size(dvt_byte_data))
-      allocate(temp(size(byte_data) + size(dvt_byte_data)))
-      temp(1:size(byte_data))=byte_data
-      current_data_point=size(byte_data)+1
-      deallocate(byte_data)
-
-      call move_alloc(from=temp, to=byte_data)
-      byte_data(current_data_point:current_data_point+size(dvt_byte_data)-1)=dvt_byte_data
-      deallocate(dvt_byte_data)
-    end if    
+      current_data_point=pack_scalar_field(byte_data, current_data_point, 3)      
+      call serialise_string_map(data_values_to_serialise%map_values, byte_data, current_data_point)      
+    end if
   end subroutine serialise_data_values_type
 
   !> Unserialises some byte data into data values
@@ -476,33 +553,46 @@ contains
     end if      
   end function unserialise_data_values_type
 
-  !> Serialises a string map, where the values are assumed to be strings
-  !! @param map_to_serialise The may which will be serialised
-  !! @param byte_data The byte data representation of this map, this is allocated here
-  subroutine serialise_string_map(map_to_serialise, byte_data)
+  !> Prepares a map for serialisation, both determines the size of storage required and also issues any locks
+  !! @param map_to_serialise The map which will be prepared for serialisation
+  !! @returns The number of bytes needed to store the serialised state
+  integer(kind=8) function prepare_to_serialise_string_map(map_to_serialise)
     type(map_type), intent(inout) :: map_to_serialise
-    character, dimension(:), allocatable, intent(out) :: byte_data
 
-    integer :: current_data_point
     type(mapentry_type) :: map_entry
     type(iterator_type) :: iterator
-    character, dimension(:), allocatable :: dvt_byte_data, temp
     character(len=STRING_LENGTH) :: str_value
 
-    allocate(byte_data(kind(current_data_point)))
-    current_data_point=1
+    prepare_to_serialise_string_map=kind(prepare_to_serialise_string_map)
+    iterator=c_get_iterator(map_to_serialise)
+    do while (c_has_next(iterator))
+      map_entry=c_next_mapentry(iterator)
+      str_value=c_get_string(map_entry)
+      prepare_to_serialise_string_map=prepare_to_serialise_string_map+len(trim(map_entry%key)) + &
+           len(trim(str_value)) + (kind(prepare_to_serialise_string_map) * 2)
+    end do
+  end function prepare_to_serialise_string_map  
+
+  !> Serialises a string map, where the values are assumed to be strings. This releases any locks issued during preparation
+  !! @param map_to_serialise The map which will be serialised
+  !! @param byte_data The byte data representation of this map, this is allocated here
+  !! @param current_data_point The current write point in the byte data, is updated during call so represents next point on return
+  subroutine serialise_string_map(map_to_serialise, byte_data, current_data_point)
+    type(map_type), intent(inout) :: map_to_serialise
+    character, dimension(:), allocatable, intent(inout) :: byte_data
+    integer, intent(inout) :: current_data_point
+
+    type(mapentry_type) :: map_entry
+    type(iterator_type) :: iterator
+    character(len=STRING_LENGTH) :: str_value
+
     current_data_point=pack_scalar_field(byte_data, current_data_point, c_size(map_to_serialise))
 
     iterator=c_get_iterator(map_to_serialise)
     do while (c_has_next(iterator))
       map_entry=c_next_mapentry(iterator)
       str_value=c_get_string(map_entry)
-      allocate(temp(size(byte_data) + len(trim(map_entry%key)) + len(trim(str_value)) + (kind(current_data_point) * 2)))
-      temp(1:size(byte_data))=byte_data
-      current_data_point=size(byte_data)+1
-      deallocate(byte_data)
-
-      call move_alloc(from=temp, to=byte_data)
+            
       current_data_point=pack_scalar_field(byte_data, current_data_point, len(trim(map_entry%key)))
       byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1) = transfer(trim(map_entry%key), &
            byte_data(current_data_point:current_data_point+len(trim(map_entry%key))-1))          
@@ -545,6 +635,6 @@ contains
         current_data_point=current_data_point+value_size
         call c_put_string(unserialise_string_map, value_key, value_value)
       end do
-    end if    
+    end if
   end function unserialise_string_map  
 end module writer_types_mod

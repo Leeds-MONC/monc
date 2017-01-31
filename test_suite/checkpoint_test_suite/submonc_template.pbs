@@ -20,7 +20,7 @@ export STDOUT_DIR=add_stdout_dirname
 export CP_DIR=add_checkpoint_dirname
 export RUN_NAME=add_testsuite_jobname
 export NPES=np
-export MAX_CONTINUATION_RUNS=20
+export MAX_CONTINUATION_RUNS=50
 
 ulimit -c unlimited
 

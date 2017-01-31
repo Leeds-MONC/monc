@@ -34,7 +34,7 @@ module io_server_mod
   use global_callback_inter_io_mod, only : perform_global_callback
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, initialise_logging
   use mpi, only : MPI_COMM_WORLD, MPI_STATUSES_IGNORE, MPI_BYTE
-  use io_server_state_reader_mod, only : read_io_server_state
+  use io_server_state_reader_mod, only : read_io_server_configuration
   implicit none
 
 #ifndef TEST_MODE
@@ -74,7 +74,8 @@ contains
 
     if (continuation_run) then
       ! Handle case where we need to allocate this due to no IO server config
-      call read_io_server_state(options_get_string(options_database, "checkpoint"), io_xml_configuration, io_communicator_arg)
+      call read_io_server_configuration(options_get_string(options_database, "checkpoint"), &
+           io_xml_configuration, io_communicator_arg)
     end if
 
     if (.not. allocated(io_xml_configuration)) then

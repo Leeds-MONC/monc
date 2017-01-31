@@ -39,7 +39,7 @@ dtm=0.4
 
 # IO server configuration
 ioserver_configuration_file="add_ioconfig_file_path"
-moncs_per_io_server=16
+moncs_per_io_server=15
 sampling_frequency=10
 3d_sampling_frequency=4500
 mm=1800.0

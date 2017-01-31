@@ -95,7 +95,7 @@ module configuration_parser_mod
      character(len=STRING_LENGTH) :: file_name, title
      integer :: number_of_contents, write_timestep_frequency
      real :: write_time_frequency
-     logical :: write_on_model_time, write_on_terminate
+     logical :: write_on_model_time, write_on_terminate, include_in_io_state_write
      type(io_configuration_file_writer_facet_type), dimension(:), allocatable :: contents     
   end type io_configuration_file_writer_type
 
@@ -632,6 +632,14 @@ contains
            retrieve_string_value(attribute_values(field_index), STRING_DATA_TYPE) == "true"
     else
       building_config%file_writers(current_building_file_writer)%write_on_terminate=.false.
+    end if
+
+    field_index=get_field_index_from_name(attribute_names, "store_state")
+    if (field_index .gt. 0) then 
+      building_config%file_writers(current_building_file_writer)%include_in_io_state_write=&
+           retrieve_string_value(attribute_values(field_index), STRING_DATA_TYPE) == "true"
+    else
+      building_config%file_writers(current_building_file_writer)%include_in_io_state_write=.true.
     end if
     
     building_config%file_writers(current_building_file_writer)%number_of_contents=0

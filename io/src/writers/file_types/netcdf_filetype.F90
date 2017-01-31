@@ -95,12 +95,8 @@ contains
         end if
         call check_thread_status(forthread_mutex_lock(netcdf_mutex))
         call lock_mpi()
-        if (io_configuration%number_of_io_servers .gt. 1) then
-          call check_netcdf_status(nf90_create(unique_filename, ior(NF90_NETCDF4, NF90_MPIIO), ncdf_writer_state%ncid, &
-               comm = io_configuration%io_communicator, info = MPI_INFO_NULL))
-        else
-          call check_netcdf_status(nf90_create(unique_filename, NF90_CLOBBER, ncdf_writer_state%ncid))
-        end if
+        call check_netcdf_status(nf90_create(unique_filename, ior(NF90_NETCDF4, NF90_MPIIO), ncdf_writer_state%ncid, &
+             comm = io_configuration%io_communicator, info = MPI_INFO_NULL))
         call unlock_mpi()
         call write_out_global_attributes(ncdf_writer_state%ncid, file_writer_information, timestep, time)
         call define_dimensions(ncdf_writer_state, io_configuration%dimension_sizing)
@@ -123,8 +119,10 @@ contains
   !! @param io_configuration The IO server configuration
   !! @param file_writer_information The file writer information
   !! @param timestep The write timestep
-  subroutine store_io_server_state(io_configuration, file_writer_information, timestep)
+  subroutine store_io_server_state(io_configuration, writer_entries, time_points, file_writer_information, timestep)
     type(io_configuration_type), intent(inout) :: io_configuration
+    type(writer_type), volatile, dimension(:), intent(inout) :: writer_entries
+    type(hashmap_type), volatile, intent(inout) :: time_points
     type(writer_type), intent(inout), target :: file_writer_information
     integer, intent(in) :: timestep
 
@@ -134,11 +132,11 @@ contains
     call lock_mpi()
     call check_netcdf_status(nf90_redef(ncdf_writer_state%ncid))
     call unlock_mpi()
-    call define_io_server_state_contributions(io_configuration, ncdf_writer_state)
+    call define_io_server_state_contributions(io_configuration, writer_entries, time_points, ncdf_writer_state)
     call lock_mpi()
     call check_netcdf_status(nf90_enddef(ncdf_writer_state%ncid))
     call unlock_mpi()
-    call write_io_server_state(io_configuration, ncdf_writer_state)
+    call write_io_server_state(io_configuration, writer_entries, time_points, ncdf_writer_state)
   end subroutine store_io_server_state
 
   !> Looks up and retrieves the writer entry that corresponds to this NetCDF file state
