@@ -23,16 +23,15 @@ module casim_mod
      insoluble_modes, active_ice, active_number, &
      isol, iinsol, option, aerosol_option
 
-  Use diaghelp_monc, only: i_here, j_here, mype, time
   use micro_main, only: shipway_microphysics
+  use generic_diagnostic_variables, ONLY: casdiags, allocate_diagnostic_space, &
+       deallocate_diagnostic_space
 
   implicit none
 
 #ifndef TEST_MODE
   private
 #endif
-
-  real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: surface_precip
 
   REAL(wp), allocatable :: theta(:,:,:), pressure(:,:,:),  &
      z_half(:,:,:), z_centre(:,:,:), dz(:,:,:), qv(:,:,:),qc(:,:,:) &
@@ -77,6 +76,8 @@ module casim_mod
   REAL(wp), allocatable :: dActiveSolNumber(:,:,:)                      ! Activated soluble number (if we need a tracer)
   REAL(wp), allocatable :: dActiveInsolNumber(:,:,:)                      ! Activated insoluble number (if we need a tracer)
 
+  REAL(wp), allocatable :: surface_precip(:,:)
+
   INTEGER ::   ils,ile, jls,jle, kls,kle, &
      its,ite, jts,jte, kts,kte
 
@@ -118,7 +119,7 @@ contains
     
     allocate(casim_get_descriptor%published_fields(1))
 
-    casim_get_descriptor%published_fields(1)="surface_precip_local" 
+    casim_get_descriptor%published_fields(1)="surface_precip" 
 
   end function casim_get_descriptor
 
@@ -148,10 +149,10 @@ contains
     
     integer :: i
 
-    if (name .eq. "surface_precip_local") then
+    if (name .eq. "surface_precip") then
       allocate(field_value%real_2d_array(current_state%local_grid%size(Y_INDEX), &
            current_state%local_grid%size(X_INDEX)))
-       field_value%real_2d_array(:,:)=surface_precip(:,:) 
+       field_value%real_2d_array(:,:)= surface_precip(:,:)
     end if
     
   end subroutine field_value_retrieval_callback
@@ -162,9 +163,10 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
 
     integer :: y_size_local, x_size_local
+
     y_size_local = current_state%local_grid%size(Y_INDEX)
     x_size_local = current_state%local_grid%size(X_INDEX)
-
+    
     call read_configuration(current_state)   
 
     ils=1
@@ -258,6 +260,12 @@ contains
     allocate(dAccumInsolNumber(kte,1,1))
     allocate(dActiveSolNumber(kte,1,1))
     allocate(dActiveInsolNumber(kte,1,1))
+
+    casdiags % l_surface_rain = .TRUE.
+    casdiags % l_surface_snow = .TRUE.
+    casdiags % l_surface_graup = .TRUE.
+
+    CALL allocate_diagnostic_space(its, ite, jts, jte, kts, kte)
 
     allocate(surface_precip(y_size_local, x_size_local))
 
@@ -354,8 +362,6 @@ contains
     if (active_number(iinsol))  i_ActiveInsolNumber = &
        get_q_index(standard_q_names%ACTIVE_INSOL_NUMBER, 'casim') 
 
-    ! For debugging in the microphysics code
-    mype = current_state%parallel%my_rank
   end subroutine initialisation_callback
 
   !> Called for each column per timestep this will calculate the microphysical tendencies
@@ -364,12 +370,12 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
 
     REAL(wp) :: dtwp
-    INTEGER :: icol, jcol, iqx
-
-    time=current_state%time
+    INTEGER :: icol, jcol, iqx, target_x_index, target_y_index
 
     icol=current_state%column_local_x
     jcol=current_state%column_local_y
+    target_y_index=jcol-current_state%local_grid%halo_size(Y_INDEX)
+    target_x_index=icol-current_state%local_grid%halo_size(X_INDEX)
 
     if (current_state%halo_column .or. current_state%timestep < 2) return
 
@@ -414,11 +420,6 @@ contains
     ActiveInsolNumber = 0.0
     dActiveInsolNumber = 0.0
 
-    ! initialise surface precip to zero...
-    surface_precip = 0.0
-
-    i_here=icol
-    j_here=jcol
     theta(:,1,1) = current_state%zth%data(:, jcol, icol) + current_state%global_grid%configuration%vertical%thref(:)
     dth(:,1,1) = current_state%sth%data(:, jcol, icol)
     exner(:,1,1) = current_state%global_grid%configuration%vertical%rprefrcp(:)
@@ -689,6 +690,13 @@ contains
     if (i_ActiveInsolNumber>0) current_state%sq(i_ActiveInsolNumber)%data(:,jcol,icol) &
        =  current_state%sq(i_ActiveInsolNumber)%data(:,jcol,icol) + dActiveInsolNumber(:,1,1)
 
+    ! for total surface precipitation, sum the surface rain rate (cloud + rain which is precip_r)
+    ! and surface
+    ! snow rate (precip_s), which is the sum of ice, snow and graupel (See micromain.F90 in casim for
+    ! calculation). 
+    surface_precip(target_y_index,target_x_index) = &
+         casdiags % SurfaceRainR(1,1) + casdiags % SurfaceSnowR(1,1) 
+    
   end subroutine timestep_callback
 
 

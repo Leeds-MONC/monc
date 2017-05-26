@@ -27,7 +27,7 @@ module netcdf_filetype_writer_mod
   use mpi_communication_mod, only : lock_mpi, unlock_mpi, wait_for_mpi_request
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
   use netcdf_misc_mod, only : check_netcdf_status
-  use mpi, only : MPI_STATUS_IGNORE, MPI_REQUEST_NULL
+  use mpi, only : MPI_STATUS_IGNORE, MPI_REQUEST_NULL, MPI_INT
   implicit none
 
 #ifndef TEST_MODE
@@ -98,7 +98,7 @@ contains
         call check_netcdf_status(nf90_create(unique_filename, ior(NF90_NETCDF4, NF90_MPIIO), ncdf_writer_state%ncid, &
              comm = io_configuration%io_communicator, info = MPI_INFO_NULL))
         call unlock_mpi()
-        call write_out_global_attributes(ncdf_writer_state%ncid, file_writer_information, timestep, time)
+        call write_out_global_attributes(io_configuration, ncdf_writer_state%ncid, file_writer_information, timestep, time)
         call define_dimensions(ncdf_writer_state, io_configuration%dimension_sizing)
         call define_time_series_dimensions(ncdf_writer_state, file_writer_information, time, time_points, termination_write)
         call define_variables(io_configuration, ncdf_writer_state, file_writer_information)
@@ -1086,20 +1086,26 @@ contains
 
   !> Writes out global attributes into the checkpoint
   !! @param ncid NetCDF file id
-  subroutine write_out_global_attributes(ncid, file_writer_information, timestep, time)
+  subroutine write_out_global_attributes(io_configuration, ncid, file_writer_information, timestep, time)
+    type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: ncid, timestep
     type(writer_type), intent(inout) :: file_writer_information
     real, intent(in) :: time
 
-    integer :: date_values(8)
+    integer :: date_values(8), ierr
+    character(len=50) :: date_time
 
     call date_and_time(values=date_values)
+    call lock_mpi()
+    call mpi_bcast(date_values, 8, MPI_INT, 0, io_configuration%io_communicator, ierr)
+    call unlock_mpi()
+    date_time=trim(conv_to_string(date_values(3)))//"/"//&
+         trim(conv_to_string(date_values(2)))//"/"//trim(conv_to_string(date_values(1)))//" "//trim(conv_to_string(&
+         date_values(5)))// ":"//trim(conv_to_string(date_values(6)))//":"//trim(conv_to_string(date_values(7)))
 
     call lock_mpi()
     call check_netcdf_status(nf90_put_att(ncid, NF90_GLOBAL, "title", file_writer_information%title))
-    call check_netcdf_status(nf90_put_att(ncid, NF90_GLOBAL, "created", trim(conv_to_string(date_values(3)))//"/"//&
-         trim(conv_to_string(date_values(2)))//"/"//trim(conv_to_string(date_values(1)))//" "//trim(conv_to_string(&
-         date_values(5)))// ":"//trim(conv_to_string(date_values(6)))//":"//trim(conv_to_string(date_values(7)))))
+    call check_netcdf_status(nf90_put_att(ncid, NF90_GLOBAL, "created", date_time))
     call check_netcdf_status(nf90_put_att(ncid, NF90_GLOBAL, "MONC time", trim(conv_to_string(time))))
     call check_netcdf_status(nf90_put_att(ncid, NF90_GLOBAL, "MONC timestep", trim(conv_to_string(timestep))))
     call check_netcdf_status(nf90_put_att(ncid, NF90_GLOBAL, "Diagnostic write frequency", &
