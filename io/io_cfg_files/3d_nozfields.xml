@@ -1,0 +1,82 @@
+<data-definition name="3d_noz_data" frequency="{3d_noz_frequency}" send_on_terminate="true">
+	<field name="z" type="array" data_type="double" size="z"/>
+	<field name="thref" type="array" data_type="double" size="z"/>
+	<field name="prefn" type="array" data_type="double" size="z"/>
+	<field name="rhon" type="array" data_type="double" size="z"/>
+	<field name="rho" type="array" data_type="double" size="z"/>
+	<field name="w" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+	<field name="u_nogal" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+	<field name="v_nogal" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+	<field name="th" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+	<field name="p" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+	<field name="q" type="array" data_type="double" size="z,y,x,qfields" collective=true optional=true/>
+	<field name="olubar" type="array" data_type="double" size="z" optional=true/>
+	<field name="olvbar" type="array" data_type="double" size="z" optional=true/>
+	<field name="olthbar" type="array" data_type="double" size="z" optional=true/>
+	<field name="olzubar" type="array" data_type="double" size="z" optional=true/>
+	<field name="olzvbar" type="array" data_type="double" size="z" optional=true/>
+	<field name="olzthbar" type="array" data_type="double" size="z" optional=true/>
+	<field name="olqbar" type="array" data_type="double" size="z,qfields" optional=true/>
+	<field name="olzqbar" type="array" data_type="double" size="z,qfields" optional=true/>
+
+	<field name="time" type="scalar" data_type="double"/>
+	<field name="ugal" type="scalar" data_type="double"/>
+	<field name="vgal" type="scalar" data_type="double"/>
+	<field name="nqfields" type="scalar" data_type="integer"/>
+	<field name="timestep" type="scalar" data_type="integer"/>
+	<field name="dtm" type="scalar" data_type="double"/>
+	<field name="dtm_new" type="scalar" data_type="double"/>
+	<field name="absolute_new_dtm" type="scalar" data_type="double"/>
+	<field name="options_database" type="map" data_type="string" size="number_options"/>
+	<field name="q_indicies" type="map" data_type="string" size="active_q_indicies" optional=true/>
+	<field name="x_resolution" type="scalar" data_type="double"/>
+	<field name="x_top" type="scalar" data_type="double" />
+	<field name="x_bottom" type="scalar" data_type="double"/>
+	<field name="y_resolution" type="scalar" data_type="double"/>
+	<field name="y_top" type="scalar" data_type="double" />
+	<field name="y_bottom" type="scalar" data_type="double"/>
+</data-definition>
+
+<group name="3d_noz_fields">
+	<member name="w"/>
+	<member name="u_nogal"/>
+	<member name="v_nogal"/>
+	<member name="th"/>
+	<member name="p"/>
+	<member name="q"/>
+	<member name="olubar"/>
+	<member name="olvbar"/>
+	<member name="olthbar"/>
+	<member name="olqbar"/>
+	<member name="olzubar"/>
+	<member name="olzvbar"/>
+	<member name="olzthbar"/>
+	<member name="olzqbar"/>
+	<member name="time"/>
+	<member name="ugal"/>
+	<member name="vgal"/>
+	<member name="nqfields"/>
+	<member name="timestep"/>
+	<member name="dtm"/>
+	<member name="dtm_new"/>
+	<member name="absolute_new_dtm"/>
+	<member name="options_database"/>
+	<member name="q_indicies"/>
+	<member name="z"/>
+	<member name="thref"/>
+	<member name="prefn"/>
+	<member name="rhon"/>
+	<member name="rho"/>
+	<member name="x_resolution"/>
+	<member name="x_top"/>
+	<member name="x_bottom"/>
+	<member name="y_resolution"/>
+	<member name="y_top"/>
+	<member name="y_bottom"/>
+</group>
+
+<data-writing>
+  <file name="{3d_noz_file}" write_timestep_frequency="{3d_noz_write_frequency}" title="3D fields" write_on_terminate="true">
+    <include group="3d_noz_fields" time_manipulation="none"/>
+  </file>
+</data-writing>

@@ -34,7 +34,7 @@ dtm=0.4
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
-moncs_per_io_server=16
+moncs_per_io_server=11
 sampling_frequency=10
 3d_sampling_frequency=600
 mm=600.0
@@ -64,8 +64,8 @@ cfl_dtmmin=0.001
 thref0=288.0
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=64
-y_size=64
+x_size=66
+y_size=66
 z_size=100
 dxx=50
 dyy=50

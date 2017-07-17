@@ -10,6 +10,7 @@ module casim_mod
   use q_indices_mod, only: get_q_index, standard_q_names
   use optionsdatabase_mod, only : options_get_real, options_get_logical, options_get_integer
   use logging_mod, only : LOG_INFO, LOG_ERROR, log_master_log
+  use registry_mod, only : is_component_enabled
 
   ! casim modules...
   use variable_precision, ONLY: wp
@@ -164,6 +165,10 @@ contains
 
     integer :: y_size_local, x_size_local
 
+    if (is_component_enabled(current_state%options_database, "simplecloud")) then
+      call log_master_log(LOG_ERROR, "Casim and Simplecloud are enabled, this does not work yet. Please disable one")
+    end if 
+    
     y_size_local = current_state%local_grid%size(Y_INDEX)
     x_size_local = current_state%local_grid%size(X_INDEX)
     

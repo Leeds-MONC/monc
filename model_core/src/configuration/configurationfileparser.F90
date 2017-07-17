@@ -46,7 +46,7 @@ contains
 
     integer :: file_status
     logical :: continue_parsing, found_global
-    character(len=1000) :: raw_line
+    character(len=10000) :: raw_line
 
     found_global=.false.
     continue_parsing=.true.
@@ -86,7 +86,7 @@ contains
     logical, intent(inout) :: found_global
     
     integer :: mode, start_split, end_split
-    character(len=1000) :: config_key, config_value
+    character(len=10000) :: config_key, config_value
 
     call get_mode_and_split_points_from_line(raw_line, mode, start_split, end_split)
 

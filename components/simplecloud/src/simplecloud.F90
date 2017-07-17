@@ -8,6 +8,9 @@ module simplecloud_mod
   use science_constants_mod, only : r_over_cp, rlvap_over_cp
   use saturation_mod, only: qsaturation, dqwsatdt
   use q_indices_mod, only: get_q_index, standard_q_names
+  use registry_mod, only : is_component_enabled
+  use logging_mod, only : LOG_ERROR, log_master_log
+
 implicit none
 
 #ifndef TEST_MODE
@@ -38,6 +41,10 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
 
     integer :: k ! look counter
+
+    if (is_component_enabled(current_state%options_database, "casim")) then
+      call log_master_log(LOG_ERROR, "Casim and Simplecloud are enabled, this does not work yet. Please disable one")
+    end if 
 
     iqv=get_q_index(standard_q_names%VAPOUR, 'simplecloud')
     iql=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'simplecloud')

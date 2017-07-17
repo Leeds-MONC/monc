@@ -239,8 +239,12 @@ contains
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
       call piecewise_linear_1d(z_init_pl_theta(1:size(z_init_pl_theta)), f_init_pl_theta(1:size(f_init_pl_theta)), zgrid, &
          current_state%global_grid%configuration%vertical%theta_init)
-      if (l_matchthref) &
+      if (l_matchthref) then
+         if(.not. current_state%use_anelastic_equations) then
+           call log_master_log(LOG_ERROR, "Non-anelastic equation set and l_maththref are incompatible")
+         end if
          current_state%global_grid%configuration%vertical%thref = current_state%global_grid%configuration%vertical%theta_init
+      end if
       if (.not. current_state%continuation_run) then
         do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
           do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
