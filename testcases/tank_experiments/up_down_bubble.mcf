@@ -103,7 +103,7 @@ l_init_pl_u=.false.
 l_init_pl_v=.false.
 l_init_pl_q=.false.
   
-l_matchthref=.true.
+l_matchthref=.false.
 
 # Set up the tank
 

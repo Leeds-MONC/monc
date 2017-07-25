@@ -21,6 +21,8 @@ th_advection_enabled=.true.
 iobridge_enabled=.true.
 scalar_diagnostics_enabled=.true.
 profile_diagnostics_enabled=.true.
+subgrid_profile_diagnostics_enabled=.true.
+flux_budget_enabled=.true.
 
 # Control configuration
 display_synopsis_frequency=100
@@ -51,7 +53,7 @@ advection_q_fields=tvd
 cfl_frequency=10
 cfl_cvismax=0.4
 cfl_cvelmax=0.4
-cfl_dtmmax=5.0
+cfl_dtmmax=1.0
 cfl_dtmmin=0.001
 
 # Simple setup configuration
