@@ -353,6 +353,9 @@ contains
     raw_generic=>generate_sendable_description(z_size)
     call c_put_generic(sendable_fields, "z", raw_generic, .false.)
     call c_put_generic(sendable_fields, "thref", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "prefn", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "rhon", raw_generic, .false.)
+    call c_put_generic(sendable_fields, "rho", raw_generic, .false.)
     raw_generic=>generate_sendable_description(z_size, y_size, x_size)
     call c_put_generic(sendable_fields, "w", raw_generic, .false.)
     call c_put_generic(sendable_fields, "zw", raw_generic, .false.)
@@ -895,6 +898,15 @@ contains
     else if (field%name .eq. "thref") then
       pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
            real_array_1d=current_state%global_grid%configuration%vertical%thref)
+    else if (field%name .eq. "prefn") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_1d=current_state%global_grid%configuration%vertical%prefn)
+    else if (field%name .eq. "rhon") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_1d=current_state%global_grid%configuration%vertical%rhon)
+    else if (field%name .eq. "rho") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_1d=current_state%global_grid%configuration%vertical%rho)
     else if (field%name .eq. "u") then
       current_state%u%data=current_state%u%data+current_state%ugal
       pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer, current_state%u, &

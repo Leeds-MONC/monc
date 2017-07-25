@@ -19,7 +19,8 @@ module profile_diagnostics_mod
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable ::     &
        tempfac, u_wind_tot, uprime_tot, v_wind_tot, vprime_tot,  &
        ww_tot, theta_tot, qv_tot, ql_tot, w_wind_tot, rh_tot,    &
-       thref, prefn, rho, rhon, thinit
+       wq_tot, wtheta_tot, uw_tot, vw_tot, th2_tot,              &
+       thref, prefn, rho, rhon, thinit, uinit, vinit
   real(kind=DEFAULT_PRECISION) :: qlcrit
 
   public profile_diagnostics_get_descriptor
@@ -37,7 +38,7 @@ contains
 
     profile_diagnostics_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     profile_diagnostics_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
-    allocate(profile_diagnostics_get_descriptor%published_fields(15))
+    allocate(profile_diagnostics_get_descriptor%published_fields(2*22))
 
     profile_diagnostics_get_descriptor%published_fields(1)="theta_total_local"
     profile_diagnostics_get_descriptor%published_fields(2)="vapour_mmr_total_local"
@@ -54,6 +55,42 @@ contains
     profile_diagnostics_get_descriptor%published_fields(13)="rho_local"
     profile_diagnostics_get_descriptor%published_fields(14)="rhon_local" 
     profile_diagnostics_get_descriptor%published_fields(15)="thinit_local"
+    profile_diagnostics_get_descriptor%published_fields(16)="uw_total_local"
+    profile_diagnostics_get_descriptor%published_fields(17)="vw_total_local"
+    profile_diagnostics_get_descriptor%published_fields(18)="wtheta_total_local"
+    profile_diagnostics_get_descriptor%published_fields(19)="th2_total_local"
+    profile_diagnostics_get_descriptor%published_fields(20)="wq_total_local"
+
+    profile_diagnostics_get_descriptor%published_fields(21)="uinit_local"
+    profile_diagnostics_get_descriptor%published_fields(22)="vinit_local" 
+
+!   =====================================================
+!   2nd, provisionally instantaneous, stream
+    profile_diagnostics_get_descriptor%published_fields(22+1)="i_theta_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+2)="i_vapour_mmr_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+3)="i_liquid_mmr_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+4)="i_u_wind_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+4)="i_u_wind_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+5)="i_uu_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+6)="i_v_wind_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+7)="i_vv_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+8)="i_ww_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+9)="i_w_wind_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+10)="i_rh_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+11)="i_thref_local"
+    profile_diagnostics_get_descriptor%published_fields(22+12)="i_prefn_local"
+    profile_diagnostics_get_descriptor%published_fields(22+13)="i_rho_local"
+    profile_diagnostics_get_descriptor%published_fields(22+14)="i_rhon_local" 
+    profile_diagnostics_get_descriptor%published_fields(22+15)="i_thinit_local"
+
+    profile_diagnostics_get_descriptor%published_fields(22+16)="i_uw_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+17)="i_vw_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+18)="i_wtheta_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+19)="i_th2_total_local"
+    profile_diagnostics_get_descriptor%published_fields(22+20)="i_wq_total_local"
+
+    profile_diagnostics_get_descriptor%published_fields(22+21)="i_uinit_local"
+    profile_diagnostics_get_descriptor%published_fields(22+22)="i_vinit_local"    
 
   end function profile_diagnostics_get_descriptor
 
@@ -71,7 +108,14 @@ contains
          , w_wind_tot(current_state%local_grid%size(Z_INDEX))   &
          , prefn(current_state%local_grid%size(Z_INDEX))        &
          , rho(current_state%local_grid%size(Z_INDEX))          &
-         , rhon(current_state%local_grid%size(Z_INDEX)) )
+         , rhon(current_state%local_grid%size(Z_INDEX))         &
+         , uinit(current_state%local_grid%size(Z_INDEX))       &
+         , vinit(current_state%local_grid%size(Z_INDEX)))
+    allocate(wq_tot(current_state%local_grid%size(Z_INDEX))     &
+         ,   wtheta_tot(current_state%local_grid%size(Z_INDEX)) &
+         ,   uw_tot(current_state%local_grid%size(Z_INDEX))     &
+         ,   vw_tot(current_state%local_grid%size(Z_INDEX))     &
+         ,   th2_tot(current_state%local_grid%size(Z_INDEX)) )
     
     if (allocated(current_state%global_grid%configuration%vertical%olubar)) then
       allocate(uprime_tot(current_state%local_grid%size(Z_INDEX)))
@@ -96,7 +140,7 @@ contains
        if (current_state%th%active) &
             allocate(rh_tot(current_state%local_grid%size(Z_INDEX)))
     endif
-   
+
   end subroutine initialisation_callback  
 
   subroutine timestep_callback(current_state)
@@ -105,6 +149,8 @@ contains
     integer :: k, i
     real(kind=DEFAULT_PRECISION) :: cltop_col, clbas_col, qv, qc, TdegK, Pmb &
          , qs, exner
+    real(kind=DEFAULT_PRECISION) :: uprime_w_local, vprime_w_local &
+                                  , thprime_w_local, qprime_w_local
 
     if (current_state%first_timestep_column) then
        u_wind_tot(:) = 0.0_DEFAULT_PRECISION
@@ -113,7 +159,13 @@ contains
        if (allocated(vprime_tot)) vprime_tot(:) = 0.0_DEFAULT_PRECISION
        w_wind_tot(:) = 0.0_DEFAULT_PRECISION
        ww_tot(:) = 0.0_DEFAULT_PRECISION
-
+       
+       wq_tot(:)     = 0.0_DEFAULT_PRECISION
+       wtheta_tot(:) = 0.0_DEFAULT_PRECISION
+       uw_tot(:)     = 0.0_DEFAULT_PRECISION
+       vw_tot(:)     = 0.0_DEFAULT_PRECISION
+       th2_tot(:)    = 0.0_DEFAULT_PRECISION
+       
        if (current_state%th%active) then 
           theta_tot(:)=0.0_DEFAULT_PRECISION
        endif
@@ -149,12 +201,55 @@ contains
           w_wind_tot(k) = w_wind_tot(k) + & 
                (current_state%w%data(k,current_state%column_local_y,current_state%column_local_x))
        enddo
+
+!      <u'w'> and <v'w'> are on w-points, so we interpolate u and v both horizontally and vertically.
+       do k=1, current_state%local_grid%size(Z_INDEX)-1
+          uprime_w_local =  &
+               0.25 * ( current_state%u%data(k,current_state%column_local_y,current_state%column_local_x)   + &
+               current_state%u%data(k,current_state%column_local_y,current_state%column_local_x-1) + &
+               current_state%u%data(k+1,current_state%column_local_y,current_state%column_local_x) + &
+               current_state%u%data(k+1,current_state%column_local_y,current_state%column_local_x-1) ) + &
+               current_state%ugal
+          if (allocated(current_state%global_grid%configuration%vertical%olubar)) &
+               uprime_w_local = uprime_w_local - &
+               0.5  * ( current_state%global_grid%configuration%vertical%olubar(k) + &
+               current_state%global_grid%configuration%vertical%olubar(k+1) )
+          vprime_w_local = &
+               0.25 * ( current_state%v%data(k,current_state%column_local_y,current_state%column_local_x)   + &
+               current_state%v%data(k,current_state%column_local_y-1,current_state%column_local_x) + &
+               current_state%v%data(k+1,current_state%column_local_y,current_state%column_local_x) + &
+               current_state%v%data(k+1,current_state%column_local_y-1,current_state%column_local_x) ) + &
+               current_state%vgal
+          if (allocated(current_state%global_grid%configuration%vertical%olvbar)) &
+               vprime_w_local = vprime_w_local - &
+               0.5  * ( current_state%global_grid%configuration%vertical%olvbar(k) + &
+               current_state%global_grid%configuration%vertical%olvbar(k+1) )
+          uw_tot(k) = uw_tot(k) + uprime_w_local * &
+               current_state%w%data(k,current_state%column_local_y,current_state%column_local_x)
+          vw_tot(k) = vw_tot(k) + vprime_w_local * &
+               current_state%w%data(k,current_state%column_local_y,current_state%column_local_x)
+       enddo
+
        if (current_state%th%active) then
           do k=1, current_state%local_grid%size(Z_INDEX)
              theta_tot(k) = theta_tot(k) + & 
                   (current_state%th%data(k,current_state%column_local_y,current_state%column_local_x) &
                   + current_state%global_grid%configuration%vertical%thref(k))
+             th2_tot(k) = th2_tot(k) + &
+                  (current_state%th%data(k,current_state%column_local_y,current_state%column_local_x) - &
+                  current_state%global_grid%configuration%vertical%olthbar(k) )**2
           enddo
+!       <w'theta'> is on w-levels, so theta is interpolated to w-levels.
+          do k=1, current_state%local_grid%size(Z_INDEX)-1
+             thprime_w_local = 0.5 * (  &
+                  (current_state%th%data(k,current_state%column_local_y,current_state%column_local_x) - &
+                  current_state%global_grid%configuration%vertical%olthbar(k)) + &
+                  (current_state%th%data(k+1,current_state%column_local_y,current_state%column_local_x) - &
+                  current_state%global_grid%configuration%vertical%olthbar(k+1)) )
+             wtheta_tot(k) = wtheta_tot(k) + &
+                  current_state%w%data(k,current_state%column_local_y,current_state%column_local_x) * &
+                  thprime_w_local
+          enddo          
        endif
        if (current_state%th%active .and. .not. current_state%passive_q .and. current_state%number_q_fields .gt. 0) then
           do k=1, current_state%local_grid%size(Z_INDEX)
@@ -170,6 +265,19 @@ contains
              qs = qsaturation(TdegK, Pmb)
              rh_tot(k) = rh_tot(k) + (qv/qs)
           enddo
+          do k=1, current_state%local_grid%size(Z_INDEX)-1
+             qprime_w_local = 0.5 * (  &
+                  (current_state%q(current_state%liquid_water_mixing_ratio_index)% &
+                  data(k,current_state%column_local_y,current_state%column_local_x) - &
+                  current_state%global_grid%configuration%vertical% &
+                  olqbar(k,current_state%liquid_water_mixing_ratio_index)) + &
+                  (current_state%q(current_state%liquid_water_mixing_ratio_index)% &
+                  data(k+1,current_state%column_local_y,current_state%column_local_x) - &
+                  current_state%global_grid%configuration%vertical% &
+                  olqbar(k+1,current_state%liquid_water_mixing_ratio_index)) )
+             wq_tot(k) = wq_tot(k) + qprime_w_local * &
+                  current_state%w%data(k,current_state%column_local_y,current_state%column_local_x)
+          end do
        endif
     endif
   end subroutine timestep_callback  
@@ -198,6 +306,34 @@ contains
       field_information%enabled=allocated(uprime_tot)
     else if (name .eq. "vv_total_local") then
       field_information%enabled=allocated(vprime_tot)
+   else if (name .eq. "wtheta_total_local") then
+      field_information%enabled=current_state%th%active
+    else if (name .eq. "wq_total_local") then
+      field_information%enabled= (.not.current_state%passive_q) .and. &
+        (current_state%liquid_water_mixing_ratio_index > 0)
+   else if (name .eq. "th2_total_local") then
+      field_information%enabled=current_state%th%active
+!   ========================================================================
+!   2nd stream
+    else if (name .eq. "i_theta_total_local") then
+      field_information%enabled=current_state%th%active
+    else if (name .eq. "i_vapour_mmr_total_local" .or. name .eq. "i_liquid_mmr_total_local") then
+      field_information%enabled=.not. current_state%passive_q .and. current_state%number_q_fields .gt. 0
+    else if (name .eq. "i_rh_total_local") then
+      field_information%enabled=current_state%th%active .and. .not. current_state%passive_q .and. &
+           current_state%number_q_fields .gt. 0
+    else if (name .eq. "i_uu_total_local") then
+      field_information%enabled=allocated(uprime_tot)
+    else if (name .eq. "i_vv_total_local") then
+      field_information%enabled=allocated(vprime_tot)
+    else if (name .eq. "i_wtheta_total_local") then
+      field_information%enabled=current_state%th%active
+    else if (name .eq. "i_wq_total_local") then
+      field_information%enabled= (.not.current_state%passive_q) .and. &
+        (current_state%liquid_water_mixing_ratio_index > 0)
+   else if (name .eq. "i_th2_total_local") then
+      field_information%enabled=current_state%th%active
+!   ========================================================================
     else 
       field_information%enabled=.true.
     end if
@@ -288,6 +424,143 @@ contains
        allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
        do k = 1, current_state%local_grid%size(Z_INDEX)
           field_value%real_1d_array(k)=rh_tot(k)
+       enddo
+ else if (name .eq. "wq_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=wq_tot(k)
+       enddo
+    else if (name .eq. "wtheta_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=wtheta_tot(k)
+       enddo
+    else if (name .eq. "uw_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=uw_tot(k)
+       enddo
+    else if (name .eq. "vw_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=vw_tot(k)
+       enddo
+    else if (name .eq. "th2_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=th2_tot(k)
+       enddo
+! =====================================================
+!   2nd stream
+    else if (name .eq. "i_prefn_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=current_state%global_grid%configuration%vertical%prefn(k)
+       enddo
+    else if (name .eq. "i_rho_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=current_state%global_grid%configuration%vertical%rho(k)
+       enddo
+    else if (name .eq. "i_rhon_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=current_state%global_grid%configuration%vertical%rhon(k)
+       enddo 
+    else if (name .eq. "i_thref_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=current_state%global_grid%configuration%vertical%thref(k)
+       enddo   
+    else if (name .eq. "i_thinit_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=current_state%global_grid%configuration%vertical%theta_init(k)
+       enddo    
+    else if (name .eq. "i_uinit_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=current_state%global_grid%configuration%vertical%u_init(k)
+       enddo    
+    else if (name .eq. "i_vinit_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=current_state%global_grid%configuration%vertical%v_init(k)
+       enddo    
+    elseif (name .eq. "i_u_wind_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=u_wind_tot(k)
+       enddo
+    else if (name .eq. "i_uu_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=uprime_tot(k)
+       enddo
+    else if (name .eq. "i_v_wind_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=v_wind_tot(k)
+       enddo
+    else if (name .eq. "i_vv_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=vprime_tot(k)
+       enddo
+    else if (name .eq. "i_ww_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=ww_tot(k)
+       enddo 
+    else if (name .eq. "i_theta_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=theta_tot(k)
+       enddo
+    else if (name .eq. "i_vapour_mmr_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=qv_tot(k)
+       enddo
+    else if (name .eq. "i_liquid_mmr_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=ql_tot(k)
+       enddo
+    else if (name .eq. "i_w_wind_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=w_wind_tot(k)
+       enddo
+    else if (name .eq. "i_rh_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=rh_tot(k)
+       enddo
+    else if (name .eq. "i_wq_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=wq_tot(k)
+       enddo
+    else if (name .eq. "i_wtheta_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=wtheta_tot(k)
+       enddo
+    else if (name .eq. "i_uw_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=uw_tot(k)
+       enddo
+    else if (name .eq. "i_vw_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=vw_tot(k)
+       enddo
+    else if (name .eq. "i_th2_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=th2_tot(k)
        enddo
     end if
   end subroutine field_value_retrieval_callback

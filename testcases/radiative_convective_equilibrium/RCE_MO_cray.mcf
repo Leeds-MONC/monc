@@ -24,20 +24,20 @@ scalar_diagnostics_enabled=.true.
 # Control configuration
 display_synopsis_frequency=2000
 termination_time=432000
-dtm=0.01
+dtm=1.00
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
-moncs_per_io_server=16
+moncs_per_io_server=11
 sampling_frequency=20
-3d_sampling_frequency=1000
+3d_sampling_frequency=100
 mm=3600.
 mm1=60.
 diag_write_freq=10800.
 
 # Checkpoint configuration 
 checkpoint_frequency=0   
-checkpoint_file="RCE_dump.nc" 
+checkpoint_file="checkpoint_files/RCE_dump.nc" 
 checkpoint_walltime_frequency=10 
 walltime_limit=00:40:00  
 
@@ -53,7 +53,7 @@ advection_q_fields=tvd
 cfl_frequency=100
 cfl_cvismax=0.4
 cfl_cvelmax=0.4
-cfl_dtmmax=100.
+cfl_dtmmax=3.0
 cfl_dtmmin=.001
 
 # not convinced this works as fixing the gal 

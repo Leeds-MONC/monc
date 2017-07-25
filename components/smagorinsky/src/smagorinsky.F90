@@ -11,7 +11,7 @@ module smagorinsky_mod
   use halo_communication_mod, only : copy_field_to_buffer, init_halo_communication, finalise_halo_communication, &
        initiate_nonblocking_halo_swap, get_single_field_per_halo_cell, copy_corner_to_buffer
   use registry_mod, only : is_component_enabled
-  use logging_mod, only : LOG_ERROR, log_master_log
+  use logging_mod, only : LOG_ERROR, LOG_INFO, log_master_log
   use q_indices_mod, only: get_q_index, standard_q_names
   implicit none
 
@@ -22,7 +22,8 @@ module smagorinsky_mod
   integer, parameter :: RICHARDSON_NUMBER_CALCULATION=2
   real(kind=DEFAULT_PRECISION) :: eps, repsh, thcona, thconb, thconap1, suba, subb, subc, subg, subh, subr, pr_n, ric, ricinv
 
-  public smagorinsky_get_descriptor
+  public smagorinsky_get_descriptor, calculate_half_squared_strain_rate, &
+         calculate_richardson_number, calculate_thermal_dissipation_rate
 
   integer :: iqv, iql ! index for water vapour and liquid
 
@@ -53,7 +54,13 @@ contains
     if (.not. current_state%use_viscosity_and_diffusion) then 
        call log_master_log(LOG_ERROR, "Smagorinsky requires use_viscosity_and_diffusion=.true. or monc will fail")
     endif
-    
+
+    if (.not. is_component_enabled(current_state%options_database, "lower_bc")) then
+       call log_master_log(LOG_INFO, "LOWERBC is disabled, zero diff and vis_coeff on level 1")
+       current_state%vis_coefficient%data(1,:,:)=0.0_DEFAULT_PRECISION
+       current_state%diff_coefficient%data(1,:,:)=0.0_DEFAULT_PRECISION
+    endif
+       
     eps=0.01_DEFAULT_PRECISION
     repsh=0.5_DEFAULT_PRECISION/eps
     thcona=ratio_mol_wts*current_state%thref0
@@ -608,6 +615,47 @@ contains
       calculate_half_squared_strain_rate(k)=ssq11+ssq22+ssq33+ssq13+ssq23+ssq12+smallp
     end do
   end function calculate_half_squared_strain_rate
+
+!===========================================
+  !! @param current_state The current model state
+  !! @returns The thermal dissiptation rate for a specific column: backscatter is NOT included -- exercise for partners
+  function calculate_thermal_dissipation_rate(current_state, th)
+    type(model_state_type), target, intent(inout) :: current_state
+    type(prognostic_field_type), intent(inout) :: th
+    real(kind=DEFAULT_PRECISION) :: calculate_thermal_dissipation_rate(current_state%local_grid%size(Z_INDEX))
+
+    integer :: k
+
+    do k=2,current_state%local_grid%size(Z_INDEX)-1
+      calculate_thermal_dissipation_rate(k) = &
+        current_state%diff_coefficient%data(k, current_state%column_local_y, current_state%column_local_x) * ( &
+          (current_state%global_grid%configuration%vertical%rdzn(k+1) * &
+            (current_state%th%data(k+1, current_state%column_local_y, current_state%column_local_x) - &
+             current_state%th%data(k, current_state%column_local_y, current_state%column_local_x) - &
+             current_state%global_grid%configuration%vertical%dthref(k) ) ) ** 2 + &
+          0.25 * current_state%global_grid%configuration%horizontal%cx2 * &
+            ( (current_state%th%data(k, current_state%column_local_y, current_state%column_local_x+1) - &
+               current_state%th%data(k, current_state%column_local_y, current_state%column_local_x) ) ** 2 + &
+              (current_state%th%data(k, current_state%column_local_y, current_state%column_local_x) - &
+               current_state%th%data(k, current_state%column_local_y, current_state%column_local_x-1) ) ** 2 + &
+              (current_state%th%data(k+1, current_state%column_local_y, current_state%column_local_x+1) - &
+               current_state%th%data(k+1, current_state%column_local_y, current_state%column_local_x) ) **2 + &
+              (current_state%th%data(k+1, current_state%column_local_y, current_state%column_local_x) - &
+               current_state%th%data(k+1, current_state%column_local_y, current_state%column_local_x-1) ) ** 2 ) + &
+          0.25 * current_state%global_grid%configuration%horizontal%cy2 * &
+            ( (current_state%th%data(k, current_state%column_local_y+1, current_state%column_local_x) - &
+               current_state%th%data(k, current_state%column_local_y, current_state%column_local_x) ) ** 2 + &
+              (current_state%th%data(k, current_state%column_local_y, current_state%column_local_x) - &
+               current_state%th%data(k, current_state%column_local_y-1, current_state%column_local_x) ) ** 2 + &
+              (current_state%th%data(k+1, current_state%column_local_y+1, current_state%column_local_x) - &
+               current_state%th%data(k+1, current_state%column_local_y, current_state%column_local_x) ) **2 + &
+              (current_state%th%data(k+1, current_state%column_local_y, current_state%column_local_x) - &
+               current_state%th%data(k+1, current_state%column_local_y-1, current_state%column_local_x) ) ** 2 ) )
+    end do
+
+  end function calculate_thermal_dissipation_rate
+
+!===========================================
 
   !> Copies the viscosity field data to halo buffers for a specific process in a dimension and halo cell
   !! @param current_state The current model state

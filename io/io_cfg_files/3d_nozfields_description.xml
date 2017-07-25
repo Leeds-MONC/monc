@@ -1,0 +1,9 @@
+<io-configuration>
+	<server-configuration>
+		<thread_pool number=100/>
+	</server-configuration>
+
+#include "io/io_cfg_files/3d_nozfields.xml"
+#include "io/io_cfg_files/checkpoint.xml"
+
+</io-configuration>

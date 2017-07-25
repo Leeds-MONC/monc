@@ -21,6 +21,8 @@ th_advection_enabled=.true.
 iobridge_enabled=.true.
 scalar_diagnostics_enabled=.true.
 profile_diagnostics_enabled=.true.
+subgrid_profile_diagnostics_enabled=.true.
+flux_budget_enabled=.true.
 
 # Control configuration
 display_synopsis_frequency=100
@@ -29,7 +31,7 @@ dtm=0.4
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
-moncs_per_io_server=16
+moncs_per_io_server=11
 sampling_frequency=10
 3d_sampling_frequency=600
 mm=1800.0
@@ -51,7 +53,7 @@ advection_q_fields=tvd
 cfl_frequency=10
 cfl_cvismax=0.4
 cfl_cvelmax=0.4
-cfl_dtmmax=5.0
+cfl_dtmmax=1.0
 cfl_dtmmin=0.001
 
 # Simple setup configuration
@@ -59,8 +61,8 @@ cfl_dtmmin=0.001
 thref0=298.7
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=64
-y_size=64
+x_size=66
+y_size=66
 z_size=76
 dxx=100
 dyy=100
@@ -141,9 +143,9 @@ f_force_pl_theta=-2.0, -2.0, 0.0, 0.0
 
 names_constant_forcing_q=vapour
 z_force_pl_q=0.0, 300.0, 500.0, 3000.
-f_force_pl_q=-1.2e-8, -1.2e-8, 0.0, 0.0
+f_force_pl_q=-1.2e-5, -1.2e-5, 0.0, 0.0
 # Unit options are kg/kg/s, kg/kg/day, g/kg/s or g/kg/day
-units_q_force=kg/kg/s
+units_q_force=g/kg/s
 
 convert_input_theta_from_temperature=.true.
 

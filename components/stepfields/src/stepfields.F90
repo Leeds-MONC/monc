@@ -109,47 +109,33 @@ contains
 #ifdef U_ACTIVE   
     call step_single_field(current_state%column_local_x,  current_state%column_local_y, &
          x_prev, y_prev, current_state%u, current_state%zu, current_state%su, current_state%local_grid, .true., &
-         current_state%field_stepping, current_state%dtm, current_state%ugal, current_state%savu)
+         current_state%field_stepping, current_state%dtm, current_state%ugal, c1, c2, .false., current_state%savu)
 #endif
 #ifdef V_ACTIVE
     call step_single_field(current_state%column_local_x,  current_state%column_local_y, &
          x_prev, y_prev, current_state%v, current_state%zv, current_state%sv, current_state%local_grid, .true., &
-         current_state%field_stepping, current_state%dtm, current_state%vgal, current_state%savv)
+         current_state%field_stepping, current_state%dtm, current_state%vgal, c1, c2, .false., current_state%savv)
 #endif
 #ifdef W_ACTIVE
     call step_single_field(current_state%column_local_x,  current_state%column_local_y, &
          x_prev, y_prev, current_state%w, current_state%zw, current_state%sw, current_state%local_grid, .false., &
-         current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION), current_state%savw)
+         current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION), c1, c2, .false., current_state%savw)
 #endif
-    if (current_state%th%active) then
-       if (current_state%field_stepping == CENTRED_STEPPING) then
-          ! initial timesmooth of theta using Robert filter - smoothing finished in swapsmooth
-          do k=1,current_state%local_grid%size(Z_INDEX) 
-             current_state%th%data(k,current_state%column_local_y, current_state%column_local_x) = &
-                  c1*current_state%th%data(k, current_state%column_local_y,  current_state%column_local_x)+ &
-                  c2*current_state%zth%data(k,  current_state%column_local_y,  current_state%column_local_x)
-          enddo
-       endif
+    if (current_state%th%active) then       
        call step_single_field(current_state%column_local_x,  current_state%column_local_y, &
          x_prev, y_prev, current_state%th, current_state%zth, current_state%sth, current_state%local_grid, .false., &
-         current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION))
+         current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION), c1, c2, &
+         current_state%field_stepping == CENTRED_STEPPING)
     endif
     do i=1,current_state%number_q_fields
-      if (current_state%q(i)%active) then
-         if (current_state%field_stepping == CENTRED_STEPPING) then
-          ! initial timesmooth of q using Robert filter - smoothing finished in swapsmooth
-            do k=1,current_state%local_grid%size(Z_INDEX) 
-               current_state%q(i)%data(k,  current_state%column_local_y,  current_state%column_local_x) = &
-                    c1*current_state%q(i)%data(k, current_state%column_local_y,  current_state%column_local_x) + &
-                    c2*current_state%zq(i)%data(k,  current_state%column_local_y,  current_state%column_local_x)
-            enddo
-         endif
+      if (current_state%q(i)%active) then         
         call step_single_field(current_state%column_local_x,  current_state%column_local_y, x_prev, y_prev, &
              current_state%q(i), current_state%zq(i), current_state%sq(i), current_state%local_grid, .false., &
-             current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION))
+             current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION), c1, c2, &
+             current_state%field_stepping == CENTRED_STEPPING)
       end if
     end do
-  end subroutine step_all_fields
+  end subroutine step_all_fields 
 
   !> Determines the minimum and maximum values for the local flow field. These are before the stepping, and are all reduced
   !! later on in the cfl test
@@ -253,23 +239,27 @@ contains
   !! @param direction The stepping direction (centred or forward)
   !! @param dtm The delta time per timestep
   !! @param gal Galilean transformation
+  !! @param c1 Constant to use in smoothing
+  !! @param c2 Constant to use in smoothing
+  !! @param do_timesmoothing Whether timesmoothing using Robert filter should be done on the field
   !! @param sav Optional sav field
   subroutine step_single_field(x_local_index, y_local_index, x_prev, y_prev, field, zfield, sfield, local_grid,&
-       flow_field, direction, dtm, gal, sav)
+       flow_field, direction, dtm, gal, c1, c2, do_timesmoothing, sav)
     integer, intent(in) :: x_local_index, y_local_index, x_prev, y_prev, direction
     real(kind=DEFAULT_PRECISION), intent(in) :: dtm, gal
-    logical, intent(in) :: flow_field
+    logical, intent(in) :: flow_field, do_timesmoothing
     type(local_grid_type), intent(inout) :: local_grid
     type(prognostic_field_type), intent(inout) :: field, zfield, sfield
+    real(kind=DEFAULT_PRECISION), intent(in) :: c1, c2
     type(prognostic_field_type), optional, intent(inout) :: sav
 
     if (x_prev .ge. local_grid%local_domain_start_index(X_INDEX)) then
       if (present(sav)) then
         call step_column_in_slice(y_local_index, x_prev, y_prev, field, zfield, sfield, local_grid, &
-             flow_field, direction, dtm, gal, sav)
-      else
+             flow_field, direction, dtm, gal, c1, c2, do_timesmoothing, sav)
+      else               
         call step_column_in_slice(y_local_index, x_prev, y_prev, field, zfield, sfield, local_grid, &
-             flow_field, direction, dtm, gal)
+             flow_field, direction, dtm, gal, c1, c2, do_timesmoothing)
       end if
     end if
 
@@ -278,21 +268,42 @@ contains
       if (x_local_index .gt. 1) then
         if (present(sav)) then
           call step_column_in_slice(y_local_index, x_local_index-1, y_prev, field, zfield, sfield, local_grid, &
-               flow_field, direction, dtm, gal, sav)
+               flow_field, direction, dtm, gal, c1, c2, do_timesmoothing, sav)
         else
           call step_column_in_slice(y_local_index, x_local_index-1, y_prev, field, zfield, sfield, local_grid, &
-               flow_field, direction, dtm, gal)
+               flow_field, direction, dtm, gal, c1, c2, do_timesmoothing)
         end if
       end if
       if (present(sav)) then
         call step_column_in_slice(y_local_index, x_local_index, y_prev, field, zfield, sfield, local_grid, &
-             flow_field, direction, dtm, gal, sav)     
+             flow_field, direction, dtm, gal, c1, c2, do_timesmoothing, sav)     
       else
         call step_column_in_slice(y_local_index, x_local_index, y_prev, field, zfield, sfield, local_grid, &
-             flow_field, direction, dtm, gal)     
+             flow_field, direction, dtm, gal, c1, c2, do_timesmoothing)     
       end if
     end if
-  end subroutine step_single_field  
+  end subroutine step_single_field
+
+  !> Performs initial timesmoothing for a theta or Q field using Robert filter. This is finished off in swapsmooth
+  !! @param field The field to smooth
+  !! @param zfield The zfield to use in smoothing
+  !! @param local_grid Description of the local grid
+  !! @param x_index The X index to work on
+  !! @param y_index The Y index to work on
+  !! @param c1 Constant to use in smoothing
+  !! @param c2 Constant to use in smoothing
+  subroutine perform_timesmooth_for_field(field, zfield, local_grid, x_index, y_index, c1, c2)
+    type(prognostic_field_type), intent(inout) :: field, zfield
+    type(local_grid_type), intent(inout) :: local_grid
+    integer, intent(in) :: x_index, y_index
+    real(kind=DEFAULT_PRECISION), intent(in) :: c1, c2
+
+    integer :: k
+
+    do k=1,local_grid%size(Z_INDEX)
+      field%data(k, y_index, x_index)=c1*field%data(k, y_index, x_index)+c2*zfield%data(k, y_index, x_index)
+    end do    
+  end subroutine perform_timesmooth_for_field 
 
   !> Will step a column in a specific slice. If y_prev is large enough then will step the y-1 column and if this
   !! is the last column of the slice then will also step the current column
@@ -308,17 +319,24 @@ contains
   !! @param direction The stepping direction (centred or forward)
   !! @param dtm The delta time per timestep
   !! @param gal Galilean transformation
+  !! @param c1 Constant to use in smoothing
+  !! @param c2 Constant to use in smoothing
+  !! @param do_timesmoothing Whether timesmoothing using Robert filter should be done on the field
   !! @param sav Optional sav field
   subroutine step_column_in_slice(y_local_index, x_prev, y_prev, field, zfield, sfield, local_grid,&
-       flow_field, direction, dtm, gal, sav)
+       flow_field, direction, dtm, gal,  c1, c2, do_timesmoothing, sav)
     integer, intent(in) :: y_local_index, x_prev, y_prev, direction
     real(kind=DEFAULT_PRECISION), intent(in) :: dtm, gal
-    logical, intent(in) :: flow_field
+    logical, intent(in) :: flow_field, do_timesmoothing
     type(local_grid_type), intent(inout) :: local_grid
     type(prognostic_field_type), intent(inout) :: field, zfield, sfield
+    real(kind=DEFAULT_PRECISION), intent(in) :: c1, c2
     type(prognostic_field_type), optional, intent(inout) :: sav
 
     if (y_prev .ge. local_grid%local_domain_start_index(Y_INDEX)) then
+      if (do_timesmoothing) then
+        call perform_timesmooth_for_field(field, zfield, local_grid, x_prev, y_prev, c1, c2)
+      end if      
       if (present(sav)) then
         call step_field(x_prev, y_prev, field, zfield, sfield, local_grid, flow_field, direction, dtm, gal, sav)
       else
@@ -327,6 +345,9 @@ contains
     end if
 
     if (y_local_index == local_grid%local_domain_end_index(Y_INDEX)) then
+      if (do_timesmoothing) then
+        call perform_timesmooth_for_field(field, zfield, local_grid, x_prev, y_local_index, c1, c2)
+      end if 
       if (present(sav)) then
         call step_field(x_prev, y_local_index, field, zfield, sfield, local_grid, flow_field, direction, dtm, gal, sav)
       else

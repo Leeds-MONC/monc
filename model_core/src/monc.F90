@@ -287,41 +287,66 @@ contains
   end subroutine display_registed_components
 
   !> Splits the MPI_COMM_WORLD communicator into MONC and IO separate communicators. The size of each depends
-  !! on the stride supplied.
+  !! on the stride supplied. This will deal with the case where you only have 1 extra process, for instance 3 MONCs to an
+  !! IO server with 5 processes. 0=IO server, 1-3 are MONCS but by rights 4 would be an IO server. However we dont want to
+  !! waste a process as an IO server which is not serving anything, hence in this edge case it will be used as a MONC instead
   !! @param io_stride The absolute process id stride for IO processes
   !! @param monc_communicator The communicator associated with MONC processes
   !! @param io_communicator The communicator associated with IO processes
-  subroutine split_communicator_into_monc_and_io(io_stride, monc_communicator, io_communicator, &
+  subroutine split_communicator_into_monc_and_io(moncs_per_io, monc_communicator, io_communicator, &
        am_i_monc_process, corresponding_io_server_process)
-    integer, intent(in) :: io_stride
+    integer, intent(in) :: moncs_per_io
     integer, intent(out) :: monc_communicator, io_communicator, corresponding_io_server_process
     logical, intent(out) :: am_i_monc_process
 
     integer, dimension(:), allocatable :: members_monc_group, members_io_group
     integer :: total_ranks, monc_group, io_group, io_processes, monc_processes, i, io_index, &
-         monc_index, my_rank, ierr, global_group
+         monc_index, my_rank, ierr, global_group, io_stride
 
     call mpi_comm_size(MPI_COMM_WORLD, total_ranks, ierr)
     call mpi_comm_rank(MPI_COMM_WORLD, my_rank, ierr)
 
+    io_stride=moncs_per_io+1
     io_processes=get_number_io_processes(total_ranks, io_stride)
     monc_processes=total_ranks-io_processes
     allocate(members_io_group(io_processes), members_monc_group(monc_processes))
     io_index=1
     monc_index=1
+    corresponding_io_server_process=-1
     am_i_monc_process=.true.
 
     do i=0, total_ranks-1
-      if (mod(i, io_stride) == 0 .and. i .lt. total_ranks-1) then
-        members_io_group(io_index)=i
+      if (mod(i, io_stride) == 0 .and. i .lt. total_ranks) then
+        if (io_index .le. io_processes) then
+          members_io_group(io_index)=i
+        else
+          members_monc_group(monc_index)=i
+          monc_index=monc_index+1
+        end if        
         io_index=io_index+1
         if (my_rank == i) am_i_monc_process=.false.
-        if (my_rank .gt. i .and. my_rank .lt. i+io_stride) corresponding_io_server_process=i
+        if (my_rank .gt. i .and. my_rank .lt. i+io_stride) then
+          corresponding_io_server_process=i
+        end if
       else
         members_monc_group(monc_index)=i
         monc_index=monc_index+1
       end if
     end do
+
+    if (.not. am_i_monc_process .and. my_rank .eq. total_ranks-1) then
+      am_i_monc_process=.true.
+      corresponding_io_server_process=my_rank-io_stride
+    end if
+
+    if (am_i_monc_process .and. corresponding_io_server_process .lt. 0) then
+      call log_log(LOG_ERROR, "MONC can not deduce its IO server rank, try with a different number of IO to MONC setting")
+    end if    
+
+    if (log_get_logging_level() .ge. LOG_DEBUG) then
+      call log_log(LOG_DEBUG, "IO server assignment, rank="//conv_to_string(my_rank)//" IO server="//&
+           conv_to_string(corresponding_io_server_process)//" am I a MONC="//conv_to_string(am_i_monc_process))
+    end if    
 
     call mpi_comm_group(MPI_COMM_WORLD, global_group, ierr)
     call mpi_group_incl(global_group, monc_processes, members_monc_group, monc_group, ierr)
@@ -336,9 +361,12 @@ contains
   !! @param total_ranks Total number of processes in use
   !! @param io_stride The absolute process id stride for IO processes
   !! @returns The number of processes used for running the IO server
-  integer function get_number_io_processes(total_ranks, io_stride)
-    integer, intent(in) :: total_ranks, io_stride
+  integer function get_number_io_processes(total_ranks, moncs_per_io)
+    integer, intent(in) :: total_ranks, moncs_per_io
 
+    integer :: io_stride
+
+    io_stride=moncs_per_io
     get_number_io_processes=total_ranks/io_stride
     if (get_number_io_processes * io_stride .lt. total_ranks-1) get_number_io_processes=get_number_io_processes+1
   end function get_number_io_processes

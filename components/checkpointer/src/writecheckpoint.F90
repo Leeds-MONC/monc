@@ -47,13 +47,17 @@ contains
          dtm_id, dtm_new_id, absolute_new_dtm_id
     logical :: q_indices_declared
 
-    ! If there are multiple processes then open for parallel IO
+#ifdef SINGLE_MONC_DO_SEQUENTIAL_NETCDF
     if (current_state%parallel%processes .gt. 1) then
       call check_status(nf90_create(filename, ior(NF90_NETCDF4, NF90_MPIIO), ncid, &
            comm = current_state%parallel%monc_communicator, info = MPI_INFO_NULL))
     else
       call check_status(nf90_create(filename, NF90_CLOBBER, ncid))
     end if
+#else
+    call check_status(nf90_create(filename, ior(NF90_NETCDF4, NF90_MPIIO), ncid, &
+         comm = current_state%parallel%monc_communicator, info = MPI_INFO_NULL))
+#endif
     call write_out_global_attributes(ncid)
     call define_grid_dimensions(current_state, ncid, z_dim_id, y_dim_id, x_dim_id)    
     if (current_state%number_q_fields .gt. 0) call define_q_field_dimension(current_state, ncid, q_dim_id)

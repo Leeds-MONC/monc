@@ -80,7 +80,7 @@
 </group>
 
 <data-writing>
-  <file name="{checkpoint_file}" write_timestep_frequency="{checkpoint_frequency}" title="Checkpoint" write_on_terminate="true">
+  <file name="{checkpoint_file}" write_timestep_frequency="{checkpoint_frequency}" title="Checkpoint" write_on_terminate="true" store_state="false">
     <include group="checkpoint_fields" time_manipulation="none"/>
     <include state="io"/>
   </file>

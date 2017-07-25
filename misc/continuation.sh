@@ -40,8 +40,8 @@ run_monc() {
 		exit
 	fi
 
-	local output_filename=`ls -rt1 output_$RUN_NAME* 2> /dev/null | tail -1`
-	local checkpoint_filename=`ls -rt1 $RUN_NAME*.nc 2> /dev/null | tail -1`
+	local output_filename=`ls -rt1 $STDOUT_DIR/output_$RUN_NAME* 2> /dev/null | tail -1`
+	local checkpoint_filename=`ls -rt1 $CP_DIR/$RUN_NAME*.nc 2> /dev/null | tail -1`
 
 	if [ ! -z "$output_filename" ] && [ ! -z "$checkpoint_filename" ]; then
 		determine_if_finished $output_filename
@@ -72,17 +72,17 @@ run_monc() {
 		export OMP_NUM_THREADS=1
 		export MPICH_MAX_THREAD_SAFETY=multiple
 	
-		local submittedId=$(qsub -W depend=afterany:$PBS_JOBID -v crun=$outputid,cpfile=$checkpoint_filename submonc.pbs)
+		local submittedId=$(qsub -W depend=afterany:$PBS_JOBID -v crun=$outputid,cpfile=$checkpoint_filename $SUBMISSION_SCRIPT_NAME)
 
 		((outputid++))
-		local outputfn="output_"$RUN_NAME"_"$outputid
+		local outputfn=$STDOUT_DIR"/output_"$RUN_NAME$outputid
 
 		if [ $RUN_MONC_CONFIG -eq 1 ]; then
-    	echo "Start MONC with configuration file $config"
-			eval 'aprun -B $MONC_EXEC --config=$TESTCASE &> $outputfn'
+    		    echo "Start MONC with configuration file $config"
+		    eval 'aprun -B $MONC_EXEC --config=$TESTCASE &> $outputfn'
 		else
-			echo "Restarting MONC with checkpoint file $checkpoint_filename"
-			eval 'aprun -B $MONC_EXEC --checkpoint=$checkpoint_filename &> $outputfn'
+		    echo "Restarting MONC with checkpoint file $checkpoint_filename"
+		    eval 'aprun -B $MONC_EXEC --checkpoint=$checkpoint_filename &> $outputfn'
   	fi
 fi
 }

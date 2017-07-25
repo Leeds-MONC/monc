@@ -20,7 +20,8 @@ module instantaneous_time_manipulation_mod
   type(hashmap_type), volatile :: existing_instantaneous_writes
 
   public init_instantaneous_manipulation, finalise_instantaneous_manipulation, perform_instantaneous_time_manipulation, &
-       is_instantaneous_time_manipulation_ready_to_write, serialise_instantaneous_state, unserialise_instantaneous_state
+       is_instantaneous_time_manipulation_ready_to_write, serialise_instantaneous_state, unserialise_instantaneous_state, &
+       prepare_to_serialise_instantaneous_state
 contains
 
   !> Initialises the instantaneous time manipulation
@@ -93,21 +94,26 @@ contains
     call check_thread_status(forthread_mutex_unlock(existing_instantaneous_writes_mutex))
   end function deduce_whether_to_issue_values
 
-  !> Will serialise the state of this manipulator so that it can be later restarted
-  !! @param byte_data The state of this manipulator is written into here, this is allocated in this call
-  subroutine serialise_instantaneous_state(byte_data)
-    character, dimension(:), allocatable, intent(out) :: byte_data
-
-    integer :: byte_size, current_data_point
+  !> Prepares to serialise the instantaneous state, both determines the byte storage size and issues any locks
+  !! @returns The number of bytes needed to store the serialised state
+  integer(kind=8) function prepare_to_serialise_instantaneous_state()
     real(kind=DEFAULT_PRECISION) :: a
+    
+    call check_thread_status(forthread_mutex_lock(existing_instantaneous_writes_mutex))
+    prepare_to_serialise_instantaneous_state=kind(prepare_to_serialise_instantaneous_state) + &
+         ((STRING_LENGTH + kind(a)) * c_size(existing_instantaneous_writes))
+  end function prepare_to_serialise_instantaneous_state  
+
+  !> Will serialise the state of this manipulator so that it can be later restarted. Any locks issued during preparation
+  !! are released here
+  !! @param byte_data The state of this manipulator is written into here
+  subroutine serialise_instantaneous_state(byte_data)
+    character, dimension(:), allocatable, intent(inout) :: byte_data
+
+    integer :: current_data_point
     type(mapentry_type) :: map_entry
     type(iterator_type) :: iterator
-
-    call check_thread_status(forthread_mutex_lock(existing_instantaneous_writes_mutex))
-
-    byte_size=kind(byte_size) + ((STRING_LENGTH + kind(a)) * c_size(existing_instantaneous_writes))
-
-    allocate(byte_data(byte_size))
+    
     current_data_point=1
     current_data_point=pack_scalar_field(byte_data, current_data_point, c_size(existing_instantaneous_writes))
     iterator=c_get_iterator(existing_instantaneous_writes)

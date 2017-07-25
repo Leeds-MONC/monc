@@ -34,7 +34,7 @@ module io_server_mod
   use global_callback_inter_io_mod, only : perform_global_callback
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, initialise_logging
   use mpi, only : MPI_COMM_WORLD, MPI_STATUSES_IGNORE, MPI_BYTE
-  use io_server_state_reader_mod, only : read_io_server_state
+  use io_server_state_reader_mod, only : read_io_server_configuration
   implicit none
 
 #ifndef TEST_MODE
@@ -74,7 +74,8 @@ contains
 
     if (continuation_run) then
       ! Handle case where we need to allocate this due to no IO server config
-      call read_io_server_state(options_get_string(options_database, "checkpoint"), io_xml_configuration, io_communicator_arg)
+      call read_io_server_configuration(options_get_string(options_database, "checkpoint"), &
+           io_xml_configuration, io_communicator_arg)
     end if
 
     if (.not. allocated(io_xml_configuration)) then
@@ -348,6 +349,10 @@ contains
     io_configuration%number_of_moncs=io_configuration%number_of_moncs+1
     this_monc_index=io_configuration%number_of_moncs
     if (io_configuration%number_of_moncs .gt. size(io_configuration%registered_moncs)) then
+      call log_log(LOG_ERROR, "You have a high ratio of computational cores to IO servers, the limit is currently 100")
+      ! The extension of the MONC registration array is broken as the pointers involved in the map does not get copied across
+      ! we could manually do this, but that is for another day! If you need to extend these limits either increase the constants
+      ! or fix the extension, I don't think it will be too hard to fix the extension bit (copy the maps manually)
       call extend_registered_moncs_array(io_configuration)      
     end if
 
@@ -411,6 +416,7 @@ contains
          source, description_data=data_description)
 
     call handle_monc_dimension_information(data_description, monc_defn)
+     
     do i=1, io_configuration%number_of_data_definitions
       created_mpi_type=build_mpi_datatype(io_configuration%data_definitions(i), data_description, data_size, &
            monc_defn%field_start_locations(i), monc_defn%field_end_locations(i), monc_defn%dimensions(i))            
