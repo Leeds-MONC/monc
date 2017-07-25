@@ -16,6 +16,7 @@ module writer_types_mod
   private
 #endif
 
+  #ifndef DOXYGEN_SHOULD_SKIP_THIS
   abstract interface
      !> Time manipulation interface which is implemented by the instantaneous and time averaged manipulations
      type(data_values_type) function perform_time_manipulation(instant_values, output_frequency, field_name, timestep, time)
@@ -32,6 +33,7 @@ module writer_types_mod
        integer, intent(in) :: latest_timestep, write_timestep
      end function is_field_ready_to_write     
   end interface
+  #endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
   !< Pending writes which will be dealt with sequentially
   type pending_write_type

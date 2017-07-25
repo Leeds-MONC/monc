@@ -118,6 +118,7 @@ module configuration_parser_mod
      character, dimension(:), allocatable :: text_configuration
   end type io_configuration_type
 
+  #ifndef DOXYGEN_SHOULD_SKIP_THIS
   abstract interface
      subroutine handle_recv_data_from_io_server(io_configuration, data_buffer, inter_io_index)
        import io_configuration_type
@@ -126,6 +127,7 @@ module configuration_parser_mod
        integer, intent(in) :: inter_io_index
      end subroutine handle_recv_data_from_io_server
   end interface
+  #endif /* DOXYGEN_SHOULD_SKIP_THIS */
 
   !< For reading the IO XML configuration, these are string length constants which can be increased if required
   integer, parameter :: FILE_STR_STRIDE=10000, FILE_LINE_LEN=2000
