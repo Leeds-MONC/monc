@@ -1,0 +1,11 @@
+.fcm-make/
+build/
+extract/
+fcm-make-as-parsed.cfg
+fcm-make-on-success.cfg
+fcm-make.log
+preprocess/
+
+.*.sw*
+*.nc
+*.autogen
