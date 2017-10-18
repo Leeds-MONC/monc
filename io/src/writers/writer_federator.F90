@@ -35,6 +35,11 @@ module writer_federator_mod
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
   use mpi, only : MPI_INT, MPI_MAX
   use mpi_communication_mod, only : lock_mpi, unlock_mpi
+
+  !! XXX: temporary
+  use configuration_parser_mod, only : io_configuration_misc_item_type
+  use diagnostic_types_mod, only : diagnostics_activitity_type, get_misc_action_at_index
+
   implicit none
 
 #ifndef TEST_MODE
@@ -158,57 +163,246 @@ contains
     end if
   end subroutine inform_writer_federator_time_point
 
+  logical function find_specific_field_meta_information(field_name, all_field_meta_information, &
+      specific_field_meta_information) result(field_found)
+    character(len=STRING_LENGTH), intent(in) :: field_name
+    type(field_meta_information_type), dimension(:), intent(in) :: all_field_meta_information
+    type(field_meta_information_type), intent(out) :: specific_field_meta_information
+
+    integer :: k
+
+    field_found=.false.
+    k=1
+    do while (.not. field_found .and. k < size(all_field_meta_information))
+      if (field_name == all_field_meta_information(k)%field_name) then
+        specific_field_meta_information = all_field_meta_information(k)
+        field_found=.true.
+      end if
+      k=k+1
+    end do
+  end function find_specific_field_meta_information
+
+  subroutine update_writer_field_with_field_meta_information(writer_field, field_meta_information)
+    type(writer_field_type), intent(inout) :: writer_field
+    type(field_meta_information_type), intent(in) :: field_meta_information
+
+
+    call log_log(LOG_WARN, "Setting meta info for  field `"//trim(writer_field%field_name))
+
+    if (writer_field%units /= "") then
+      call log_log(LOG_WARN, "Meta information for `units` provided by MONC for field `"//&
+        trim(writer_field%field_name)//"` ignored because it is "//&
+        "also defined in IO server configuration file")
+    else
+      writer_field%units = field_meta_information%field_units
+    endif
+
+    if (writer_field%field_long_name /= "") then
+      call log_log(LOG_WARN, "Meta information for `field_long_name` provided by MONC for field `"//&
+        trim(writer_field%field_name)//"` ignored because it is "//&
+        "also defined in IO server configuration file")
+    else
+      writer_field%field_long_name = field_meta_information%field_long_name
+      call log_log(LOG_WARN, "long_name: "//trim(writer_field%field_long_name))
+    endif
+
+    if (writer_field%field_standard_name /= "") then
+      call log_log(LOG_WARN, "Meta information for `field_standard_name` provided by MONC for field `"//&
+        trim(writer_field%field_name)//"` ignored because it is "//&
+        "also defined in IO server configuration file")
+    else
+      writer_field%field_standard_name = field_meta_information%field_standard_name
+    endif
+  end subroutine update_writer_field_with_field_meta_information
+
+  character(len=STRING_LENGTH) function get_source_field_for_activity(field_name, field_activities,&
+                                            source_field_activity) result(source_field_name)
+    character(len=STRING_LENGTH), intent(in) :: field_name
+    type(list_type), intent(inout) :: field_activities
+    type(io_configuration_misc_item_type), pointer, intent(out) :: source_field_activity
+
+    integer :: num_activities, k
+    type(io_configuration_misc_item_type), pointer :: misc_action
+    character(len=STRING_LENGTH) :: dest_field_name, operation_type, activity_type
+
+    source_field_name = ""
+    source_field_activity => null()
+
+    num_activities = c_size(field_activities)
+
+    if (num_activities .gt. 0) then
+      do k=1, num_activities
+
+        misc_action=>get_misc_action_at_index(field_activities, k)
+        activity_type = misc_action%type
+
+        if (c_contains(misc_action%embellishments, "result")) then
+          dest_field_name=c_get_string(misc_action%embellishments, "result")
+        else
+          call log_log(LOG_ERROR, "IO activity configuration found without 'result' field name")
+        endif
+
+        if (dest_field_name == field_name) then
+          if (activity_type == "communication" .and. c_contains(misc_action%embellishments, "operator")) then
+            operation_type=c_get_string(misc_action%embellishments, "operator")
+          else if (activity_type == "operator" .and. c_contains(misc_action%embellishments, "name")) then
+            operation_type=c_get_string(misc_action%embellishments, "name")
+          else
+            call log_log(LOG_ERROR, "Unsure how to parse operation type for '"//&
+              trim(activity_type)//"' IO activity type")
+          endif
+
+          if (c_contains(misc_action%embellishments, "field")) then
+            source_field_name=c_get_string(misc_action%embellishments, "field")
+          else
+            call log_log(LOG_WARN, "=== '"//&
+              trim(source_field_name)//" :: "//trim(operation_type)//" "//trim(activity_type))
+
+            if (activity_type == "operator" .and. operation_type == "arithmetic") then
+              call log_log(LOG_WARN, "Skipping arithmetic operations on '"//&
+                trim(dest_field_name)//"' field for now, need to work out how to get source "//&
+                " field from operation definition")
+              misc_action => null()
+              source_field_name = ""
+            else
+
+              call log_log(LOG_ERROR, "IO activity configuration for field '"//&
+                trim(dest_field_name)//"' does not have a 'field' (source) field name")
+            endif
+          endif
+          source_field_activity => misc_action
+        endif
+      end do
+    end if
+  end function get_source_field_for_activity
+
+
   !> Set meta information for active diagnostic fields based on information received from MONC
-  subroutine set_meta_information_for_active_diagnostic_fields(field_meta_information)
-     type(field_meta_information_type), dimension(:), intent(in) :: field_meta_information
+  subroutine set_meta_information_for_active_diagnostic_fields(io_configuration, field_meta_information)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    type(field_meta_information_type), dimension(:), intent(in) :: field_meta_information
 
-     logical :: field_found
-     integer :: i,j,k
+    type(io_configuration_diagnostic_field_type) :: diagnostic_field_config
+    type(field_meta_information_type) :: specific_field_meta_information
+    type(writer_field_type) :: current_writer_field
+    character(len=STRING_LENGTH) :: field_name, field_namespace
+    logical :: meta_info_found, io_config_found
+    integer :: i,j
 
-     call log_log(LOG_DEBUG, "Setting meta information for active fields ")
-     do i=1, size(writer_entries)
-       do j=1, size(writer_entries(i)%contents)
-         if (writer_entries(i)%contents(j)%enabled) then
-            field_found=.false.
-            k=1
-            do while (.not. field_found .and. k < size(field_meta_information))
-               if (writer_entries(i)%contents(j)%field_name == field_meta_information(k)%field_name) then
-                  if (writer_entries(i)%contents(j)%units /= "") then
-                     call log_log(LOG_WARN, "Meta information for `units` provided by MONC for field `"//&
-                        trim(writer_entries(i)%contents(j)%field_name)//"` ignored because it is "//&
-                        "also defined in IO server configuration file")
-                  else
-                     writer_entries(i)%contents(j)%units = field_meta_information(k)%field_units
-                  endif
+    integer :: num_activities, k, num_activities_seen
+    type(io_configuration_misc_item_type), pointer :: current_field_activity
+    class(*), pointer :: gen
+    character(len=STRING_LENGTH) :: activity_name, source_field_name, dest_field_name, &
+       operation_name, is_root, current_activity_source_field_name, current_units
+    type(list_type) :: field_activities
+    character(len=STRING_LENGTH) :: derived_field_accumulated_units
 
-                  if (writer_entries(i)%contents(j)%field_long_name /= "") then
-                     call log_log(LOG_WARN, "Meta information for `field_long_name` provided by MONC for field `"//&
-                        trim(writer_entries(i)%contents(j)%field_name)//"` ignored because it is "//&
-                        "also defined in IO server configuration file")
-                  else
-                     writer_entries(i)%contents(j)%field_long_name = field_meta_information(k)%field_long_name
-                  endif
 
-                  if (writer_entries(i)%contents(j)%field_standard_name /= "") then
-                     call log_log(LOG_WARN, "Meta information for `field_standard_name` provided by MONC for field `"//&
-                        trim(writer_entries(i)%contents(j)%field_name)//"` ignored because it is "//&
-                        "also defined in IO server configuration file")
-                  else
-                     writer_entries(i)%contents(j)%field_standard_name = field_meta_information(k)%field_standard_name
-                  endif
+    call log_log(LOG_INFO, "Setting meta information for active fields ")
+    do i=1, size(writer_entries)
+      do j=1, size(writer_entries(i)%contents)
+        current_writer_field = writer_entries(i)%contents(j)
+        if (current_writer_field%enabled) then
+          field_name = current_writer_field%field_name
+          field_namespace = current_writer_field%field_namespace
 
-                  field_found=.true.
-               end if
-               k=k+1
+          ! attempt to find meta information for a field which has the same name in the output file
+          ! as the field published by MONC
+          meta_info_found = find_specific_field_meta_information(field_name,&
+            field_meta_information, specific_field_meta_information&
+            )
+
+          if (meta_info_found) then
+            ! NB: have to call with `writer_entries(i)%contents(j)` otherwise we'll be updating a copy
+            call update_writer_field_with_field_meta_information(writer_entries(i)%contents(j),&
+              specific_field_meta_information)
+          else if (field_name == "time" .or. field_name == 'ugal' .or. field_name == 'vgal' &
+          .or. field_name == 'nqfields' .or. field_name == 'timestep' .or. field_name == "dtm" &
+          .or. field_name == 'dtm_new' .or. field_name == 'absolute_new_dtm' &
+          .or. field_name == 'x_resolution' .or. field_name == 'y_resolution' &
+          .or. field_name == 'x_top' .or. field_name == 'y_top' &
+          .or. field_name == 'x_bottom' .or. field_name == 'y_bottom') then
+            ! TODO: no idea what to do with time yet...
+            call log_log(LOG_WARN, "Skipping finding meta data for field `"&
+              //trim(field_name)//"`")
+          else
+            ! since there isn't a direct mapping between the MONC field and and output field we
+            ! have to look through the "activities" in the io configuration to find which MONC
+            ! published field leads to the resulting outputfield
+            io_config_found = get_diagnostic_field_configuration(io_configuration, field_name, &
+               field_namespace, diagnostic_field_config)
+
+            if (.not. io_config_found) then
+               call log_log(LOG_ERROR, "Couldn't find io configuration for output of field `"&
+                  //trim(current_writer_field%field_name)//"`")
+            endif
+
+            field_activities = diagnostic_field_config%members
+            num_activities = c_size(field_activities)
+
+            if (num_activities == 0) then
+               call log_log(LOG_ERROR, "There aren't any IO 'activities' (mpi reductions etc)"&
+                  "defined for the output field `"&
+                  //trim(current_writer_field%field_name)//"` "//&
+                  "and so can't find MONC field get meta information from")
+            endif
+
+            call log_log(LOG_WARN, trim(field_name))
+            ! run through the "activies" (mpi reductions etc) that are defined in the io 
+            ! file to find the starting field from which we should be get unit information etc from MONC
+            ! NB: we don't want to just iterate until we find a MONC field with the source-field
+            ! name of one of the intermediate activity fields of the diagnostic field, since there
+            ! might be name collisions here. We keep iterating until we've exhausted all the
+            ! activities
+            derived_field_accumulated_units = ""
+            current_activity_source_field_name = field_name
+            do k=1, num_activities
+              current_activity_source_field_name = get_source_field_for_activity(&
+                                                  current_activity_source_field_name, field_activities,&
+                                                  current_field_activity)
+              call log_log(LOG_WARN, "-> "//trim(current_activity_source_field_name))
+
+              !! TODO: arithmetic operations should include units, check for them here!
+              !if (c_contains(field_activities, "units")) then
+                !derived_field_accumulated_units = derived_field_accumulated_units//" "//&
+                  !c_get_string(field_activities, "units")
+              !endif
             end do
-            if (.not. field_found) then
-               !! TODO: handle mpi-reduction derived fields here
-               call log_log(LOG_WARN, "Meta information not provided by MONC for field `"&
-                  //trim(writer_entries(i)%contents(j)%field_name)//"`")
-            end if
-         end if
-       end do
-     end do
+
+            ! ensure that we've gone through all the activities for this diagnostic field
+            if (trim(get_source_field_for_activity(current_activity_source_field_name,&
+                                        field_activities, current_field_activity)) /= "") then
+               call log_log(LOG_ERROR, "On iterating through IO 'activities' (mpi reductions etc)"&
+                  "defined for the output field `"//trim(current_writer_field%field_name)//"` "//&
+                  "more activities were found than expected")
+            endif
+
+            ! now we know which field to start from get its meta information and add any extra info
+            ! that the "activities" have in addition
+            meta_info_found = find_specific_field_meta_information(current_activity_source_field_name,&
+               field_meta_information, specific_field_meta_information&
+               )
+
+            if (meta_info_found) then
+              !! TODO: include accumulated units here
+              ! NB: have to call with `writer_entries(i)%contents(j)` otherwise we'll be updating a copy
+              call update_writer_field_with_field_meta_information(writer_entries(i)%contents(j),&
+                specific_field_meta_information)
+            else
+              !! TODO: handle mpi-reduction derived fields here
+              call log_log(LOG_WARN, "Meta information not provided by MONC for field `"&
+                //trim(current_writer_field%field_name)//"`"//&
+                conv_to_string(io_config_found))
+
+              !else
+              !call log_log(LOG_ERROR, "Couldn't find io config for field `"&
+              !//trim(field_name)//"` ("//trim(field_namespace)//") while attempting to "//&
+              !"update the fields meta information with info provided by MONC")
+            endif
+          endif
+        end if
+      end do
+    end do
   end subroutine set_meta_information_for_active_diagnostic_fields
 
   !> Informs the writer federator that specific fields are present and should be reflected in the diagnostics output

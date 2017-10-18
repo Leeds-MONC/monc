@@ -31,19 +31,19 @@
 </data-definition>
 
 <data-handling namespace="profile_fields">
-   <diagnostic field="prefn"  type="array" data_type="double" size="zn" units="K">
+   <diagnostic field="prefn"  type="array" data_type="double" size="zn">
 	<communication name="reduction" operator="mean" result="prefn" field="prefn_local" root="auto"/>
    </diagnostic>
-   <diagnostic field="rho"  type="array" data_type="double" size="z" units="K">
+   <diagnostic field="rho"  type="array" data_type="double" size="z">
 	<communication name="reduction" operator="mean" result="rho" field="rho_local" root="auto"/>
    </diagnostic>  
-   <diagnostic field="rhon"  type="array" data_type="double" size="zn" units="K">
+   <diagnostic field="rhon"  type="array" data_type="double" size="zn">
 	<communication name="reduction" operator="mean" result="rhon" field="rhon_local" root="auto"/>
    </diagnostic>
-   <diagnostic field="thinit"  type="array" data_type="double" size="zn" units="K">
+   <diagnostic field="thinit"  type="array" data_type="double" size="zn">
 	<communication name="reduction" operator="mean" result="thinit" field="thinit_local" root="auto"/>
   </diagnostic>
-   <diagnostic field="thref"  type="array" data_type="double" size="zn" units="K">
+   <diagnostic field="thref"  type="array" data_type="double" size="zn">
 	<communication name="reduction" operator="mean" result="thref" field="thref_local" root="auto"/>
   </diagnostic>  
   <diagnostic field="u_wind_mean"  type="array" data_type="double" size="zn" units="m/s">

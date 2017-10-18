@@ -24,11 +24,13 @@ module diagnostic_federator_mod
   use data_utils_mod, only : get_scalar_integer_from_monc, get_scalar_real_from_monc, is_field_present, &
        get_action_attribute_logical, get_action_attribute_integer, get_action_attribute_string, &
        get_array_double_from_monc, get_array_integer_from_monc, get_scalar_logical_from_monc
-  use logging_mod, only : LOG_WARN, LOG_ERROR, log_log
+  use logging_mod, only : LOG_WARN, LOG_ERROR, LOG_INFO, log_log
   use operator_mod, only : perform_activity, initialise_operators, finalise_operators, get_operator_required_fields, &
        get_operator_perform_procedure, get_operator_auto_size
   use io_server_client_mod, only : DOUBLE_DATA_TYPE, INTEGER_DATA_TYPE
   use writer_field_manager_mod, only : provide_field_to_writer_federator
+
+  use diagnostic_types_mod, only: diagnostics_activity_type, get_misc_action_at_index
   implicit none
 
 #ifndef TEST_MODE
@@ -64,14 +66,14 @@ module diagnostic_federator_mod
   end type diagnostics_type  
 
   !< A diagnostic activity which is executed at some point with an input and returns an output
-  type diagnostics_activity_type
-     integer :: activity_type, communication_operator, root
-     real(kind=DEFAULT_PRECISION) :: result
-     type(list_type) :: required_fields
-     type(map_type) :: activity_attributes
-     character(len=STRING_LENGTH) :: result_name, activity_name, uuid
-     procedure(perform_activity), pointer, nopass :: operator_procedure
-  end type diagnostics_activity_type
+  !type diagnostics_activity_type
+     !integer :: activity_type, communication_operator, root
+     !real(kind=DEFAULT_PRECISION) :: result
+     !type(list_type) :: required_fields
+     !type(map_type) :: activity_attributes
+     !character(len=STRING_LENGTH) :: result_name, activity_name, uuid
+     !procedure(perform_activity), pointer, nopass :: operator_procedure
+  !end type diagnostics_activity_type
 
   type(hashmap_type), volatile :: diagnostics_per_monc_at_timestep, all_diagnostics_at_timestep
   type(hashset_type), volatile :: all_outstanding_fields, available_fields
@@ -79,7 +81,7 @@ module diagnostic_federator_mod
   integer, volatile :: timestep_entries_rwlock, all_diagnostics_per_timestep_rwlock, clean_progress_mutex, &
        previous_clean_point, previous_viewed_timestep, current_point
 
- public initialise_diagnostic_federator, finalise_diagnostic_federator, check_diagnostic_federator_for_completion, &
+  public initialise_diagnostic_federator, finalise_diagnostic_federator, check_diagnostic_federator_for_completion, &
       pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available
 contains  
 
@@ -1074,28 +1076,6 @@ contains
     end if    
   end function get_comm_activity_from_fieldname  
 
-  !> Retrieves a misc action from the parsed user XML configuration at a specific index
-  !! @param action_members The members to extract from
-  !! @param index The index to look up
-  !! @returns The misc item at this index or null if none is found
-  function get_misc_action_at_index(action_members, index)
-    type(list_type), intent(inout) :: action_members
-    integer, intent(in) :: index
-    type(io_configuration_misc_item_type), pointer :: get_misc_action_at_index
-
-    class(*), pointer :: generic
-
-    generic=>c_get_generic(action_members, index)
-    if (associated(generic)) then
-      select type(generic)
-      type is(io_configuration_misc_item_type)
-        get_misc_action_at_index=>generic
-      end select
-    else
-      get_misc_action_at_index=>null()
-    end if
-  end function get_misc_action_at_index
-
   !> Based upon the IO configuration this will define the diagnostics structure. It is done once at initialisation and then this
   !! same information is used for execution at each data arrival point.
   !! @param io_configuration The IO server configuration
@@ -1122,6 +1102,8 @@ contains
         diagnostic_definitions(i)%diagnostic_namespace=io_configuration%diagnostics(i)%namespace
         diagnostic_definitions(i)%collective=io_configuration%diagnostics(i)%collective
         action_entities=c_size(io_configuration%diagnostics(i)%members)
+        call log_log(LOG_INFO, "Iterating over activities for diagnostic field '"//&
+           trim(diagnostic_definitions(i)%diagnostic_name)//"'")
         if (action_entities .gt. 0) then
           do j=1, action_entities
             misc_action=>get_misc_action_at_index(io_configuration%diagnostics(i)%members, j)

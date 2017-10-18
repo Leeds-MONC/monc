@@ -66,11 +66,11 @@
     <communication name="reduction" operator="max" result="clbas_max" field="clbas_max_loc_reduced" root="auto"/>
     <operator name="localreduce" operator="max" result="clbas_max_loc_reduced" field="clbas_local"/>
   </diagnostic>
-  <diagnostic field="wmax"  type="scalar" data_type="double" units="m/s">
+  <diagnostic field="wmax"  type="scalar" data_type="double">
     <communication name="reduction" operator="max" result="wmax" field="wmax_loc_reduced" root="auto"/>
     <operator name="localreduce" field="wmax_local" result="wmax_loc_reduced" operator="max"/>
   </diagnostic>  
-  <diagnostic field="wmin"  type="scalar" data_type="double" units="m/s">
+  <diagnostic field="wmin"  type="scalar" data_type="double">
     <communication name="reduction" operator="min" result="wmin" field="wmin_loc_reduced" root="auto"/>
     <operator name="localreduce" field="wmin_local" result="wmin_loc_reduced" operator="min"/>
   </diagnostic>

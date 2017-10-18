@@ -452,7 +452,7 @@ contains
       field_meta_information(i)%field_units = data_description(i)%field_units
     end do
 
-    call set_meta_information_for_active_diagnostic_fields(field_meta_information)
+    call set_meta_information_for_active_diagnostic_fields(io_configuration, field_meta_information)
   end subroutine update_writer_entries_with_metadata_from_data_description
 
 
