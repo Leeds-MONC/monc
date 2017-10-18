@@ -32,9 +32,9 @@ module monc_component_mod
     type, public :: component_field_information_type
        integer :: field_type, data_type, number_dimensions, dimension_sizes(4)
        logical :: enabled
-       character(len=STRING_LENGTH) :: units !< Units of field
-       character(len=STRING_LENGTH) :: long_name !< Long descriptive name for field (for CF-compliance)
-       character(len=STRING_LENGTH) :: standard_name !< Standard CF-compliant name, see http://cfconventions.org/standard-names.html for reference
+       character(len=STRING_LENGTH) :: units = "" !< Units of field
+       character(len=STRING_LENGTH) :: long_name = "" !< Long descriptive name for field (for CF-compliance)
+       character(len=STRING_LENGTH) :: standard_name = "" !< Standard CF-compliant name, see http://cfconventions.org/standard-names.html for reference
     end type component_field_information_type
 
     !> Description of a component
