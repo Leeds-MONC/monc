@@ -95,8 +95,10 @@ contains
         end if
         call check_thread_status(forthread_mutex_lock(netcdf_mutex))
         call lock_mpi()
-        call check_netcdf_status(nf90_create(unique_filename, ior(NF90_NETCDF4, NF90_MPIIO), ncdf_writer_state%ncid, &
-             comm = io_configuration%io_communicator, info = MPI_INFO_NULL))
+        call check_netcdf_status(nf90_create(unique_filename, &
+               ior(NF90_NETCDF4, NF90_MPIIO), ncdf_writer_state%ncid, comm = io_configuration%io_communicator, &
+                   info = MPI_INFO_NULL), &
+               error_message_details="Error creating file '"//trim(unique_filename)//"'")
         call unlock_mpi()
         call write_out_global_attributes(io_configuration, ncdf_writer_state%ncid, file_writer_information, timestep, time)
         call define_dimensions(ncdf_writer_state, io_configuration%dimension_sizing)
