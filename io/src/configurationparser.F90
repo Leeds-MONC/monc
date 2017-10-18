@@ -48,7 +48,10 @@ module configuration_parser_mod
 
   !> Configuration associated with the representation of a specific data field
   type io_configuration_field_type
-     character(len=STRING_LENGTH) :: name, namespace, dim_size_defns(4), units
+     character(len=STRING_LENGTH) :: name, namespace, dim_size_defns(4)
+     character(len=STRING_LENGTH) :: units !< Units of field data
+     character(len=STRING_LENGTH) :: long_name !< Long descriptive name for CF-compliance
+     character(len=STRING_LENGTH) :: standard_name !< CF-compliant standard name, see http://cfconventions.org/standard-names.html for reference
      integer :: field_type, data_type, dimensions
      logical :: optional, collective
   end type io_configuration_field_type
@@ -74,7 +77,10 @@ module configuration_parser_mod
   end type io_configuration_misc_item_type
 
   type io_configuration_diagnostic_field_type
-     character(len=STRING_LENGTH) :: name, dim_size_defns(4), units, namespace
+     character(len=STRING_LENGTH) :: name, dim_size_defns(4), namespace
+     character(len=STRING_LENGTH) :: units !< Units of field data
+     character(len=STRING_LENGTH) :: long_name !< Long descriptive name for CF-compliance
+     character(len=STRING_LENGTH) :: standard_name !< CF-compliant standard name, see http://cfconventions.org/standard-names.html for reference
      integer :: field_type, data_type, dimensions
      logical :: collective
      type(list_type) :: members
