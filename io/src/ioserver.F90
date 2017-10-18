@@ -12,7 +12,8 @@ module io_server_mod
        cancel_requests, free_mpi_type, get_number_io_servers, get_my_io_rank, test_for_inter_io, lock_mpi, unlock_mpi, &
        waitall_for_mpi_requests, initialise_mpi_communication, pause_for_mpi_interleaving
   use diagnostic_federator_mod, only : initialise_diagnostic_federator, finalise_diagnostic_federator, &
-       check_diagnostic_federator_for_completion, pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available
+       check_diagnostic_federator_for_completion, pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available, &
+       diagnostic_definitions
   use writer_federator_mod, only : initialise_writer_federator, finalise_writer_federator, check_writer_for_trigger, &
        inform_writer_federator_fields_present, inform_writer_federator_time_point, provide_q_field_names_to_writer_federator, &
        set_meta_information_for_active_diagnostic_fields
@@ -452,7 +453,7 @@ contains
       field_meta_information(i)%field_units = data_description(i)%field_units
     end do
 
-    call set_meta_information_for_active_diagnostic_fields(io_configuration, field_meta_information)
+    call set_meta_information_for_active_diagnostic_fields(diagnostic_definitions, field_meta_information)
   end subroutine update_writer_entries_with_metadata_from_data_description
 
 

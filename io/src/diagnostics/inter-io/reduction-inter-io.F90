@@ -42,7 +42,7 @@ module reduction_inter_io_mod
   logical, volatile :: initialised=.false.
 
   public init_reduction_inter_io, check_reduction_inter_io_for_completion, finalise_reduction_inter_io, &
-       perform_inter_io_reduction, get_reduction_operator
+       perform_inter_io_reduction, get_reduction_operator, get_reduction_operator_string
 contains
 
   !> Initialises the reduction action
@@ -498,4 +498,21 @@ contains
       call log_log(LOG_ERROR, "Reduction operator '"//trim(op_string)//"' not recognised")
     end if
   end function get_reduction_operator  
+
+  !> Given the integer representation return the name of a reduciton operator
+  character(len=4) function get_reduction_operator_string(op_int)
+    integer, intent(in) :: op_int
+    
+    if (op_int .eq. MEAN) then
+      get_reduction_operator_string="mean"
+    else if (op_int .eq. MIN) then
+      get_reduction_operator_string="min"
+    else if (op_int .eq. MAX) then
+      get_reduction_operator_string="max"
+    else if (op_int .eq. SUM) then
+      get_reduction_operator_string="sum"
+    else
+      call log_log(LOG_ERROR, "Reduction operator for '"//conv_to_string(op_int)//"' not recognised")
+    end if
+  end function get_reduction_operator_string  
 end module reduction_inter_io_mod

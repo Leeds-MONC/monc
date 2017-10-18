@@ -36,7 +36,9 @@ module writer_federator_mod
   use mpi, only : MPI_INT, MPI_MAX
   use mpi_communication_mod, only : lock_mpi, unlock_mpi
 
-  use diagnostic_types_mod, only : diagnostics_activitity_type, get_misc_action_at_index
+  use diagnostic_types_mod, only : diagnostics_activity_type, get_misc_action_at_index, &
+     get_diagnostic_activity_by_result_name, diagnostics_type, OPERATOR_TYPE, REDUCTION_TYPE
+  use reduction_inter_io_mod, only : get_reduction_operator_string
 
   implicit none
 
@@ -185,153 +187,239 @@ contains
     type(field_meta_information_type), intent(in) :: field_meta_information
 
 
-    call log_log(LOG_WARN, "Setting meta info for  field `"//trim(writer_field%field_name))
+    call log_log(LOG_DEBUG, "Setting meta info for  field `"//trim(writer_field%field_name))
 
-    if (writer_field%units /= "") then
-      call log_log(LOG_WARN, "Meta information for `units` provided by MONC for field `"//&
-        trim(writer_field%field_name)//"` ignored because it is "//&
-        "also defined in IO server configuration file")
-    else
-      writer_field%units = field_meta_information%field_units
+    if (len_trim(field_meta_information%field_units) > 0) then
+      if (writer_field%units /= "") then
+        call log_log(LOG_WARN, "Meta information for `units` provided by MONC for field `"//&
+          trim(writer_field%field_name)//"` ignored because it is "//&
+          "also defined in IO server configuration file")
+      else
+        writer_field%units = field_meta_information%field_units
+      endif
     endif
 
-    if (writer_field%field_long_name /= "") then
-      call log_log(LOG_WARN, "Meta information for `field_long_name` provided by MONC for field `"//&
-        trim(writer_field%field_name)//"` ignored because it is "//&
-        "also defined in IO server configuration file")
-    else
-      writer_field%field_long_name = field_meta_information%field_long_name
-      call log_log(LOG_WARN, "long_name: "//trim(writer_field%field_long_name))
+    if (len_trim(field_meta_information%field_long_name) > 0) then
+      if (writer_field%field_long_name /= "") then
+        call log_log(LOG_WARN, "Meta information for `field_long_name` provided by MONC for field `"//&
+          trim(writer_field%field_name)//"` ignored because it is "//&
+          "also defined in IO server configuration file")
+      else
+        writer_field%field_long_name = field_meta_information%field_long_name
+      endif
     endif
 
-    if (writer_field%field_standard_name /= "") then
-      call log_log(LOG_WARN, "Meta information for `field_standard_name` provided by MONC for field `"//&
-        trim(writer_field%field_name)//"` ignored because it is "//&
-        "also defined in IO server configuration file")
-    else
-      writer_field%field_standard_name = field_meta_information%field_standard_name
+    if (len_trim(field_meta_information%field_standard_name) > 0) then
+      if (writer_field%field_standard_name /= "") then
+        call log_log(LOG_WARN, "Meta information for `field_standard_name` provided by MONC for field `"//&
+          trim(writer_field%field_name)//"` ignored because it is "//&
+          "also defined in IO server configuration file")
+      else
+        writer_field%field_standard_name = field_meta_information%field_standard_name
+      endif
     endif
   end subroutine update_writer_field_with_field_meta_information
 
-  character(len=STRING_LENGTH) function get_source_field_for_activity(field_name, field_activities,&
-                                            source_field_activity) result(source_field_name)
-    character(len=STRING_LENGTH), intent(in) :: field_name
+
+  !> 
+  type(field_meta_information_type) &
+      function get_meta_information_from_diagnostics_activity(field_meta_information, result_name, field_activities) &
+            result(specific_field_meta_information)
+
+    type(field_meta_information_type), dimension(:), intent(in) :: field_meta_information
+    character(len=STRING_LENGTH), intent(in) :: result_name
     type(list_type), intent(inout) :: field_activities
-    type(io_configuration_misc_item_type), pointer, intent(out) :: source_field_activity
 
-    integer :: num_activities, k
-    type(io_configuration_misc_item_type), pointer :: misc_action
-    character(len=STRING_LENGTH) :: dest_field_name, operation_type, activity_type
+    type(diagnostics_activity_type), pointer :: activity
+    type(field_meta_information_type) :: child_field_meta_information
+    character(len=STRING_LENGTH) :: child_field_name, operator_name
+    logical :: meta_info_found
+    type(iterator_type) :: iterator
+    integer :: k
 
-    source_field_name = ""
-    source_field_activity => null()
+    activity=>get_diagnostic_activity_by_result_name(field_activities, result_name)
 
-    num_activities = c_size(field_activities)
+    if (.not. associated(activity)) then
+      ! since there isn't an activity defined to produce this field it much be a component field available from MONC, so we simply
+      ! return the field's meta information (if MONC is provided it)
+      meta_info_found = find_specific_field_meta_information(result_name,&
+        field_meta_information, child_field_meta_information)
 
-    if (num_activities .gt. 0) then
-      do k=1, num_activities
+      if (.not. meta_info_found) then
+        call log_log(LOG_ERROR, "End of IO 'activities' for field '"//&
+          trim(result_name)//"' reached but no meta information found from MONC-provided meta information")
+      endif
 
-        misc_action=>get_misc_action_at_index(field_activities, k)
-        activity_type = misc_action%type
+      if (len_trim(child_field_meta_information%field_units) == 0) then
+        call log_log(LOG_WARN, "No 'units' meta information provided by MONC for field '"//trim(result_name)//"'")
+      endif
+      if (len_trim(child_field_meta_information%field_long_name) == 0) then
+        call log_log(LOG_WARN, "No 'long_name' meta information provided by MONC for field '"//trim(result_name)//"'")
+      endif
 
-        if (c_contains(misc_action%embellishments, "result")) then
-          dest_field_name=c_get_string(misc_action%embellishments, "result")
+      specific_field_meta_information = child_field_meta_information
+    else
+      ! depending on the type of activity the meta information from the used field(s) is combined with meta information specific to
+      ! the activity
+
+      !call log_log(LOG_INFO, trim(result_name)//" -> "//conv_to_string(activity%activity_type)//" . "//&
+        !trim(activity%activity_name))
+
+      iterator=c_get_iterator(activity%required_fields)
+      if (activity%activity_type == REDUCTION_TYPE) then
+        if (.not. c_size(activity%required_fields) == 1) then
+          call log_log(LOG_ERROR, "Not implemented: can only handle meta information for reductions with one fields")
         else
-          call log_log(LOG_ERROR, "IO activity configuration found without 'result' field name")
+          child_field_name = c_next_string(iterator)
+          child_field_meta_information = get_meta_information_from_diagnostics_activity(field_meta_information, &
+            child_field_name, field_activities)
+
+          operator_name = get_reduction_operator_string(activity%communication_operator)
+
+          specific_field_meta_information%field_units = trim(child_field_meta_information%field_units)
+
+          if (len_trim(child_field_meta_information%field_long_name) > 0) then
+            specific_field_meta_information%field_long_name = trim(operator_name)//" of "//&
+              trim(child_field_meta_information%field_long_name)
+          endif
+
+          if (len_trim(child_field_meta_information%field_standard_name) > 0) then
+            call log_log(LOG_WARN, "The 'standard_name' meta info provided by MONC for the field '"//&
+              trim(child_field_name)//"' will be ignored because this field was further manipulated on the IO server")
+          endif
         endif
-
-        if (activity_type == "operator") then
-          operation_type = c_get_string(misc_action%embellishments, "name")
-        endif
-
-        if (dest_field_name == field_name) then
-
-         call log_log(LOG_WARN, "=== '"//&
-           trim(source_field_name)//" :: "//trim(operation_type)//" "//trim(activity_type))
-
-          if (c_contains(misc_action%embellishments, "field")) then
-            source_field_name=c_get_string(misc_action%embellishments, "field")
+      else if (activity%activity_type == OPERATOR_TYPE) then
+        if (activity%activity_name == "localreduce") then
+          if (.not. c_size(activity%required_fields) == 1) then
+            call log_log(LOG_ERROR, "Not implemented: can only handle meta information for reductions with one fields")
           else
+            child_field_name = c_next_string(iterator)
+            child_field_meta_information = get_meta_information_from_diagnostics_activity(field_meta_information, &
+              child_field_name, field_activities)
 
-            if (activity_type == "operator" .and. operation_type == "arithmetic") then
-              call log_log(LOG_WARN, "Skipping arithmetic operations on '"//&
-                trim(dest_field_name)//"' field for now, need to work out how to get source "//&
-                " field from operation definition")
-              misc_action => null()
-              source_field_name = ""
-            else
+            operator_name = c_get_string(activity%activity_attributes, "operator")
 
-              call log_log(LOG_ERROR, "IO activity configuration for field '"//&
-                trim(dest_field_name)//"' does not have a 'field' (source) field name")
+            specific_field_meta_information%field_units = trim(child_field_meta_information%field_units)
+            if (len_trim(child_field_meta_information%field_long_name) > 0) then
+              specific_field_meta_information%field_long_name = "per-MONC "//trim(operator_name)//" of "//&
+                trim(child_field_meta_information%field_long_name)
+            endif
+
+            if (len_trim(child_field_meta_information%field_standard_name) > 0) then
+              call log_log(LOG_WARN, "The 'standard_name' meta info provided by MONC for the field '"//&
+                trim(child_field_name)//"' will be ignored because this field was further manipulated on the IO server")
             endif
           endif
-          source_field_activity => misc_action
+        else if (activity%activity_name == "arithmetic") then
+          specific_field_meta_information%field_units = ""
+          specific_field_meta_information%field_long_name = ""
+
+          ! collect meta information from all fields that are used in arithmetic operation
+          do while (c_has_next(iterator))
+            child_field_name = c_next_string(iterator)
+            child_field_meta_information = get_meta_information_from_diagnostics_activity(field_meta_information, &
+              child_field_name, field_activities)
+
+            if (len_trim(child_field_meta_information%field_units) > 0) then
+              specific_field_meta_information%field_units = trim(trim(child_field_meta_information%field_units)//" "//&
+                trim(specific_field_meta_information%field_units))
+            endif
+
+            if (len_trim(child_field_meta_information%field_long_name) > 0) then
+              specific_field_meta_information%field_long_name = trim(trim(child_field_meta_information%field_long_name)//" "//&
+                trim(specific_field_meta_information%field_long_name))
+            endif
+
+            if (len_trim(child_field_meta_information%field_standard_name) > 0) then
+              call log_log(LOG_WARN, "The 'standard_name' meta info provided by MONC for the field '"//&
+                trim(child_field_name)//"' will be ignored because this field was further manipulated on the IO server")
+            endif
+          end do
+
+          call log_log(LOG_WARN, "Meta information for arithmetic operations is simply concatenated for now "//&
+            "so the meta information may actually be incorrect")
+
+          ! if these fields contributed any meta information append the arithmetic operation's meta information
+          if (len_trim(specific_field_meta_information%field_units) > 0) then
+            if (.not. c_contains(activity%activity_attributes, "units")) then
+              call log_log(LOG_WARN, "The arithmetic operation to produce '"//trim(result_name)//"' does not "//&
+                "have any units defined, assuming unity.")
+              specific_field_meta_information%field_units = trim(specific_field_meta_information%field_units)
+            else
+              specific_field_meta_information%field_units = trim(trim(specific_field_meta_information%field_units)//" "//&
+                trim(c_get_string(activity%activity_attributes, "units")))
+            endif
+          endif
+
+          if (len_trim(specific_field_meta_information%field_long_name) > 0) then
+            if (.not. c_contains(activity%activity_attributes, "description")) then
+              call log_log(LOG_WARN, "The arithmetic operation to produce '"//trim(result_name)//"' does not "//&
+                "have any description defined, to produce a descriptive `long name` a description must be present.")
+              specific_field_meta_information%field_long_name = trim(specific_field_meta_information%field_long_name)
+            else
+              specific_field_meta_information%field_long_name = trim(trim(specific_field_meta_information%field_long_name)//" "//&
+                trim(c_get_string(activity%activity_attributes, "description")))
+            endif
+          endif
+        else
+          call log_log(LOG_ERROR, "Setting of field meta data not implemented for IO operation '"//&
+            trim(activity%activity_name)//"'")
         endif
-      end do
-    end if
-  end function get_source_field_for_activity
+      else
+        call log_log(LOG_ERROR, "Setting of field meta data not implemented for IO activity with ID '"//&
+          conv_to_string(activity%activity_type)//"'")
+      endif
+    endif
 
+    !call log_log(LOG_INFO, trim(result_name)//" :: "//&
+      !trim(specific_field_meta_information%field_long_name)//","//&
+      !trim(specific_field_meta_information%field_standard_name)//","//&
+      !trim(specific_field_meta_information%field_units)//","//&
+      !"")
+  end function get_meta_information_from_diagnostics_activity
 
-  !character(len=STRING_LENGTH) function get_diagnostic_activity_description(source_diagnostic_activity)
-  !end function get_diagnostic_activity_description
+  type(diagnostics_type) function find_diagnostic_field(diagnostic_definitions, field_name)
+    type(diagnostics_type), dimension(:), intent(inout) :: diagnostic_definitions
+    character(len=STRING_LENGTH) :: field_name
 
+    integer :: i
+    logical :: found_field
 
-  !> Get the "operation type" for a given diagnostic field activity
-  character(len=STRING_LENGTH) function get_diagnostic_activity_description(activity)&
-                                                                        result(description)
-    type(io_configuration_misc_item_type), pointer, intent(in) :: activity
-    character(len=STRING_LENGTH) :: activity_type, operator_name
+    found_field = .false.
 
-     activity_type = activity%type
-     description = ""
+    do i=1, size(diagnostic_definitions)
+      if (diagnostic_definitions(i)%diagnostic_name == field_name) then
+        find_diagnostic_field=diagnostic_definitions(i)
+        found_field = .true.
+      endif
+    end do
 
-     if (activity_type == "communication") then
-       if (.not. c_contains(activity%embellishments, 'operator')) then
-         call log_log(LOG_ERROR, "Communication activity without an operator")
-       else
-         description=trim(c_get_string(activity%embellishments, "operator"))//" of"
-       endif
+    if (.not. found_field) then
+      call log_log(LOG_ERROR, "BLAH")
+    endif
 
-     else if (activity_type == "operator") then
-       operator_name=c_get_string(activity%embellishments, "name")
-       if (operator_name == "localreduce") then
-         description="per-MONC "//trim(c_get_string(activity%embellishments, "operator"))//" of"
-       else if (operator_name == "arithmetic") then
-         if (.not. c_contains(activity%embellishments, 'description')) then
-           call log_log(LOG_ERROR, "Arithmetic operations in IO config file should contain a 'description' what"//&
-             "the operation does, missing for '"//trim(operator_name)//"'")
-         else
-           description=trim(c_get_string(activity%embellishments, "operator"))//" of"
-         endif
-       else
-         call log_log(LOG_ERROR, "Unsure how to produce description for activity operator for"//&
-           trim(operator_name)//"'")
-       endif
-     else
-        call log_log(LOG_ERROR, "Unsure how to parse operation type for '"//&
-           trim(activity_type)//"' IO activity type")
-     endif
-  end function get_diagnostic_activity_description
+  end function find_diagnostic_field
 
   !> Set meta information for active diagnostic fields based on information received from MONC
-  subroutine set_meta_information_for_active_diagnostic_fields(io_configuration, field_meta_information)
-    type(io_configuration_type), intent(inout) :: io_configuration
+  subroutine set_meta_information_for_active_diagnostic_fields(diagnostic_definitions, field_meta_information)
+    type(diagnostics_type), dimension(:), intent(inout) :: diagnostic_definitions
     type(field_meta_information_type), dimension(:), intent(in) :: field_meta_information
 
-    type(io_configuration_diagnostic_field_type) :: diagnostic_field_config
     type(field_meta_information_type) :: specific_field_meta_information
     type(writer_field_type) :: current_writer_field
     character(len=STRING_LENGTH) :: field_name, field_namespace
-    logical :: meta_info_found, io_config_found
+    logical :: meta_info_found
     integer :: i,j
 
-    integer :: num_activities, k, num_activities_seen
-    type(io_configuration_misc_item_type), pointer :: current_field_activity
-    class(*), pointer :: gen
-    character(len=STRING_LENGTH) :: activity_name, source_field_name, dest_field_name, &
-       operation_name, is_root, current_activity_source_field_name, current_units
-    type(list_type) :: field_activities
-    character(len=STRING_LENGTH) :: derived_field_units_extra, derived_field_long_name_extra
+    !integer :: num_activities, k, num_activities_seen
+    !type(io_configuration_misc_item_type), pointer :: current_field_activity
+    !class(*), pointer :: gen
+    !character(len=STRING_LENGTH) :: activity_name, source_field_name, dest_field_name, &
+       !operation_name, is_root, current_activity_source_field_name, current_units
+    !type(list_type) :: field_activities
+    !character(len=STRING_LENGTH) :: derived_field_units_extra, derived_field_long_name_extra
+
+    type(diagnostics_type) :: diagnostic_field
 
 
     call log_log(LOG_INFO, "Setting meta information for active fields ")
@@ -345,8 +433,8 @@ contains
           ! attempt to find meta information for a field which has the same name in the output file
           ! as the field published by MONC
           meta_info_found = find_specific_field_meta_information(field_name,&
-            field_meta_information, specific_field_meta_information&
-            )
+                                                                 field_meta_information,&
+                                                                 specific_field_meta_information)
 
           if (meta_info_found) then
             ! NB: have to call with `writer_entries(i)%contents(j)` otherwise we'll be updating a copy
@@ -362,101 +450,12 @@ contains
             call log_log(LOG_WARN, "Skipping finding meta data for field `"&
               //trim(field_name)//"`")
           else
-            ! since there isn't a direct mapping between the MONC field and and output field we
-            ! have to look through the "activities" in the io configuration to find which MONC
-            ! published field leads to the resulting outputfield
-            io_config_found = get_diagnostic_field_configuration(io_configuration, field_name, &
-               field_namespace, diagnostic_field_config)
+            diagnostic_field = find_diagnostic_field(diagnostic_definitions, field_name)
+            specific_field_meta_information = get_meta_information_from_diagnostics_activity(&
+               field_meta_information, field_name, diagnostic_field%activities)
 
-            if (.not. io_config_found) then
-               call log_log(LOG_ERROR, "Couldn't find io configuration for output of field `"&
-                  //trim(current_writer_field%field_name)//"`")
-            endif
-
-            field_activities = diagnostic_field_config%members
-            num_activities = c_size(field_activities)
-
-            if (num_activities == 0) then
-               call log_log(LOG_ERROR, "There aren't any IO 'activities' (mpi reductions etc)"&
-                  "defined for the output field `"&
-                  //trim(current_writer_field%field_name)//"` "//&
-                  "and so can't find MONC field get meta information from")
-            endif
-
-            call log_log(LOG_WARN, trim(field_name))
-            ! run through the "activies" (mpi reductions etc) that are defined in the io 
-            ! file to find the starting field from which we should be get unit information etc from MONC
-            ! NB: we don't want to just iterate until we find a MONC field with the source-field
-            ! name of one of the intermediate activity fields of the diagnostic field, since there
-            ! might be name collisions here. We keep iterating until we've exhausted all the
-            ! activities
-            derived_field_units_extra = ""
-            derived_field_long_name_extra = ""
-            current_activity_source_field_name = field_name
-            do k=1, num_activities
-              current_activity_source_field_name = get_source_field_for_activity(&
-                                                  current_activity_source_field_name, field_activities,&
-                                                  current_field_activity)
-
-              if (associated(current_field_activity)) then
-                ! Use `adjustl` with `trim` to remove leading spaces
-                derived_field_long_name_extra = trim(adjustl(trim(derived_field_long_name_extra)//" "//&
-                  trim(get_diagnostic_activity_description(current_field_activity))))
-
-                !call log_log(LOG_WARN, "-> "//trim(current_activity_source_field_name)//" . "//&
-                  !derived_field_long_name_extra)
-              endif
-
-
-              !! TODO: arithmetic operations should include units, check for them here!
-              !if (c_contains(field_activities, "units")) then
-                !derived_field_units_extra = derived_field_units_extra//" "//&
-                  !c_get_string(field_activities, "units")
-              !endif
-            end do
-
-            ! ensure that we've gone through all the activities for this diagnostic field
-            if (trim(get_source_field_for_activity(current_activity_source_field_name,&
-                                        field_activities, current_field_activity)) /= "") then
-               call log_log(LOG_ERROR, "On iterating through IO 'activities' (mpi reductions etc)"&
-                  "defined for the output field `"//trim(current_writer_field%field_name)//"` "//&
-                  "more activities were found than expected")
-            endif
-
-            ! now we know which field to start from get its meta information and add any extra info
-            ! that the "activities" have in addition
-            meta_info_found = find_specific_field_meta_information(current_activity_source_field_name,&
-               field_meta_information, specific_field_meta_information&
-               )
-
-            if (meta_info_found) then
-              !! TODO: include accumulated units here
-              ! NB: have to call with `writer_entries(i)%contents(j)` otherwise we'll be updating a copy
-              if (len_trim(specific_field_meta_information%field_long_name) > 0 .and. &
-                  len_trim(derived_field_long_name_extra) > 0) then
-                specific_field_meta_information%field_long_name = trim(derived_field_long_name_extra)//" "//&
-                  trim(specific_field_meta_information%field_long_name)
-              endif
-
-              if (len_trim(specific_field_meta_information%field_units) > 0 .and. &
-                  len_trim(derived_field_units_extra) > 0) then
-                specific_field_meta_information%field_units = trim(derived_field_units_extra)//" "//&
-                  trim(specific_field_meta_information%field_units)
-              endif
-
-              call update_writer_field_with_field_meta_information(writer_entries(i)%contents(j),&
-                specific_field_meta_information)
-            else
-              !! TODO: handle mpi-reduction derived fields here
-              call log_log(LOG_WARN, "Meta information not provided by MONC for field `"&
-                //trim(current_writer_field%field_name)//"`"//&
-                conv_to_string(io_config_found))
-
-              !else
-              !call log_log(LOG_ERROR, "Couldn't find io config for field `"&
-              !//trim(field_name)//"` ("//trim(field_namespace)//") while attempting to "//&
-              !"update the fields meta information with info provided by MONC")
-            endif
+            call update_writer_field_with_field_meta_information(writer_entries(i)%contents(j),&
+              specific_field_meta_information)
           endif
         end if
       end do

@@ -228,6 +228,10 @@ contains
        field_information%units = 'm/s'
        field_information%long_name = "column maximum vertical velocity"
     endif
+    if (name .eq. "wmin_local") then
+       field_information%units = 'm/s'
+       field_information%long_name = "column minimum vertical velocity"
+    endif
   end subroutine field_information_retrieval_callback
 
   !> Field value retrieval callback, this returns the value of a specific published field
