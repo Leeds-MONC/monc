@@ -20,9 +20,10 @@ module writer_federator_mod
   use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_unlock, forthread_mutex_destroy, &
        forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_unlock, forthread_rwlock_init, forthread_rwlock_destroy
   use threadpool_mod, only : check_thread_status
-  use logging_mod, only : LOG_DEBUG, LOG_ERROR, LOG_WARN, log_log, log_master_log, log_get_logging_level, log_is_master
+  use logging_mod, only : LOG_DEBUG, LOG_INFO, LOG_ERROR, LOG_WARN, log_log, log_master_log, log_get_logging_level, log_is_master
   use writer_types_mod, only : writer_type, writer_field_type, write_field_collective_values_type, pending_write_type, &
-       collective_q_field_representation_type, write_field_collective_descriptor_type, write_field_collective_monc_info_type
+       collective_q_field_representation_type, write_field_collective_descriptor_type, write_field_collective_monc_info_type, &
+       field_meta_information_type
   use netcdf_filetype_writer_mod, only : initialise_netcdf_filetype, finalise_netcdf_filetype, define_netcdf_file, &
        write_variable, close_netcdf_file, store_io_server_state, get_writer_entry_from_netcdf
   use global_callback_inter_io_mod, only : perform_global_callback
@@ -49,7 +50,8 @@ module writer_federator_mod
 
   public initialise_writer_federator, finalise_writer_federator, provide_ordered_field_to_writer_federator, &
        check_writer_for_trigger, issue_actual_write, is_field_used_by_writer_federator, inform_writer_federator_fields_present, &
-       inform_writer_federator_time_point, provide_q_field_names_to_writer_federator, is_field_split_on_q
+       inform_writer_federator_time_point, provide_q_field_names_to_writer_federator, is_field_split_on_q, &
+       set_meta_information_for_active_diagnostic_fields
 contains
 
   !> Initialises the write federator and configures it based on the user configuration. Also initialises the time manipulations
@@ -155,6 +157,59 @@ contains
       call check_thread_status(forthread_rwlock_unlock(time_points_rwlock))      
     end if
   end subroutine inform_writer_federator_time_point
+
+  !> Set meta information for active diagnostic fields based on information received from MONC
+  subroutine set_meta_information_for_active_diagnostic_fields(field_meta_information)
+     type(field_meta_information_type), dimension(:), intent(in) :: field_meta_information
+
+     logical :: field_found
+     integer :: i,j,k
+
+     call log_log(LOG_DEBUG, "Setting meta information for active fields ")
+     do i=1, size(writer_entries)
+       do j=1, size(writer_entries(i)%contents)
+         if (writer_entries(i)%contents(j)%enabled) then
+            field_found=.false.
+            k=1
+            do while (.not. field_found .and. k < size(field_meta_information))
+               if (writer_entries(i)%contents(j)%field_name == field_meta_information(k)%field_name) then
+                  if (writer_entries(i)%contents(j)%units /= "") then
+                     call log_log(LOG_WARN, "Meta information for `units` provided by MONC for field `"//&
+                        trim(writer_entries(i)%contents(j)%field_name)//"` ignored because it is "//&
+                        "also defined in IO server configuration file")
+                  else
+                     writer_entries(i)%contents(j)%units = field_meta_information(k)%field_units
+                  endif
+
+                  if (writer_entries(i)%contents(j)%field_long_name /= "") then
+                     call log_log(LOG_WARN, "Meta information for `field_long_name` provided by MONC for field `"//&
+                        trim(writer_entries(i)%contents(j)%field_name)//"` ignored because it is "//&
+                        "also defined in IO server configuration file")
+                  else
+                     writer_entries(i)%contents(j)%field_long_name = field_meta_information(k)%field_long_name
+                  endif
+
+                  if (writer_entries(i)%contents(j)%field_standard_name /= "") then
+                     call log_log(LOG_WARN, "Meta information for `field_standard_name` provided by MONC for field `"//&
+                        trim(writer_entries(i)%contents(j)%field_name)//"` ignored because it is "//&
+                        "also defined in IO server configuration file")
+                  else
+                     writer_entries(i)%contents(j)%field_standard_name = field_meta_information(k)%field_standard_name
+                  endif
+
+                  field_found=.true.
+               end if
+               k=k+1
+            end do
+            if (.not. field_found) then
+               !! TODO: handle mpi-reduction derived fields here
+               call log_log(LOG_WARN, "Meta information not provided by MONC for field `"&
+                  //trim(writer_entries(i)%contents(j)%field_name)//"`")
+            end if
+         end if
+       end do
+     end do
+  end subroutine set_meta_information_for_active_diagnostic_fields
 
   !> Informs the writer federator that specific fields are present and should be reflected in the diagnostics output
   !! @param field_names The set of field names that are present
@@ -1291,6 +1346,8 @@ contains
       writer_entries(writer_entry_index)%contents(my_facet_index)%field_type=diagnostic_field_configuration%field_type
       writer_entries(writer_entry_index)%contents(my_facet_index)%dim_size_defns=diagnostic_field_configuration%dim_size_defns
       writer_entries(writer_entry_index)%contents(my_facet_index)%units=diagnostic_field_configuration%units
+      writer_entries(writer_entry_index)%contents(my_facet_index)%field_long_name=diagnostic_field_configuration%long_name
+      writer_entries(writer_entry_index)%contents(my_facet_index)%field_standard_name=diagnostic_field_configuration%standard_name
       writer_entries(writer_entry_index)%contents(my_facet_index)%collective_write=diagnostic_field_configuration%collective
       writer_entries(writer_entry_index)%contents(my_facet_index)%collective_initialised=.false.
       writer_entries(writer_entry_index)%contents(my_facet_index)%issue_write=.true.
@@ -1300,6 +1357,8 @@ contains
       writer_entries(writer_entry_index)%contents(my_facet_index)%data_type=prognostic_field_configuration%data_type
       writer_entries(writer_entry_index)%contents(my_facet_index)%field_type=prognostic_field_configuration%field_type
       writer_entries(writer_entry_index)%contents(my_facet_index)%units=prognostic_field_configuration%units
+      writer_entries(writer_entry_index)%contents(my_facet_index)%field_long_name=prognostic_field_configuration%long_name
+      writer_entries(writer_entry_index)%contents(my_facet_index)%field_standard_name=prognostic_field_configuration%standard_name
       writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions=prognostic_field_configuration%dimensions
       writer_entries(writer_entry_index)%contents(my_facet_index)%collective_write=prognostic_field_configuration%collective
       writer_entries(writer_entry_index)%contents(my_facet_index)%collective_initialised=.false.
@@ -1322,6 +1381,7 @@ contains
     else
       call log_log(LOG_ERROR, "A diagnostic or prognostic configuration for the field '"//trim(field_name)//"' was not found")
     end if
+
     if (writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions .gt. 0) then
       if (writer_entries(writer_entry_index)%contents(my_facet_index)%dim_size_defns(&
            writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions) .eq. "qfields") then

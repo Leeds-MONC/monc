@@ -14,9 +14,11 @@ module io_server_mod
   use diagnostic_federator_mod, only : initialise_diagnostic_federator, finalise_diagnostic_federator, &
        check_diagnostic_federator_for_completion, pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available
   use writer_federator_mod, only : initialise_writer_federator, finalise_writer_federator, check_writer_for_trigger, &
-       inform_writer_federator_fields_present, inform_writer_federator_time_point, provide_q_field_names_to_writer_federator
+       inform_writer_federator_fields_present, inform_writer_federator_time_point, provide_q_field_names_to_writer_federator, &
+       set_meta_information_for_active_diagnostic_fields
   use writer_field_manager_mod, only : initialise_writer_field_manager, finalise_writer_field_manager, &
        provide_monc_data_to_writer_federator
+  use writer_types_mod, only: field_meta_information_type
   use collections_mod, only : hashset_type, hashmap_type, map_type, iterator_type, c_get_integer, c_put_integer, c_is_empty, &
        c_remove, c_add_string, c_integer_at, c_free, c_get_iterator, c_has_next, c_next_mapentry
   use conversions_mod, only : conv_to_string
@@ -428,17 +430,6 @@ contains
     if (.not. initialised_present_data) then
       initialised_present_data=.true.
 
-      do i=1, size(io_configuration%diagnostics)
-        field_found=get_data_description_from_name(data_description, io_configuration%diagnostics(i)%name, field_description)
-        if (field_found) then
-           io_configuration%diagnostics(i)%units = field_description%field_units
-           io_configuration%diagnostics(i)%long_name = field_description%field_long_name
-           io_configuration%diagnostics(i)%standard_name = field_description%field_standard_name
-        endif
-
-        !! TODO: handle propagation of field information down MPI reductions here
-      enddo
-
       q_indecies_field_found=get_data_description_from_name(data_description, NUMBER_Q_INDICIES_KEY, field_description)
       if (q_indecies_field_found) then
          call c_put_integer(io_configuration%dimension_sizing, "active_q_indicies", field_description%dim_sizes(1))
@@ -447,6 +438,22 @@ contains
     end if
     call get_monc_information_data(source)
   end subroutine init_data_definition
+
+  subroutine update_writer_entries_with_metadata_from_data_description(data_description)
+    type(data_sizing_description_type), dimension(:), intent(in) :: data_description
+
+    type(field_meta_information_type), dimension(size(data_description)):: field_meta_information
+    integer :: i
+
+    do i=1,size(data_description)
+      field_meta_information(i)%field_name = data_description(i)%field_name
+      field_meta_information(i)%field_standard_name = data_description(i)%field_standard_name
+      field_meta_information(i)%field_long_name = data_description(i)%field_long_name
+      field_meta_information(i)%field_units = data_description(i)%field_units
+    end do
+
+    call set_meta_information_for_active_diagnostic_fields(field_meta_information)
+  end subroutine update_writer_entries_with_metadata_from_data_description
 
 
   !> Retrieves MONC information data, this is sent by MONC (and received) regardless, but only actioned if the data has not
@@ -527,6 +534,8 @@ contains
     call inform_writer_federator_fields_present(io_configuration, diag_field_names_and_roots=diagnostics_field_names_and_roots)
     call c_free(present_field_names)
     call c_free(diagnostics_field_names_and_roots)
+
+    call update_writer_entries_with_metadata_from_data_description(data_description)
   end subroutine register_present_field_names_to_federators  
 
   !> Handles the provided local MONC dimension and data layout information

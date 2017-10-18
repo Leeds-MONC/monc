@@ -9,7 +9,7 @@ module netcdf_filetype_writer_mod
        c_put_integer, c_remove, c_free, c_has_next, c_get_iterator, c_next_mapentry, c_next_generic, c_get_real, c_size, &
        c_next_string, c_is_empty, c_add_string
   use conversions_mod, only : conv_to_integer, conv_to_string, conv_to_real
-  use logging_mod, only : LOG_ERROR, LOG_WARN, LOG_DEBUG, log_log, log_master_log, log_get_logging_level, log_is_master
+  use logging_mod, only : LOG_ERROR, LOG_WARN, LOG_DEBUG, LOG_INFO, log_log, log_master_log, log_get_logging_level, log_is_master
   use writer_types_mod, only : writer_type, writer_field_type, write_field_collective_values_type, &
        netcdf_diagnostics_timeseries_type, netcdf_diagnostics_type, write_field_collective_descriptor_type, &
        write_field_collective_monc_info_type
@@ -921,10 +921,23 @@ contains
         call unlock_mpi()
         deallocate(dimension_ids)
       end if
+
       call c_put_integer(file_state%variable_to_id, variable_key, field_id)
       if (len_trim(file_writer_information%contents(i)%units) .gt. 0) then
         call lock_mpi()
         call check_netcdf_status(nf90_put_att(file_state%ncid, field_id, "units", file_writer_information%contents(i)%units))
+        call unlock_mpi()
+      end if
+      if (len_trim(file_writer_information%contents(i)%field_long_name) .gt. 0) then
+        call lock_mpi()
+        call check_netcdf_status(nf90_put_att(file_state%ncid, field_id, "long_name",&
+           file_writer_information%contents(i)%field_long_name))
+        call unlock_mpi()
+      end if
+      if (len_trim(file_writer_information%contents(i)%field_standard_name) .gt. 0) then
+        call lock_mpi()
+        call check_netcdf_status(nf90_put_att(file_state%ncid, field_id, "standard_name",&
+           file_writer_information%contents(i)%field_standard_name))
         call unlock_mpi()
       end if
     end do
