@@ -414,7 +414,7 @@ contains
 
     if (present(suffix) .and. i_prefix /= 0 .and. i_suffix /= 0) then
       new_long_name = trim(new_prefix)//" "//trim(long_name(i_prefix+len(prefix)+1:i_suffix-1))
-    elseif (i_prefix /= 0) then
+    elseif (.not. present(suffix) .and. i_prefix /= 0) then
       new_long_name = trim(new_prefix)//" "//long_name(i_prefix+len(prefix)+1:len(long_name))
     else
       new_long_name = long_name
@@ -427,12 +427,19 @@ contains
 
     new_long_name = long_name
     if (len_trim(new_long_name) > 0) then
+      ! to be applied against datasets which have one entry for each vertical column level
       new_long_name = do_long_name_substitution(new_long_name, "vertical profile of horizontal mean", &
-        "sum of per-MONC horizontal sum of", "divided by domain xy-area")
+        "sum of per-MONC horizontal sum of", "divided by domain xy-cell-count")
+
+      ! to be applied against datasets which have one value for each vertical column
+      ! matches e.g. `sum of per-MONC sum of per-column liquid-water path devided by domain xy-cell-count`
+      new_long_name = do_long_name_substitution(new_long_name, "domain-wide mean", &
+        "sum of per-MONC sum", "divided by domain xy-cell-count")
+      ! matches: e.g. `max of per-MONC max of per-column liquid-water path`
       new_long_name = do_long_name_substitution(new_long_name, "domain-wide max", &
-        "max of per-MONC max of column maximum")
+        "max of per-MONC max")
       new_long_name = do_long_name_substitution(new_long_name, "domain-wide min", &
-        "min of per-MONC min of column minimum")
+        "min of per-MONC min")
     endif
 
   end function cleanup_field_long_name
@@ -459,7 +466,7 @@ contains
     end do
 
     if (.not. found_field) then
-      call log_log(LOG_ERROR, "BLAH")
+      call log_log(LOG_ERROR, "Couldn't find diagnostics definition for field '"//trim(field_name)//"'")
     endif
 
   end function find_diagnostic_field
@@ -502,8 +509,13 @@ contains
           .or. field_name == 'dtm_new' .or. field_name == 'absolute_new_dtm' &
           .or. field_name == 'x_resolution' .or. field_name == 'y_resolution' &
           .or. field_name == 'x_top' .or. field_name == 'y_top' &
-          .or. field_name == 'x_bottom' .or. field_name == 'y_bottom') then
-            ! TODO: no idea what to do with time yet...
+          .or. field_name == 'x_bottom' .or. field_name == 'y_bottom' &
+          .or. field_name == 'q_udef1' .or. field_name == 'q_udef2' &       ! <- from here and below appeared with bomex.mcf test case
+          .or. field_name == 'zq_udef1' .or. field_name == 'zq_udef2' &
+          .or. field_name == 'olqbar_udef1' .or. field_name == 'olqbar_udef2' &
+          .or. field_name == 'olzqbar_udef1' .or. field_name == 'olzqbar_udef2' &
+          ) then
+            ! TODO: no idea what to do with time and these other fields yet...
             call log_log(LOG_WARN, "Skipping finding meta data for field `"&
               //trim(field_name)//"`")
           else

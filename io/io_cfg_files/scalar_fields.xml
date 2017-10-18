@@ -12,57 +12,57 @@
 </data-definition>
 
 <data-handling namespace="scalar_fields">
-  <diagnostic field="VWP_mean"  type="scalar" data_type="double" units="kg/m^2">
-	<operator name="arithmetic" result="VWP_mean" equation="VWP_mean_g/({x_size}*{y_size})"/>
+  <diagnostic field="VWP_mean"  type="scalar" data_type="double">
+	<operator name="arithmetic" result="VWP_mean" equation="VWP_mean_g/({x_size}*{y_size})" units="1" description="divided by domain xy-cell-count"/>
 	<communication name="reduction" operator="sum" result="VWP_mean_g" field="VWP_mean_loc_reduced" root="auto"/>
 	<operator name="localreduce" operator="sum" result="VWP_mean_loc_reduced" field="vwp_local"/>
   </diagnostic>
-  <diagnostic field="LWP_mean"  type="scalar" data_type="double" units="kg/m^2">
-	<operator name="arithmetic" result="LWP_mean" equation="LWP_mean_g/({x_size}*{y_size})"/>
+  <diagnostic field="LWP_mean"  type="scalar" data_type="double">
+	<operator name="arithmetic" result="LWP_mean" equation="LWP_mean_g/({x_size}*{y_size})" units="1" description="divided by domain xy-cell-count"/>
 	<communication name="reduction" operator="sum" result="LWP_mean_g" field="LWP_mean_loc_reduced" root="auto"/>
 	<operator name="localreduce" operator="sum" result="LWP_mean_loc_reduced" field="lwp_local"/>
   </diagnostic>
-  <diagnostic field="LWP_var"  type="scalar" data_type="double" units="kg^2/m^4">
-	<operator name="arithmetic" result="LWP_var" equation="LWP_var_g/({x_size}*{y_size})"/>
+  <diagnostic field="LWP_var"  type="scalar" data_type="double">
+	<operator name="arithmetic" result="LWP_var" equation="LWP_var_g/({x_size}*{y_size})" units="1" description="divided by domain xy-cell-count"/>
 	<communication name="reduction" operator="sum" result="LWP_var_g" field="LWP_var_loc_reduced" root="auto"/>
 	<operator name="localreduce" operator="sum" result="LWP_var_loc_reduced" field="lwp_var_local"/>
 	<operator name="arithmetic" result="lwp_var_local" equation="(lwp_local-10)"/>
   </diagnostic>
-  <diagnostic field="VWP_max"  type="scalar" data_type="double" units="kg/m^2">
+  <diagnostic field="VWP_max"  type="scalar" data_type="double">
     <communication name="reduction" operator="max" result="VWP_max" field="VWP_max_loc_reduced" root="auto"/>
     <operator name="localreduce" operator="max" result="VWP_max_loc_reduced" field="vwp_local"/>
   </diagnostic>
-  <diagnostic field="LWP_max"  type="scalar" data_type="double" units="kg/m^2">
+  <diagnostic field="LWP_max"  type="scalar" data_type="double">
     <communication name="reduction" operator="max" result="LWP_max" field="LWP_max_loc_reduced" root="auto"/>
     <operator name="localreduce" operator="max" result="LWP_max_loc_reduced" field="lwp_local"/>
   </diagnostic>
-  <diagnostic field="qlmax"  type="scalar" data_type="double" units="kg/kg">
+  <diagnostic field="qlmax"  type="scalar" data_type="double">
     <communication name="reduction" operator="max" result="qlmax" field="qlmax_loc_reduced" root="auto"/>
    <operator name="localreduce" operator="max" result="qlmax_loc_reduced" field="qlmax_local"/>
   </diagnostic>
-  <diagnostic field="cltop_mean"  type="scalar" data_type="double" units="m">
-	<operator name="arithmetic" result="cltop_mean" equation="cltop_mean_g/({x_size}*{y_size})"/>
+  <diagnostic field="cltop_mean"  type="scalar" data_type="double">
+	<operator name="arithmetic" result="cltop_mean" equation="cltop_mean_g/({x_size}*{y_size})" units="1" description="divided by domain xy-cell-count"/>
 	 <communication name="reduction" operator="sum" result="cltop_mean_g" field="cltop_mean_loc_reduced" root="auto"/>
 	<operator name="localreduce" operator="sum" result="cltop_mean_loc_reduced" field="cltop_local"/>
   </diagnostic>
-  <diagnostic field="clbas_mean"  type="scalar" data_type="double" units="m">
-	<operator name="arithmetic" result="clbas_mean" equation="clbas_mean_g/({x_size}*{y_size})"/>
+  <diagnostic field="clbas_mean"  type="scalar" data_type="double">
+	<operator name="arithmetic" result="clbas_mean" equation="clbas_mean_g/({x_size}*{y_size})" units="1" description="divided by domain xy-cell-count"/>
 	<communication name="reduction" operator="sum" result="clbas_mean_g" field="clbas_mean_loc_reduced" root="auto"/>
 	<operator name="localreduce" operator="sum" result="clbas_mean_loc_reduced" field="clbas_local"/>
   </diagnostic>
-  <diagnostic field="cltop_min"  type="scalar" data_type="double" units="m">
+  <diagnostic field="cltop_min"  type="scalar" data_type="double">
     <communication name="reduction" operator="min" result="cltop_min" field="cltop_min_loc_reduced" root="auto"/>
    <operator name="localreduce" operator="min" result="cltop_min_loc_reduced" field="cltop_local"/>
   </diagnostic>
-  <diagnostic field="clbas_min"  type="scalar" data_type="double" units="m">
+  <diagnostic field="clbas_min"  type="scalar" data_type="double">
     <communication name="reduction" operator="min" result="clbas_min" field="clbas_min_loc_reduced" root="auto"/>
     <operator name="localreduce" operator="min" result="clbas_min_loc_reduced" field="clbas_local"/>
   </diagnostic>
-  <diagnostic field="cltop_max"  type="scalar" data_type="double" units="m">
+  <diagnostic field="cltop_max"  type="scalar" data_type="double">
     <communication name="reduction" operator="max" result="cltop_max" field="cltop_max_loc_reduced" root="auto"/>
    <operator name="localreduce" operator="max" result="cltop_max_loc_reduced" field="cltop_local"/>
   </diagnostic>
-  <diagnostic field="clbas_max"  type="scalar" data_type="double" units="m">
+  <diagnostic field="clbas_max"  type="scalar" data_type="double">
     <communication name="reduction" operator="max" result="clbas_max" field="clbas_max_loc_reduced" root="auto"/>
     <operator name="localreduce" operator="max" result="clbas_max_loc_reduced" field="clbas_local"/>
   </diagnostic>
@@ -74,29 +74,29 @@
     <communication name="reduction" operator="min" result="wmin" field="wmin_loc_reduced" root="auto"/>
     <operator name="localreduce" field="wmin_local" result="wmin_loc_reduced" operator="min"/>
   </diagnostic>
- <diagnostic field="senhf_max"  type="scalar" data_type="double" units="m">
+ <diagnostic field="senhf_max"  type="scalar" data_type="double">
 	<communication name="reduction" operator="max" result="senhf_max" field="senhf_max_loc_reduced" root="auto"/>
 	<operator name="localreduce" operator="max" result="senhf_max_loc_reduced" field="senhf_local"/>
   </diagnostic>
- <diagnostic field="lathf_max"  type="scalar" data_type="double" units="m">
+ <diagnostic field="lathf_max"  type="scalar" data_type="double">
 	<communication name="reduction" operator="max" result="lathf_max" field="lathf_max_loc_reduced" root="auto"/>
 	<operator name="localreduce" operator="max" result="lathf_max_loc_reduced" field="lathf_local"/>
   </diagnostic>
- <diagnostic field="senhf_min"  type="scalar" data_type="double" units="m">
+ <diagnostic field="senhf_min"  type="scalar" data_type="double">
 	<communication name="reduction" operator="min" result="senhf_min" field="senhf_min_loc_reduced" root="auto"/>
 	<operator name="localreduce" operator="min" result="senhf_min_loc_reduced" field="senhf_local"/>
   </diagnostic>
- <diagnostic field="lathf_min"  type="scalar" data_type="double" units="m">
+ <diagnostic field="lathf_min"  type="scalar" data_type="double">
 	<communication name="reduction" operator="min" result="lathf_min" field="lathf_min_loc_reduced" root="auto"/>
 	<operator name="localreduce" operator="min" result="lathf_min_loc_reduced" field="lathf_local"/>
   </diagnostic>
-  <diagnostic field="senhf_mean"  type="scalar" data_type="double" units="m">
-	<operator name="arithmetic" result="senhf_mean" equation="senhf_mean_g/({x_size}*{y_size})"/>
+  <diagnostic field="senhf_mean"  type="scalar" data_type="double">
+	<operator name="arithmetic" result="senhf_mean" equation="senhf_mean_g/({x_size}*{y_size})" units="1" description="divided by domain xy-cell-count"/>
 	<communication name="reduction" operator="sum" result="senhf_mean_g" field="senhf_mean_loc_reduced" root="auto"/>
 	<operator name="localreduce" operator="sum" result="senhf_mean_loc_reduced" field="senhf_local"/>
   </diagnostic>
-  <diagnostic field="lathf_mean"  type="scalar" data_type="double" units="m">
-	<operator name="arithmetic" result="lathf_mean" equation="lathf_mean_g/({x_size}*{y_size})"/>
+  <diagnostic field="lathf_mean"  type="scalar" data_type="double">
+	<operator name="arithmetic" result="lathf_mean" equation="lathf_mean_g/({x_size}*{y_size})" units="1" description="divided by domain xy-cell-count"/>
 	<communication name="reduction" operator="sum" result="lathf_mean_g" field="lathf_mean_loc_reduced" root="auto"/>
 	<operator name="localreduce" operator="sum" result="lathf_mean_loc_reduced" field="lathf_local"/>
   </diagnostic>
