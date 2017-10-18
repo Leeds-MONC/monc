@@ -922,11 +922,10 @@ contains
         deallocate(dimension_ids)
       end if
 
-      call log_log(LOG_WARN, "netcdf: "//trim(file_writer_information%contents(i)%field_name)//" -- "//&
+      call log_log(LOG_INFO, "netcdf: "//trim(file_writer_information%contents(i)%field_name)//" -- "//&
          trim(file_writer_information%contents(i)%units)//" :: "//&
          trim(file_writer_information%contents(i)%field_long_name)//" :: "//&
          trim(file_writer_information%contents(i)%field_standard_name)//" :: ")
-
 
       call c_put_integer(file_state%variable_to_id, variable_key, field_id)
       if (len_trim(file_writer_information%contents(i)%units) .gt. 0) then

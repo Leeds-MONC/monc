@@ -46,16 +46,16 @@
    <diagnostic field="thref"  type="array" data_type="double" size="zn">
 	<communication name="reduction" operator="mean" result="thref" field="thref_local" root="auto"/>
   </diagnostic>  
-  <diagnostic field="u_wind_mean"  type="array" data_type="double" size="zn" units="m/s">
-	<operator name="arithmetic" result="u_wind_mean" equation="u_wind_mean_g/({x_size}*{y_size})"/>
+  <diagnostic field="u_wind_mean"  type="array" data_type="double" size="zn">
+	<operator name="arithmetic" result="u_wind_mean" equation="u_wind_mean_g/({x_size}*{y_size})" units="1" description="divided by domain xy-area"/>
 	<communication name="reduction" operator="sum" result="u_wind_mean_g" field="u_wind_total_local" root="auto"/>
   </diagnostic> 
-  <diagnostic field="v_wind_mean"  type="array" data_type="double" size="zn" units="m/s">
-	<operator name="arithmetic" result="v_wind_mean" equation="v_wind_mean_g/({x_size}*{y_size})"/>
+  <diagnostic field="v_wind_mean"  type="array" data_type="double" size="zn">
+	<operator name="arithmetic" result="v_wind_mean" equation="v_wind_mean_g/({x_size}*{y_size})" units="1" description="divided by domain xy-area"/>
 	<communication name="reduction" operator="sum" result="v_wind_mean_g" field="v_wind_total_local" root="auto"/>
   </diagnostic>
-  <diagnostic field="w_wind_mean"  type="array" data_type="double" size="z" units="K">
-	<operator name="arithmetic" result="w_wind_mean" equation="w_wind_total_g/({x_size}*{y_size})"/>
+  <diagnostic field="w_wind_mean"  type="array" data_type="double" size="z">
+	<operator name="arithmetic" result="w_wind_mean" equation="w_wind_total_g/({x_size}*{y_size})" units="1" description="divided by domain xy-area"/>
 	<communication name="reduction" operator="sum" result="w_wind_total_g" field="w_wind_total_local" root="auto"/>
   </diagnostic>   
   <diagnostic field="uu_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
@@ -70,8 +70,8 @@
 	<operator name="arithmetic" result="ww_mean" equation="ww_mean_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="ww_mean_g" field="ww_total_local" root="auto"/>
   </diagnostic>  
-  <diagnostic field="theta_mean"  type="array" data_type="double" size="zn" units="K">
-	<operator name="arithmetic" result="theta_mean" equation="theta_mean_g/({x_size}*{y_size})"/>
+  <diagnostic field="theta_mean"  type="array" data_type="double" size="zn">
+	<operator name="arithmetic" result="theta_mean" equation="theta_mean_g/({x_size}*{y_size})" units="1" description="divided by domain xy-area"/>
 	<communication name="reduction" operator="sum" result="theta_mean_g" field="theta_total_local" root="auto"/>
   </diagnostic>  
   <diagnostic field="vapour_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">

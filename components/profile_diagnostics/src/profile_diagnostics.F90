@@ -337,6 +337,26 @@ contains
     else 
       field_information%enabled=.true.
     end if
+
+    if (name .eq. "prefn_local") then
+       field_information%units = "Pa"
+       field_information%long_name = "reference pressure at cell-faces"
+    else if (name .eq. "u_wind_total_local") then
+       field_information%units = "m/s"
+       field_information%long_name = "per-MONC horizontal sum of u-wind"
+    else if (name .eq. "v_wind_total_local") then
+       field_information%units = "m/s"
+       field_information%long_name = "per-MONC horizontal sum of v-wind"
+    else if (name .eq. "w_wind_total_local") then
+       field_information%units = "m/s"
+       field_information%long_name = "per-MONC horizontal sum of w-wind"
+    else if (name .eq. "theta_total_local") then
+       field_information%units = "K"
+       field_information%long_name = "per-MONC horizontal sum of potential temperature"
+    else if (name .eq. "thinit_local") then
+       field_information%units = "K"
+       field_information%long_name = "initial vertical profile of potential temperature"
+    endif
   end subroutine field_information_retrieval_callback
 
   !> Field value retrieval callback, this returns the value of a specific published field

@@ -194,6 +194,11 @@ contains
     type(field_meta_information_type), intent(in) :: field_meta_information
 
     call log_log(LOG_DEBUG, "Setting meta info for  field `"//trim(writer_field%field_name))
+    call log_log(LOG_DEBUG, trim(writer_field%field_name)//" :: "//&
+      trim(field_meta_information%field_long_name)//","//&
+      trim(field_meta_information%field_standard_name)//","//&
+      trim(field_meta_information%field_units)//","//&
+      "")
 
     if (len_trim(field_meta_information%field_units) > 0) then
       if (writer_field%units /= "") then
@@ -358,8 +363,10 @@ contains
                 "have any units defined, assuming unity.")
               specific_field_meta_information%field_units = trim(specific_field_meta_information%field_units)
             else
-              specific_field_meta_information%field_units = trim(trim(specific_field_meta_information%field_units)//" "//&
-                trim(c_get_string(activity%activity_attributes, "units")))
+              if (trim(c_get_string(activity%activity_attributes, "units")) /= "1") then
+                specific_field_meta_information%field_units = trim(trim(specific_field_meta_information%field_units)//" "//&
+                  trim(c_get_string(activity%activity_attributes, "units")))
+              endif
             endif
           endif
 
@@ -388,7 +395,49 @@ contains
       !trim(specific_field_meta_information%field_standard_name)//","//&
       !trim(specific_field_meta_information%field_units)//","//&
       !"")
+
   end function get_meta_information_from_diagnostics_activity
+
+
+  !> Apply one particular substitution for the long name description by looking for prefix and suffix, and if found use
+  !! the new suffix
+  character(len=STRING_LENGTH) function do_long_name_substitution(long_name, new_prefix, prefix, suffix) result(new_long_name)
+    character(len=*), intent(in) :: long_name, new_prefix, prefix
+    character(len=*), intent(in), optional :: suffix
+
+    integer :: i_prefix, i_suffix
+
+    i_prefix = index(long_name, trim(prefix))
+    if (present(suffix)) then
+      i_suffix = index(long_name, trim(suffix))
+    endif
+
+    if (present(suffix) .and. i_prefix /= 0 .and. i_suffix /= 0) then
+      new_long_name = trim(new_prefix)//" "//trim(long_name(i_prefix+len(prefix)+1:i_suffix-1))
+    elseif (i_prefix /= 0) then
+      new_long_name = trim(new_prefix)//" "//long_name(i_prefix+len(prefix)+1:len(long_name))
+    else
+      new_long_name = long_name
+    endif
+  end function do_long_name_substitution
+
+  !> This function is basically a hack for making a long name produced from a chain activities easier to read
+  character(len=STRING_LENGTH) function cleanup_field_long_name(long_name) result(new_long_name)
+    character(len=STRING_LENGTH), intent(in) :: long_name
+
+    new_long_name = long_name
+    if (len_trim(new_long_name) > 0) then
+      new_long_name = do_long_name_substitution(new_long_name, "vertical profile of horizontal mean", &
+        "sum of per-MONC horizontal sum of", "divided by domain xy-area")
+      new_long_name = do_long_name_substitution(new_long_name, "domain-wide max", &
+        "max of per-MONC max of column maximum")
+      new_long_name = do_long_name_substitution(new_long_name, "domain-wide min", &
+        "min of per-MONC min of column minimum")
+    endif
+
+  end function cleanup_field_long_name
+
+   
 
   !> Return the diagnostic definition for the requested field name
   !! @param diagnostic_definitions All diagnostic definitions currently defined
@@ -461,6 +510,9 @@ contains
             diagnostic_field = find_diagnostic_field(diagnostic_definitions, field_name)
             specific_field_meta_information = get_meta_information_from_diagnostics_activity(&
                field_meta_information, field_name, diagnostic_field%activities)
+
+            specific_field_meta_information%field_long_name = cleanup_field_long_name(&
+              specific_field_meta_information%field_long_name)
 
             call update_writer_field_with_field_meta_information(writer_entries(i)%contents(j),&
               specific_field_meta_information)
