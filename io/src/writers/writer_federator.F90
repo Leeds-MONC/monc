@@ -163,6 +163,10 @@ contains
     end if
   end subroutine inform_writer_federator_time_point
 
+  !> Attempt to find meta information for a given field published by the MONCs
+  !! @param field_name Field to search for
+  !! @param all_field_meta_information All field meta information received from MONCs
+  !! @return specific_field_meta_information Returns meta information if found
   logical function find_specific_field_meta_information(field_name, all_field_meta_information, &
       specific_field_meta_information) result(field_found)
     character(len=STRING_LENGTH), intent(in) :: field_name
@@ -182,10 +186,12 @@ contains
     end do
   end function find_specific_field_meta_information
 
+  !> Update a specific writer using the meta information for the field that is written
+  !! @param writer_field Writer field to update
+  !! @param field_meta_information Meta information to use
   subroutine update_writer_field_with_field_meta_information(writer_field, field_meta_information)
     type(writer_field_type), intent(inout) :: writer_field
     type(field_meta_information_type), intent(in) :: field_meta_information
-
 
     call log_log(LOG_DEBUG, "Setting meta info for  field `"//trim(writer_field%field_name))
 
@@ -221,8 +227,14 @@ contains
   end subroutine update_writer_field_with_field_meta_information
 
 
-  !> 
-  type(field_meta_information_type) &
+  !> Iterate over diagnostic activities defined for a diagnostic field to produce meta information based on the
+  !! activities performed and the MONC component fields operated on. This function is called recursively (iterating over
+  !! all required fields) until MONC component fields are found. This function should initially be called with the name
+  !! of the diagnostic field that will be output, e.g. `wmax`
+  !! @param field_meta_information All meta information received from MONCs
+  !! @param result_name Name of field (within activities) for which meta information will be returned
+  !! @param field_activities All activities defined for a given diagnostic field
+  recursive type(field_meta_information_type) &
       function get_meta_information_from_diagnostics_activity(field_meta_information, result_name, field_activities) &
             result(specific_field_meta_information)
 
@@ -378,6 +390,9 @@ contains
       !"")
   end function get_meta_information_from_diagnostics_activity
 
+  !> Return the diagnostic definition for the requested field name
+  !! @param diagnostic_definitions All diagnostic definitions currently defined
+  !! @param field_name Name of field to find diagnostic definition for
   type(diagnostics_type) function find_diagnostic_field(diagnostic_definitions, field_name)
     type(diagnostics_type), dimension(:), intent(inout) :: diagnostic_definitions
     character(len=STRING_LENGTH) :: field_name
@@ -400,7 +415,9 @@ contains
 
   end function find_diagnostic_field
 
-  !> Set meta information for active diagnostic fields based on information received from MONC
+  !> Set meta information on writers for active diagnostic fields based on information received from MONC
+  !! @param diagnostic_definitions All diagnostics currently defined
+  !! @param field_meta_information All meta information received from MONCs
   subroutine set_meta_information_for_active_diagnostic_fields(diagnostic_definitions, field_meta_information)
     type(diagnostics_type), dimension(:), intent(inout) :: diagnostic_definitions
     type(field_meta_information_type), dimension(:), intent(in) :: field_meta_information
@@ -411,16 +428,7 @@ contains
     logical :: meta_info_found
     integer :: i,j
 
-    !integer :: num_activities, k, num_activities_seen
-    !type(io_configuration_misc_item_type), pointer :: current_field_activity
-    !class(*), pointer :: gen
-    !character(len=STRING_LENGTH) :: activity_name, source_field_name, dest_field_name, &
-       !operation_name, is_root, current_activity_source_field_name, current_units
-    !type(list_type) :: field_activities
-    !character(len=STRING_LENGTH) :: derived_field_units_extra, derived_field_long_name_extra
-
     type(diagnostics_type) :: diagnostic_field
-
 
     call log_log(LOG_INFO, "Setting meta information for active fields ")
     do i=1, size(writer_entries)
