@@ -5,7 +5,7 @@ module writer_federator_mod
   use configuration_parser_mod, only : TIME_AVERAGED_TYPE, INSTANTANEOUS_TYPE, NONE_TYPE, GROUP_TYPE, FIELD_TYPE, IO_STATE_TYPE, &
        io_configuration_type, io_configuration_field_type, io_configuration_diagnostic_field_type, &
        io_configuration_data_definition_type, data_values_type, get_data_value_by_field_name, get_diagnostic_field_configuration,&
-       get_prognostic_field_configuration, get_monc_location
+       get_prognostic_field_configuration, get_monc_location, io_configuration_misc_item_type
   use none_time_manipulation_mod, only : perform_none_time_manipulation, is_none_time_manipulation_ready_to_write
   use instantaneous_time_manipulation_mod, only : init_instantaneous_manipulation, finalise_instantaneous_manipulation, &
        perform_instantaneous_time_manipulation, is_instantaneous_time_manipulation_ready_to_write
@@ -36,8 +36,6 @@ module writer_federator_mod
   use mpi, only : MPI_INT, MPI_MAX
   use mpi_communication_mod, only : lock_mpi, unlock_mpi
 
-  !! XXX: temporary
-  use configuration_parser_mod, only : io_configuration_misc_item_type
   use diagnostic_types_mod, only : diagnostics_activitity_type, get_misc_action_at_index
 
   implicit none
@@ -242,21 +240,18 @@ contains
           call log_log(LOG_ERROR, "IO activity configuration found without 'result' field name")
         endif
 
+        if (activity_type == "operator") then
+          operation_type = c_get_string(misc_action%embellishments, "name")
+        endif
+
         if (dest_field_name == field_name) then
-          if (activity_type == "communication" .and. c_contains(misc_action%embellishments, "operator")) then
-            operation_type=c_get_string(misc_action%embellishments, "operator")
-          else if (activity_type == "operator" .and. c_contains(misc_action%embellishments, "name")) then
-            operation_type=c_get_string(misc_action%embellishments, "name")
-          else
-            call log_log(LOG_ERROR, "Unsure how to parse operation type for '"//&
-              trim(activity_type)//"' IO activity type")
-          endif
+
+         call log_log(LOG_WARN, "=== '"//&
+           trim(source_field_name)//" :: "//trim(operation_type)//" "//trim(activity_type))
 
           if (c_contains(misc_action%embellishments, "field")) then
             source_field_name=c_get_string(misc_action%embellishments, "field")
           else
-            call log_log(LOG_WARN, "=== '"//&
-              trim(source_field_name)//" :: "//trim(operation_type)//" "//trim(activity_type))
 
             if (activity_type == "operator" .and. operation_type == "arithmetic") then
               call log_log(LOG_WARN, "Skipping arithmetic operations on '"//&
@@ -277,6 +272,47 @@ contains
   end function get_source_field_for_activity
 
 
+  !character(len=STRING_LENGTH) function get_diagnostic_activity_description(source_diagnostic_activity)
+  !end function get_diagnostic_activity_description
+
+
+  !> Get the "operation type" for a given diagnostic field activity
+  character(len=STRING_LENGTH) function get_diagnostic_activity_description(activity)&
+                                                                        result(description)
+    type(io_configuration_misc_item_type), pointer, intent(in) :: activity
+    character(len=STRING_LENGTH) :: activity_type, operator_name
+
+     activity_type = activity%type
+     description = ""
+
+     if (activity_type == "communication") then
+       if (.not. c_contains(activity%embellishments, 'operator')) then
+         call log_log(LOG_ERROR, "Communication activity without an operator")
+       else
+         description=trim(c_get_string(activity%embellishments, "operator"))//" of"
+       endif
+
+     else if (activity_type == "operator") then
+       operator_name=c_get_string(activity%embellishments, "name")
+       if (operator_name == "localreduce") then
+         description="per-MONC "//trim(c_get_string(activity%embellishments, "operator"))//" of"
+       else if (operator_name == "arithmetic") then
+         if (.not. c_contains(activity%embellishments, 'description')) then
+           call log_log(LOG_ERROR, "Arithmetic operations in IO config file should contain a 'description' what"//&
+             "the operation does, missing for '"//trim(operator_name)//"'")
+         else
+           description=trim(c_get_string(activity%embellishments, "operator"))//" of"
+         endif
+       else
+         call log_log(LOG_ERROR, "Unsure how to produce description for activity operator for"//&
+           trim(operator_name)//"'")
+       endif
+     else
+        call log_log(LOG_ERROR, "Unsure how to parse operation type for '"//&
+           trim(activity_type)//"' IO activity type")
+     endif
+  end function get_diagnostic_activity_description
+
   !> Set meta information for active diagnostic fields based on information received from MONC
   subroutine set_meta_information_for_active_diagnostic_fields(io_configuration, field_meta_information)
     type(io_configuration_type), intent(inout) :: io_configuration
@@ -295,7 +331,7 @@ contains
     character(len=STRING_LENGTH) :: activity_name, source_field_name, dest_field_name, &
        operation_name, is_root, current_activity_source_field_name, current_units
     type(list_type) :: field_activities
-    character(len=STRING_LENGTH) :: derived_field_accumulated_units
+    character(len=STRING_LENGTH) :: derived_field_units_extra, derived_field_long_name_extra
 
 
     call log_log(LOG_INFO, "Setting meta information for active fields ")
@@ -354,17 +390,27 @@ contains
             ! name of one of the intermediate activity fields of the diagnostic field, since there
             ! might be name collisions here. We keep iterating until we've exhausted all the
             ! activities
-            derived_field_accumulated_units = ""
+            derived_field_units_extra = ""
+            derived_field_long_name_extra = ""
             current_activity_source_field_name = field_name
             do k=1, num_activities
               current_activity_source_field_name = get_source_field_for_activity(&
                                                   current_activity_source_field_name, field_activities,&
                                                   current_field_activity)
-              call log_log(LOG_WARN, "-> "//trim(current_activity_source_field_name))
+
+              if (associated(current_field_activity)) then
+                ! Use `adjustl` with `trim` to remove leading spaces
+                derived_field_long_name_extra = trim(adjustl(trim(derived_field_long_name_extra)//" "//&
+                  trim(get_diagnostic_activity_description(current_field_activity))))
+
+                !call log_log(LOG_WARN, "-> "//trim(current_activity_source_field_name)//" . "//&
+                  !derived_field_long_name_extra)
+              endif
+
 
               !! TODO: arithmetic operations should include units, check for them here!
               !if (c_contains(field_activities, "units")) then
-                !derived_field_accumulated_units = derived_field_accumulated_units//" "//&
+                !derived_field_units_extra = derived_field_units_extra//" "//&
                   !c_get_string(field_activities, "units")
               !endif
             end do
@@ -386,6 +432,18 @@ contains
             if (meta_info_found) then
               !! TODO: include accumulated units here
               ! NB: have to call with `writer_entries(i)%contents(j)` otherwise we'll be updating a copy
+              if (len_trim(specific_field_meta_information%field_long_name) > 0 .and. &
+                  len_trim(derived_field_long_name_extra) > 0) then
+                specific_field_meta_information%field_long_name = trim(derived_field_long_name_extra)//" "//&
+                  trim(specific_field_meta_information%field_long_name)
+              endif
+
+              if (len_trim(specific_field_meta_information%field_units) > 0 .and. &
+                  len_trim(derived_field_units_extra) > 0) then
+                specific_field_meta_information%field_units = trim(derived_field_units_extra)//" "//&
+                  trim(specific_field_meta_information%field_units)
+              endif
+
               call update_writer_field_with_field_meta_information(writer_entries(i)%contents(j),&
                 specific_field_meta_information)
             else
