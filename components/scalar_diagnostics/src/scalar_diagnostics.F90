@@ -219,7 +219,15 @@ contains
     else
       field_information%enabled=.true.
     end if    
- 
+
+    if (name .eq. "qlmax_local") then
+       field_information%units = 'kg/kg'
+       field_information%long_name = "column maximum liquid water specific mass"
+    endif
+    if (name .eq. "wmax_local") then
+       field_information%units = 'm/s'
+       field_information%long_name = "column maximum vertical velocity"
+    endif
   end subroutine field_information_retrieval_callback
 
   !> Field value retrieval callback, this returns the value of a specific published field

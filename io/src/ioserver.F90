@@ -32,7 +32,7 @@ module io_server_mod
   use threadpool_mod, only : threadpool_init, threadpool_finalise, threadpool_start_thread, check_thread_status, &
        threadpool_deactivate, threadpool_is_idle
   use global_callback_inter_io_mod, only : perform_global_callback
-  use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, initialise_logging
+  use logging_mod, only : LOG_ERROR, LOG_WARN, LOG_INFO, log_log, initialise_logging
   use mpi, only : MPI_COMM_WORLD, MPI_STATUSES_IGNORE, MPI_BYTE
   use io_server_state_reader_mod, only : read_io_server_configuration
   implicit none
@@ -410,13 +410,12 @@ contains
     type(data_sizing_description_type) :: data_description(io_configuration%number_of_distinct_data_fields+4)
     integer :: created_mpi_type, data_size, recv_count, i
     type(data_sizing_description_type) :: field_description
-    logical :: field_found
+    logical :: q_indecies_field_found, field_found
     
     recv_count=data_receive(mpi_type_data_sizing_description, io_configuration%number_of_distinct_data_fields+4, &
          source, description_data=data_description)
 
     call handle_monc_dimension_information(data_description, monc_defn)
-     
     do i=1, io_configuration%number_of_data_definitions
       created_mpi_type=build_mpi_datatype(io_configuration%data_definitions(i), data_description, data_size, &
            monc_defn%field_start_locations(i), monc_defn%field_end_locations(i), monc_defn%dimensions(i))            
@@ -428,15 +427,35 @@ contains
     end do
     if (.not. initialised_present_data) then
       initialised_present_data=.true.
-      field_found=get_data_description_from_name(data_description, NUMBER_Q_INDICIES_KEY, field_description)
-      call c_put_integer(io_configuration%dimension_sizing, "active_q_indicies", field_description%dim_sizes(1))
+
+      do i=1, size(io_configuration%diagnostics)
+        field_found=get_data_description_from_name(data_description, io_configuration%diagnostics(i)%name, field_description)
+        if (field_found) then
+           io_configuration%diagnostics(i)%units = field_description%field_units
+           io_configuration%diagnostics(i)%long_name = field_description%field_long_name
+           io_configuration%diagnostics(i)%standard_name = field_description%field_standard_name
+        endif
+
+        !! TODO: handle propagation of field information down MPI reductions here
+      enddo
+
+      q_indecies_field_found=get_data_description_from_name(data_description, NUMBER_Q_INDICIES_KEY, field_description)
+      if (q_indecies_field_found) then
+         call c_put_integer(io_configuration%dimension_sizing, "active_q_indicies", field_description%dim_sizes(1))
+      endif
       call register_present_field_names_to_federators(data_description, recv_count)
     end if
     call get_monc_information_data(source)
   end subroutine init_data_definition
 
+
   !> Retrieves MONC information data, this is sent by MONC (and received) regardless, but only actioned if the data has not
   !! already been set
+  !! 
+  !! The following three things are sent in the byte-array: 1) values of the `zn` array, 2) names of the `q` fields and 3)
+  !! `units`, `long_name` and `standard_name` for all component fields. Corresponding data is packed together in
+  !! `iobridge_mod::send_general_monc_information_to_server`
+  !!
   !! @param source MONC source process
   subroutine get_monc_information_data(source)
     integer, intent(in) :: source
