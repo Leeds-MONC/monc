@@ -10,7 +10,8 @@ module mpi_communication_mod
   use forthread_mod, only : forthread_mutex_lock, forthread_mutex_unlock, forthread_mutex_init, forthread_mutex_destroy
   use threadpool_mod, only : check_thread_status
   use mpi, only : MPI_COMM_WORLD, MPI_SOURCE, MPI_INT, MPI_BYTE, MPI_STATUS_SIZE, MPI_REQUEST_NULL, &
-       MPI_STATUS_IGNORE, MPI_STATUSES_IGNORE, MPI_ANY_SOURCE, MPI_THREAD_MULTIPLE, MPI_THREAD_SERIALIZED
+       MPI_STATUS_IGNORE, MPI_STATUSES_IGNORE, MPI_ANY_SOURCE, MPI_THREAD_MULTIPLE, MPI_THREAD_SERIALIZED, MPI_SUCCESS, &
+       MPI_ERRORS_RETURN, MPI_MAX_ERROR_STRING
   use iso_c_binding
   implicit none
 
@@ -44,6 +45,7 @@ contains
   !! @param provided_threading The provided threading mode
   subroutine initialise_mpi_communication(provided_threading)
     integer, intent(in) :: provided_threading
+    integer :: i_error
 
     mpi_threading_mode=provided_threading
     if (mpi_threading_mode .ne. MPI_THREAD_MULTIPLE .and. mpi_threading_mode .ne. MPI_THREAD_SERIALIZED) then
@@ -51,7 +53,28 @@ contains
     end if    
     manage_mpi_thread_safety=provided_threading == MPI_THREAD_SERIALIZED
     call check_thread_status(forthread_mutex_init(mpi_mutex, -1))
+
+    call MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN, i_error)
   end subroutine initialise_mpi_communication
+
+  subroutine check_for_mpi_error(ierr, error_message_details)
+    integer, intent(in) :: ierr
+    character(len=STRING_LENGTH), intent(in), optional :: error_message_details
+
+    integer :: length, error_status
+    character(len=MPI_MAX_ERROR_STRING) :: mpi_error_message
+
+    call MPI_Error_string(ierr, mpi_error_message, length, error_status)
+
+    if (ierr /= MPI_SUCCESS) then
+       if (present(error_message_details)) then
+          call log_log(LOG_ERROR, "MPI-related error occured: "//trim(mpi_error_message)&
+             //" ("//trim(error_message_details)//")")
+       else
+          call log_log(LOG_ERROR, "MPI-related error occured "//trim(mpi_error_message))
+       endif
+    endif
+  end subroutine check_for_mpi_error
 
   !> If we are explicitly managing MPI thread safety (SERIALIZED mode) then locks MPI
   subroutine lock_mpi()
@@ -96,6 +119,8 @@ contains
         call mpi_wait(request, MPI_STATUS_IGNORE, ierr)
       end if
     end if
+
+    call check_for_mpi_error(ierr, "error in `wait_for_mpi_request`")
   end subroutine wait_for_mpi_request  
 
   !> Waits for all MPI requests to complete, either by managing thread safety and interleaving or just a call to MPI
@@ -119,6 +144,8 @@ contains
     else
       call mpi_waitall(count, requests, MPI_STATUSES_IGNORE, ierr)
     end if
+
+    call check_for_mpi_error(ierr, "error in `waitall_for_mpi_request`")
   end subroutine waitall_for_mpi_requests 
 
   !> Retrieves the number of IO servers that are running in total
@@ -131,6 +158,8 @@ contains
 
     call mpi_comm_size(io_comm, number, ierr)
     get_number_io_servers=number
+
+    call check_for_mpi_error(ierr, "error in `get_number_io_servers`")
   end function get_number_io_servers
 
   !> Retrieves my IO server rank out of the number of IO servers that are running
@@ -143,6 +172,8 @@ contains
 
     call mpi_comm_rank(io_comm, number, ierr)
     get_my_io_rank=number
+
+    call check_for_mpi_error(ierr, "error in `get_my_io_rank`")
   end function get_my_io_rank  
 
   !> Registers a request for receiving a command from any MONC process on the command channel
@@ -153,6 +184,8 @@ contains
     call mpi_irecv(command_buffer, 1, MPI_INT, MPI_ANY_SOURCE, COMMAND_TAG, &
          MPI_COMM_WORLD, command_request_handle, ierr)
     call unlock_mpi()
+
+    call check_for_mpi_error(ierr, "error in `register_command_receive`")
   end subroutine register_command_receive
 
   !> Awaits some data on the data channel. This is of the type, size from the source provided and can either be written into
@@ -190,6 +223,8 @@ contains
       call unlock_mpi()
       data_receive=recv_count
     end if    
+
+    call check_for_mpi_error(ierr, "error in `data_receive`")
   end function data_receive
 
   !> Cancels all outstanding communication requests
@@ -209,6 +244,8 @@ contains
       call mpi_cancel(req, ierr)
       call unlock_mpi()
     end if
+
+    call check_for_mpi_error(ierr, "error in `cancel_request`")
   end subroutine cancel_request  
 
   !> Tests for a command message based upon the request already registered
@@ -232,6 +269,8 @@ contains
     else
       test_for_command=.false.
     end if    
+
+    call check_for_mpi_error(ierr, "error in `test_for_command`")
   end function test_for_command
 
   !> Tests for inter IO server communication
@@ -266,6 +305,8 @@ contains
     end do
     call unlock_mpi()
     test_for_inter_io=.false.
+
+    call check_for_mpi_error(ierr, "error in `test_for_inter_io`")
   end function test_for_inter_io
   
   !> Frees an MPI type, used in clean up
@@ -276,6 +317,8 @@ contains
     integer :: ierr
 
     call mpi_type_free(the_type, ierr)
+
+    call check_for_mpi_error(ierr, "error in `free_mpi_type`")
   end subroutine free_mpi_type  
 
   !> Builds the MPI type that corresponds to the data which will be received from a specific MONC process. Two factors
@@ -390,5 +433,7 @@ contains
     call unlock_mpi()
     call mpi_type_size(new_type, data_size, ierr)
     build_mpi_datatype=new_type
+
+    call check_for_mpi_error(ierr, "error in `build_mpi_datatype`")
   end function build_mpi_datatype
 end module mpi_communication_mod
