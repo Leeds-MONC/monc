@@ -1,9 +1,8 @@
 #!/bin/bash --login
 #PBS -N MONC
-#PBS -l select=22
+#PBS -l select=33
 #PBS -l walltime=01:00:00
 #PBS -j oe
-#PBS -P monc
 #PBS -q normal
 
 ##############################################################
@@ -23,12 +22,12 @@ cd $PBS_O_WORKDIR
 export SUBMISSION_SCRIPT_NAME=submonc.pbs
 export MONC_EXEC=./build/bin/monc_driver.exe
 
-export TESTCASE=testcases/radiative_convective_equilibrium/RCE_MO_cray.mcf
+export TESTCASE=testcases/stable/Fog_Porson2011.mcf
 export STDOUT_DIR=monc_stdout
 export CP_DIR=checkpoint_files
-export RUN_NAME=RCE_dump_
+export RUN_NAME=fog_dump_
 export NPES=np
-export MAX_CONTINUATION_RUNS=100
+export MAX_CONTINUATION_RUNS=200
 
 ulimit -c unlimited
 

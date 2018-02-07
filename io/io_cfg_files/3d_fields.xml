@@ -1,10 +1,10 @@
-<data-definition name="3d_fields_data" frequency="{3d_sampling_frequency}">
+<data-definition name="3d_fields_data" frequency="{sampling_frequency}">
   <field name="w" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
   <field name="u" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
   <field name="v" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
   <field name="th" type="array" data_type="double" size="zn,y,x" collective=true optional=true/>
   <field name="q" type="array" data_type="double" size="z,y,x,qfields" collective=true optional=true/>
-</data-definition>
+ </data-definition>
 
 <group name="3d_fields">
   <member name="w"/>
@@ -12,5 +12,5 @@
   <member name="v"/>
   <member name="th"/>
   <member name="q"/>
-</group>
+ </group>
 

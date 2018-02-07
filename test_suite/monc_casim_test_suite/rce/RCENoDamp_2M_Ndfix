@@ -40,7 +40,7 @@ diag_write_freq=10800.
 # Checkpoint configuration 
 checkpoint_frequency=0   
 checkpoint_file="add_checkpoint_file" 
-checkpoint_walltime_frequency=10 
+check_wall_frequency=10 
 walltime_limit=00:40:00  
 
 # limit for defining cloud

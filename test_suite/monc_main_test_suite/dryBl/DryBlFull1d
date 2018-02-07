@@ -24,8 +24,8 @@ dtm=0.5
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="add_checkpoint_file"
-check_walltime_frequency=1
-walltime_limit=00:01:30
+check_walltime_frequency=20
+walltime_limit=00:05:00
 
 # Advection choices
 advection_flow_fields=pw

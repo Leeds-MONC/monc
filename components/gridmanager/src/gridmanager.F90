@@ -4,7 +4,7 @@ module gridmanager_mod
   use monc_component_mod, only : component_descriptor_type
   use state_mod, only : model_state_type
   use optionsdatabase_mod, only : options_get_integer, options_get_logical, options_get_real, &
-     options_get_logical_array, options_get_real_array, options_get_string_array, options_get_array_size
+     options_get_logical_array, options_get_real_array, options_get_string_array, options_get_array_size, options_get_string
   use grids_mod, only : vertical_grid_configuration_type, X_INDEX, Y_INDEX, Z_INDEX
   use logging_mod, only : LOG_INFO, LOG_ERROR, log_master_log, log_log
   use conversions_mod, only : conv_to_string
@@ -75,7 +75,8 @@ contains
 
     deallocate(vertical_grid%z, vertical_grid%zn, vertical_grid%dz, vertical_grid%dzn, vertical_grid%czb, vertical_grid%cza, &
          vertical_grid%czg, vertical_grid%czh, vertical_grid%rdz, vertical_grid%rdzn, vertical_grid%tzc1, vertical_grid%tzc2,&
-         vertical_grid%tzd1, vertical_grid%tzd2, vertical_grid%thref, vertical_grid%theta_init, vertical_grid%tref, &
+         vertical_grid%tzd1, vertical_grid%tzd2, vertical_grid%thref, vertical_grid%theta_init,  vertical_grid%temp_init, &
+         vertical_grid%rh_init, vertical_grid%tref, &
          vertical_grid%prefn, vertical_grid%pdiff, vertical_grid%prefrcp, vertical_grid%rprefrcp, vertical_grid%rho, &
          vertical_grid%rhon, vertical_grid%tstarpr, vertical_grid%qsat, vertical_grid%dqsatdt, vertical_grid%qsatfac, &
          vertical_grid%dthref, vertical_grid%rneutml, vertical_grid%rneutml_sq, vertical_grid%buoy_co, &
@@ -99,6 +100,7 @@ contains
          current_state%origional_vertical_grid_setup, current_state%continuation_run)
     call set_vertical_reference_profile(current_state, current_state%global_grid%configuration%vertical, &
          current_state%global_grid%size(Z_INDEX))
+    
   end subroutine initialise_verticalgrid_configuration_type
 
   !> Sets up the vertical grid reference profile at each point
@@ -115,6 +117,8 @@ contains
     call calculate_initial_profiles(current_state, vertical_grid)
     call set_up_vertical_reference_properties(current_state, vertical_grid, current_state%global_grid%size(Z_INDEX))
     call set_anelastic_pressure(current_state)
+    ! 
+    call set_qv_init_from_rh(current_state)
 
     do k=2,kkp-1
       ! for diffusion onto p-level from below
@@ -163,13 +167,13 @@ contains
 
     integer :: nq_init ! The number of q fields to initialize
     integer :: nzq     ! The number of input levels for q_init
-    integer :: i,j,n ! loop counters
+    integer :: i,j,n, k ! loop counters
     integer :: iq  ! temporary q varible index
 
     real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: f_init_pl_q       ! Initial node values for q variables
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_init_pl_q      ! Initial node height values for q variables
-    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_init_pl_theta  ! Initial node values for theta variable
-    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_init_pl_theta  ! Initial node height values for theta variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_init_pl_theta  ! Initial node values for potential temperature variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_init_pl_theta  ! Initial node height values for potential temperature variable
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_init_pl_u      ! Initial node values for u variable
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_init_pl_u      ! Initial node height values for u variable
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_init_pl_v      ! Initial node values for v variable
@@ -180,7 +184,8 @@ contains
 
     logical :: l_init_pl_u     ! if .true. then initialize u field
     logical :: l_init_pl_v     ! if .true. then initialize v field
-    logical :: l_init_pl_theta ! if .true. then initialize theta field
+    logical :: l_init_pl_theta ! if .true. then initialize potential temperature field
+    logical :: l_init_pl_rh    ! if .true. then initialize relative humidity field
     logical :: l_init_pl_q     ! if .true. then initialize q fields
     logical :: l_thref         ! if .true. then initialize thref profile (overrides thref0)
     logical :: l_matchthref    ! if .true. then initialize thref to be the same as theta_init
@@ -191,6 +196,7 @@ contains
     real(kind=DEFAULT_PRECISION), allocatable :: zgrid(:)  ! z grid to use in interpolation
 
     real(kind=DEFAULT_PRECISION) :: zztop ! top of the domain
+    real(kind=DEFAULT_PRECISION) :: qsat
 
     allocate(zgrid(current_state%local_grid%local_domain_end_index(Z_INDEX)))
     
@@ -203,10 +209,16 @@ contains
     vertical_grid%theta_init = 0.0_DEFAULT_PRECISION
 
     l_init_pl_theta=options_get_logical(current_state%options_database, "l_init_pl_theta")
+    l_init_pl_rh=options_get_logical(current_state%options_database, "l_init_pl_rh") 
     l_init_pl_q=options_get_logical(current_state%options_database, "l_init_pl_q")
     if (l_init_pl_q) then
       allocate(names_init_pl_q(options_get_array_size(current_state%options_database, "names_init_pl_q")))
       call options_get_string_array(current_state%options_database, "names_init_pl_q", names_init_pl_q)
+      do n = 1,size(names_init_pl_q)
+         if (trim(names_init_pl_q(n)) .eq. 'vapour' .and. l_init_pl_rh) then 
+            call log_master_log(LOG_ERROR, "Initialisation of vapour and RH - STOP")
+         endif
+      enddo
     end if
     l_init_pl_u=options_get_logical(current_state%options_database, "l_init_pl_u")
     l_init_pl_v=options_get_logical(current_state%options_database, "l_init_pl_v")
@@ -236,6 +248,7 @@ contains
       call options_get_real_array(current_state%options_database, "z_init_pl_theta", z_init_pl_theta)
       call options_get_real_array(current_state%options_database, "f_init_pl_theta", f_init_pl_theta)
       call check_top(zztop, z_init_pl_theta(size(z_init_pl_theta)), 'z_init_pl_theta')
+      call check_input_levels(size(z_init_pl_theta), size(f_init_pl_theta), "f_init_pl_theta")
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
       call piecewise_linear_1d(z_init_pl_theta(1:size(z_init_pl_theta)), f_init_pl_theta(1:size(f_init_pl_theta)), zgrid, &
          current_state%global_grid%configuration%vertical%theta_init)
@@ -262,6 +275,7 @@ contains
       call options_get_real_array(current_state%options_database, "z_init_pl_u", z_init_pl_u)
       call options_get_real_array(current_state%options_database, "f_init_pl_u", f_init_pl_u)
       call check_top(zztop, z_init_pl_u(size(z_init_pl_u)), 'z_init_pl_u')
+      call check_input_levels(size(z_init_pl_u), size(f_init_pl_u), "f_init_pl_u")
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
       call piecewise_linear_1d(z_init_pl_u(1:size(z_init_pl_u)), f_init_pl_u(1:size(f_init_pl_u)), &
          zgrid, current_state%global_grid%configuration%vertical%u_init)
@@ -281,6 +295,7 @@ contains
       call options_get_real_array(current_state%options_database, "z_init_pl_v", z_init_pl_v)
       call options_get_real_array(current_state%options_database, "f_init_pl_v", f_init_pl_v)
       call check_top(zztop, z_init_pl_v(size(z_init_pl_v)), 'z_init_pl_v')
+      call check_input_levels(size(z_init_pl_v), size(f_init_pl_v), "f_init_pl_v")
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
       call piecewise_linear_1d(z_init_pl_v(1:size(z_init_pl_v)), f_init_pl_v(1:size(f_init_pl_v)), &
          zgrid, current_state%global_grid%configuration%vertical%v_init)
@@ -303,10 +318,12 @@ contains
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
       allocate(f_init_pl_q_tmp(nq_init*nzq))
       call options_get_real_array(current_state%options_database, "f_init_pl_q", f_init_pl_q_tmp)
+      !call check_input_levels(size(z_init_pl_q), size(f_init_pl_q_tmp), "f_init_pl_q_tmp")
       allocate(f_init_pl_q(nzq, nq_init))
       f_init_pl_q(1:nzq, 1:nq_init)=reshape(f_init_pl_q_tmp, (/nzq, nq_init/))
       do n=1, nq_init
-        iq=get_q_index(trim(names_init_pl_q(n)), 'piecewise_initialization')
+         iq=get_q_index(trim(names_init_pl_q(n)), 'piecewise_initialization')
+         call check_input_levels(size(z_init_pl_q), size(f_init_pl_q(1:nzq,n)), "f_init_pl_q")
         call piecewise_linear_1d(z_init_pl_q(1:nzq), f_init_pl_q(1:nzq,n), zgrid, &
            current_state%global_grid%configuration%vertical%q_init(:,iq))
         if (.not. current_state%continuation_run) then
@@ -320,7 +337,7 @@ contains
         end if
       end do
       deallocate(f_init_pl_q_tmp, z_init_pl_q, f_init_pl_q, names_init_pl_q)
-    end if
+   end if
     deallocate(zgrid)      
   end subroutine calculate_initial_profiles
 
@@ -636,7 +653,8 @@ contains
     allocate(vertical_grid%dz(n), vertical_grid%dzn(n),&
          vertical_grid%czb(n), vertical_grid%cza(n), vertical_grid%czg(n), vertical_grid%czh(n),&
          vertical_grid%rdz(n), vertical_grid%rdzn(n), vertical_grid%tzc1(n), vertical_grid%tzc2(n),&
-         vertical_grid%tzd1(n), vertical_grid%tzd2(n), vertical_grid%theta_init(n), &
+         vertical_grid%tzd1(n), vertical_grid%tzd2(n), vertical_grid%theta_init(n), vertical_grid%temp_init(n), &
+         vertical_grid%rh_init(n), &
          vertical_grid%tref(n), vertical_grid%prefn(n), vertical_grid%pdiff(n), vertical_grid%prefrcp(n), &
          vertical_grid%rprefrcp(n), vertical_grid%rho(n), vertical_grid%rhon(n), vertical_grid%tstarpr(n), &
          vertical_grid%qsat(n), vertical_grid%dqsatdt(n), vertical_grid%qsatfac(n), vertical_grid%dthref(n), &
@@ -832,5 +850,86 @@ contains
     end if
 
   end subroutine check_top
+
+  subroutine check_input_levels(z_levels, field_levels, field)
+    integer, intent(in) :: z_levels
+    integer, intent(in) :: field_levels
+    character(*), intent(in) :: field
+
+    if (z_levels /= field_levels)then
+       call log_master_log(LOG_ERROR, "Input levels not equal for "//trim(field)//", z_levels = "// &
+            trim(conv_to_string(z_levels))//" field_levels = "//conv_to_string(field_levels))
+    end if
+
+  end subroutine check_input_levels
+  
+  subroutine set_qv_init_from_rh(current_state)
+
+    type(model_state_type), intent(inout) :: current_state
+
+    logical :: l_init_pl_rh    ! if .true. then initialize relative humidity field
+    real(kind=DEFAULT_PRECISION) :: zztop ! top of the domain
+    real(kind=DEFAULT_PRECISION) :: qsat
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: f_init_pl_rh     ! Initial node values for relative humidity variable
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_init_pl_rh     ! Initial node height values for relative humidity variable
+    real(kind=DEFAULT_PRECISION), allocatable :: zgrid(:)  ! z grid to use in interpolation
+    real(kind=DEFAULT_PRECISION), allocatable :: TdegK(:)  ! temperature in Kelvin
+    integer :: i,j,n, k ! loop counters
+    integer :: iq  ! temporary q varible index
+
+    type(vertical_grid_configuration_type) :: vertical_grid
+
+    vertical_grid=current_state%global_grid%configuration%vertical
+
+    allocate(zgrid(current_state%local_grid%local_domain_end_index(Z_INDEX)))
+    
+    zztop = current_state%global_grid%top(Z_INDEX)
+
+    l_init_pl_rh=options_get_logical(current_state%options_database, "l_init_pl_rh") 
+
+    if (l_init_pl_rh)then
+       allocate(z_init_pl_rh(options_get_array_size(current_state%options_database, "z_init_pl_rh")), &
+             f_init_pl_rh(options_get_array_size(current_state%options_database, "f_init_pl_rh")))
+       call options_get_real_array(current_state%options_database, "z_init_pl_rh", z_init_pl_rh)
+       call options_get_real_array(current_state%options_database, "f_init_pl_rh", f_init_pl_rh)
+       call check_top(zztop, z_init_pl_rh(size(z_init_pl_rh)), 'z_init_pl_rh')
+       call check_input_levels(size(z_init_pl_rh), size(f_init_pl_rh), "f_init_pl_rh")
+       zgrid=current_state%global_grid%configuration%vertical%zn(:)
+      call piecewise_linear_1d(z_init_pl_rh(1:size(z_init_pl_rh)), f_init_pl_rh(1:size(f_init_pl_rh)), zgrid, &
+           current_state%global_grid%configuration%vertical%rh_init)
+      
+      if (.not. current_state%passive_q .and. current_state%th%active) then
+         iq=get_q_index('vapour', 'piecewise_initialization')
+         allocate(TdegK(current_state%local_grid%local_domain_end_index(Z_INDEX)))
+         TdegK(:) = current_state%global_grid%configuration%vertical%theta_init(:)* &
+              (vertical_grid%prefn(:)/current_state%surface_reference_pressure)**r_over_cp
+         do k = current_state%local_grid%local_domain_start_index(Z_INDEX), &
+              current_state%local_grid%local_domain_end_index(Z_INDEX)
+            qsat=qsaturation(TdegK(k), current_state%global_grid%configuration%vertical%prefn(k)/100.)    
+            current_state%global_grid%configuration%vertical%q_init(k, iq) = & 
+                 (current_state%global_grid%configuration%vertical%rh_init(k)/100.0)*qsat
+            !print *,  current_state%global_grid%configuration%vertical%rh_init(k), &
+            !     current_state%global_grid%configuration%vertical%q_init(k, iq), &
+            !     TdegK(k)
+         enddo
+         if (.not. current_state%continuation_run) then
+            do i=current_state%local_grid%local_domain_start_index(X_INDEX), &
+                 current_state%local_grid%local_domain_end_index(X_INDEX)
+               do j=current_state%local_grid%local_domain_start_index(Y_INDEX), &
+                    current_state%local_grid%local_domain_end_index(Y_INDEX)
+                  current_state%q(iq)%data(:,j,i) = current_state%global_grid%configuration%vertical%q_init(:, iq)
+               end do
+            end do
+         end if
+
+         deallocate(TdegK)
+      else
+         call log_master_log(LOG_ERROR, "Initialising with RH but q and/or theta passive")
+      end if
+      
+      deallocate(z_init_pl_rh, f_init_pl_rh)
+    end if
+
+  end subroutine set_qv_init_from_rh
 
 end module gridmanager_mod

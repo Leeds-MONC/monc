@@ -44,7 +44,7 @@ dtm=0.1
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="up_down_bubble_dump.nc"
-checkpoint_walltime_frequency=10
+check_walltime_frequency=10
 walltime_limit=00:30:00
 
 # IO server configuration

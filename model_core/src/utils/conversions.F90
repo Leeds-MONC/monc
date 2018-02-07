@@ -142,7 +142,7 @@ contains
     real :: real_value
 
     if (len(trim(string)) .ne. 0) then
-      read(string, '(f10.2)', iostat=ierr ) real_value
+      read(string, '(f11.2)', iostat=ierr ) real_value
       string_is_real = ierr == 0
     else
       string_is_real=.false.

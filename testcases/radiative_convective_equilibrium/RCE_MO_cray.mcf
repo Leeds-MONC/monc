@@ -38,7 +38,7 @@ diag_write_freq=10800.
 # Checkpoint configuration 
 checkpoint_frequency=0   
 checkpoint_file="checkpoint_files/RCE_dump.nc" 
-checkpoint_walltime_frequency=10 
+check_walltime_frequency=10 
 walltime_limit=00:40:00  
 
 # limit for defining cloud

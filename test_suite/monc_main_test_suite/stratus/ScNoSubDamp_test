@@ -42,7 +42,7 @@ dtm=0.4
 # IO server configuration
 ioserver_configuration_file="add_ioconfig_file_path"
 moncs_per_io_server=11
-sampling_frequency=10
+sampling_frequency=20
 3d_sampling_frequency=4500
 mm=1800.0
 mm1=20.0
@@ -51,8 +51,8 @@ diag_write_freq=7260.0
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="add_checkpoint_file"
-check_walltime_frequency=1
-walltime_limit=00:01:30
+check_walltime_frequency=20
+walltime_limit=00:05:00
 # Advection choices
 advection_flow_fields=pw
 advection_theta_field=tvd

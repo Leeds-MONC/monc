@@ -2,7 +2,7 @@ module setfluxlook_mod
   use monc_component_mod, only : component_descriptor_type
   use state_mod, only : PRESCRIBED_SURFACE_FLUXES, PRESCRIBED_SURFACE_VALUES, model_state_type
   use grids_mod, only : Z_INDEX
-  use datadefn_mod, only : DEFAULT_PRECISION
+  use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use optionsdatabase_mod, only : options_get_real, options_get_integer, options_get_array_size, &
      options_get_real_array, options_get_string, options_get_logical
   use saturation_mod, only : qsaturation
@@ -13,6 +13,8 @@ module setfluxlook_mod
   use logging_mod, only : LOG_INFO, LOG_WARN, LOG_ERROR, LOG_DEBUG, log_master_log, log_log, log_get_logging_level
   use q_indices_mod, only: get_q_index, standard_q_names
   use interpolation_mod, only: interpolate_point_linear_1d
+  use naming_conventions_mod
+
   implicit none
 
 #ifndef TEST_MODE
@@ -28,10 +30,12 @@ module setfluxlook_mod
      
   integer, parameter :: LOOKUP_ENTRIES = 80    !< Number of entries for MO lookup tables
   integer, parameter :: MAX_FILE_LEN=200       !< Maximum length of surface condition input filename
-  integer, parameter :: MAX_SURFACE_INPUTS=50  !< Specifies the maximum number of surface inputs through configuration file
+  integer, parameter :: MAX_SURFACE_INPUTS=750  !< Specifies the maximum number of surface inputs through configuration file
                                                !! Inputs through netcdf files are not limitted by this.
   
   character(MAX_FILE_LEN) :: input_file
+
+  character(len=STRING_LENGTH) :: units_surface_temp='unset'  ! units of theta variable forcing
 
   real(kind=DEFAULT_PRECISION) :: max_change_buoyancy_flux
   real(kind=DEFAULT_PRECISION), allocatable :: surface_boundary_input_times(:)
@@ -102,6 +106,9 @@ contains
        ! surface vapour (surface_vapour_mixing_ratio) set to saturated value (see read_config)
           if (current_state%saturated_surface)then
              current_state%surface_vapour_mixing_ratio = qsaturation(surface_temperatures(1),current_state%surface_pressure*0.01)
+          else 
+             current_state%surface_vapour_mixing_ratio =  &
+                  options_get_real(current_state%options_database, "surface_vapour_mixing_ratio")
           endif
           
        ! The code below copied from set_flux as these values need to be 
@@ -240,7 +247,7 @@ contains
     type(model_state_type), intent(inout), target :: current_state
 
     real(kind=DEFAULT_PRECISION) :: surface_temp   ! Surface temperature
-
+  
     if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_FLUXES) then  ! Prescribed surface fluxes
       
       ! Linear interpolation of input data...
@@ -269,7 +276,12 @@ contains
          surface_temperatures, &
          current_state%time, surface_temp, &
          extrapolate='constant') 
-
+      
+      select case(trim(units_surface_temp))
+      case(degC) ! degrees C
+         surface_temp = surface_temp + 273.15_DEFAULT_PRECISION
+      case default ! kelvin
+      end select
 
       if (current_state%saturated_surface)then
         current_state%surface_vapour_mixing_ratio = qsaturation(surface_temp,current_state%surface_pressure*0.01)
@@ -317,7 +329,7 @@ contains
        "type_of_surface_boundary_conditions")
     current_state%use_time_varying_surface_values=options_get_logical(current_state%options_database, &
        "use_time_varying_surface_values")
-
+  
     current_state%saturated_surface = .true. ! We will change this if we find some humidity data
 
     input_file=options_get_string(current_state%options_database, "surface_conditions_file")
@@ -344,6 +356,8 @@ contains
         surface_temperatures=0.0
         surface_humidities=0.0
         call options_get_real_array(current_state%options_database, "surface_temperatures", surface_temperatures)
+        units_surface_temp=options_get_string(current_state%options_database, "units_surface_temp")
+        
         call options_get_real_array(current_state%options_database, "surface_humidities", surface_humidities)
         number_input_humidities=options_get_array_size(current_state%options_database, "surface_humidities")
       end if

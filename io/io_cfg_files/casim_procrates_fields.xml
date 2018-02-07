@@ -1,0 +1,17 @@
+<data-definition name="casim_procrate_fields" frequency="{sampling_frequency}" namespace="casim_procrate_profiles">
+  <field name="pcond_total" type="array" data_type="double" optional=true/>
+</data-definition>
+
+<data-handling namespace="casim_procrate_profiles">
+
+  <diagnostic field="pcond_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pcond_mean" equation="pcond_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pcond_total_g" field="pcond_total" root="auto"/>
+  </diagnostic>
+   
+</data-handling>
+
+
+<group name="casim_1d_procrate" namespace="casim_procrates_profiles">
+  <member name="pcond_mean"/>
+</group>

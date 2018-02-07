@@ -84,12 +84,14 @@ contains
            current_state%diffusion_halo_swap_state, 2, .true.)
     end if    
 
-    iqv = get_q_index(standard_q_names%VAPOUR, 'smagorinsky')
-    current_state%water_vapour_mixing_ratio_index=iqv
-
-    iql = get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'smagorinsky')
-    current_state%liquid_water_mixing_ratio_index=iql
-
+    if (.not. current_state%passive_q) then 
+       iqv = get_q_index(standard_q_names%VAPOUR, 'smagorinsky')
+       current_state%water_vapour_mixing_ratio_index=iqv
+       
+       iql = get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'smagorinsky')
+       current_state%liquid_water_mixing_ratio_index=iql
+    endif
+       
   end subroutine initialisation_callback
   
   !> For each none halo cell this will calculate the subgrid terms for viscosity and diffusion

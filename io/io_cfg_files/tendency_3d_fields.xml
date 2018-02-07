@@ -1,0 +1,185 @@
+<data-definition name="tendency_3d_fields_data" frequency="{3d_sampling_frequency}">
+  <field name="tend_u_pwadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_v_pwadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_w_pwadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_th_pwadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qv_pwadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_ql_pwadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qi_pwadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qr_pwadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qs_pwadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qg_pwadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_tabs_pwadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+  <field name="tend_u_tvdadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_v_tvdadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_w_tvdadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_th_tvdadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qv_tvdadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_ql_tvdadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qi_tvdadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qr_tvdadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qs_tvdadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qg_tvdadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_tabs_tvdadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+  <field name="tend_th_thadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_tabs_thadvection_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+  <field name="tend_th_diffusion_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qv_diffusion_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_ql_diffusion_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qi_diffusion_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qr_diffusion_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qs_diffusion_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qg_diffusion_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_tabs_diffusion_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+  <field name="tend_u_viscosity_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_v_viscosity_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_w_viscosity_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+  <field name="tend_w_buoyancy_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+  <field name="tend_u_forcing_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_v_forcing_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_th_forcing_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qv_forcing_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_ql_forcing_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qi_forcing_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qr_forcing_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qs_forcing_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qg_forcing_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_tabs_forcing_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+  <field name="tend_u_damping_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_v_damping_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_w_damping_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_th_damping_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qv_damping_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_ql_damping_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qi_damping_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qr_damping_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qs_damping_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qg_damping_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_tabs_damping_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+  <field name="tend_u_coriolis_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_v_coriolis_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+  <field name="tend_th_simplecloud_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qv_simplecloud_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_ql_simplecloud_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_tabs_simplecloud_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+  <field name="tend_th_total_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qv_total_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_ql_total_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qi_total_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qr_total_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qs_total_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_qg_total_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_tabs_total_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+  <field name="tend_u_pstep_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_v_pstep_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_w_pstep_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+  <field name="tend_u_total_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_v_total_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="tend_w_total_3d_local" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+
+</data-definition>
+
+<group name="tendency_3d_fields">
+  <member name="tend_u_pwadvection_3d_local"/>
+  <member name="tend_v_pwadvection_3d_local"/>
+  <member name="tend_w_pwadvection_3d_local"/>
+  <member name="tend_th_pwadvection_3d_local"/>
+  <member name="tend_qv_pwadvection_3d_local"/>
+  <member name="tend_ql_pwadvection_3d_local"/>
+  <member name="tend_qi_pwadvection_3d_local"/>
+  <member name="tend_qr_pwadvection_3d_local"/>
+  <member name="tend_qs_pwadvection_3d_local"/>
+  <member name="tend_qg_pwadvection_3d_local"/>
+  <member name="tend_tabs_pwadvection_3d_local"/>
+
+  <member name="tend_u_tvdadvection_3d_local"/>
+  <member name="tend_v_tvdadvection_3d_local"/>
+  <member name="tend_w_tvdadvection_3d_local"/>
+  <member name="tend_th_tvdadvection_3d_local"/>
+  <member name="tend_qv_tvdadvection_3d_local"/>
+  <member name="tend_ql_tvdadvection_3d_local"/>
+  <member name="tend_qi_tvdadvection_3d_local"/>
+  <member name="tend_qr_tvdadvection_3d_local"/>
+  <member name="tend_qs_tvdadvection_3d_local"/>
+  <member name="tend_qg_tvdadvection_3d_local"/>
+  <member name="tend_tabs_tvdadvection_3d_local"/>
+
+  <member name="tend_th_thadvection_3d_local"/>
+  <member name="tend_tabs_thadvection_3d_local"/>
+
+  <member name="tend_th_diffusion_3d_local"/>
+  <member name="tend_qv_diffusion_3d_local"/>
+  <member name="tend_ql_diffusion_3d_local"/>
+  <member name="tend_qi_diffusion_3d_local"/>
+  <member name="tend_qr_diffusion_3d_local"/>
+  <member name="tend_qs_diffusion_3d_local"/>
+  <member name="tend_qg_diffusion_3d_local"/>
+  <member name="tend_tabs_diffusion_3d_local"/>
+
+  <member name="tend_u_viscosity_3d_local"/>
+  <member name="tend_v_viscosity_3d_local"/>
+  <member name="tend_w_viscosity_3d_local"/>
+
+  <member name="tend_w_buoyancy_3d_local"/>
+
+  <member name="tend_u_forcing_3d_local"/>
+  <member name="tend_v_forcing_3d_local"/>
+  <member name="tend_th_forcing_3d_local"/>
+  <member name="tend_qv_forcing_3d_local"/>
+  <member name="tend_ql_forcing_3d_local"/>
+  <member name="tend_qi_forcing_3d_local"/>
+  <member name="tend_qr_forcing_3d_local"/>
+  <member name="tend_qs_forcing_3d_local"/>
+  <member name="tend_qg_forcing_3d_local"/>
+  <member name="tend_tabs_forcing_3d_local"/>
+
+  <member name="tend_u_damping_3d_local"/>
+  <member name="tend_v_damping_3d_local"/>
+  <member name="tend_w_damping_3d_local"/>
+  <member name="tend_th_damping_3d_local"/>
+  <member name="tend_qv_damping_3d_local"/>
+  <member name="tend_ql_damping_3d_local"/>
+  <member name="tend_qi_damping_3d_local"/>
+  <member name="tend_qr_damping_3d_local"/>
+  <member name="tend_qs_damping_3d_local"/>
+  <member name="tend_qg_damping_3d_local"/>
+  <member name="tend_tabs_damping_3d_local"/>
+
+  <member name="tend_u_coriolis_3d_local"/>
+  <member name="tend_v_coriolis_3d_local"/>
+
+  <member name="tend_th_simplecloud_3d_local"/>
+  <member name="tend_qv_simplecloud_3d_local"/>
+  <member name="tend_ql_simplecloud_3d_local"/>
+  <member name="tend_tabs_simplecloud_3d_local"/>
+
+  <member name="tend_th_total_3d_local"/>
+  <member name="tend_qv_total_3d_local"/>
+  <member name="tend_ql_total_3d_local"/>
+  <member name="tend_qi_total_3d_local"/>
+  <member name="tend_qr_total_3d_local"/>
+  <member name="tend_qs_total_3d_local"/>
+  <member name="tend_qg_total_3d_local"/>
+  <member name="tend_tabs_total_3d_local"/>
+
+  <member name="tend_u_pstep_3d_local"/>
+  <member name="tend_v_pstep_3d_local"/>
+  <member name="tend_w_pstep_3d_local"/>
+
+  <member name="tend_u_total_3d_local"/>
+  <member name="tend_v_total_3d_local"/>
+  <member name="tend_w_total_3d_local"/>
+
+</group>

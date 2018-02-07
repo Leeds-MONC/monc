@@ -20,7 +20,7 @@ module checkpointer_read_checkpoint_mod
        Z_KEY, ZN_KEY, NQFIELDS, UGAL, VGAL, TIME_KEY, TIMESTEP, CREATED_ATTRIBUTE_KEY, TITLE_ATTRIBUTE_KEY, ABSOLUTE_NEW_DTM_KEY, &
        DTM_KEY, DTM_NEW_KEY, Q_INDICES_DIM_KEY, Q_INDICES_KEY, Q_FIELD_ANONYMOUS_NAME, ZQ_FIELD_ANONYMOUS_NAME, &
        MAX_STRING_LENGTH, THREF, OLUBAR, OLZUBAR, OLVBAR, OLZVBAR, OLTHBAR, OLZTHBAR, OLQBAR, OLZQBAR, OLQBAR_ANONYMOUS_NAME, &
-       OLZQBAR_ANONYMOUS_NAME, check_status, remove_null_terminator_from_string
+       OLZQBAR_ANONYMOUS_NAME, RAD_LAST_TIME_KEY, STH_LW_KEY, STH_SW_KEY, check_status, remove_null_terminator_from_string
   use datadefn_mod, only : DEFAULT_PRECISION
   use q_indices_mod, only : q_metadata_type, set_q_index, get_q_index, get_indices_descriptor, standard_q_names
   implicit none
@@ -158,6 +158,8 @@ contains
     call read_single_variable(ncid, TIME_KEY, real_data_1d_double=r_data)
     ! The time is written into checkpoint as time+dtm, therefore the time as read in has been correctly advanced
     current_state%time = r_data(1)
+    call read_single_variable(ncid, RAD_LAST_TIME_KEY, real_data_1d_double=r_data)
+    current_state%rad_last_time = r_data(1)
   end subroutine load_misc
 
   !> Will read a global attribute from the checkpoint file - note that it allocates string memory
@@ -254,6 +256,14 @@ contains
              DUAL_GRID, DUAL_GRID, zq_field_name, multi_process)
       end do      
     end if
+    if (does_field_exist(ncid, STH_LW_KEY)) then
+       call load_single_3d_field(ncid, current_state%local_grid, current_state%sth_lw, DUAL_GRID, &
+            DUAL_GRID, DUAL_GRID, STH_LW_KEY, multi_process)
+    end if
+    if (does_field_exist(ncid, STH_LW_KEY)) then
+       call load_single_3d_field(ncid, current_state%local_grid, current_state%sth_sw, DUAL_GRID, &
+            DUAL_GRID, DUAL_GRID, STH_SW_KEY, multi_process)
+    endif
   end subroutine load_all_fields
 
   !> Determines whether a variable (field) exists within the NetCDF checkpoint file

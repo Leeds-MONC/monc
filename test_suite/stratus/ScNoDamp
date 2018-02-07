@@ -129,8 +129,8 @@ l_subs_pl_q=.true.
 
 #SUBSIDENCE=1, DIVERGENCE=0
 subsidence_input_type=0
-subsidence_local_theta=.false.
-subsidence_local_q=.false.
+subsidence_local_theta=.true.
+subsidence_local_q=.true.
 
 # surface flux config
 # type_of_surface_boundary_conditions=PRESCRIBED_FLUX=0

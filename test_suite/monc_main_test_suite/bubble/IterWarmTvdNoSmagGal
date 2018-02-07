@@ -53,7 +53,7 @@ nsmth=20
 # IO server configuration
 ioserver_configuration_file="add_ioconfig_file_path"
 moncs_per_io_server=11
-sampling_frequency=10
+sampling_frequency=20
 3d_sampling_frequency=300
 mm=600.0
 mm1=20.0
@@ -64,7 +64,7 @@ diag_write_freq=3600.0
 checkpoint_frequency=0
 checkpoint_file="add_checkpoint_file"
 check_walltime_frequency=1
-walltime_limit=00:01:00
+walltime_limit=00:05:00
 
 # iterative solver
 tolerance=1.e-6

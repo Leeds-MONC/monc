@@ -1,4 +1,5 @@
 <data-definition name="profile_timeseries_fields" frequency="{sampling_frequency}" namespace="profile_fields">
+  <!-- resolved profile terms (from profile_diagnostics) -->
   <field name="prefn_local" type="array" data_type="double" optional=true />
   <field name="rho_local" type="array" data_type="double" optional=true />
   <field name="rhon_local" type="array" data_type="double" optional=true />
@@ -10,24 +11,113 @@
   <field name="uu_total_local" type="array" data_type="double" optional=true/>
   <field name="vv_total_local" type="array" data_type="double" optional=true/>
   <field name="ww_total_local" type="array" data_type="double" optional=true/>
+  <field name="www_total_local" type="array" data_type="double" optional=true/>
+  <field name="wwww_total_local" type="array" data_type="double" optional=true/>
   <field name="theta_total_local" type="array" data_type="double" optional=true/>
   <field name="vapour_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="rh_total_local" type="array" data_type="double" optional=true/>
   <field name="liquid_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="rain_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="ice_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="snow_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="graupel_mmr_total_local" type="array" data_type="double" optional=true/>
   <field name="uw_total_local" type="array" data_type="double" optional=true/>
   <field name="vw_total_local" type="array" data_type="double" optional=true/>
-  <field name="wtheta_total_local" type="array" data_type="double" optional=true/>
+  <field name="uv_total_local" type="array" data_type="double" optional=true/>
   <field name="th2_total_local" type="array" data_type="double" optional=true/>
+  <field name="wke_total_local" type="array" data_type="double" optional=true/>
+  <field name="wtheta_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wtheta_cn_total_local" type="array" data_type="double" optional=true/> 
+  <field name="wqv_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqv_cn_total_local" type="array" data_type="double" optional=true/>
+  <field name="wql_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wql_cn_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqr_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqr_cn_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqi_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqi_cn_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqs_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqs_cn_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqg_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqg_cn_total_local" type="array" data_type="double" optional=true/>
+  <!-- Subgrid profile terms (from smagorinsky and subgrid_diagnostics) -->
   <field name="uwsg_total_local" type="array" data_type="double" optional=true/>
   <field name="vwsg_total_local" type="array" data_type="double" optional=true/>
   <field name="uusg_total_local" type="array" data_type="double" optional=true/>
   <field name="vvsg_total_local" type="array" data_type="double" optional=true/>
   <field name="wwsg_total_local" type="array" data_type="double" optional=true/>
   <field name="tkesg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wkesg_total_local" type="array" data_type="double" optional=true/>
   <field name="wtsg_total_local" type="array" data_type="double" optional=true/>
   <field name="th2sg_total_local" type="array" data_type="double" optional=true/>
+  <field name="theta_dis_total_local" type="array" data_type="double" optional=true/>
+  <field name="viscosity_coef_total_local" type="array" data_type="double" optional=true/>
+  <field name="diffusion_coef_total_local" type="array" data_type="double" optional=true/>
+  <field name="richardson_number_total_local" type="array" data_type="double" optional=true/>
+  <field name="richardson_squared_total_local" type="array" data_type="double" optional=true/>
+  <field name="dissipation_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqv_sg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wql_sg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqr_sg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqi_sg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqs_sg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqg_sg_total_local" type="array" data_type="double" optional=true/>
+  <!-- Large-scale forcing terms (from forcing component) -->
   <field name="u_large_scale" type="array" data_type="double" optional=true />
+  <field name="v_large_scale" type="array" data_type="double" optional=true />
   <field name="th_large_scale" type="array" data_type="double" optional=true />
-  <field name="rh_total_local" type="array" data_type="double" optional=true/>
+  <field name="vapour_mmr_large_scale" type="array" data_type="double" optional=true />
+  <field name="cloud_mmr_large_scale" type="array" data_type="double" optional=true />
+  <field name="rain_mmr_large_scale" type="array" data_type="double" optional=true />
+  <field name="ice_mmr_large_scale" type="array" data_type="double" optional=true />
+  <field name="snow_mmr_large_scale" type="array" data_type="double" optional=true />
+  <field name="graupel_mmr_large_scale" type="array" data_type="double" optional=true />
+  <field name="u_subsidence" type="array" data_type="double" optional=true />
+  <field name="v_subsidence" type="array" data_type="double" optional=true />
+  <field name="th_subsidence" type="array" data_type="double" optional=true />
+  <field name="vapour_mmr_subsidence" type="array" data_type="double" optional=true />
+  <field name="cloud_mmr_subsidence" type="array" data_type="double" optional=true />
+  <field name="rain_mmr_subsidence" type="array" data_type="double" optional=true />
+  <field name="ice_mmr_subsidence" type="array" data_type="double" optional=true />
+  <field name="snow_mmr_subsidence" type="array" data_type="double" optional=true />
+  <field name="graupel_mmr_subsidence" type="array" data_type="double" optional=true />
+   <!-- Microphysics process rates (assumed to be from CASIM) -->
+  <field name="pcond_total" type="array" data_type="double" optional=true/>
+  <field name="phomc_total" type="array" data_type="double" optional=true/> 
+  <field name="pinuc_total" type="array" data_type="double" optional=true/>
+  <field name="pidep_total" type="array" data_type="double" optional=true/>
+  <field name="psdep_total" type="array" data_type="double" optional=true/>
+  <field name="piacw_total" type="array" data_type="double" optional=true/>
+  <field name="psacw_total" type="array" data_type="double" optional=true/>
+  <field name="psacr_total" type="array" data_type="double" optional=true/>
+  <field name="pisub_total" type="array" data_type="double" optional=true/>
+  <field name="pssub_total" type="array" data_type="double" optional=true/>
+  <field name="pimlt_total" type="array" data_type="double" optional=true/>
+  <field name="psmlt_total" type="array" data_type="double" optional=true/>
+  <field name="psaut_total" type="array" data_type="double" optional=true/>
+  <field name="psaci_total" type="array" data_type="double" optional=true/>
+  <field name="praut_total" type="array" data_type="double" optional=true/>
+  <field name="pracw_total" type="array" data_type="double" optional=true/>
+  <field name="prevp_total" type="array" data_type="double" optional=true/>
+  <field name="pgacw_total" type="array" data_type="double" optional=true/>
+  <field name="pgacs_total" type="array" data_type="double" optional=true/>
+  <field name="pgmlt_total" type="array" data_type="double" optional=true/>
+  <field name="pgsub_total" type="array" data_type="double" optional=true/>
+  <field name="psedi_total" type="array" data_type="double" optional=true/>
+  <field name="pseds_total" type="array" data_type="double" optional=true/>
+  <field name="psedr_total" type="array" data_type="double" optional=true/>
+  <field name="psedg_total" type="array" data_type="double" optional=true/>
+  <field name="psedl_total" type="array" data_type="double" optional=true/>
+  <!-- Microphysics tendencies (assumed to be from CASIM) -->
+  <field name="dth_mphys_total" type="array" data_type="double" optional=true/>
+  <field name="dth_cond_evap_total" type="array" data_type="double" optional=true/>
+  <field name="dqv_mphys_total" type="array" data_type="double" optional=true/>
+  <field name="dqv_cond_evap_total" type="array" data_type="double" optional=true/>
+  <field name="dqc_mphys_total" type="array" data_type="double" optional=true/>
+  <field name="dqr_mphys_total" type="array" data_type="double" optional=true/>
+  <field name="dqi_mphys_total" type="array" data_type="double" optional=true/>
+  <field name="dqs_mphys_total" type="array" data_type="double" optional=true/>
+  <field name="dqg_mphys_total" type="array" data_type="double" optional=true/>
 </data-definition>
 
 <data-handling namespace="profile_fields">
@@ -69,7 +159,15 @@
   <diagnostic field="ww_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
 	<operator name="arithmetic" result="ww_mean" equation="ww_mean_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="ww_mean_g" field="ww_total_local" root="auto"/>
-  </diagnostic>  
+  </diagnostic>
+  <diagnostic field="www_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+	<operator name="arithmetic" result="www_mean" equation="www_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="www_mean_g" field="www_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="wwww_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+	<operator name="arithmetic" result="wwww_mean" equation="wwww_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wwww_mean_g" field="wwww_total_local" root="auto"/>
+  </diagnostic>
   <diagnostic field="theta_mean"  type="array" data_type="double" size="zn" units="K">
 	<operator name="arithmetic" result="theta_mean" equation="theta_mean_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="theta_mean_g" field="theta_total_local" root="auto"/>
@@ -82,6 +180,22 @@
     	<operator name="arithmetic" result="liquid_mmr_mean" equation="liquid_mmr_mean_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="liquid_mmr_mean_g" field="liquid_mmr_total_local" root="auto"/>
   </diagnostic>
+  <diagnostic field="rain_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <operator name="arithmetic" result="rain_mmr_mean" equation="rain_mmr_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="rain_mmr_mean_g" field="rain_mmr_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="ice_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <operator name="arithmetic" result="ice_mmr_mean" equation="ice_mmr_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="ice_mmr_mean_g" field="ice_mmr_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="snow_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <operator name="arithmetic" result="snow_mmr_mean" equation="snow_mmr_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="snow_mmr_mean_g" field="snow_mmr_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="graupel_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <operator name="arithmetic" result="graupel_mmr_mean" equation="graupel_mmr_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="graupel_mmr_mean_g" field="graupel_mmr_total_local" root="auto"/>
+  </diagnostic>
   <diagnostic field="uw_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
 	<operator name="arithmetic" result="uw_mean" equation="uw_mean_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="uw_mean_g" field="uw_total_local" root="auto"/>
@@ -90,18 +204,123 @@
   <diagnostic field="vw_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
 	<operator name="arithmetic" result="vw_mean" equation="vw_mean_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="vw_mean_g" field="vw_total_local" root="auto"/>
-  </diagnostic>  
-
-  <diagnostic field="wtheta_mean"  type="array" data_type="double" size="zn" units="Km/s">
-	<operator name="arithmetic" result="wtheta_mean" equation="wtheta_mean_g/({x_size}*{y_size})"/>
-	<communication name="reduction" operator="sum" result="wtheta_mean_g" field="wtheta_total_local" root="auto"/>
-  </diagnostic>  
-
+  </diagnostic>
+  
+  <diagnostic field="uv_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+	<operator name="arithmetic" result="uv_mean" equation="uv_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="uv_mean_g" field="uv_total_local" root="auto"/>
+  </diagnostic>
+ 
+  <diagnostic field="wke_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wke_mean" equation="wke_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wke_mean_g" field="wke_total_local" root="auto"/>
+  </diagnostic> 
+  
   <diagnostic field="th2_mean"  type="array" data_type="double" size="zn" units="K^2">
 	<operator name="arithmetic" result="th2_mean" equation="th2_mean_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="th2_mean_g" field="th2_total_local" root="auto"/>
   </diagnostic>  
 
+  <diagnostic field="wtheta_ad_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wtheta_ad_mean" equation="wtheta_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wtheta_ad_mean_g" field="wtheta_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wtheta_cn_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wtheta_cn_mean" equation="wtheta_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wtheta_cn_mean_g" field="wtheta_cn_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wqv_ad_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqv_ad_mean" equation="wqv_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqv_ad_mean_g" field="wqv_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wqv_cn_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqv_cn_mean" equation="wqv_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqv_cn_mean_g" field="wqv_cn_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wql_ad_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wql_ad_mean" equation="wql_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wql_ad_mean_g" field="wql_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wql_cn_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wql_cn_mean" equation="wql_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wql_cn_mean_g" field="wql_cn_total_local" root="auto"/>
+  </diagnostic>
+
+   <diagnostic field="wqr_ad_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqr_ad_mean" equation="wqr_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqr_ad_mean_g" field="wqr_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wqr_cn_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqr_cn_mean" equation="wqr_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqr_cn_mean_g" field="wqr_cn_total_local" root="auto"/>
+  </diagnostic>
+
+   <diagnostic field="wqi_ad_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqi_ad_mean" equation="wqi_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqi_ad_mean_g" field="wqi_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wqi_cn_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqi_cn_mean" equation="wqi_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqi_cn_mean_g" field="wqi_cn_total_local" root="auto"/>
+  </diagnostic>
+
+   <diagnostic field="wqs_ad_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqs_ad_mean" equation="wqs_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqs_ad_mean_g" field="wqs_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wqs_cn_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqs_cn_mean" equation="wqs_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqs_cn_mean_g" field="wqs_cn_total_local" root="auto"/>
+  </diagnostic>
+
+   <diagnostic field="wqg_ad_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqg_ad_mean" equation="wqg_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqg_ad_mean_g" field="wqg_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wqg_cn_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqg_cn_mean" equation="wqg_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqg_cn_mean_g" field="wqg_cn_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wqv_sg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqv_sg_mean" equation="wqv_sg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqv_sg_mean_g" field="wqv_sg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wql_sg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wql_sg_mean" equation="wql_sg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wql_sg_mean_g" field="wql_sg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wqr_sg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqr_sg_mean" equation="wqr_sg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqr_sg_mean_g" field="wqr_sg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wqi_sg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqi_sg_mean" equation="wqi_sg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqi_sg_mean_g" field="wqi_sg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wqs_sg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqs_sg_mean" equation="wqs_sg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqs_sg_mean_g" field="wqs_sg_total_local" root="auto"/>
+  </diagnostic>
+  
+  <diagnostic field="wqg_sg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqg_sg_mean" equation="wqg_sg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqg_sg_mean_g" field="wqg_sg_total_local" root="auto"/>
+  </diagnostic>
+  
   <diagnostic field="uwsg_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
 	<operator name="arithmetic" result="uwsg_mean" equation="uwsg_mean_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="uwsg_mean_g" field="uwsg_total_local" root="auto"/>
@@ -130,6 +349,11 @@
   <diagnostic field="tkesg_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
 	<operator name="arithmetic" result="tkesg_mean" equation="tkesg_mean_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="tkesg_mean_g" field="tkesg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wkesg_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+	<operator name="arithmetic" result="wkesg_mean" equation="wkesg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wkesg_mean_g" field="wkesg_total_local" root="auto"/>
   </diagnostic>  
 
   <diagnostic field="wtsg_mean"  type="array" data_type="double" size="zn" units="Km/s">
@@ -140,20 +364,249 @@
   <diagnostic field="th2sg_mean"  type="array" data_type="double" size="zn" units="K^2">
 	<operator name="arithmetic" result="th2sg_mean" equation="th2sg_mean_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="th2sg_mean_g" field="th2sg_total_local" root="auto"/>
-  </diagnostic>  
+  </diagnostic> 
+
+   <diagnostic field="theta_dis_mean"  type="array" data_type="double" size="zn" units="K^2">
+	<operator name="arithmetic" result="theta_dis_mean" equation="theta_dis_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="theta_dis_mean_g" field="theta_dis_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="viscosity_coef_mean"  type="array" data_type="double" size="zn" units="K^2">
+    <operator name="arithmetic" result="viscosity_coef_mean" equation="viscosity_coef_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="viscosity_coef_mean_g" field="viscosity_coef_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="diffusion_coef_mean"  type="array" data_type="double" size="zn" units="K^2">
+     <operator name="arithmetic" result="diffusion_coef_mean" equation="diffusion_coef_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="diffusion_coef_mean_g" field="diffusion_coef_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="richardson_number_mean"  type="array" data_type="double" size="zn" units="K^2">
+     <operator name="arithmetic" result="richardson_number_mean" equation="richardson_number_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="richardson_number_mean_g" field="richardson_number_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="richardson_squared_mean"  type="array" data_type="double" size="zn" units="K^2">
+     <operator name="arithmetic" result="richardson_squared_mean" equation="richardson_squared_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="richardson_squared_mean_g" field="richardson_squared_total_local" root="auto"/>
+  </diagnostic>   
+
+  <diagnostic field="dissipation_mean"  type="array" data_type="double" size="zn" units="K^2">
+     <operator name="arithmetic" result="dissipation_mean" equation="dissipation_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dissipation_mean_g" field="dissipation_total_local" root="auto"/>
+  </diagnostic>   
 
   <diagnostic field="th_large_scale_mean"  type="array" data_type="double" size="zn" units="m/s">
 	<operator name="arithmetic" result="th_large_scale_mean" equation="th_large_scale_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="th_large_scale_g" field="th_large_scale" root="auto"/>
   </diagnostic> 
+
   <diagnostic field="u_large_scale_mean"  type="array" data_type="double" size="zn" units="m/s">
     <operator name="arithmetic" result="u_large_scale_mean" equation="u_large_scale_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="u_large_scale_g" field="u_large_scale" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="v_large_scale_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <operator name="arithmetic" result="v_large_scale_mean" equation="v_large_scale_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="v_large_scale_g" field="v_large_scale" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="vapour_mmr_large_scale_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <operator name="arithmetic" result="vapour_mmr_large_scale_mean" equation="vapour_mmr_large_scale_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="vapour_mmr_large_scale_g" field="vapour_mmr_large_scale" root="auto"/>
+  </diagnostic>
+  <diagnostic field="cloud_mmr_large_scale_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <operator name="arithmetic" result="cloud_mmr_large_scale_mean" equation="cloud_mmr_large_scale_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="cloud_mmr_large_scale_g" field="cloud_mmr_large_scale" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="th_subsidence_mean"  type="array" data_type="double" size="zn" units="m/s">
+	<operator name="arithmetic" result="th_subsidence_mean" equation="th_subsidence_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="th_subsidence_g" field="th_subsidence" root="auto"/>
   </diagnostic> 
+
+  <diagnostic field="u_subsidence_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <operator name="arithmetic" result="u_subsidence_mean" equation="u_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="u_subsidence_g" field="u_subsidence" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="v_subsidence_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <operator name="arithmetic" result="v_subsidence_mean" equation="v_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="v_subsidence_g" field="v_subsidence" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="vapour_mmr_subsidence_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <operator name="arithmetic" result="vapour_mmr_subsidence_mean" equation="vapour_mmr_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="vapour_mmr_subsidence_g" field="vapour_mmr_subsidence" root="auto"/>
+  </diagnostic>
+  <diagnostic field="cloud_mmr_subsidence_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <operator name="arithmetic" result="cloud_mmr_subsidence_mean" equation="cloud_mmr_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="cloud_mmr_subsidence_g" field="cloud_mmr_subsidence" root="auto"/>
+  </diagnostic>
+  <diagnostic field="rain_mmr_subsidence_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <operator name="arithmetic" result="rain_mmr_subsidence_mean" equation="rain_mmr_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="rain_mmr_subsidence_g" field="rain_mmr_subsidence" root="auto"/>
+  </diagnostic>
+  <diagnostic field="ice_mmr_subsidence_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <operator name="arithmetic" result="ice_mmr_subsidence_mean" equation="ice_mmr_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="ice_mmr_subsidence_g" field="ice_mmr_subsidence" root="auto"/>
+  </diagnostic>
+  <diagnostic field="snow_mmr_subsidence_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <operator name="arithmetic" result="snow_mmr_subsidence_mean" equation="snow_mmr_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="snow_mmr_subsidence_g" field="snow_mmr_subsidence" root="auto"/>
+  </diagnostic>
+  <diagnostic field="graupel_mmr_subsidence_mean"  type="array" data_type="double" size="zn" units="m/s">
+    <operator name="arithmetic" result="graupel_mmr_subsidence_mean" equation="graupel_mmr_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="graupel_mmr_subsidence_g" field="graupel_mmr_subsidence" root="auto"/>
+  </diagnostic>
+ 
   <diagnostic field="rh_mean"  type="array" data_type="double" size="zn" units="K">
      <operator name="arithmetic" result="rh_mean" equation="(rh_total_g/({x_size}*{y_size})*100)"/>
     <communication name="reduction" operator="sum" result="rh_total_g" field="rh_total_local" root="auto"/>
   </diagnostic>
+
+  <diagnostic field="pcond_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pcond_mean" equation="pcond_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pcond_total_g" field="pcond_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="phomc_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="phomc_mean" equation="phomc_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="phomc_total_g" field="phomc_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pinuc_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pinuc_mean" equation="pinuc_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pinuc_total_g" field="pinuc_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pidep_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pidep_mean" equation="pidep_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pidep_total_g" field="pidep_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psdep_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psdep_mean" equation="psdep_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psdep_total_g" field="psdep_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="piacw_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="piacw_mean" equation="piacw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="piacw_total_g" field="piacw_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psacw_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psacw_mean" equation="psacw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psacw_total_g" field="psacw_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psacr_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psacr_mean" equation="psacr_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psacr_total_g" field="psacr_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pisub_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pisub_mean" equation="pisub_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pisub_total_g" field="pisub_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pssub_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pssub_mean" equation="pssub_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pssub_total_g" field="pssub_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pimlt_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pimlt_mean" equation="pimlt_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pimlt_total_g" field="pimlt_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psmlt_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psmlt_mean" equation="psmlt_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psmlt_total_g" field="psmlt_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psaut_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psaut_mean" equation="psaut_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psaut_total_g" field="psaut_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psaci_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psaci_mean" equation="psaci_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psaci_total_g" field="psaci_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="praut_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="praut_mean" equation="praut_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="praut_total_g" field="praut_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pracw_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pracw_mean" equation="pracw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pracw_total_g" field="pracw_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="prevp_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="prevp_mean" equation="prevp_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="prevp_total_g" field="prevp_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pgacw_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pgacw_mean" equation="pgacw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pgacw_total_g" field="pgacw_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pgacs_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pgacs_mean" equation="pgacs_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pgacs_total_g" field="pgacs_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pgmlt_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pgmlt_mean" equation="pgmlt_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pgmlt_total_g" field="pgmlt_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pgsub_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pgsub_mean" equation="pgsub_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pgsub_total_g" field="pgsub_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psedi_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psedi_mean" equation="psedi_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psedi_total_g" field="psedi_total" root="auto"/>
+  </diagnostic>
+    <diagnostic field="pseds_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pseds_mean" equation="pseds_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pseds_total_g" field="pseds_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psedr_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psedr_mean" equation="psedr_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psedr_total_g" field="psedr_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psedg_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psedg_mean" equation="psedg_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psedg_total_g" field="psedg_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psedl_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psedl_mean" equation="psedl_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psedl_total_g" field="psedl_total" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="dth_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dth_mphys_mean" equation="dth_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dth_mphys_total_g" field="dth_mphys_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dth_cond_evap_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dth_cond_evap_mean" equation="dth_cond_evap_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dth_cond_evap_total_g" field="dth_cond_evap_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqv_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqv_mphys_mean" equation="dqv_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqv_mphys_total_g" field="dqv_mphys_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqv_cond_evap_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqv_cond_evap_mean" equation="dqv_cond_evap_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqv_cond_evap_total_g" field="dqv_cond_evap_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqc_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqc_mphys_mean" equation="dqc_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqc_mphys_total_g" field="dqc_mphys_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqr_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqr_mphys_mean" equation="dqr_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqr_mphys_total_g" field="dqr_mphys_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqi_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqi_mphys_mean" equation="dqi_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqi_mphys_total_g" field="dqi_mphys_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqs_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqs_mphys_mean" equation="dqs_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqs_mphys_total_g" field="dqs_mphys_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqg_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqg_mphys_mean" equation="dqg_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqg_mphys_total_g" field="dqg_mphys_total" root="auto"/>
+  </diagnostic>
+  
 </data-handling>
 
 <group name="profile_timeseries" namespace="profile_fields">
@@ -168,12 +621,39 @@
   <member name="uu_mean"/>
   <member name="vv_mean"/>
   <member name="ww_mean"/>
+  <member name="www_mean"/>
+  <member name="wwww_mean"/>
   <member name="theta_mean"/>
   <member name="vapour_mmr_mean"/>
-  <member name="liquid_mmr_mean"/> 
+  <member name="liquid_mmr_mean"/>
+  <member name="rain_mmr_mean"/>
+  <member name="ice_mmr_mean"/>
+  <member name="snow_mmr_mean"/>
+  <member name="graupel_mmr_mean"/>
+  <member name="wqv_ad_mean"/>
+  <member name="wql_ad_mean"/>
+  <member name="wqr_ad_mean"/>
+  <member name="wqi_ad_mean"/>
+  <member name="wqs_ad_mean"/>
+  <member name="wqg_ad_mean"/>
+  <member name="wqv_cn_mean"/>
+  <member name="wql_cn_mean"/>
+  <member name="wqr_cn_mean"/>
+  <member name="wqi_cn_mean"/>
+  <member name="wqs_cn_mean"/>
+  <member name="wqg_cn_mean"/>
+  <member name="wqv_sg_mean"/>
+  <member name="wql_sg_mean"/>
+  <member name="wqr_sg_mean"/>
+  <member name="wqi_sg_mean"/>
+  <member name="wqs_sg_mean"/>
+  <member name="wqg_sg_mean"/>
   <member name="uw_mean"/>
   <member name="vw_mean"/>
-  <member name="wtheta_mean"/>
+  <member name="uv_mean"/>
+  <member name="wtheta_cn_mean"/>
+  <member name="wtheta_ad_mean"/>
+  <member name="wke_mean"/>
   <member name="th2_mean"/>
   <member name="uwsg_mean"/>
   <member name="vwsg_mean"/>
@@ -181,9 +661,63 @@
   <member name="vvsg_mean"/>
   <member name="wwsg_mean"/>
   <member name="tkesg_mean"/>
+  <member name="wkesg_mean"/>
   <member name="wtsg_mean"/>
   <member name="th2sg_mean"/>
+  <member name="theta_dis_mean"/>
+  <member name="viscosity_coef_mean"/>
+  <member name="diffusion_coef_mean"/>
+  <member name="richardson_number_mean"/>
+  <member name="richardson_squared_mean"/>
+  <member name="dissipation_mean"/>
   <member name="u_large_scale_mean"/>
   <member name="th_large_scale_mean"/>
+  <member name="v_large_scale_mean"/>
+  <member name="vapour_mmr_large_scale_mean"/>
+  <member name="cloud_mmr_large_scale_mean"/>
+  <member name="u_subsidence_mean"/>
+  <member name="th_subsidence_mean"/>
+  <member name="v_subsidence_mean"/>
+  <member name="vapour_mmr_subsidence_mean"/>
+  <member name="cloud_mmr_subsidence_mean"/>
+  <member name="rain_mmr_subsidence_mean"/>
+  <member name="ice_mmr_subsidence_mean"/>
+  <member name="snow_mmr_subsidence_mean"/>
+  <member name="graupel_mmr_subsidence_mean"/>
   <member name="rh_mean"/>
+  <member name="pcond_mean"/>
+  <member name="phomc_mean"/> 
+  <member name="pinuc_mean"/>
+  <member name="pidep_mean"/>
+  <member name="psdep_mean"/>
+  <member name="piacw_mean"/>
+  <member name="psacw_mean"/>
+  <member name="psacr_mean"/>
+  <member name="pisub_mean"/>
+  <member name="pssub_mean"/>
+  <member name="pimlt_mean"/>
+  <member name="psmlt_mean"/>
+  <member name="psaut_mean"/>
+  <member name="psaci_mean"/>
+  <member name="praut_mean"/>
+  <member name="pracw_mean"/>
+  <member name="prevp_mean"/>
+  <member name="pgacw_mean"/>
+  <member name="pgacs_mean"/>
+  <member name="pgmlt_mean"/>
+  <member name="pgsub_mean"/>
+  <member name="psedi_mean"/>
+  <member name="pseds_mean"/>
+  <member name="psedr_mean"/>
+  <member name="psedg_mean"/>
+  <member name="psedl_mean"/>
+  <member name="dth_mphys_mean"/>
+  <member name="dth_cond_evap_mean"/>
+  <member name="dqv_mphys_mean"/>
+  <member name="dqv_cond_evap_mean"/>
+  <member name="dqc_mphys_mean"/>
+  <member name="dqr_mphys_mean"/>
+  <member name="dqi_mphys_mean"/>
+  <member name="dqs_mphys_mean"/>
+  <member name="dqg_mphys_mean"/>
 </group>

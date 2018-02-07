@@ -14,7 +14,8 @@ module iobridge_mod
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, log_master_log
   use optionsdatabase_mod, only : options_get_integer
   use q_indices_mod, only : q_metadata_type, get_indices_descriptor
-  use registry_mod, only : get_all_component_published_fields, get_component_field_value, get_component_field_information
+  use registry_mod, only : get_all_component_published_fields, get_component_field_value, &
+       get_component_field_information, is_component_enabled
   use io_server_client_mod, only : COMMAND_TAG, DATA_TAG, REGISTER_COMMAND, DEREGISTER_COMMAND, DATA_COMMAND_START, &
        ARRAY_FIELD_TYPE, SCALAR_FIELD_TYPE, MAP_FIELD_TYPE, INTEGER_DATA_TYPE, BOOLEAN_DATA_TYPE, STRING_DATA_TYPE, &
        FLOAT_DATA_TYPE, DOUBLE_DATA_TYPE, LOCAL_SIZES_KEY, LOCAL_START_POINTS_KEY, LOCAL_END_POINTS_KEY, NUMBER_Q_INDICIES_KEY, &
@@ -23,6 +24,7 @@ module iobridge_mod
        get_mpi_datatype_from_internal_representation, pack_scalar_field, pack_array_field, pack_map_field
   use mpi, only : MPI_COMM_WORLD, MPI_INT, MPI_BYTE, MPI_REQUEST_NULL, MPI_STATUSES_IGNORE, MPI_STATUS_IGNORE, MPI_STATUS_SIZE
   use q_indices_mod, only : q_metadata_type, get_max_number_q_indices, get_indices_descriptor, get_number_active_q_indices
+
   implicit none
 
 #ifndef TEST_MODE
@@ -384,6 +386,13 @@ contains
       raw_generic=>generate_sendable_description(z_size, y_size, x_size)
       call c_put_generic(sendable_fields, "p", raw_generic, .false.)   
     end if
+    ! need to dump heating rate tendency from socrates radiation
+    if (is_component_enabled(current_state%options_database, "socrates_couple")) then
+       raw_generic=>generate_sendable_description(z_size, y_size, x_size)
+       call c_put_generic(sendable_fields, "sth_lw", raw_generic, .false.)
+       call c_put_generic(sendable_fields, "sth_sw", raw_generic, .false.)
+    endif
+       
   end subroutine populate_globally_visible_sendable_fields  
 
   !> Generates a sendable description based upon the dimension information supplied, missing arguments means that dimension
@@ -785,6 +794,9 @@ contains
     else if (field%name .eq. "absolute_new_dtm") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
            real_value=current_state%absolute_new_dtm)
+    else if (field%name .eq. "rad_last_time") then
+       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
+            real_value=current_state%rad_last_time)
     else
       ! Handle component field here
       pack_scalar_into_send_buffer=handle_component_field_scalar_packing_into_send_buffer(current_state, &
@@ -950,6 +962,18 @@ contains
     else if (field%name .eq. "p") then
       pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer, current_state%p, current_buffer_point, &
            current_state%local_grid)
+    else if (field%name .eq. "sth_lw") then
+      pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer,  &
+            current_state%sth_lw, current_buffer_point, current_state%local_grid) 
+    else if (field%name .eq. "sth_sw") then
+      pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer,  &
+            current_state%sth_sw, current_buffer_point, current_state%local_grid)
+!!$    else if (field%name .eq. "sw_down_surf") then
+!!$      pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer,  &
+!!$            current_state%sth_sw, current_buffer_point, current_state%local_grid)
+!!$    else if (field%name .eq. "lww_down_surf") then
+!!$      pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer,  &
+!!$            current_state%sth_sw, current_buffer_point, current_state%local_grid)  
     else
        ! Handle component field here
        pack_array_into_send_buffer=handle_component_field_array_packing_into_send_buffer(current_state, &

@@ -109,7 +109,7 @@ l_sources=.false.
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="bubble_simple_dump.nc"
-checkpoint_walltime_frequency=10
+check_walltime_frequency=10
 walltime_limit=00:30:00
 
 # water loading - this should be interfaced properly

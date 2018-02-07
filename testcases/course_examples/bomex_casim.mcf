@@ -39,7 +39,7 @@ diag_write_freq=7200.0
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="bomex_casim_dump.nc"
-checkpoint_walltime_frequency=10
+check_walltime_frequency=10
 walltime_limit=00:30:00
 
 # Advection choices
