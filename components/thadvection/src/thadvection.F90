@@ -7,7 +7,7 @@ module thadvection_mod
   use state_mod, only : model_state_type
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
   use science_constants_mod, only : G
-  use logging_mod, only : LOG_ERROR, log_master_log
+  use logging_mod, only : LOG_ERROR, LOG_WARN, log_master_log
   use optionsdatabase_mod, only : options_get_real, options_get_integer, options_get_logical
 implicit none
 
@@ -16,6 +16,7 @@ implicit none
 #endif
 
   logical :: baroclinicity_use_geostrophic_shear
+  logical :: l_advect_mean_baroclinicity
   real(kind=DEFAULT_PRECISION) :: fcoriol, fcoriol_over_G, rate_change_geostrophic_wind_x, rate_change_geostrophic_wind_y, &
        multiplicative_factor_x, multiplicative_factor_y
 
@@ -59,7 +60,20 @@ contains
   subroutine initialisation_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
+    !AH (08/02/18) - by default l_advect_mean_baroclinicity is false. It
+    !                is switch to true if passive_q true and baroclinicity_use_geostrophic_shear is true
+    !                If passive q is false code will run but a warning is issued.
+    !                Mean advection of baroclinicity only works for dry case
     baroclinicity_use_geostrophic_shear=options_get_logical(current_state%options_database, "baroclinicity_use_geostrophic_shear")
+    if (baroclinicity_use_geostrophic_shear) then
+       if (current_state%passive_q) then 
+          l_advect_mean_baroclinicity = .true.
+       else
+          call log_master_log(LOG_WARN, "The combination if baroclinicity and active q is not allowed, code will run but"// & 
+               " no advection of mean baroclinicity")
+          l_advect_mean_baroclinicity = .false.
+       endif
+    endif
     fcoriol=options_get_real(current_state%options_database, "fcoriol")
     rate_change_geostrophic_wind_x=options_get_real(current_state%options_database, "rate_change_geostrophic_wind_x")
     rate_change_geostrophic_wind_y=options_get_real(current_state%options_database, "rate_change_geostrophic_wind_y")
@@ -190,26 +204,23 @@ contains
 
     integer :: k
 
-    if (baroclinicity_use_geostrophic_shear) then
-        if (current_state%passive_q) then
-            if (current_state%use_anelastic_equations) then
-                do k=2, current_state%local_grid%size(Z_INDEX)
-                  current_state%sth%data(k, local_y, local_x)=current_state%sth%data(k, local_y, local_x)+&
-                       current_state%global_grid%configuration%vertical%thref(k)*fcoriol_over_G*&
-                       ((current_state%v%data(k, local_y, local_x) + current_state%vgal) * rate_change_geostrophic_wind_x-&
-                       (current_state%u%data(k, local_y, local_x) + current_state%ugal) * rate_change_geostrophic_wind_y)
-                end do
-              else
-                do k=2, current_state%local_grid%size(Z_INDEX)
-                  current_state%sth%data(k, local_y, local_x)=current_state%sth%data(k, local_y, local_x)+&
-                       ((current_state%v%data(k, local_y, local_x) + current_state%vgal) * multiplicative_factor_x-&
-                       (current_state%u%data(k, local_y, local_x) + current_state%ugal) * multiplicative_factor_y)                    
-                end do
-              end if
-        else
-          call log_master_log(LOG_ERROR, "The combination if baroclinicity and active q is not yet allowed")
-        end if
-      end if
+    if (l_advect_mean_baroclinicity) then
+       if (current_state%use_anelastic_equations) then
+          do k=2, current_state%local_grid%size(Z_INDEX)
+             current_state%sth%data(k, local_y, local_x)=current_state%sth%data(k, local_y, local_x)+&
+                  current_state%global_grid%configuration%vertical%thref(k)*fcoriol_over_G*&
+                  ((current_state%v%data(k, local_y, local_x) + current_state%vgal) * rate_change_geostrophic_wind_x-&
+                  (current_state%u%data(k, local_y, local_x) + current_state%ugal) * rate_change_geostrophic_wind_y)
+          end do
+       else
+          do k=2, current_state%local_grid%size(Z_INDEX)
+             current_state%sth%data(k, local_y, local_x)=current_state%sth%data(k, local_y, local_x)+&
+                  ((current_state%v%data(k, local_y, local_x) + current_state%vgal) * multiplicative_factor_x-&
+                  (current_state%u%data(k, local_y, local_x) + current_state%ugal) * multiplicative_factor_y)                    
+          end do
+       end if
+    end if
+    
   end subroutine advection_of_mean_baroclinicity  
 
 

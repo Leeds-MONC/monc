@@ -9,6 +9,8 @@ module casim_profile_dgs_mod
 
   ! needs casim modules
   use mphys_switches, only: l_warm
+  ! need casdiags for the diag switches
+  use generic_diagnostic_variables, ONLY: casdiags
   ! and casim component structure, which contains the process rate data
   use casim_monc_dgs_space, only: casim_monc_dgs
 
@@ -187,50 +189,109 @@ contains
     endif
 
     if (.not. current_state%halo_column) then
-       psedl_tot(:)= psedl_tot(:) + casim_monc_dgs % psedl(:,target_y_index,target_x_index)
-       pcond_tot(:)= pcond_tot(:) + casim_monc_dgs % pcond(:,target_y_index,target_x_index)
-       praut_tot(:)= praut_tot(:) + casim_monc_dgs % praut(:,target_y_index,target_x_index)
-       pracw_tot(:)= pracw_tot(:) + casim_monc_dgs % pracw(:,target_y_index,target_x_index)
-       prevp_tot(:)= prevp_tot(:) + casim_monc_dgs % prevp(:,target_y_index,target_x_index)
-       psedr_tot(:)= psedr_tot(:) + casim_monc_dgs % psedr(:,target_y_index,target_x_index)
-       dth_mphys_tot(:)= dth_mphys_tot(:) + &
-            casim_monc_dgs %  dth_total(:,target_y_index,target_x_index) 
-       dth_cond_evap_tot(:)= dth_cond_evap_tot(:) + &
-            casim_monc_dgs % dth_cond_evap(:,target_y_index,target_x_index)
-       dqv_mphys_tot(:)= dqv_mphys_tot(:) + &
-            casim_monc_dgs % dqv_total(:,target_y_index,target_x_index)
-       dqv_cond_evap_tot(:)= dqv_cond_evap_tot(:) + &
-            casim_monc_dgs % dqv_cond_evap(:,target_y_index,target_x_index)
-       dqc_mphys_tot(:)= dqc_mphys_tot(:) + &
+       if ( casdiags % l_psedl ) &
+            psedl_tot(:)= psedl_tot(:) + casim_monc_dgs % psedl(:,target_y_index,target_x_index)
+       if ( casdiags % l_pcond ) & 
+            pcond_tot(:)= pcond_tot(:) + casim_monc_dgs % pcond(:,target_y_index,target_x_index)
+       if (  casdiags % l_praut ) & 
+            praut_tot(:)= praut_tot(:) + casim_monc_dgs % praut(:,target_y_index,target_x_index)
+       if ( casdiags % l_pracw ) & 
+            pracw_tot(:)= pracw_tot(:) + casim_monc_dgs % pracw(:,target_y_index,target_x_index)
+       if ( casdiags % l_prevp ) & 
+            prevp_tot(:)= prevp_tot(:) + casim_monc_dgs % prevp(:,target_y_index,target_x_index)
+       if ( casdiags % l_psedr ) & 
+            psedr_tot(:)= psedr_tot(:) + casim_monc_dgs % psedr(:,target_y_index,target_x_index)
+       if ( casdiags % l_dth ) then
+          dth_mphys_tot(:)= dth_mphys_tot(:) + &
+               casim_monc_dgs %  dth_total(:,target_y_index,target_x_index)
+          
+          dth_cond_evap_tot(:)= dth_cond_evap_tot(:) + &
+               casim_monc_dgs % dth_cond_evap(:,target_y_index,target_x_index)
+       endif
+
+       if ( casdiags % l_dqv ) then
+          dqv_mphys_tot(:)= dqv_mphys_tot(:) + &
+               casim_monc_dgs % dqv_total(:,target_y_index,target_x_index)
+          dqv_cond_evap_tot(:)= dqv_cond_evap_tot(:) + &
+               casim_monc_dgs % dqv_cond_evap(:,target_y_index,target_x_index)
+       endif
+
+       if ( casdiags % l_dqc ) &
+            dqc_mphys_tot(:)= dqc_mphys_tot(:) + &
             casim_monc_dgs % dqc(:,target_y_index,target_x_index)
-       dqr_mphys_tot(:)= dqr_mphys_tot(:) + &
+       if ( casdiags % l_dqr ) & 
+            dqr_mphys_tot(:)= dqr_mphys_tot(:) + &
             casim_monc_dgs % dqr(:,target_y_index,target_x_index)
-       if (.not. l_warm) then  
-          phomc_tot(:)= phomc_tot(:) + casim_monc_dgs % phomc(:,target_y_index,target_x_index)
-          pinuc_tot(:)= pinuc_tot(:) + casim_monc_dgs % pinuc(:,target_y_index,target_x_index)
-          pidep_tot(:)= pidep_tot(:) + casim_monc_dgs % pidep(:,target_y_index,target_x_index)
-          piacw_tot(:)= piacw_tot(:) + casim_monc_dgs % piacw(:,target_y_index,target_x_index)
-          pisub_tot(:)= pisub_tot(:) + casim_monc_dgs % pisub(:,target_y_index,target_x_index)
-          pimlt_tot(:)= pimlt_tot(:) + casim_monc_dgs % pimlt(:,target_y_index,target_x_index)
-          psedi_tot(:)= psedi_tot(:) + casim_monc_dgs % psedi(:,target_y_index,target_x_index)
-          psacw_tot(:)= psacw_tot(:) + casim_monc_dgs % psacw(:,target_y_index,target_x_index)
-          psacr_tot(:)= psacr_tot(:) + casim_monc_dgs % psacr(:,target_y_index,target_x_index)
-          pssub_tot(:)= pssub_tot(:) + casim_monc_dgs % pssub(:,target_y_index,target_x_index)
-          psmlt_tot(:)= psmlt_tot(:) + casim_monc_dgs % psmlt(:,target_y_index,target_x_index)
-          psaut_tot(:)= psaut_tot(:) + casim_monc_dgs % psaut(:,target_y_index,target_x_index) 
-          psaci_tot(:)= psaci_tot(:) + casim_monc_dgs % psaci(:,target_y_index,target_x_index)
-          psdep_tot(:)= psdep_tot(:) + casim_monc_dgs % psdep(:,target_y_index,target_x_index)
-          pseds_tot(:)= pseds_tot(:) + casim_monc_dgs % pseds(:,target_y_index,target_x_index)
-          pgacw_tot(:)= pgacw_tot(:) + casim_monc_dgs % pgacw(:,target_y_index,target_x_index)
-          pgacs_tot(:)= pgacs_tot(:) + casim_monc_dgs % pgacs(:,target_y_index,target_x_index)
-          pgmlt_tot(:)= pgmlt_tot(:) + casim_monc_dgs % pgmlt(:,target_y_index,target_x_index)
-          pgsub_tot(:)= pgsub_tot(:) + casim_monc_dgs % pgsub(:,target_y_index,target_x_index)
-          psedg_tot(:)= psedg_tot(:) + casim_monc_dgs % psedg(:,target_y_index,target_x_index)
-          dqi_mphys_tot(:)= dqi_mphys_tot(:) + &
+       
+       if (.not. l_warm) then
+          if ( casdiags % l_phomc ) & 
+               phomc_tot(:)= phomc_tot(:) + &
+               casim_monc_dgs % phomc(:,target_y_index,target_x_index)
+          if ( casdiags % l_pinuc ) & 
+               pinuc_tot(:)= pinuc_tot(:) + &
+               casim_monc_dgs % pinuc(:,target_y_index,target_x_index)
+          if ( casdiags % l_pidep ) & 
+               pidep_tot(:)= pidep_tot(:) + &
+               casim_monc_dgs % pidep(:,target_y_index,target_x_index)
+          if ( casdiags % l_piacw ) & 
+               piacw_tot(:)= piacw_tot(:) + &
+               casim_monc_dgs % piacw(:,target_y_index,target_x_index)
+          if ( casdiags % l_pisub ) &
+               pisub_tot(:)= pisub_tot(:) + &
+               casim_monc_dgs % pisub(:,target_y_index,target_x_index)
+          if ( casdiags % l_pimlt ) &
+               pimlt_tot(:)= pimlt_tot(:) + &
+               casim_monc_dgs % pimlt(:,target_y_index,target_x_index)
+          if ( casdiags % l_psedi ) & 
+               psedi_tot(:)= psedi_tot(:) + &
+               casim_monc_dgs % psedi(:,target_y_index,target_x_index)
+          if ( casdiags % l_psacw ) & 
+               psacw_tot(:)= psacw_tot(:) + &
+               casim_monc_dgs % psacw(:,target_y_index,target_x_index)
+          if ( casdiags % l_psacr ) & 
+               psacr_tot(:)= psacr_tot(:) + &
+               casim_monc_dgs % psacr(:,target_y_index,target_x_index)
+          if ( casdiags % l_pssub ) & 
+               pssub_tot(:)= pssub_tot(:) + &
+               casim_monc_dgs % pssub(:,target_y_index,target_x_index)
+          if ( casdiags % l_psmlt ) & 
+               psmlt_tot(:)= psmlt_tot(:) + &
+               casim_monc_dgs % psmlt(:,target_y_index,target_x_index)
+          if ( casdiags % l_psaut ) &
+               psaut_tot(:)= psaut_tot(:) + &
+               casim_monc_dgs % psaut(:,target_y_index,target_x_index)
+          if ( casdiags % l_psaci ) &
+               psaci_tot(:)= psaci_tot(:) + &
+               casim_monc_dgs % psaci(:,target_y_index,target_x_index)
+          if ( casdiags % l_psdep ) & 
+               psdep_tot(:)= psdep_tot(:) + &
+               casim_monc_dgs % psdep(:,target_y_index,target_x_index)
+          if ( casdiags % l_pseds ) & 
+               pseds_tot(:)= pseds_tot(:) + &
+               casim_monc_dgs % pseds(:,target_y_index,target_x_index)
+          if ( casdiags % l_pgacw ) & 
+               pgacw_tot(:)= pgacw_tot(:) + &
+               casim_monc_dgs % pgacw(:,target_y_index,target_x_index)
+          if ( casdiags % l_pgacs ) &
+               pgacs_tot(:)= pgacs_tot(:) + &
+               casim_monc_dgs % pgacs(:,target_y_index,target_x_index)
+          if ( casdiags % l_pgmlt ) &
+               pgmlt_tot(:)= pgmlt_tot(:) + &
+               casim_monc_dgs % pgmlt(:,target_y_index,target_x_index)
+          if ( casdiags % l_pgsub ) &
+               pgsub_tot(:)= pgsub_tot(:) + &
+               casim_monc_dgs % pgsub(:,target_y_index,target_x_index)
+          if ( casdiags % l_psedg ) & 
+               psedg_tot(:)= psedg_tot(:) + &
+               casim_monc_dgs % psedg(:,target_y_index,target_x_index)
+          if ( casdiags % l_dqi ) & 
+               dqi_mphys_tot(:)= dqi_mphys_tot(:) + &
                casim_monc_dgs % dqi(:,target_y_index,target_x_index)
-          dqs_mphys_tot(:)= dqs_mphys_tot(:) + &
+          if ( casdiags % l_dqs ) & 
+               dqs_mphys_tot(:)= dqs_mphys_tot(:) + &
                casim_monc_dgs % dqs(:,target_y_index,target_x_index)
-          dqg_mphys_tot(:)= dqg_mphys_tot(:) + &
+          if ( casdiags % l_dqg ) &
+               dqg_mphys_tot(:)= dqg_mphys_tot(:) + &
                casim_monc_dgs % dqg(:,target_y_index,target_x_index)
        endif
        

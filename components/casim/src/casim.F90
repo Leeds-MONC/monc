@@ -22,7 +22,59 @@ module casim_mod
      l_3mr, l_3ms, l_3mg,                        &
      soluble_modes, active_cloud, active_rain,   &
      insoluble_modes, active_ice, active_number, &
-     isol, iinsol, option, aerosol_option
+     isol, iinsol, option, aerosol_option,        &
+     iopt_act, option, aerosol_option        &
+     ! All process rates are read in using read_configuration
+     ! routine in this component
+     , l_aaut, l_aacc, l_aevp, l_ased, l_warm            &
+     , l_inuc, iopt_rcrit, iopt_inuc, l_iaut, l_iacw                &
+     , l_rain, l_boussinesq, diag_mu_option   &
+     , l_sed_3mdiff, l_cons, l_abelshipway, l_sed_icecloud_as_1m         &
+     , l_active_inarg2000, process_level, l_separate_rain, l_idep    &
+     , max_step_length, max_sed_length, l_sg, l_g, l_passive        &
+     , l_passive3m, l_limit_psd, l_override_checks &
+     , max_mu, fix_mu, l_raci_g, l_onlycollect, l_inhom_revp &
+     , l_tidy_conserve_E , l_tidy_conserve_q & 
+     , l_pcond & ! Condensation	 
+     , l_praut & ! Autoconversion cloud -> rain
+     , l_pracw & ! Accretion  cloud -> rain
+     , l_pracr & ! aggregation of rain drops
+     , l_prevp & ! evaporation of rain
+     , l_psedl & ! sedimentation of cloud
+     , l_psedr & ! sedimentation of rain
+     , l_ptidy & ! tidying term 1
+     , l_ptidy2 & ! tidying term 2
+     , l_pinuc & ! ice nucleation
+     , l_pidep & ! ice deposition
+     , l_piacw & ! ice accreting water
+     , l_psaut & ! ice autoconversion ice -> snow
+     , l_psdep & ! vapour deposition onto snow
+     , l_psacw & ! snow accreting water
+     , l_pgdep & ! vapour deposition onto graupel
+     , l_pseds & ! snow sedimentation
+     , l_psedi & ! ice sedimentation
+     , l_psedg & ! graupel sedimentation
+     , l_psaci & ! snow accreting ice
+     , l_praci & ! rain accreting ice
+     , l_psacr & ! snow accreting rain
+     , l_pgacr & ! graupel accreting rain
+     , l_pgacw & ! graupel accreting cloud water
+     , l_pgaci & ! graupel accreting ice
+     , l_pgacs & ! graupel accreting snow
+     , l_piagg & ! aggregation of ice particles
+     , l_psagg & ! aggregation of snow particles
+     , l_pgagg & ! aggregation of graupel particles
+     , l_psbrk & ! break up of snow flakes
+     , l_pgshd & ! shedding of liquid from graupel
+     , l_pihal & ! hallet mossop
+     , l_psmlt & ! snow melting
+     , l_pgmlt & ! graupel melting
+     , l_phomr & ! homogeneous freezing of rain
+     , l_phomc & ! homogeneous freezing of cloud droplets
+     , l_pssub & ! sublimation of snow
+     , l_pgsub & ! sublimation of graupel
+     , l_pisub & ! sublimation of ice
+     , l_pimlt   ! ice melting
 
   use micro_main, only: shipway_microphysics
   use generic_diagnostic_variables, ONLY: casdiags, allocate_diagnostic_space, &
@@ -370,44 +422,60 @@ contains
          get_q_index(standard_q_names%ACTIVE_INSOL_NUMBER, 'casim')
 
     ! set logicals for the microphysics diagnostics: process rates
-    casdiags % l_pcond = .TRUE.
-    casdiags % l_psedl = .TRUE.
-    casdiags % l_praut = .TRUE.
-    casdiags % l_pracw = .TRUE.
-    casdiags % l_prevp = .TRUE.
-    casdiags % l_psedr = .TRUE.
-    casdiags % l_surface_rain = .TRUE.
-    casdiags % l_precip = .TRUE.
     casdiags % l_dth = .TRUE.
     casdiags % l_dqv = .TRUE.
-    casdiags % l_dqc = .TRUE.
-    casdiags % l_dqr = .TRUE.
-    if (.not. l_warm) then 
-       casdiags % l_phomc = .TRUE.
-       casdiags % l_pinuc = .TRUE.
-       casdiags % l_pidep = .TRUE.
-       casdiags % l_piacw = .TRUE.
-       casdiags % l_pisub = .TRUE.
-       casdiags % l_pimlt = .TRUE.
-       casdiags % l_psedi = .TRUE.
-       casdiags % l_psmlt = .TRUE.
-       casdiags % l_psaut = .TRUE.
-       casdiags % l_psaci = .TRUE.
-       casdiags % l_psacw = .TRUE.
-       casdiags % l_psacr = .TRUE.
-       casdiags % l_pssub = .TRUE.
-       casdiags % l_psdep = .TRUE.
-       casdiags % l_pseds = .TRUE.
-       casdiags % l_pgacw = .TRUE.
-       casdiags % l_pgacs = .TRUE.
-       casdiags % l_pgmlt = .TRUE.
-       casdiags % l_pgsub = .TRUE.
-       casdiags % l_psedg = .TRUE.
-       casdiags % l_surface_snow = .TRUE.
-       casdiags % l_surface_graup = .TRUE.
-       casdiags % l_dqi = .TRUE.
-       casdiags % l_dqs = .TRUE.
-       casdiags % l_dqg = .TRUE.
+    if ( nq_l>0 ) casdiags % l_dqc = .TRUE.
+    if ( nq_r>0 ) casdiags % l_dqr = .TRUE.
+    if ( l_pcond ) casdiags % l_pcond = .TRUE.
+    if ( l_psedl ) then
+       casdiags % l_psedl = .TRUE.
+       casdiags % l_surface_rain = .TRUE.
+       casdiags % l_precip = .TRUE.
+    endif
+    if ( l_praut ) casdiags % l_praut = .TRUE.
+    if ( l_pracw ) casdiags % l_pracw = .TRUE.
+    if ( l_prevp ) casdiags % l_prevp = .TRUE.
+    if ( l_psedr ) then
+       casdiags % l_psedr = .TRUE.
+       casdiags % l_surface_rain = .TRUE.
+       casdiags % l_precip = .TRUE.
+    endif
+    if (.not. l_warm) then
+       if ( nq_i>0 ) casdiags % l_dqi = .TRUE.
+       if ( nq_s>0 ) casdiags % l_dqs = .TRUE.
+       if ( nq_g>0 ) casdiags % l_dqg = .TRUE.
+       if ( l_phomc ) casdiags % l_phomc = .TRUE.
+       if ( l_pinuc ) casdiags % l_pinuc = .TRUE.
+       if ( l_pidep ) casdiags % l_pidep = .TRUE.
+       if ( l_piacw ) casdiags % l_piacw = .TRUE.
+       if ( l_pisub ) casdiags % l_pisub = .TRUE.
+       if ( l_pimlt ) casdiags % l_pimlt = .TRUE.
+       if ( l_psedi ) then
+          casdiags % l_psedi = .TRUE.
+          casdiags % l_surface_snow = .TRUE.
+          casdiags % l_precip = .TRUE.
+       endif
+       if ( l_psmlt ) casdiags % l_psmlt = .TRUE.
+       if ( l_psaut ) casdiags % l_psaut = .TRUE.
+       if ( l_psaci ) casdiags % l_psaci = .TRUE.
+       if ( l_psacw ) casdiags % l_psacw = .TRUE.
+       if ( l_psacr ) casdiags % l_psacr = .TRUE.
+       if ( l_pssub ) casdiags % l_pssub = .TRUE.
+       if ( l_psdep ) casdiags % l_psdep = .TRUE.
+       if ( l_pseds ) then
+          casdiags % l_pseds = .TRUE.
+          casdiags % l_surface_snow = .TRUE.
+          casdiags % l_precip = .TRUE.
+       endif
+       if ( l_pgacw ) casdiags % l_pgacw = .TRUE.
+       if ( l_pgacs ) casdiags % l_pgacs = .TRUE.
+       if ( l_pgmlt ) casdiags % l_pgmlt = .TRUE.
+       if ( l_pgsub ) casdiags % l_pgsub = .TRUE.
+       if ( l_psedg ) then
+          casdiags % l_psedg = .TRUE.
+          casdiags % l_surface_graup = .TRUE.
+          casdiags % l_precip = .TRUE.
+       endif
     endif
 
     ! allocate diagnostic space in casdiags depending on the logicals defined above
@@ -771,57 +839,6 @@ contains
   !! @param current_state The current model state
   subroutine read_configuration(current_state)
 
-
-    Use mphys_switches, only: iopt_act, option, aerosol_option        &
-       , l_aaut, l_aacc, l_aevp, l_ased, l_warm            &
-       , l_inuc, iopt_rcrit, iopt_inuc, l_iaut, l_iacw                &
-       , l_rain, l_boussinesq, diag_mu_option   &
-       , l_sed_3mdiff, l_cons, l_abelshipway, l_sed_icecloud_as_1m         &
-       , l_active_inarg2000, process_level, l_separate_rain, l_idep    &
-       , max_step_length, max_sed_length, l_sg, l_g, l_passive        &
-       , l_passive3m, l_limit_psd, l_override_checks &
-       , max_mu, fix_mu, l_raci_g, l_onlycollect, l_inhom_revp &
-       , l_tidy_conserve_E , l_tidy_conserve_q & 
-       , l_pcond & ! Condensation	 
-       , l_praut & ! Autoconversion cloud -> rain
-       , l_pracw & ! Accretion  cloud -> rain
-       , l_pracr & ! aggregation of rain drops
-       , l_prevp & ! evaporation of rain
-       , l_psedl & ! sedimentation of cloud
-       , l_psedr & ! sedimentation of rain
-       , l_ptidy & ! tidying term 1
-       , l_ptidy2 & ! tidying term 2
-       , l_pinuc & ! ice nucleation
-       , l_pidep & ! ice deposition
-       , l_piacw & ! ice accreting water
-       , l_psaut & ! ice autoconversion ice -> snow
-       , l_psdep & ! vapour deposition onto snow
-       , l_psacw & ! snow accreting water
-       , l_pgdep & ! vapour deposition onto graupel
-       , l_pseds & ! snow sedimentation
-       , l_psedi & ! ice sedimentation
-       , l_psedg & ! graupel sedimentation
-       , l_psaci & ! snow accreting ice
-       , l_praci & ! rain accreting ice
-       , l_psacr & ! snow accreting rain
-       , l_pgacr & ! graupel accreting rain
-       , l_pgacw & ! graupel accreting cloud water
-       , l_pgaci & ! graupel accreting ice
-       , l_pgacs & ! graupel accreting snow
-       , l_piagg & ! aggregation of ice particles
-       , l_psagg & ! aggregation of snow particles
-       , l_pgagg & ! aggregation of graupel particles
-       , l_psbrk & ! break up of snow flakes
-       , l_pgshd & ! shedding of liquid from graupel
-       , l_pihal & ! hallet mossop
-       , l_psmlt & ! snow melting
-       , l_pgmlt & ! graupel melting
-       , l_phomr & ! homogeneous freezing of rain
-       , l_phomc & ! homogeneous freezing of cloud droplets
-       , l_pssub & ! sublimation of snow
-       , l_pgsub & ! sublimation of graupel
-       , l_pisub & ! sublimation of ice
-       , l_pimlt   ! ice melting
 
     Use mphys_parameters, only: p1, p2, p3, sp1, sp2, sp3   
 

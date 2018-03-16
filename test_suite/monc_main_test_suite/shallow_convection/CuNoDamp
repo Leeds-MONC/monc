@@ -110,6 +110,7 @@ z0th=0.0002
 
 # Coriolis
 fcoriol=0.0000376
+baroclinicity_use_geostrophic_shear=.true.
 geostrophic_wind_rate_of_change_in_x=0.0018
 geostrophic_wind_rate_of_change_in_y=0.0
 surface_geostrophic_wind_x=-10.
