@@ -17,12 +17,6 @@ install:
   - export NETCDF_C_VERSION=4.4.0
   - export NETCDF_FORTRAN_VERSION=4.4.3
   - export FCM_VERSION=2017.10.0
-  # Install FCM (used for compilation)
-  - wget https://github.com/metomi/fcm/archive/${FCM_VERSION}.tar.gz
-  - tar -xf ${FCM_VERSION}.tar.gz
-  - export PATH=`pwd`/fcm-${FCM_VERSION}/bin:$PATH
-  # try compilation with FCM
-  - fcm make -f fcm-make/monc-ubuntu-14.04-gnu.cfg
   # Download:
   - wget https://github.com/Unidata/netcdf-c/archive/v${NETCDF_C_VERSION}.tar.gz
   - tar -xf v${NETCDF_C_VERSION}.tar.gz
@@ -48,6 +42,12 @@ install:
   # Build and install:
   # - make check
   - sudo make install
+  # Install FCM (used for compilation)
+  - wget https://github.com/metomi/fcm/archive/${FCM_VERSION}.tar.gz
+  - tar -xf ${FCM_VERSION}.tar.gz
+  - export PATH=`pwd`/fcm-${FCM_VERSION}/bin:$PATH
+  # Compile MONC with FCM
+  - fcm make -f fcm-make/monc-ubuntu-14.04-gnu.cfg
 
 
 script: pytest
