@@ -47,6 +47,7 @@ install:
   - tar -xf ${FCM_VERSION}.tar.gz
   - export PATH=`pwd`/fcm-${FCM_VERSION}/bin:$PATH
   # Compile MONC with FCM
+  - cd
   - fcm make -f fcm-make/monc-ubuntu-14.04-gnu.cfg
 
 
