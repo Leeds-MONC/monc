@@ -36,10 +36,10 @@ dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, 
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 moncs_per_io_server=3
 sampling_frequency=4
-3d_sampling_frequency=1
+3d_sampling_frequency=20
 mm=5.0
 mm1=5.0
-diag_write_freq=10.0
+diag_write_freq=900.0
 
 #Advection
 advection_flow_fields=tvd
@@ -49,7 +49,7 @@ advection_q_fields=tvd
 # Control configuration
 display_synopsis_frequency=100
 cfl_frequency=2
-termination_time=50.
+termination_time=100.
 dtm=.25
 
 # Checkpoint configuration
