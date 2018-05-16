@@ -49,8 +49,8 @@ install:
   - tar -xf ${FCM_VERSION}.tar.gz
   - export PATH=`pwd`/fcm-${FCM_VERSION}/bin:$PATH
   # Compile MONC with FCM
-  # change directory to home
-  - cd
+  # change to where Travis has checked out our repository
+  - cd $TRAVIS_BUILD_DIR
   - ls
   - fcm make -f fcm-make/monc-ubuntu-14.04-gnu.cfg
 
