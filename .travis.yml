@@ -11,7 +11,7 @@ before_install:
   # Install HDF5 compiled for parallel use
   - sudo apt-get install -y libhdf5-mpich2-dev
   # Install GNU m4:
-  - apt-get install -y m4
+  - sudo apt-get install -y m4
 
 install:
   - export NETCDF_C_VERSION=4.4.0
