@@ -3,5 +3,7 @@ before_install:
   - sudo apt-get install -y mpich fftw3-dev
   # Install MONC's python libraries
   - sudo apt-get install -y python-numpy python-scipy python-matplotlib ipython ipython-notebook
+  # install pytest for running tests
+  - sudo apt-get install -y python-logilab-common
 
 script: pytest
