@@ -42,12 +42,16 @@ install:
   # Build and install:
   # - make check
   - sudo make install
+  # change directory to home
+  - cd
   # Install FCM (used for compilation)
   - wget https://github.com/metomi/fcm/archive/${FCM_VERSION}.tar.gz
   - tar -xf ${FCM_VERSION}.tar.gz
   - export PATH=`pwd`/fcm-${FCM_VERSION}/bin:$PATH
   # Compile MONC with FCM
+  # change directory to home
   - cd
+  - ls
   - fcm make -f fcm-make/monc-ubuntu-14.04-gnu.cfg
 
 
