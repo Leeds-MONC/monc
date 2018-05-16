@@ -1,5 +1,5 @@
 before_install:
   # Install MONC's dependencies
-  - apt-get install -y mpich fftw3-dev
+  - sudo apt-get install -y mpich fftw3-dev
   # Install MONC's python libraries
-  - apt-get install -y python-numpy python-scipy python-matplotlib ipython ipython-notebook
+  - sudo apt-get install -y python-numpy python-scipy python-matplotlib ipython ipython-notebook
