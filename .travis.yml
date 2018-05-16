@@ -5,5 +5,39 @@ before_install:
   - sudo apt-get install -y python-numpy python-scipy python-matplotlib ipython ipython-notebook
   # install pytest for running tests
   - sudo apt-get install -y python-logilab-common
+  # Install HDF5 compiled for parallel use
+  - sudo apt-get install -y libhdf5-mpich-dev
+  # Install GNU m4:
+  - apt-get install -y m4
+
+install:
+  - export NETCDF_C_VERSION=4.4.0
+  - export NETCDF_FORTRAN_VERSION=4.4.3
+  # Download:
+  - wget https://github.com/Unidata/netcdf-c/archive/v${NETCDF_C_VERSION}.tar.gz
+  - tar -xf v${NETCDF_C_VERSION}.tar.gz
+  - cd netcdf-c-${NETCDF_C_VERSION}/
+  # Configure:
+  - CC=mpicc CPPFLAGS=-I/usr/include/hdf5/mpich LDFLAGS=-L/usr/lib/x86_64-linux-gnu/hdf5/mpich ./configure --enable-parallel-tests --disable-dap --prefix=/usr
+  # Build and install:
+  - make check
+  - sudo make install
+  # change directory to home
+  - cd
+  # Build NetCDF Fortran static libraries
+  # Download:
+  - wget https://github.com/Unidata/netcdf-fortran/archive/v${NETCDF_FORTRAN_VERSION}.tar.gz
+  - tar -xf v${NETCDF_FORTRAN_VERSION}.tar.gz
+  - cd netcdf-fortran-${NETCDF_FORTRAN_VERSION}/
+  # Configure:
+  - H5DIR=/usr
+  - NCDIR=/usr
+  - NFDIR=/usr
+  - ODIR=/usr
+  - CC=mpicc FC=mpif90 F77=mpif77 CPPFLAGS="-I${NCDIR}/include  -I${H5DIR}/include/hdf5/mpich -I${ODIR}/include" LDFLAGS="-L${NCDIR}/lib -L${H5DIR}/lib/x86_64-linux-gnu/hdf5/mpich -L${ODIR}/lib" LD_LIBRARY_PATH=${NCDIR}/lib:${H5DIR}/lib:${ODIR}/lib LIBS="-lnetcdf -lhdf5_hl -lhdf5 -lz" ./configure --disable-shared --prefix=${NCDIR}
+  # Build and install:
+  - make check
+  - sudo make install
+
 
 script: pytest
