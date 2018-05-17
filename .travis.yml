@@ -57,4 +57,4 @@ install:
 script:
   - pytest
   # run straka test for now to ensure that MONC runs
-  - mpirun -np 4 build/bin/monc_driver.exe --config=testcases/tank_experiments/straka_short.mcf
+  - mpirun -np 4 build/bin/monc_driver.exe --config=tests/straka_short.mcf
