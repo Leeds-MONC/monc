@@ -59,7 +59,11 @@ module writer_types_mod
 
   !< The field type, many of these make up a specific writer
   type writer_field_type
-     character(len=STRING_LENGTH) :: field_name, field_namespace, dim_size_defns(4), units
+     character(len=STRING_LENGTH) :: field_namespace, dim_size_defns(4)
+     character(len=STRING_LENGTH) :: field_name = ""
+     character(len=STRING_LENGTH) :: units = "" !< Units of field
+     character(len=STRING_LENGTH) :: field_long_name = "" !< Long descriptive name, required for CF-compliance
+     character(len=STRING_LENGTH) :: field_standard_name = "" !< CF-compliant "standard name"
      procedure(perform_time_manipulation), pointer, nopass :: time_manipulation
      procedure(is_field_ready_to_write), pointer, nopass :: ready_to_write
      integer :: time_manipulation_type, values_mutex, dimensions, field_type, data_type, timestep_frequency, &
@@ -103,11 +107,19 @@ module writer_types_mod
      logical :: termination_write
   end type netcdf_diagnostics_type
 
+  !< For storing meta information for a field with a given name
+  type field_meta_information_type
+     character(len=STRING_LENGTH) :: field_name = "" !< Name of the field that this describes
+     character(len=STRING_LENGTH) :: field_units = "" !< Units of field data
+     character(len=STRING_LENGTH) :: field_long_name = ""!< Long descriptive name for CF-compliance
+     character(len=STRING_LENGTH) :: field_standard_name = ""!< CF-compliant standard name, see http://cfconventions.org/standard-names.html for reference
+  end type field_meta_information_type
+
   public writer_type, writer_field_type, write_field_collective_values_type, pending_write_type, &
        perform_time_manipulation, collective_q_field_representation_type, netcdf_diagnostics_timeseries_type, &
        netcdf_diagnostics_type, serialise_writer_type, unserialise_writer_type, serialise_data_values_type, &
        unserialise_data_values_type, write_field_collective_descriptor_type, write_field_collective_monc_info_type, &
-       prepare_to_serialise_data_values_type, prepare_to_serialise_writer_type
+       prepare_to_serialise_data_values_type, prepare_to_serialise_writer_type, field_meta_information_type
 contains
 
   !> Prepares to serialise the writer type by issuing locks and determining the size of serialised bytes needed

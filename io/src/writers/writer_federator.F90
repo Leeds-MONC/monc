@@ -5,7 +5,7 @@ module writer_federator_mod
   use configuration_parser_mod, only : TIME_AVERAGED_TYPE, INSTANTANEOUS_TYPE, NONE_TYPE, GROUP_TYPE, FIELD_TYPE, IO_STATE_TYPE, &
        io_configuration_type, io_configuration_field_type, io_configuration_diagnostic_field_type, &
        io_configuration_data_definition_type, data_values_type, get_data_value_by_field_name, get_diagnostic_field_configuration,&
-       get_prognostic_field_configuration, get_monc_location
+       get_prognostic_field_configuration, get_monc_location, io_configuration_misc_item_type
   use none_time_manipulation_mod, only : perform_none_time_manipulation, is_none_time_manipulation_ready_to_write
   use instantaneous_time_manipulation_mod, only : init_instantaneous_manipulation, finalise_instantaneous_manipulation, &
        perform_instantaneous_time_manipulation, is_instantaneous_time_manipulation_ready_to_write
@@ -20,9 +20,10 @@ module writer_federator_mod
   use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_unlock, forthread_mutex_destroy, &
        forthread_rwlock_rdlock, forthread_rwlock_wrlock, forthread_rwlock_unlock, forthread_rwlock_init, forthread_rwlock_destroy
   use threadpool_mod, only : check_thread_status
-  use logging_mod, only : LOG_DEBUG, LOG_ERROR, LOG_WARN, log_log, log_master_log, log_get_logging_level, log_is_master
+  use logging_mod, only : LOG_DEBUG, LOG_INFO, LOG_ERROR, LOG_WARN, log_log, log_master_log, log_get_logging_level, log_is_master
   use writer_types_mod, only : writer_type, writer_field_type, write_field_collective_values_type, pending_write_type, &
-       collective_q_field_representation_type, write_field_collective_descriptor_type, write_field_collective_monc_info_type
+       collective_q_field_representation_type, write_field_collective_descriptor_type, write_field_collective_monc_info_type, &
+       field_meta_information_type
   use netcdf_filetype_writer_mod, only : initialise_netcdf_filetype, finalise_netcdf_filetype, define_netcdf_file, &
        write_variable, close_netcdf_file, store_io_server_state, get_writer_entry_from_netcdf
   use global_callback_inter_io_mod, only : perform_global_callback
@@ -34,6 +35,11 @@ module writer_federator_mod
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
   use mpi, only : MPI_INT, MPI_MAX
   use mpi_communication_mod, only : lock_mpi, unlock_mpi
+
+  use diagnostic_types_mod, only : diagnostics_activity_type, get_misc_action_at_index, &
+     get_diagnostic_activity_by_result_name, diagnostics_type, OPERATOR_TYPE, REDUCTION_TYPE
+  use reduction_inter_io_mod, only : get_reduction_operator_string
+
   implicit none
 
 #ifndef TEST_MODE
@@ -49,7 +55,8 @@ module writer_federator_mod
 
   public initialise_writer_federator, finalise_writer_federator, provide_ordered_field_to_writer_federator, &
        check_writer_for_trigger, issue_actual_write, is_field_used_by_writer_federator, inform_writer_federator_fields_present, &
-       inform_writer_federator_time_point, provide_q_field_names_to_writer_federator, is_field_split_on_q
+       inform_writer_federator_time_point, provide_q_field_names_to_writer_federator, is_field_split_on_q, &
+       set_meta_information_for_active_diagnostic_fields
 contains
 
   !> Initialises the write federator and configures it based on the user configuration. Also initialises the time manipulations
@@ -155,6 +162,377 @@ contains
       call check_thread_status(forthread_rwlock_unlock(time_points_rwlock))      
     end if
   end subroutine inform_writer_federator_time_point
+
+  !> Attempt to find meta information for a given field published by the MONCs
+  !! @param field_name Field to search for
+  !! @param all_field_meta_information All field meta information received from MONCs
+  !! @return specific_field_meta_information Returns meta information if found
+  logical function find_specific_field_meta_information(field_name, all_field_meta_information, &
+      specific_field_meta_information) result(field_found)
+    character(len=STRING_LENGTH), intent(in) :: field_name
+    type(field_meta_information_type), dimension(:), intent(in) :: all_field_meta_information
+    type(field_meta_information_type), intent(out) :: specific_field_meta_information
+
+    integer :: k
+
+    field_found=.false.
+    k=1
+    do while (.not. field_found .and. k < size(all_field_meta_information))
+      if (field_name == all_field_meta_information(k)%field_name) then
+        specific_field_meta_information = all_field_meta_information(k)
+        field_found=.true.
+      end if
+      k=k+1
+    end do
+  end function find_specific_field_meta_information
+
+  !> Update a specific writer using the meta information for the field that is written
+  !! @param writer_field Writer field to update
+  !! @param field_meta_information Meta information to use
+  subroutine update_writer_field_with_field_meta_information(writer_field, field_meta_information)
+    type(writer_field_type), intent(inout) :: writer_field
+    type(field_meta_information_type), intent(in) :: field_meta_information
+
+    call log_log(LOG_DEBUG, "Setting meta info for  field `"//trim(writer_field%field_name))
+    call log_log(LOG_DEBUG, trim(writer_field%field_name)//" :: "//&
+      trim(field_meta_information%field_long_name)//","//&
+      trim(field_meta_information%field_standard_name)//","//&
+      trim(field_meta_information%field_units)//","//&
+      "")
+
+    if (len_trim(field_meta_information%field_units) > 0) then
+      if (writer_field%units /= "") then
+        call log_log(LOG_WARN, "Meta information for `units` provided by MONC for field `"//&
+          trim(writer_field%field_name)//"` ignored because it is "//&
+          "also defined in IO server configuration file")
+      else
+        writer_field%units = field_meta_information%field_units
+      endif
+    endif
+
+    if (len_trim(field_meta_information%field_long_name) > 0) then
+      if (writer_field%field_long_name /= "") then
+        call log_log(LOG_WARN, "Meta information for `field_long_name` provided by MONC for field `"//&
+          trim(writer_field%field_name)//"` ignored because it is "//&
+          "also defined in IO server configuration file")
+      else
+        writer_field%field_long_name = field_meta_information%field_long_name
+      endif
+    endif
+
+    if (len_trim(field_meta_information%field_standard_name) > 0) then
+      if (writer_field%field_standard_name /= "") then
+        call log_log(LOG_WARN, "Meta information for `field_standard_name` provided by MONC for field `"//&
+          trim(writer_field%field_name)//"` ignored because it is "//&
+          "also defined in IO server configuration file")
+      else
+        writer_field%field_standard_name = field_meta_information%field_standard_name
+      endif
+    endif
+  end subroutine update_writer_field_with_field_meta_information
+
+
+  !> Iterate over diagnostic activities defined for a diagnostic field to produce meta information based on the
+  !! activities performed and the MONC component fields operated on. This function is called recursively (iterating over
+  !! all required fields) until MONC component fields are found. This function should initially be called with the name
+  !! of the diagnostic field that will be output, e.g. `wmax`
+  !! @param field_meta_information All meta information received from MONCs
+  !! @param result_name Name of field (within activities) for which meta information will be returned
+  !! @param field_activities All activities defined for a given diagnostic field
+  recursive type(field_meta_information_type) &
+      function get_meta_information_from_diagnostics_activity(field_meta_information, result_name, field_activities) &
+            result(specific_field_meta_information)
+
+    type(field_meta_information_type), dimension(:), intent(in) :: field_meta_information
+    character(len=STRING_LENGTH), intent(in) :: result_name
+    type(list_type), intent(inout) :: field_activities
+
+    type(diagnostics_activity_type), pointer :: activity
+    type(field_meta_information_type) :: child_field_meta_information
+    character(len=STRING_LENGTH) :: child_field_name, operator_name
+    logical :: meta_info_found
+    type(iterator_type) :: iterator
+    integer :: k
+
+    activity=>get_diagnostic_activity_by_result_name(field_activities, result_name)
+
+    if (.not. associated(activity)) then
+      ! since there isn't an activity defined to produce this field it much be a component field available from MONC, so we simply
+      ! return the field's meta information (if MONC is provided it)
+      meta_info_found = find_specific_field_meta_information(result_name,&
+        field_meta_information, child_field_meta_information)
+
+      if (.not. meta_info_found) then
+        call log_log(LOG_ERROR, "End of IO 'activities' for field '"//&
+          trim(result_name)//"' reached but no meta information found from MONC-provided meta information")
+      endif
+
+      if (len_trim(child_field_meta_information%field_units) == 0) then
+        call log_log(LOG_WARN, "No 'units' meta information provided by MONC for field '"//trim(result_name)//"'")
+      endif
+      if (len_trim(child_field_meta_information%field_long_name) == 0) then
+        call log_log(LOG_WARN, "No 'long_name' meta information provided by MONC for field '"//trim(result_name)//"'")
+      endif
+
+      specific_field_meta_information = child_field_meta_information
+    else
+      ! depending on the type of activity the meta information from the used field(s) is combined with meta information specific to
+      ! the activity
+
+      !call log_log(LOG_INFO, trim(result_name)//" -> "//conv_to_string(activity%activity_type)//" . "//&
+        !trim(activity%activity_name))
+
+      iterator=c_get_iterator(activity%required_fields)
+      if (activity%activity_type == REDUCTION_TYPE) then
+        if (.not. c_size(activity%required_fields) == 1) then
+          call log_log(LOG_ERROR, "Not implemented: can only handle meta information for reductions with one fields")
+        else
+          child_field_name = c_next_string(iterator)
+          child_field_meta_information = get_meta_information_from_diagnostics_activity(field_meta_information, &
+            child_field_name, field_activities)
+
+          operator_name = get_reduction_operator_string(activity%communication_operator)
+
+          specific_field_meta_information%field_units = trim(child_field_meta_information%field_units)
+
+          if (len_trim(child_field_meta_information%field_long_name) > 0) then
+            specific_field_meta_information%field_long_name = trim(operator_name)//" of "//&
+              trim(child_field_meta_information%field_long_name)
+          endif
+
+          if (len_trim(child_field_meta_information%field_standard_name) > 0) then
+            call log_log(LOG_WARN, "The 'standard_name' meta info provided by MONC for the field '"//&
+              trim(child_field_name)//"' will be ignored because this field was further manipulated on the IO server")
+          endif
+        endif
+      else if (activity%activity_type == OPERATOR_TYPE) then
+        if (activity%activity_name == "localreduce") then
+          if (.not. c_size(activity%required_fields) == 1) then
+            call log_log(LOG_ERROR, "Not implemented: can only handle meta information for reductions with one fields")
+          else
+            child_field_name = c_next_string(iterator)
+            child_field_meta_information = get_meta_information_from_diagnostics_activity(field_meta_information, &
+              child_field_name, field_activities)
+
+            operator_name = c_get_string(activity%activity_attributes, "operator")
+
+            specific_field_meta_information%field_units = trim(child_field_meta_information%field_units)
+            if (len_trim(child_field_meta_information%field_long_name) > 0) then
+              specific_field_meta_information%field_long_name = "per-MONC "//trim(operator_name)//" of "//&
+                trim(child_field_meta_information%field_long_name)
+            endif
+
+            if (len_trim(child_field_meta_information%field_standard_name) > 0) then
+              call log_log(LOG_WARN, "The 'standard_name' meta info provided by MONC for the field '"//&
+                trim(child_field_name)//"' will be ignored because this field was further manipulated on the IO server")
+            endif
+          endif
+        else if (activity%activity_name == "arithmetic") then
+          specific_field_meta_information%field_units = ""
+          specific_field_meta_information%field_long_name = ""
+
+          ! collect meta information from all fields that are used in arithmetic operation
+          do while (c_has_next(iterator))
+            child_field_name = c_next_string(iterator)
+            child_field_meta_information = get_meta_information_from_diagnostics_activity(field_meta_information, &
+              child_field_name, field_activities)
+
+            if (len_trim(child_field_meta_information%field_units) > 0) then
+              specific_field_meta_information%field_units = trim(trim(child_field_meta_information%field_units)//" "//&
+                trim(specific_field_meta_information%field_units))
+            endif
+
+            if (len_trim(child_field_meta_information%field_long_name) > 0) then
+              specific_field_meta_information%field_long_name = trim(trim(child_field_meta_information%field_long_name)//" "//&
+                trim(specific_field_meta_information%field_long_name))
+            endif
+
+            if (len_trim(child_field_meta_information%field_standard_name) > 0) then
+              call log_log(LOG_WARN, "The 'standard_name' meta info provided by MONC for the field '"//&
+                trim(child_field_name)//"' will be ignored because this field was further manipulated on the IO server")
+            endif
+          end do
+
+          call log_log(LOG_WARN, "Meta information for arithmetic operations is simply concatenated for now "//&
+            "so the meta information may actually be incorrect")
+
+          ! if these fields contributed any meta information append the arithmetic operation's meta information
+          if (len_trim(specific_field_meta_information%field_units) > 0) then
+            if (.not. c_contains(activity%activity_attributes, "units")) then
+              call log_log(LOG_WARN, "The arithmetic operation to produce '"//trim(result_name)//"' does not "//&
+                "have any units defined, assuming unity.")
+              specific_field_meta_information%field_units = trim(specific_field_meta_information%field_units)
+            else
+              if (trim(c_get_string(activity%activity_attributes, "units")) /= "1") then
+                specific_field_meta_information%field_units = trim(trim(specific_field_meta_information%field_units)//" "//&
+                  trim(c_get_string(activity%activity_attributes, "units")))
+              endif
+            endif
+          endif
+
+          if (len_trim(specific_field_meta_information%field_long_name) > 0) then
+            if (.not. c_contains(activity%activity_attributes, "description")) then
+              call log_log(LOG_WARN, "The arithmetic operation to produce '"//trim(result_name)//"' does not "//&
+                "have any description defined, to produce a descriptive `long name` a description must be present.")
+              specific_field_meta_information%field_long_name = trim(specific_field_meta_information%field_long_name)
+            else
+              specific_field_meta_information%field_long_name = trim(trim(specific_field_meta_information%field_long_name)//" "//&
+                trim(c_get_string(activity%activity_attributes, "description")))
+            endif
+          endif
+        else
+          call log_log(LOG_ERROR, "Setting of field meta data not implemented for IO operation '"//&
+            trim(activity%activity_name)//"'")
+        endif
+      else
+        call log_log(LOG_ERROR, "Setting of field meta data not implemented for IO activity with ID '"//&
+          conv_to_string(activity%activity_type)//"'")
+      endif
+    endif
+
+    !call log_log(LOG_INFO, trim(result_name)//" :: "//&
+      !trim(specific_field_meta_information%field_long_name)//","//&
+      !trim(specific_field_meta_information%field_standard_name)//","//&
+      !trim(specific_field_meta_information%field_units)//","//&
+      !"")
+
+  end function get_meta_information_from_diagnostics_activity
+
+
+  !> Apply one particular substitution for the long name description by looking for prefix and suffix, and if found use
+  !! the new suffix
+  character(len=STRING_LENGTH) function do_long_name_substitution(long_name, new_prefix, prefix, suffix) result(new_long_name)
+    character(len=*), intent(in) :: long_name, new_prefix, prefix
+    character(len=*), intent(in), optional :: suffix
+
+    integer :: i_prefix, i_suffix
+
+    i_prefix = index(long_name, trim(prefix))
+    if (present(suffix)) then
+      i_suffix = index(long_name, trim(suffix))
+    endif
+
+    if (present(suffix) .and. i_prefix /= 0 .and. i_suffix /= 0) then
+      new_long_name = trim(new_prefix)//" "//trim(long_name(i_prefix+len(prefix)+1:i_suffix-1))
+    elseif (.not. present(suffix) .and. i_prefix /= 0) then
+      new_long_name = trim(new_prefix)//" "//long_name(i_prefix+len(prefix)+1:len(long_name))
+    else
+      new_long_name = long_name
+    endif
+  end function do_long_name_substitution
+
+  !> This function is basically a hack for making a long name produced from a chain activities easier to read
+  character(len=STRING_LENGTH) function cleanup_field_long_name(long_name) result(new_long_name)
+    character(len=STRING_LENGTH), intent(in) :: long_name
+
+    new_long_name = long_name
+    if (len_trim(new_long_name) > 0) then
+      ! to be applied against datasets which have one entry for each vertical column level
+      new_long_name = do_long_name_substitution(new_long_name, "vertical profile of horizontal mean", &
+        "sum of per-MONC horizontal sum of", "divided by domain xy-cell-count")
+
+      ! to be applied against datasets which have one value for each vertical column
+      ! matches e.g. `sum of per-MONC sum of per-column liquid-water path devided by domain xy-cell-count`
+      new_long_name = do_long_name_substitution(new_long_name, "domain-wide mean", &
+        "sum of per-MONC sum", "divided by domain xy-cell-count")
+      ! matches: e.g. `max of per-MONC max of per-column liquid-water path`
+      new_long_name = do_long_name_substitution(new_long_name, "domain-wide max", &
+        "max of per-MONC max")
+      new_long_name = do_long_name_substitution(new_long_name, "domain-wide min", &
+        "min of per-MONC min")
+    endif
+
+  end function cleanup_field_long_name
+
+   
+
+  !> Return the diagnostic definition for the requested field name
+  !! @param diagnostic_definitions All diagnostic definitions currently defined
+  !! @param field_name Name of field to find diagnostic definition for
+  type(diagnostics_type) function find_diagnostic_field(diagnostic_definitions, field_name)
+    type(diagnostics_type), dimension(:), intent(inout) :: diagnostic_definitions
+    character(len=STRING_LENGTH) :: field_name
+
+    integer :: i
+    logical :: found_field
+
+    found_field = .false.
+
+    do i=1, size(diagnostic_definitions)
+      if (diagnostic_definitions(i)%diagnostic_name == field_name) then
+        find_diagnostic_field=diagnostic_definitions(i)
+        found_field = .true.
+      endif
+    end do
+
+    if (.not. found_field) then
+      call log_log(LOG_ERROR, "Couldn't find diagnostics definition for field '"//trim(field_name)//"'")
+    endif
+
+  end function find_diagnostic_field
+
+  !> Set meta information on writers for active diagnostic fields based on information received from MONC
+  !! @param diagnostic_definitions All diagnostics currently defined
+  !! @param field_meta_information All meta information received from MONCs
+  subroutine set_meta_information_for_active_diagnostic_fields(diagnostic_definitions, field_meta_information)
+    type(diagnostics_type), dimension(:), intent(inout) :: diagnostic_definitions
+    type(field_meta_information_type), dimension(:), intent(in) :: field_meta_information
+
+    type(field_meta_information_type) :: specific_field_meta_information
+    type(writer_field_type) :: current_writer_field
+    character(len=STRING_LENGTH) :: field_name, field_namespace
+    logical :: meta_info_found
+    integer :: i,j
+
+    type(diagnostics_type) :: diagnostic_field
+
+    call log_log(LOG_INFO, "Setting meta information for active fields ")
+    do i=1, size(writer_entries)
+      do j=1, size(writer_entries(i)%contents)
+        current_writer_field = writer_entries(i)%contents(j)
+        if (current_writer_field%enabled) then
+          field_name = current_writer_field%field_name
+          field_namespace = current_writer_field%field_namespace
+
+          ! attempt to find meta information for a field which has the same name in the output file
+          ! as the field published by MONC
+          meta_info_found = find_specific_field_meta_information(field_name,&
+                                                                 field_meta_information,&
+                                                                 specific_field_meta_information)
+
+          if (meta_info_found) then
+            ! NB: have to call with `writer_entries(i)%contents(j)` otherwise we'll be updating a copy
+            call update_writer_field_with_field_meta_information(writer_entries(i)%contents(j),&
+              specific_field_meta_information)
+          else if (field_name == "time" .or. field_name == 'ugal' .or. field_name == 'vgal' &
+          .or. field_name == 'nqfields' .or. field_name == 'timestep' .or. field_name == "dtm" &
+          .or. field_name == 'dtm_new' .or. field_name == 'absolute_new_dtm' &
+          .or. field_name == 'x_resolution' .or. field_name == 'y_resolution' &
+          .or. field_name == 'x_top' .or. field_name == 'y_top' &
+          .or. field_name == 'x_bottom' .or. field_name == 'y_bottom' &
+          .or. field_name == 'q_udef1' .or. field_name == 'q_udef2' &       ! <- from here and below appeared with bomex.mcf test case
+          .or. field_name == 'zq_udef1' .or. field_name == 'zq_udef2' &
+          .or. field_name == 'olqbar_udef1' .or. field_name == 'olqbar_udef2' &
+          .or. field_name == 'olzqbar_udef1' .or. field_name == 'olzqbar_udef2' &
+          ) then
+            ! TODO: no idea what to do with time and these other fields yet...
+            call log_log(LOG_WARN, "Skipping finding meta data for field `"&
+              //trim(field_name)//"`")
+          else
+            diagnostic_field = find_diagnostic_field(diagnostic_definitions, field_name)
+            specific_field_meta_information = get_meta_information_from_diagnostics_activity(&
+               field_meta_information, field_name, diagnostic_field%activities)
+
+            specific_field_meta_information%field_long_name = cleanup_field_long_name(&
+              specific_field_meta_information%field_long_name)
+
+            call update_writer_field_with_field_meta_information(writer_entries(i)%contents(j),&
+              specific_field_meta_information)
+          endif
+        end if
+      end do
+    end do
+  end subroutine set_meta_information_for_active_diagnostic_fields
 
   !> Informs the writer federator that specific fields are present and should be reflected in the diagnostics output
   !! @param field_names The set of field names that are present
@@ -1291,6 +1669,8 @@ contains
       writer_entries(writer_entry_index)%contents(my_facet_index)%field_type=diagnostic_field_configuration%field_type
       writer_entries(writer_entry_index)%contents(my_facet_index)%dim_size_defns=diagnostic_field_configuration%dim_size_defns
       writer_entries(writer_entry_index)%contents(my_facet_index)%units=diagnostic_field_configuration%units
+      writer_entries(writer_entry_index)%contents(my_facet_index)%field_long_name=diagnostic_field_configuration%long_name
+      writer_entries(writer_entry_index)%contents(my_facet_index)%field_standard_name=diagnostic_field_configuration%standard_name
       writer_entries(writer_entry_index)%contents(my_facet_index)%collective_write=diagnostic_field_configuration%collective
       writer_entries(writer_entry_index)%contents(my_facet_index)%collective_initialised=.false.
       writer_entries(writer_entry_index)%contents(my_facet_index)%issue_write=.true.
@@ -1300,6 +1680,8 @@ contains
       writer_entries(writer_entry_index)%contents(my_facet_index)%data_type=prognostic_field_configuration%data_type
       writer_entries(writer_entry_index)%contents(my_facet_index)%field_type=prognostic_field_configuration%field_type
       writer_entries(writer_entry_index)%contents(my_facet_index)%units=prognostic_field_configuration%units
+      writer_entries(writer_entry_index)%contents(my_facet_index)%field_long_name=prognostic_field_configuration%long_name
+      writer_entries(writer_entry_index)%contents(my_facet_index)%field_standard_name=prognostic_field_configuration%standard_name
       writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions=prognostic_field_configuration%dimensions
       writer_entries(writer_entry_index)%contents(my_facet_index)%collective_write=prognostic_field_configuration%collective
       writer_entries(writer_entry_index)%contents(my_facet_index)%collective_initialised=.false.
@@ -1322,6 +1704,7 @@ contains
     else
       call log_log(LOG_ERROR, "A diagnostic or prognostic configuration for the field '"//trim(field_name)//"' was not found")
     end if
+
     if (writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions .gt. 0) then
       if (writer_entries(writer_entry_index)%contents(my_facet_index)%dim_size_defns(&
            writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions) .eq. "qfields") then

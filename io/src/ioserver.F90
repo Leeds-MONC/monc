@@ -12,11 +12,14 @@ module io_server_mod
        cancel_requests, free_mpi_type, get_number_io_servers, get_my_io_rank, test_for_inter_io, lock_mpi, unlock_mpi, &
        waitall_for_mpi_requests, initialise_mpi_communication, pause_for_mpi_interleaving
   use diagnostic_federator_mod, only : initialise_diagnostic_federator, finalise_diagnostic_federator, &
-       check_diagnostic_federator_for_completion, pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available
+       check_diagnostic_federator_for_completion, pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available, &
+       diagnostic_definitions
   use writer_federator_mod, only : initialise_writer_federator, finalise_writer_federator, check_writer_for_trigger, &
-       inform_writer_federator_fields_present, inform_writer_federator_time_point, provide_q_field_names_to_writer_federator
+       inform_writer_federator_fields_present, inform_writer_federator_time_point, provide_q_field_names_to_writer_federator, &
+       set_meta_information_for_active_diagnostic_fields
   use writer_field_manager_mod, only : initialise_writer_field_manager, finalise_writer_field_manager, &
        provide_monc_data_to_writer_federator
+  use writer_types_mod, only: field_meta_information_type
   use collections_mod, only : hashset_type, hashmap_type, map_type, iterator_type, c_get_integer, c_put_integer, c_is_empty, &
        c_remove, c_add_string, c_integer_at, c_free, c_get_iterator, c_has_next, c_next_mapentry
   use conversions_mod, only : conv_to_string
@@ -32,7 +35,7 @@ module io_server_mod
   use threadpool_mod, only : threadpool_init, threadpool_finalise, threadpool_start_thread, check_thread_status, &
        threadpool_deactivate, threadpool_is_idle
   use global_callback_inter_io_mod, only : perform_global_callback
-  use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, initialise_logging
+  use logging_mod, only : LOG_ERROR, LOG_WARN, LOG_INFO, log_log, initialise_logging
   use mpi, only : MPI_COMM_WORLD, MPI_STATUSES_IGNORE, MPI_BYTE
   use io_server_state_reader_mod, only : read_io_server_configuration
   implicit none
@@ -410,13 +413,12 @@ contains
     type(data_sizing_description_type) :: data_description(io_configuration%number_of_distinct_data_fields+4)
     integer :: created_mpi_type, data_size, recv_count, i
     type(data_sizing_description_type) :: field_description
-    logical :: field_found
+    logical :: q_indecies_field_found, field_found
     
     recv_count=data_receive(mpi_type_data_sizing_description, io_configuration%number_of_distinct_data_fields+4, &
          source, description_data=data_description)
 
     call handle_monc_dimension_information(data_description, monc_defn)
-     
     do i=1, io_configuration%number_of_data_definitions
       created_mpi_type=build_mpi_datatype(io_configuration%data_definitions(i), data_description, data_size, &
            monc_defn%field_start_locations(i), monc_defn%field_end_locations(i), monc_defn%dimensions(i))            
@@ -428,15 +430,40 @@ contains
     end do
     if (.not. initialised_present_data) then
       initialised_present_data=.true.
-      field_found=get_data_description_from_name(data_description, NUMBER_Q_INDICIES_KEY, field_description)
-      call c_put_integer(io_configuration%dimension_sizing, "active_q_indicies", field_description%dim_sizes(1))
+
+      q_indecies_field_found=get_data_description_from_name(data_description, NUMBER_Q_INDICIES_KEY, field_description)
+      if (q_indecies_field_found) then
+         call c_put_integer(io_configuration%dimension_sizing, "active_q_indicies", field_description%dim_sizes(1))
+      endif
       call register_present_field_names_to_federators(data_description, recv_count)
     end if
     call get_monc_information_data(source)
   end subroutine init_data_definition
 
+  subroutine update_writer_entries_with_metadata_from_data_description(data_description)
+    type(data_sizing_description_type), dimension(:), intent(in) :: data_description
+
+    type(field_meta_information_type), dimension(size(data_description)):: field_meta_information
+    integer :: i
+
+    do i=1,size(data_description)
+      field_meta_information(i)%field_name = data_description(i)%field_name
+      field_meta_information(i)%field_standard_name = data_description(i)%field_standard_name
+      field_meta_information(i)%field_long_name = data_description(i)%field_long_name
+      field_meta_information(i)%field_units = data_description(i)%field_units
+    end do
+
+    call set_meta_information_for_active_diagnostic_fields(diagnostic_definitions, field_meta_information)
+  end subroutine update_writer_entries_with_metadata_from_data_description
+
+
   !> Retrieves MONC information data, this is sent by MONC (and received) regardless, but only actioned if the data has not
   !! already been set
+  !! 
+  !! The following three things are sent in the byte-array: 1) values of the `zn` array, 2) names of the `q` fields and 3)
+  !! `units`, `long_name` and `standard_name` for all component fields. Corresponding data is packed together in
+  !! `iobridge_mod::send_general_monc_information_to_server`
+  !!
   !! @param source MONC source process
   subroutine get_monc_information_data(source)
     integer, intent(in) :: source
@@ -508,6 +535,8 @@ contains
     call inform_writer_federator_fields_present(io_configuration, diag_field_names_and_roots=diagnostics_field_names_and_roots)
     call c_free(present_field_names)
     call c_free(diagnostics_field_names_and_roots)
+
+    call update_writer_entries_with_metadata_from_data_description(data_description)
   end subroutine register_present_field_names_to_federators  
 
   !> Handles the provided local MONC dimension and data layout information

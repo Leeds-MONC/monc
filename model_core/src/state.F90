@@ -4,7 +4,8 @@ module state_mod
   use grids_mod, only : global_grid_type, local_grid_type
   use prognostics_mod, only : prognostic_field_type
   use communication_types_mod, only : halo_communication_type
-  use datadefn_mod, only : DEFAULT_PRECISION
+  use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
+  use logging_mod, only : LOG_WARN, LOG_ERROR, log_log
   implicit none
 
 #ifndef TEST_MODE
@@ -82,4 +83,119 @@ module state_mod
     logical :: galilean_transformation=.true., fix_ugal=.false., fix_vgal=.false.
     real(kind=DEFAULT_PRECISION) :: ugal=0.,vgal=0.
   end type model_state_type
+
+  public get_prognostic_field_units, get_prognostic_field_standard_name, &
+         get_prognostic_field_long_name
+
+contains
+
+  !> Provide CF-compliant units for prognostic variables
+  !!
+  !! @param field_name name of field to look up
+  !! @returns units of field
+  function get_prognostic_field_units(field_name) result(field_units)
+    character(len=*), intent(in) :: field_name
+    character(len=STRING_LENGTH) :: field_units
+
+    field_units = ""
+    if (trim(field_name) == "p") then
+       field_units = "Pa"
+    else if (trim(field_name) == "th") then
+       field_units = "K"
+    else if (trim(field_name) == "q") then
+       field_units = "kg/kg"
+    else if (trim(field_name) == "thref") then
+       field_units = "K"
+    else if (trim(field_name) == "u") then
+       field_units = "m/s"
+    else if (trim(field_name) == "v") then
+       field_units = "m/s"
+    else if (trim(field_name) == "w") then
+       field_units = "m/s"
+    else if (trim(field_name) == "x") then
+       field_units = "m"
+    else if (trim(field_name) == "y") then
+       field_units = "m"
+    else if (trim(field_name) == "z") then
+       field_units = "m"
+    else
+       call log_log(LOG_WARN, "Units not defined for globally sendable field "//trim(field_name))
+    endif
+
+  end function get_prognostic_field_units
+
+
+  !> Get "long name" (description of a field in terminology of CF conventions)
+  !! for prognostic fields globally available for IO
+  !! @param field_name name of field to look up
+  !! @returns long name of field
+  function get_prognostic_field_long_name(field_name) result(field_long_name)
+    character(len=*), intent(in) :: field_name
+    character(len=STRING_LENGTH) :: field_long_name
+
+    field_long_name = ""
+    if (trim(field_name) == "p") then
+       field_long_name = "Pressure perturbation"
+    else if (trim(field_name) == "th") then
+       field_long_name = "Potential temperature perturbation"
+    else if (trim(field_name) == "q") then
+       field_long_name = "Tracer concentration"
+    else if (trim(field_name) == "thref") then
+       field_long_name = "Potential temperature vertical profile"
+    else if (trim(field_name) == "u") then
+       field_long_name = "Zonal wind"
+    else if (trim(field_name) == "v") then
+       field_long_name = "Meridional wind"
+    else if (trim(field_name) == "w") then
+       field_long_name = "Vertical velocity"
+    else if (trim(field_name) == "x") then
+       field_long_name = "East-west displacement of cell centers"
+    else if (trim(field_name) == "y") then
+       field_long_name = "North-wouth displacement of cell centers"
+    else if (trim(field_name) == "z") then
+       field_long_name = "Vertical displacement of cell centers"
+    else
+       call log_log(LOG_WARN, "Description not defined for globally sendable field "//trim(field_name))
+    endif
+
+  end function get_prognostic_field_long_name
+
+  !> Provide CF-compliant standard names for prognostic variables
+  !! Variables are taken from table at
+  !! http://cfconventions.org/Data/cf-standard-names/43/build/cf-standard-name-table.html
+  !!
+  !! @param field_name name of field to look up
+  !! @returns standard name of field
+  function get_prognostic_field_standard_name(field_name) result(field_standard_name)
+    character(len=*), intent(in) :: field_name
+    character(len=STRING_LENGTH) :: field_standard_name
+
+    field_standard_name = ""
+    if (trim(field_name) == "p") then
+       field_standard_name = "" ! NB: not "air_pressure", since `p` is actually the perturbation in pressure
+    else if (trim(field_name) == "th") then
+       field_standard_name = "" ! NB: similarly to `p` this variable is the perturbation in potential temperature
+    else if (trim(field_name) == "q") then
+       field_standard_name = ""  ! no standard name
+    else if (trim(field_name) == "thref") then
+       field_standard_name = ""
+    else if (trim(field_name) == "u") then
+       field_standard_name = "eastward_wind"
+    else if (trim(field_name) == "v") then
+       field_standard_name = "northward_wind"
+    else if (trim(field_name) == "w") then
+       field_standard_name = "upward_air_velocity"
+    else if (trim(field_name) == "x") then
+       field_standard_name = "x-coordinate in Cartesian system (cell-centers)"
+    else if (trim(field_name) == "y") then
+       field_standard_name = "y-coordinate in Cartesian system (cell-centers)"
+    else if (trim(field_name) == "z") then
+       field_standard_name = "height-coordinate in Cartesian system (cell-edges)"
+    else if (trim(field_name) == "zn") then
+       field_standard_name = "height-coordinate in Cartesian system (cell-centers)"
+    else
+       call log_log(LOG_WARN, "Standard name not defined for globally sendable field "//trim(field_name))
+    endif
+
+  end function get_prognostic_field_standard_name
 end module state_mod

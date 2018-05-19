@@ -24,19 +24,20 @@ module diagnostic_federator_mod
   use data_utils_mod, only : get_scalar_integer_from_monc, get_scalar_real_from_monc, is_field_present, &
        get_action_attribute_logical, get_action_attribute_integer, get_action_attribute_string, &
        get_array_double_from_monc, get_array_integer_from_monc, get_scalar_logical_from_monc
-  use logging_mod, only : LOG_WARN, LOG_ERROR, log_log
+  use logging_mod, only : LOG_WARN, LOG_ERROR, LOG_INFO, log_log
   use operator_mod, only : perform_activity, initialise_operators, finalise_operators, get_operator_required_fields, &
        get_operator_perform_procedure, get_operator_auto_size
   use io_server_client_mod, only : DOUBLE_DATA_TYPE, INTEGER_DATA_TYPE
   use writer_field_manager_mod, only : provide_field_to_writer_federator
+
+  use diagnostic_types_mod, only: diagnostics_activity_type, get_misc_action_at_index, get_diagnostic_activity_by_result_name, &
+     retrieve_next_activity, diagnostics_type, OPERATOR_TYPE, REDUCTION_TYPE, BROADCAST_TYPE, ALLREDUCTION_TYPE, PERFORM_CLEAN_EVERY
+
   implicit none
 
 #ifndef TEST_MODE
   private
 #endif
-
-  !< The type of activity
-  integer, parameter :: OPERATOR_TYPE=1, REDUCTION_TYPE=2, BROADCAST_TYPE=3, ALLREDUCTION_TYPE=4, PERFORM_CLEAN_EVERY=100
 
   !< A wrapper type containing all the diagnostics for MONC source processes at a specific timestep
   type all_diagnostics_at_timestep_type
@@ -56,22 +57,22 @@ module diagnostic_federator_mod
   end type diagnostics_at_timestep_type  
 
   !< A diagnostic which is a name and then the list of activities require to be executed
-  type diagnostics_type
-     character(len=STRING_LENGTH) :: diagnostic_name, diagnostic_namespace, uuid
-     type(list_type) :: activities
-     integer :: generation_timestep_frequency
-     logical :: collective
-  end type diagnostics_type  
+  !type diagnostics_type
+     !character(len=STRING_LENGTH) :: diagnostic_name, diagnostic_namespace, uuid
+     !type(list_type) :: activities
+     !integer :: generation_timestep_frequency
+     !logical :: collective
+  !end type diagnostics_type  
 
   !< A diagnostic activity which is executed at some point with an input and returns an output
-  type diagnostics_activity_type
-     integer :: activity_type, communication_operator, root
-     real(kind=DEFAULT_PRECISION) :: result
-     type(list_type) :: required_fields
-     type(map_type) :: activity_attributes
-     character(len=STRING_LENGTH) :: result_name, activity_name, uuid
-     procedure(perform_activity), pointer, nopass :: operator_procedure
-  end type diagnostics_activity_type
+  !type diagnostics_activity_type
+     !integer :: activity_type, communication_operator, root
+     !real(kind=DEFAULT_PRECISION) :: result
+     !type(list_type) :: required_fields
+     !type(map_type) :: activity_attributes
+     !character(len=STRING_LENGTH) :: result_name, activity_name, uuid
+     !procedure(perform_activity), pointer, nopass :: operator_procedure
+  !end type diagnostics_activity_type
 
   type(hashmap_type), volatile :: diagnostics_per_monc_at_timestep, all_diagnostics_at_timestep
   type(hashset_type), volatile :: all_outstanding_fields, available_fields
@@ -79,8 +80,11 @@ module diagnostic_federator_mod
   integer, volatile :: timestep_entries_rwlock, all_diagnostics_per_timestep_rwlock, clean_progress_mutex, &
        previous_clean_point, previous_viewed_timestep, current_point
 
- public initialise_diagnostic_federator, finalise_diagnostic_federator, check_diagnostic_federator_for_completion, &
+  public initialise_diagnostic_federator, finalise_diagnostic_federator, check_diagnostic_federator_for_completion, &
       pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available
+   
+  !! XXX: temp
+  public diagnostic_definitions
 contains  
 
   !> Initialises the diagnostics action and sets up the diagnostics master definitions
@@ -889,27 +893,6 @@ contains
     end if
   end subroutine add_required_fields_if_needed
 
-  !> Retrieves the next activity in a collection being iterated over by an iterator
-  !! @param iterator The iterator we are using to iterate over the collection
-  !! @returns The next activity or null if none is found
-  function retrieve_next_activity(iterator)
-    type(iterator_type), intent(inout) :: iterator
-    type(diagnostics_activity_type), pointer :: retrieve_next_activity
-
-    class(*), pointer :: generic
-
-    generic=>c_next_generic(iterator)
-
-    if (associated(generic)) then
-      select type(generic)
-        type is(diagnostics_activity_type)
-          retrieve_next_activity=>generic
-      end select      
-    else
-      retrieve_next_activity=>null()
-    end if
-  end function retrieve_next_activity  
-
   !> Retrieves the timestep at a specific timestep and source MONC
   !! @param timestep The timestep to look up
   !! @param source The source MONC process id
@@ -1074,28 +1057,6 @@ contains
     end if    
   end function get_comm_activity_from_fieldname  
 
-  !> Retrieves a misc action from the parsed user XML configuration at a specific index
-  !! @param action_members The members to extract from
-  !! @param index The index to look up
-  !! @returns The misc item at this index or null if none is found
-  function get_misc_action_at_index(action_members, index)
-    type(list_type), intent(inout) :: action_members
-    integer, intent(in) :: index
-    type(io_configuration_misc_item_type), pointer :: get_misc_action_at_index
-
-    class(*), pointer :: generic
-
-    generic=>c_get_generic(action_members, index)
-    if (associated(generic)) then
-      select type(generic)
-      type is(io_configuration_misc_item_type)
-        get_misc_action_at_index=>generic
-      end select
-    else
-      get_misc_action_at_index=>null()
-    end if
-  end function get_misc_action_at_index
-
   !> Based upon the IO configuration this will define the diagnostics structure. It is done once at initialisation and then this
   !! same information is used for execution at each data arrival point.
   !! @param io_configuration The IO server configuration
@@ -1122,6 +1083,7 @@ contains
         diagnostic_definitions(i)%diagnostic_namespace=io_configuration%diagnostics(i)%namespace
         diagnostic_definitions(i)%collective=io_configuration%diagnostics(i)%collective
         action_entities=c_size(io_configuration%diagnostics(i)%members)
+
         if (action_entities .gt. 0) then
           do j=1, action_entities
             misc_action=>get_misc_action_at_index(io_configuration%diagnostics(i)%members, j)
@@ -1172,27 +1134,6 @@ contains
     end if
   end subroutine define_diagnostics
 
-  !> Retrives a diagnostic activity based upon its result name or null if none is found
-  !! @param result_name The name of the result we are looking up
-  !! @param diagnostic_entry_index The diagnostic index that we are concerned with
-  !! @returns The corresponding activity or null if none is found
-  function get_diagnostic_activity_by_result_name(result_name, diagnostic_entry_index)
-    character(len=STRING_LENGTH), intent(inout) :: result_name
-    integer, intent(in) :: diagnostic_entry_index
-    type(diagnostics_activity_type), pointer :: get_diagnostic_activity_by_result_name
-
-    type(iterator_type) :: iterator
-
-    iterator=c_get_iterator(diagnostic_definitions(diagnostic_entry_index)%activities)
-    do while (c_has_next(iterator))
-      get_diagnostic_activity_by_result_name=>retrieve_next_activity(iterator)
-      if (get_diagnostic_activity_by_result_name%result_name == result_name) then
-        return
-      end if      
-    end do
-    get_diagnostic_activity_by_result_name=>null()
-  end function get_diagnostic_activity_by_result_name
-
   !> Processes all auto dimensions by looking them up and resolving them based upon the operators
   !! @param io_configuration Configuration of the IO server
   !! @param diagnostic_configuration Configuration of the diagnostic field
@@ -1206,7 +1147,8 @@ contains
     character(len=STRING_LENGTH) :: specific_dimension
     type(diagnostics_activity_type), pointer :: diagnostic_activity
 
-    diagnostic_activity=>get_diagnostic_activity_by_result_name(diagnostic_definitions(entry_index)%diagnostic_name, entry_index)
+    diagnostic_activity=>get_diagnostic_activity_by_result_name(diagnostic_definitions(entry_index)%activities, &
+       diagnostic_definitions(entry_index)%diagnostic_name)
     if (associated(diagnostic_activity)) then
       if (diagnostic_activity%activity_type==OPERATOR_TYPE) then
         do i=1, diagnostic_configuration%dimensions

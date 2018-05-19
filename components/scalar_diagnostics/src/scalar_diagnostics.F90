@@ -219,7 +219,35 @@ contains
     else
       field_information%enabled=.true.
     end if    
- 
+
+    if (name .eq. "qlmax_local") then
+       field_information%units = 'kg/kg'
+       field_information%long_name = "per-column maximum liquid water specific mass"
+    else if (name .eq. "wmax_local") then
+       field_information%units = 'm/s'
+       field_information%long_name = "per-column maximum vertical velocity"
+    else if (name .eq. "wmin_local") then
+       field_information%units = 'm/s'
+       field_information%long_name = "per-column minimum vertical velocity"
+    else if (name .eq. "cltop_local") then
+       field_information%units = 'm'
+       field_information%long_name = "per-column maximum condensate height"
+    else if (name .eq. "clbas_local") then
+       field_information%units = 'm'
+       field_information%long_name = "per-column minimum condensate height"
+    else if (name .eq. "lwp_local") then
+       field_information%units = 'kg/m^2'
+       field_information%long_name = "per-column liquid-water path"
+    else if (name .eq. "vwp_local") then
+       field_information%units = 'kg/m^2'
+       field_information%long_name = "per-column water-vapour path"
+    else if (name .eq. "lathf_local") then
+       field_information%units = 'W/m^2'
+       field_information%long_name = "per-column surface latent-heat flux"
+    else if (name .eq. "senhf_local") then
+       field_information%units = 'W/m^2'
+       field_information%long_name = "per-column surface sensible-heat flux"
+    endif
   end subroutine field_information_retrieval_callback
 
   !> Field value retrieval callback, this returns the value of a specific published field

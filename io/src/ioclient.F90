@@ -16,6 +16,9 @@ module io_server_client_mod
   type data_sizing_description_type
      character(len=STRING_LENGTH) :: field_name !< Name of the field that this describes
      integer :: dimensions, dim_sizes(4) !< The number of dimensions and size in each dimension
+     character(len=STRING_LENGTH) :: field_units !< Units of field data
+     character(len=STRING_LENGTH) :: field_long_name !< Long descriptive name for CF-compliance
+     character(len=STRING_LENGTH) :: field_standard_name !< CF-compliant standard name, see http://cfconventions.org/standard-names.html for reference
   end type data_sizing_description_type
 
   type field_description_type
@@ -144,14 +147,16 @@ contains
   !! of the arrays on this process
   !! @return The handle of the MPI type
   integer function build_mpi_type_data_sizing_description()
-    integer :: new_type, ierr, block_counts(3), old_types(3), offsets(3)
+    integer, parameter :: N_BLOCKS = 6
+    integer :: new_type, ierr, block_counts(N_BLOCKS), old_types(N_BLOCKS), offsets(N_BLOCKS)
     integer(kind=MPI_ADDRESS_KIND) :: num_addr, base_addr
 
     type(data_sizing_description_type) :: basic_type
 
+    ! `field_name`
     call mpi_get_address(basic_type, base_addr, ierr)
     old_types(1) = MPI_CHARACTER
-    block_counts(1) = STRING_LENGTH 
+    block_counts(1) = STRING_LENGTH
     offsets(1)=0
 
     call mpi_get_address(basic_type%dimensions, num_addr, ierr)
@@ -159,12 +164,27 @@ contains
     block_counts(2) = 1
     offsets(2)=int(num_addr-base_addr)
 
-    call mpi_get_address(basic_type%dim_sizes, num_addr, ierr)    
+    call mpi_get_address(basic_type%dim_sizes, num_addr, ierr)
     old_types(3) = MPI_INT
     block_counts(3) = 4
     offsets(3)=int(num_addr-base_addr)
 
-    call mpi_type_struct(3, block_counts, offsets, old_types, new_type, ierr) 
+    call mpi_get_address(basic_type%field_units, num_addr, ierr)
+    old_types(4) = MPI_CHARACTER
+    block_counts(4) = STRING_LENGTH
+    offsets(4)=int(num_addr-base_addr)
+
+    call mpi_get_address(basic_type%field_long_name, num_addr, ierr)
+    old_types(5) = MPI_CHARACTER
+    block_counts(5) = STRING_LENGTH
+    offsets(5)=int(num_addr-base_addr)
+
+    call mpi_get_address(basic_type%field_standard_name, num_addr, ierr)
+    old_types(6) = MPI_CHARACTER
+    block_counts(6) = STRING_LENGTH
+    offsets(6)=int(num_addr-base_addr)
+
+    call mpi_type_struct(N_BLOCKS, block_counts, offsets, old_types, new_type, ierr)
     call mpi_type_commit(new_type, ierr)
     build_mpi_type_data_sizing_description=new_type
   end function build_mpi_type_data_sizing_description

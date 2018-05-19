@@ -6,15 +6,17 @@ module iobridge_mod
   use collections_mod, only : hashmap_type, map_type, list_type, c_contains, c_get_generic, c_get_string, c_put_generic, &
        c_put_integer, c_size, c_key_at, c_free
   use conversions_mod, only : conv_to_string
-  use state_mod, only : model_state_type
+  use state_mod, only : model_state_type, get_prognostic_field_units, get_prognostic_field_long_name, &
+                       get_prognostic_field_standard_name
   use grids_mod, only : X_INDEX, Y_INDEX, Z_INDEX, local_grid_type
   use optionsdatabase_mod, only : options_size, options_get_logical
   use prognostics_mod, only : prognostic_field_type
   use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
-  use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, log_master_log
+  use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, log_master_log, LOG_INFO
   use optionsdatabase_mod, only : options_get_integer
   use q_indices_mod, only : q_metadata_type, get_indices_descriptor
-  use registry_mod, only : get_all_component_published_fields, get_component_field_value, get_component_field_information
+  use registry_mod, only : get_all_component_published_fields, get_component_field_value, get_component_field_information, &
+     is_component_field_available
   use io_server_client_mod, only : COMMAND_TAG, DATA_TAG, REGISTER_COMMAND, DEREGISTER_COMMAND, DATA_COMMAND_START, &
        ARRAY_FIELD_TYPE, SCALAR_FIELD_TYPE, MAP_FIELD_TYPE, INTEGER_DATA_TYPE, BOOLEAN_DATA_TYPE, STRING_DATA_TYPE, &
        FLOAT_DATA_TYPE, DOUBLE_DATA_TYPE, LOCAL_SIZES_KEY, LOCAL_START_POINTS_KEY, LOCAL_END_POINTS_KEY, NUMBER_Q_INDICIES_KEY, &
@@ -458,6 +460,7 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
     integer, intent(in) :: mpi_type_data_sizing_description, number_unique_fields
     type(data_sizing_description_type), dimension(:), intent(inout) :: data_description
+    type(component_field_information_type) :: field_information
 
     integer :: ierr, i, next_index, request_handle
     character(len=STRING_LENGTH) :: field_name
@@ -467,7 +470,14 @@ contains
     do i=1, number_unique_fields
       field_name=c_key_at(unique_field_names, i)
       if (c_contains(sendable_fields, field_name)) then
-        call assemble_individual_description(data_description, next_index, field_name, get_sendable_field_sizing(field_name))
+        if (is_component_field_available(field_name)) then
+           field_information = get_component_field_information(current_state, field_name)
+           call assemble_individual_description(data_description, next_index, field_name, get_sendable_field_sizing(field_name), &
+                    field_units=field_information%units, field_long_name=field_information%long_name, &
+                    field_standard_name=field_information%standard_name)
+        else
+           call assemble_individual_description(data_description, next_index, field_name, get_sendable_field_sizing(field_name))
+        endif
         next_index=next_index+1
       end if      
     end do    
@@ -574,17 +584,33 @@ contains
   !! @param index The index of this current field
   !! @param field_name The corresponding field name that we are describing
   !! @param dimensions The number of dimensions (zero means the field is inactive)
-  !! @param dim1 Optional size of dimension 1
-  !! @param dim2 Optional size of dimension 2
-  !! @param dim3 Optional size of dimension 3
-  !! @param dim4 Optional size of dimension 4
-  subroutine assemble_individual_description(data_description, index, field_name, field_sizing_description)
+  !! @param field_units
+  !! @param field_long_name
+  !! @param field_standard_name
+  subroutine assemble_individual_description(data_description, index, field_name, field_sizing_description, &
+                                             field_units, field_long_name, field_standard_name)
     integer, intent(in) :: index
     character(len=*), intent(in) :: field_name
     type(io_server_sendable_field_sizing), intent(in) :: field_sizing_description
     type(data_sizing_description_type), dimension(:), intent(inout) :: data_description
+    character(len=*), intent(in), optional :: field_units, field_long_name, field_standard_name
 
     data_description(index)%field_name=field_name
+    if (present(field_units)) then
+       data_description(index)%field_units=field_units
+    else
+       data_description(index)%field_units=get_prognostic_field_units(field_name)
+    endif
+    if (present(field_long_name)) then
+       data_description(index)%field_long_name=field_long_name
+    else
+       data_description(index)%field_long_name=get_prognostic_field_long_name(field_name)
+    endif
+    if (present(field_standard_name)) then
+       data_description(index)%field_standard_name=field_standard_name
+    else
+       data_description(index)%field_standard_name=get_prognostic_field_standard_name(field_name)
+    endif
     data_description(index)%dimensions=field_sizing_description%number_dimensions
     data_description(index)%dim_sizes=field_sizing_description%dimensions
   end subroutine assemble_individual_description 
