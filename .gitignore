@@ -9,3 +9,4 @@ preprocess/
 .*.sw*
 *.nc
 *.autogen
+__pycache__/
