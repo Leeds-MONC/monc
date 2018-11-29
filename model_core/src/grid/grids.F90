@@ -85,7 +85,10 @@ module grids_mod
      real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: q_rand !< Initial profile of amplitude of q perturbations
      real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: q_force !< Profiles of forcing terms for q variables
 
-     real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: olqbar,olzqbar     
+     real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: olqbar,olzqbar  
+     ! time varying forcing terms
+     real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: wsubs_time_vary 
+
      real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: hgd
      real(kind=DEFAULT_PRECISION) :: czn, zlogm, zlogth, vk_on_zlogm
      integer, dimension(:), allocatable :: kgd

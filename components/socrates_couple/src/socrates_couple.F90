@@ -111,10 +111,10 @@ contains
     !   current_state%sth_lw%data(:,:,:) = 0.0
     !   current_state%sth_sw%data(:,:,:) = 0.0
        ! Allocate downward surface fluxes
-       allocate(current_state%sw_down_surf(y_local, x_local))
-       allocate(current_state%lw_down_surf(y_local, x_local))
-       current_state%sw_down_surf(:, :) = 0.0
-       current_state%lw_down_surf(:, :) = 0.0
+    !   allocate(current_state%sw_down_surf(y_local, x_local))
+    !   allocate(current_state%lw_down_surf(y_local, x_local))
+    !   current_state%sw_down_surf(:, :) = 0.0
+    !   current_state%lw_down_surf(:, :) = 0.0
     !endif
 
     ! allocate the density and radiation factor needed for heating rates
@@ -252,6 +252,10 @@ contains
                (LOG_INFO, "Socrates called, time ="//trim(conv_to_string(current_state%time))//&
                " rad_int_time="//trim(conv_to_string(socrates_opt%rad_int_time))//&
                " local dtm="//trim(conv_to_string(local_dtm)))
+          call log_master_log &
+               (LOG_INFO, "methane ="//trim(conv_to_string(socrates_opt%ch4_mmr))//&
+               " l_ch4="//trim(conv_to_string(lw_control%l_ch4)))
+          
           ! Do not really like this but update the rad_time_hours and
           ! rad_day here using time.
           socrates_opt%rad_day = socrates_opt%rad_start_day + &
@@ -356,20 +360,30 @@ contains
              socrates_derived_fields%albedoin2 = socrates_opt%surface_albedo
           endif
        endif
+       
+       ! AH - after all this testing check whether solar is required. If 
+       ! no solar then set fraction_lit = 0.0
+       if (socrates_opt%l_no_solar) then 
+          socrates_derived_fields%fraction_lit = 0.0
+       endif
 
        call rad_ctl(current_state, sw_spectrum, lw_spectrum,    &
              mcc, socrates_opt, merge_fields, socrates_derived_fields)
        
        ! This is needed for JULES coupling. Including irrespective of JULES enabled
        ! assign downward fluxes at the surface
-       current_state%sw_down_surf(jcol, icol) = &
-         socrates_derived_fields%flux_down_sw(1, target_y_index, target_x_index)
-       current_state%lw_down_surf(jcol, icol) = &
-         socrates_derived_fields%flux_down_lw(1, target_y_index, target_x_index)
+       !current_state%sw_down_surf(jcol, icol) = &
+       !  socrates_derived_fields%flux_down_sw(1, target_y_index, target_x_index)
+       !current_state%lw_down_surf(jcol, icol) = &
+       !  socrates_derived_fields%flux_down_lw(1, target_y_index, target_x_index)
        
     endif
 
     ! update the current_state sth
+    ! AH - temporary code to check bit comparison of socrates_couple
+    !current_state%sth_lw%data(:, jcol, icol) = 0.0
+    !current_state%sth_sw%data(:, jcol, icol) = 0.0
+    ! AH - end temporary code
     current_state%sth%data(:, jcol, icol) = &
          current_state%sth%data(:, jcol, icol) +  &
          current_state%sth_lw%data(:, jcol, icol) + &

@@ -1,0 +1,236 @@
+#
+# This needs populating, currently just a placeholder
+#
+
+# Global configuration
+global_configuration=global_config
+
+# Override global component defaults
+fftsolver_enabled=.true.
+iterativesolver_enabled=.false.
+pw_advection_enabled=.true.
+simplesetup_enabled=.true.
+smagorinsky_enabled=.true.
+lower_bc_enabled=.true.
+setfluxlook_enabled=.true. #This must be set to true if running with lower_bc
+viscosity_enabled=.true.
+diffusion_enabled=.true.
+simplecloud_enabled=.false.
+casim_enabled=.true.
+casim_profile_dgs_enabled=.true.
+coriolis_enabled=.true.
+damping_enabled=.true.
+forcing_enabled=.true. 
+galilean_transformation=.false. # Needs debugging
+randomnoise_enabled=.true.
+mean_profiles_enabled=.true. #This must be set to true if running with damping
+th_advection_enabled=.true.
+lwrad_exponential_enabled=.false.
+iobridge_enabled=.true.
+scalar_diagnostics_enabled=.true.
+profile_diagnostics_enabled=.true.
+subgrid_profile_diagnostics_enabled=.true.
+diagnostics_3d_enabled=.true.
+flux_budget_enabled=.false.
+socrates_couple_enabled=.true.
+
+# Control configuration
+display_synopsis_frequency=100
+termination_time=54100.0
+dtm=0.25
+
+# IO server configuration
+ioserver_configuration_file="testcases/transition/cao_constrain_xml/cao_constrain_write.xml"
+moncs_per_io_server=11
+sampling_frequency=120
+3d_sampling_frequency=120
+mm_scalars=60.0
+mm_profiles=600.0
+mm_3d_fields=1800.0
+diag_write_freq=10800.00
+
+#3-d files names for the intercomparison
+q_3d_diag_file = "diagnostic_files/MONC_Q_096_0p5_050_liquid.nc"
+t_3d_diag_file = "diagnostic_files/MONC_T_096_0p5_050_liquid.nc"
+theta_3d_diag_file = "diagnostic_files/MONC_Theta_096_0p5_050_liquid.nc"
+thetali_3d_diag_file = "diagnostic_files/MONC_Thetali_096_0p5_050_liquid.nc"
+u_3d_diag_file = "diagnostic_files/MONC_U_096_0p5_050_liquid.nc"
+v_3d_diag_file = "diagnostic_files/MONC_V_096_0p5_050_liquid.nc"
+w_3d_diag_file = "diagnostic_files/MONC_W_096_0p5_050_liquid.nc"
+
+# Checkpoint configuration
+checkpoint_frequency=0
+checkpoint_file="checkpoint_files/cao_fivehundredm_dump.nc"
+checkpoint_walltime_frequency=100
+walltime_limit=02:30:00
+
+# Advection choices
+advection_flow_fields=pw
+advection_theta_field=tvd
+advection_q_fields=tvd
+
+# CFL configuration
+cfl_frequency=100
+cfl_cvismax=0.4
+cfl_cvelmax=0.4
+cfl_dtmmax=0.25
+cfl_dtmmin=0.01
+
+# Simple setup configuration
+# We'll want to change this reference profile later
+thref0=270.92
+surface_pressure=100700.
+surface_reference_pressure=100000.
+x_size=192
+y_size=192
+z_size=150
+dxx=50.0
+dyy=50.0
+zztop=5000.0
+kgd=100, 130, 150
+hgd=2000.0, 3500.0, 5000.0
+nsmth=20
+
+enable_theta=.true.
+use_anelastic_equations=.true.
+origional_vertical_grid_setup=.true.
+passive_th=.false.
+passive_q=.false.
+backscatter=.false.
+use_viscosity_and_diffusion=.true.
+
+# Smagorinsky configuration
+# Default values for the smagorinsky subgrid constants
+smag-subb=40.0
+smag-subc=16.0
+# The subgrid constant values for the 'conventional' subgrid model 
+# of Brown (1999)
+#smag-subb=1.43
+#smag-subc=1.43
+
+# Initialization of fields
+l_init_pl_theta=.true.
+z_init_pl_theta=2.5, 13.33334, 33.33334, 60, 93.33331, 133.3333, 180, 233.3334, 293.3333, 360, 433.3332, 513.3333, 600, 693.3334, 793.3336, 900, 1013.333, 1133.333, 1260, 1393.333, 1533.333, 1680, 1833.333, 1993.333, 2160, 2333.334, 2513.333, 2700, 2893.334, 3093.334, 3300, 3513.334, 3733.334, 3960, 4193.327, 4433.333, 4680, 4933.332, 5193.332
+f_init_pl_theta=270.9187, 270.6685, 270.5655, 270.5129, 270.4847, 270.4706, 270.4638, 270.4624, 270.4659, 270.4737, 270.4857, 270.5018, 270.522, 270.5469, 270.5777, 270.6155, 270.6663, 270.788, 271.5708, 273.4127, 275.8175, 277.3399, 277.9727, 278.7095, 279.4169, 280.0865, 280.7472, 281.4014, 282.0132, 282.5683, 283.1124, 283.7011, 284.3763, 285.2089, 286.176, 287.2299, 288.347, 289.5155, 290.6742
+l_init_pl_u=.true.
+z_init_pl_u=2.5, 13.33334, 33.33334, 60, 93.33331, 133.3333, 180, 233.3334, 293.3333, 360, 433.3332, 513.3333, 600, 693.3334, 793.3336, 900, 1013.333, 1133.333, 1260, 1393.333, 1533.333, 1680, 1833.333, 1993.333, 2160, 2333.334, 2513.333, 2700, 2893.334, 3093.334, 3300, 3513.334, 3733.334, 3960, 4193.327, 4433.333, 4680, 4933.332, 5193.332
+f_init_pl_u=2.369846, 2.811477, 2.989416, 3.081026, 3.13836, 3.178571, 3.208317, 3.228087, 3.240664, 3.248612, 3.254231, 3.25971, 3.267342, 3.279583, 3.29855, 3.326543, 3.364538, 3.410552, 3.4419, 3.389475, 3.171791, 3.076754, 2.875894, 2.878614, 2.861746, 2.769949, 2.576939, 2.359631, 2.281675, 2.403088, 2.563127, 2.532891, 2.402199, 2.293139, 2.295924, 2.358209, 2.463792, 2.598862, 2.80271
+l_init_pl_v=.true.
+z_init_pl_v=2.5, 13.33334, 33.33334, 60, 93.33331, 133.3333, 180, 233.3334, 293.3333, 360, 433.3332, 513.3333, 600, 693.3334, 793.3336, 900, 1013.333, 1133.333, 1260, 1393.333, 1533.333, 1680, 1833.333, 1993.333, 2160, 2333.334, 2513.333, 2700, 2893.334, 3093.334, 3300, 3513.334, 3733.334, 3960, 4193.327, 4433.333, 4680, 4933.332, 5193.332
+f_init_pl_v=-10.98689, -13.13712, -14.08074, -14.6038, -14.95037, -15.20171, -15.38808, -15.51503, -15.59316, -15.63162, -15.63841, -15.62105, -15.58707, -15.54472, -15.50434, -15.48016, -15.49562, -15.59646, -15.84405, -16.85507, -18.43516, -19.46333, -20.18378, -20.81226, -21.36193, -21.67953, -21.75059, -21.65458, -21.4217, -21.08494, -20.76181, -20.59773, -20.62616, -20.83028, -21.13964, -21.45404, -21.71761, -21.95235, -22.23752
+l_init_pl_q=.true.
+names_init_pl_q=vapour
+z_init_pl_q=2.5, 13.33334, 33.33334, 60, 93.33331, 133.3333, 180, 233.3334, 293.3333, 360, 433.3332, 513.3333, 600, 693.3334, 793.3336, 900, 1013.333, 1133.333, 1260, 1393.333, 1533.333, 1680, 1833.333, 1993.333, 2160, 2333.334, 2513.333, 2700, 2893.334, 3093.334, 3300, 3513.334, 3733.334, 3960, 4193.327, 4433.333, 4680, 4933.332, 5193.332
+f_init_pl_q=0.002270824, 0.002138681, 0.002080937, 0.002047669, 0.002025459, 0.002009019, 0.001994632, 0.001981138, 0.001968152, 0.001955347, 0.001942403, 0.00192897, 0.001914577, 0.001898581, 0.001989212, 0.001902387, 0.001836884, 0.001780968, 0.001736798, 0.001747975, 0.0007383391, 0.0005593019, 0.0005176902, 0.0004739431, 0.0004453163, 0.0004216292, 0.0004004737, 0.0003828382, 0.000369502, 0.0003575985, 0.0003417819, 0.0003198423, 0.0002920692, 0.0002584734, 0.0002219349, 0.000187192, 0.0001567586, 0.0001302419, 0.0001071026
+  
+l_matchthref=.true.
+
+# Random noise
+l_rand_pl_theta=.true.
+z_rand_pl_theta=0.0, 1000.0, 1001.0, 5000.
+f_rand_pl_theta=0.2, 0.2, 0.0, 0.0
+
+# Simple cloud
+max_height_cloud=4500.
+
+# physical constants
+z0=6.6e-4
+z0th=3.7e-6
+
+# Coriolis
+fcoriol=0.0001
+geostrophic_wind_rate_of_change_in_x=0.0
+geostrophic_wind_rate_of_change_in_y=-0.0024
+surface_geostrophic_wind_x=0.0
+surface_geostrophic_wind_y=-15.0
+
+# Damping configuration
+dmptim=0.001
+zdmp=4500.0
+hdmp=2000.0
+
+forcing_file = testcases/transition/constrain_setup_forcing.nc
+
+# Subsidence profile
+use_time_varying_subsidence=.true.
+l_subs_pl_theta=.true.
+l_subs_pl_q=.true.
+
+#SUBSIDENCE=1, DIVERGENCE=0
+subsidence_input_type=1 
+subsidence_local_theta=.true.
+subsidence_local_q=.true.
+
+# Large-scale forcing
+l_constant_forcing_theta=.false.
+l_constant_forcing_q=.false.
+l_constant_forcing_u=.false.
+l_constant_forcing_v=.false.
+
+# TENDENCY=0, RELAXATION=1, INCREMENTS=2
+constant_forcing_type_theta=0
+constant_forcing_type_q=0
+constant_forcing_type_u=0
+constant_forcing_type_v=0
+
+# surface flux config
+# type_of_surface_boundary_conditions=PRESCRIBED_VALUE (1) (FIXED_FLUX=0)
+use_surface_boundary_conditions=.true.
+use_time_varying_surface_values     = .true.
+type_of_surface_boundary_conditions = 1
+surface_conditions_file             = testcases/transition/constrain_setup_forcing.nc
+
+#CASIM options
+number_q_fields=5
+option=22000
+l_warm=.true.
+
+aerosol_option=0
+iopt_act=0
+iopt_inuc=0
+process_level=0
+l_override_checks = .true.
+
+# SOCRATES inputs
+mcc_temperature_profile  = components/socrates_couple/data/mcc_profiles/one_km/mlw.t.nc
+mcc_vapour_profile       = components/socrates_couple/data/mcc_profiles/one_km/mlw.q.nc
+mcc_ozone_profile        = components/socrates_couple/data/mcc_profiles/one_km/mlw.o3.nc
+# Add options for rad_cntrl
+spectral_file_lw           = /home/d04/fra23/socrates_trunk/data/spectra/ga7/sp_lw_ga7
+spectral_file_sw           = /home/d04/fra23/socrates_trunk/data/spectra/ga7/sp_sw_ga7
+#spectral_file_lw           = /projects/monc/fra23/socrates/trunk/data/spectra/ga7/sp_lw_ga7
+#spectral_file_sw           = /projects/monc/fra23/socrates/trunk/data/spectra/ga7/sp_sw_ga7
+#spectral_file_lw           = /data/local/fra23/socrates/trunk/data/spectra/ga7/sp_lw_ga7
+#spectral_file_sw           = /data/local/fra23/socrates/trunk/data/spectra/ga7/sp_sw_ga7
+
+# 5 is clear sky, 2 is cloud (ice and liquid no overlap), 1 (ice and liquid full overlap)
+i_cloud_representation  = 2
+
+## Time and location variables for socrates
+l_360 = .true.           #  360 days in year as opposed to 365 (a UM thing 
+                         #  in the LEM, is this still required??)     
+l_solar_fixed  = .false. # true equals fixed insolation using value in sol_fixed
+solar_fixed    = 1361.0  # prescribed insolation value
+sec_fixed      = 1.15470054   # prescribed 1/cos(solar_zenith_angle)
+latitude       = 65.0    # latitude for the location of radiation calc
+longitude      = -10.  # longitude for the location of radiation calc
+rad_start_year = 2010.0  # simulation year for earth sun distance
+rad_start_day  = 31.0   # day number from January 1st
+rad_int_time   = 30.0   # Radiation integration timestep
+rad_start_time = 6.00    # Start time for the radiation
+
+## Surface albedo variables for socrates
+l_variable_srf_albedo = .false. # not coded yet but will allow variable
+                                # surface albedo with solar zenith angle
+surface_albedo = 0.0    # surface albedo (fixed in time)
+
+mphys_nq_l=1 # cloud liquid mass
+mphys_nd_l=0 # cloud drop number
+mphys_nq_r=0 # rain mass	
+mphys_nq_i=0 # ice mass
+mphys_nq_s=0 # snow mass
+mphys_nq_g=0 # graupel mass
+
+l_fix_re       = .true.
+fixed_cloud_re = 10.0 # effective radius for cloud droplets 10 microns
+fixed_ice_re   = 30.0 # effective radius for ice 30 microns

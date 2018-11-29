@@ -77,6 +77,7 @@ contains
             * current_state%global_grid%configuration%vertical%rprefrcp(k)
     enddo
 ! merge the fields centre grid fields that come from MONC first     
+! cloud_number at 1+mcc%cut is not yet set.
     do k = 2, k_top
        ! centre pressure
        merge_fields%pres_n(k+mcc%cut)= &
@@ -157,23 +158,6 @@ contains
     ! Temperature at the merge cut-off
     merge_fields%qv_n(mcc%cut+1)= &
          (current_state%q(socrates_opt%iqv)%data(k_top, jcol, icol) + mcc%q_n(mcc%cut))/2.0
-
-    ! Now sort the Ozone profile which only exists on
-    ! McClatchey levels, so needs to be merged on to MONC
-    ! levels. Check this code!!
-
-    do k=k_top+mcc%cut,mcc%cut,-1  
-       if (merge_fields%pres_level(k).gt.mcc%p_level(mcc%levs)) then
-          merge_fields%o3_n(k) = mcc%o3_n(mcc%levs)
-       else
-          do j=mcc%levs,1,-1  
-             if (merge_fields%pres_level(k).gt.mcc%p_level(j)) then
-                merge_fields%o3_n(k) = mcc%o3_n(j)
-                exit
-             endif
-          enddo
-       endif
-    enddo
     
     ! Now work out the temperature and pressure on levels
     ! Set the surface 
@@ -192,6 +176,23 @@ contains
        
        merge_fields%t_level(k) = 0.5_DEFAULT_PRECISION * &
             (merge_fields%t_n(k) + merge_fields%t_n(k+1))
+    enddo
+
+    ! Now sort the Ozone profile which only exists on
+    ! McClatchey levels, so needs to be merged on to MONC
+    ! levels. Check this code!!
+
+    do k=k_top+mcc%cut,mcc%cut,-1  
+       if (merge_fields%pres_level(k).gt.mcc%p_level(mcc%levs)) then
+          merge_fields%o3_n(k) = mcc%o3_n(mcc%levs)
+       else
+          do j=mcc%levs,1,-1  
+             if (merge_fields%pres_level(k).gt.mcc%p_level(j)) then
+                merge_fields%o3_n(k) = mcc%o3_n(j)
+                exit
+             endif
+          enddo
+       endif
     enddo
 
     ! mass of the atmosphere on irad_levs for set_atm

@@ -1,9 +1,9 @@
 #!/bin/bash --login
-#PBS -N MONC
+#PBS -N MONC_opt3
 #PBS -l select=1
-#PBS -l walltime=00:45:00
+#PBS -l walltime=01:00:00
 #PBS -j oe
-#PBS -P monc
+#PBS -P asci
 #PBS -q normal
 
 # Make sure any symbolic links are resolved to absolute path 
@@ -20,7 +20,7 @@ export STDOUT_DIR=add_stdout_dirname
 export CP_DIR=add_checkpoint_dirname
 export RUN_NAME=add_testsuite_jobname
 export NPES=np
-export MAX_CONTINUATION_RUNS=50
+export MAX_CONTINUATION_RUNS=200
 
 ulimit -c unlimited
 

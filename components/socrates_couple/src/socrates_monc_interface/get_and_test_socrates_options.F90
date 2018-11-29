@@ -138,6 +138,8 @@ contains
     socrates_opt%l_360 = options_get_logical(current_state%options_database, "l_360")
     socrates_opt%l_solar_fixed = &
          options_get_logical(current_state%options_database, "l_solar_fixed")
+    socrates_opt%l_no_solar = &
+         options_get_logical(current_state%options_database, "l_no_solar")
     socrates_opt%l_rad_calc = .false.
 
     if (socrates_opt%l_solar_fixed) then
@@ -207,19 +209,22 @@ contains
      !
      socrates_opt%default_solar_constant =  &
           options_get_real(current_state%options_database, "default_solar_constant")
-
-     !! extract the gas mass mixing ratios from config
-     socrates_opt%co2_mmr = options_get_real(current_state%options_database, "co2_mmr")
-     socrates_opt%n2o_mmr = options_get_real(current_state%options_database, "n2o_mmr")
-     socrates_opt%ch4_mmr = options_get_real(current_state%options_database, "ch4_mmr")
-     socrates_opt%o2_mmr = options_get_real(current_state%options_database, "o2_mmr")
-     socrates_opt%cfc12_mmr = options_get_real(current_state%options_database, "cfc11_mmr")
-     socrates_opt%cfc11_mmr = options_get_real(current_state%options_database, "cfc12_mmr")
-     socrates_opt%cfc113_mmr = options_get_real(current_state%options_database, "cfc113_mmr")
-     socrates_opt%cfc114_mmr = options_get_real(current_state%options_database, "cfc114_mmr")
-     socrates_opt%hcfc22_mmr = options_get_real(current_state%options_database, "hcfc22_mmr")
-     socrates_opt%hfc125_mmr = options_get_real(current_state%options_database, "hfc125_mmr")
-     socrates_opt%hfc134a_mmr = options_get_real(current_state%options_database, "hfc134a_mmr")
+     
+     ! set the well mixed gases. Values are based on UM GA settings
+     ! This should be moved to configuration once reading well mixed 
+     ! gases from configuration can be shown to bit compare (see #306)  
+     ! 
+     socrates_opt%co2_mmr = 5.94100e-4
+     socrates_opt%n2o_mmr = 4.925e-7
+     socrates_opt%ch4_mmr = 9.994e-7
+     socrates_opt%o2_mmr = 0.2314
+     socrates_opt%cfc12_mmr = 1.129e-9
+     socrates_opt%cfc11_mmr = 2.225e-9
+     socrates_opt%cfc113_mmr = 0.0
+     socrates_opt%cfc114_mmr = 0.0
+     socrates_opt%hcfc22_mmr = 0.0
+     socrates_opt%hfc125_mmr = 0.0 
+     socrates_opt%hfc134a_mmr = 0.0  
     
   end subroutine set_and_test_socrates_monc_options
 

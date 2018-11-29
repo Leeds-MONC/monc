@@ -6,6 +6,7 @@ use coriolis_mod, only : coriolis_get_descriptor
 use damping_mod, only : damping_get_descriptor
 use debugger_mod, only : debugger_get_descriptor
 use decomposition_mod, only : decomposition_get_descriptor
+use diagnostics_3d_mod, only : diagnostics_3d_get_descriptor
 use diffusion_mod, only : diffusion_get_descriptor
 use diverr_mod, only : diverr_get_descriptor
 use fftsolver_mod, only : fftsolver_get_descriptor

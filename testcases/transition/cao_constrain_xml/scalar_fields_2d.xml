@@ -1,0 +1,44 @@
+<data-definition name="2d_fields_data" frequency="{sampling_frequency}">
+  <field name="surface_precip" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="vwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="lwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="rwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="iwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="swp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="gwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="tot_iwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="senhf" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="lathf" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="reske" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="subke" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="toa_up_longwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="surface_down_longwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="surface_up_longwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="toa_down_shortwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="toa_up_shortwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="surface_down_shortwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="surface_up_shortwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+</data-definition>
+
+<group name="2d_fields">
+  <member name="surface_precip"/>
+  <member name="vwp"/>
+  <member name="lwp"/>
+  <member name="rwp"/>
+  <member name="iwp"/>
+  <member name="swp"/>
+  <member name="gwp"/>
+  <member name="tot_iwp"/>
+  <member name="senhf"/>
+  <member name="lathf"/>
+  <member name="reske"/>
+  <member name="subke"/>
+  <member name="toa_up_longwave"/>
+  <member name="surface_down_longwave"/>
+  <member name="surface_up_longwave"/>
+  <member name="toa_down_shortwave"/>
+  <member name="toa_up_shortwave"/>
+  <member name="surface_down_shortwave"/>
+  <member name="surface_up_shortwave"/>
+</group>
+

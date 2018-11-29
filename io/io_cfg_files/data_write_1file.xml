@@ -1,6 +1,6 @@
 <io-configuration>
 	<server-configuration>
-		<thread_pool number=100/>
+		<thread_pool number=500/>
 	</server-configuration>
 
 #include "io/io_cfg_files/scalar_fields.xml"

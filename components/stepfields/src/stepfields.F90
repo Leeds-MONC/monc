@@ -90,6 +90,13 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
     logical :: l_qdiag
 
+#ifdef U_ACTIVE
+    allocate(current_state%global_grid%configuration%vertical%savolubar(current_state%local_grid%size(Z_INDEX)))
+#endif
+#ifdef V_ACTIVE
+    allocate(current_state%global_grid%configuration%vertical%savolvbar(current_state%local_grid%size(Z_INDEX)))
+#endif
+    
     allocate(resetq_min(current_state%number_q_fields))
     cfl_is_enabled=is_component_enabled(current_state%options_database, "cfltest") 
     if (cfl_is_enabled) call reset_local_minmax_values(current_state)
@@ -317,12 +324,14 @@ contains
     c1 = 1.0_DEFAULT_PRECISION - 2.0_DEFAULT_PRECISION*current_state%tsmth                                               
     c2 = current_state%tsmth
 
-#ifdef U_ACTIVE   
+#ifdef U_ACTIVE
+    current_state%global_grid%configuration%vertical%savolubar=current_state%global_grid%configuration%vertical%olzubar
     call step_single_field(current_state%column_local_x,  current_state%column_local_y, &
          x_prev, y_prev, current_state%u, current_state%zu, current_state%su, current_state%local_grid, .true., &
          current_state%field_stepping, current_state%dtm, current_state%ugal, c1, c2, .false., current_state%savu)
 #endif
 #ifdef V_ACTIVE
+    current_state%global_grid%configuration%vertical%savolvbar=current_state%global_grid%configuration%vertical%olzvbar
     call step_single_field(current_state%column_local_x,  current_state%column_local_y, &
          x_prev, y_prev, current_state%v, current_state%zv, current_state%sv, current_state%local_grid, .true., &
          current_state%field_stepping, current_state%dtm, current_state%vgal, c1, c2, .false., current_state%savv)

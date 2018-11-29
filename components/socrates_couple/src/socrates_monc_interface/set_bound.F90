@@ -10,7 +10,7 @@
 SUBROUTINE set_bound(                                                       &
 
 ! Structures for the core radiation code interface
-  control, atm, dimen, spectrum, bound,  socrates_derived_fields)
+  control, isolir, atm, dimen, spectrum, bound,  socrates_derived_fields)
 
 USE rad_pcf
 USE def_control, ONLY: StrCtrl
@@ -24,6 +24,9 @@ IMPLICIT NONE
 
 ! Control options:
 TYPE(StrCtrl),      INTENT(IN)    :: control
+
+!Spectral region
+INTEGER,            INTENT(IN)    :: isolir
 
 ! Atmospheric properties:
 TYPE(StrAtm),       INTENT(IN) :: atm
@@ -47,11 +50,18 @@ bound%n_brdf_basis_fnc = 1
 !     By setting F_{1,0,0,0} equal to 4 we can set rho_alb equal to
 !     the diffuse albedo
 bound%f_brdf(1,0,0,0)  = 4.0 
+if ( isolir == ip_solar ) then
 !     Need to set this initially using input from config
-bound%rho_alb(1:atm%n_profile, ip_surf_alb_diff, 1:spectrum%basic%n_band) = &
-     socrates_derived_fields%albedoin1
-bound%rho_alb(1:atm%n_profile, ip_surf_alb_dir,  1:spectrum%basic%n_band) = & 
-     socrates_derived_fields%albedoin1
+  bound%rho_alb(1:atm%n_profile, ip_surf_alb_diff, 1:spectrum%basic%n_band) = &
+       socrates_derived_fields%albedoin1
+  bound%rho_alb(1:atm%n_profile, ip_surf_alb_dir,  1:spectrum%basic%n_band) = & 
+       socrates_derived_fields%albedoin1
+else if ( isolir == ip_infra_red ) then
+  bound%rho_alb(1:atm%n_profile, ip_surf_alb_diff, 1:spectrum%basic%n_band) = &
+       0.0
+  bound%rho_alb(1:atm%n_profile, ip_surf_alb_dir,  1:spectrum%basic%n_band) = & 
+       0.0
+end if
 !     Holds the secant of the zenith angle for the fluxes
 bound%zen_0(1:atm%n_profile) = socrates_derived_fields%sec_out
 ! sol_const = default_solar_const * scs (calced in timestep_callback)

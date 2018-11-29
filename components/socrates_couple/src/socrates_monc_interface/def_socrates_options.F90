@@ -22,7 +22,9 @@ module def_socrates_options
      
      ! Time and location variables for socrates - read from configuration
      logical :: l_solar_fixed   & ! true equals fixed insolation using value in
-          ! solar_fixed
+                                  ! solar_fixed
+          , l_no_solar          & ! true equals no shortwave radiative transfer (only longwave) 
+                                  ! false will give shortwave and longwave
           , l_360                 ! 360 days in year as opposed to 365 (a UM thing 
      ! in the LEM, is this still required??)
      

@@ -1,0 +1,8 @@
+<data-definition name="u_field_data" frequency="{3d_sampling_frequency}">
+  <field name="u" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+ </data-definition>
+
+<group name="u_field">
+  <member name="u"/>
+ </group>
+

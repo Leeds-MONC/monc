@@ -1,4 +1,4 @@
-<data-definition name="3d_fields_data" frequency="{sampling_frequency}">
+<data-definition name="3d_fields_data" frequency="{3d_sampling_frequency}">
   <field name="w" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
   <field name="u" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
   <field name="v" type="array" data_type="double" size="z,y,x" collective=true optional=true/>

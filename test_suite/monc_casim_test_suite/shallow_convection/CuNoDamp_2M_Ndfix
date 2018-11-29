@@ -1,13 +1,9 @@
-#
-# This needs populating, currently just a placeholder
-#
-
 # Global configuration
 global_configuration=global_config
 
 # Override global component defaults
+checkpointer_enabled=.true.
 fftsolver_enabled=.true.
-iterativesolver_enabled=.false.
 pw_advection_enabled=.true.
 simplesetup_enabled=.true.
 smagorinsky_enabled=.true.
@@ -15,37 +11,50 @@ lower_bc_enabled=.true.
 setfluxlook_enabled=.true. #This must be set to true if running with lower_bc
 viscosity_enabled=.true.
 diffusion_enabled=.true.
-simplecloud_enabled=.true.
+simplecloud_enabled=.false.
+casim_enabled=.true.
 coriolis_enabled=.true.
-damping_enabled=.true.
+damping_enabled=.false.
 forcing_enabled=.true. 
-galilean_transformation=.false. # Needs debugging
 randomnoise_enabled=.true.
 mean_profiles_enabled=.true. #This must be set to true if running with damping
-th_advection_enabled=.false.
+th_advection_enabled=.true.
+iobridge_enabled=.true.
+scalar_diagnostics_enabled=.true.
+profile_diagnostics_enabled=.true.
+subgrid_profile_diagnostics_enabled=.true.
+flux_budget_enabled=.true.
 
 # Control configuration
-nn_timesteps=50
-display_synopsis_frequency=1
-nn_consolidation=1
-termination_time=100.
-dtm=2.0
+display_synopsis_frequency=100
+termination_time=21610.
+dtm=0.4
+
+# IO server configuration
+ioserver_configuration_file="add_ioconfig_file_path"
+moncs_per_io_server=8
+sampling_frequency=75
+3d_sampling_frequency=450
+mm=1800.0
+mm1=60.0
+diag_write_freq=10800.0
 
 # Checkpoint configuration
-checkpoint_frequency=100
-checkpoint_file="bomex.nc"
-checkpoint_unique_per_dump=.true.
+checkpoint_frequency=0
+checkpoint_file="add_checkpoint_file"
+check_walltime_frequency=50
+walltime_limit=00:20:00
 
 # Advection choices
-advection_flow_fields=tvd
+advection_flow_fields=pw
 advection_theta_field=tvd
 advection_q_fields=tvd
 
 # CFL configuration
 cfl_frequency=10
-cfl_cvismax=0.2
-cfl_cvelmax=0.2
-cfl_dtmmax=3.
+cfl_cvismax=0.4
+cfl_cvelmax=0.4
+cfl_dtmmax=0.4
 cfl_dtmmin=0.001
 
 # Simple setup configuration
@@ -53,18 +62,18 @@ cfl_dtmmin=0.001
 thref0=298.7
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=64
-y_size=64
-z_size=64
-dxx=250
-dyy=250
+x_size=128
+y_size=128
+z_size=76
+dxx=100
+dyy=100
 zztop=3000.0
-kgd=1,64
+kgd=1,76
 hgd=0.0,3000.0
 nsmth=80
+galilean_transformation=.true.
 
 enable_theta=.true.
-number_q_fields=2
 use_anelastic_equations=.true.
 origional_vertical_grid_setup=.true.
 passive_th=.false.
@@ -90,10 +99,10 @@ l_matchthref=.false.
 # Random noise
 l_rand_pl_theta=.true.
 z_rand_pl_theta=0.0, 500.0, 501.0, 3000.
-f_rand_pl_theta=0.5, 0.5, 0.0, 0.0
+f_rand_pl_theta=0.5, 0.5, 0.0001, 0.0001
 
 # Simple cloud
-max_height_cloud=2200.
+max_height_cloud=3000.
 
 # physical constants
 z0=0.0002
@@ -101,6 +110,7 @@ z0th=0.0002
 
 # Coriolis
 fcoriol=0.0000376
+baroclinicity_use_geostrophic_shear=.true.
 geostrophic_wind_rate_of_change_in_x=0.0018
 geostrophic_wind_rate_of_change_in_y=0.0
 surface_geostrophic_wind_x=-10.
@@ -109,7 +119,7 @@ surface_geostrophic_wind_y=0.0
 # Damping configuration
 dmptim=0.001
 zdmp=2300.0
-hdmp=600.0
+hdmp=2000.0
 
 # Subsidence profile
 l_subs_pl_theta=.true.
@@ -119,7 +129,7 @@ l_subs_pl_q=.true.
 
 #SUBSIDENCE=1, DIVERGENCE=0
 subsidence_input_type=1 
-subsidence_local_theta=.false.
+subsidence_local_theta=.true.
 subsidence_local_q=.true.
 
 # Large-scale forcing
@@ -130,14 +140,15 @@ l_constant_forcing_v=.false.
 
 # Unit options are K/s or K/day
 units_theta_force=K/day
+l_constant_forcing_theta_z2pressure=.true.
 z_force_pl_theta=0.0, 1500.0, 2500.0, 3000.
 f_force_pl_theta=-2.0, -2.0, 0.0, 0.0
 
 names_constant_forcing_q=vapour
 z_force_pl_q=0.0, 300.0, 500.0, 3000.
-f_force_pl_q=-1.2e-8, -1.2e-8, 0.0, 0.0
+f_force_pl_q=-1.2e-5, -1.2e-5, 0.0, 0.0
 # Unit options are kg/kg/s, kg/kg/day, g/kg/s or g/kg/day
-units_q_force=kg/kg/s
+units_q_force=g/kg/s
 
 convert_input_theta_from_temperature=.true.
 
@@ -150,10 +161,21 @@ constant_forcing_type_u=0
 constant_forcing_type_v=0
 
 # surface flux config
-# type_of_surface_boundary_conditions=FIXED_FLUX
+# type_of_surface_boundary_conditions=PRESCRIBED_FLUX=0
 use_surface_boundary_conditions=.true.
-use_time_varying_surface_values     = .true.
+use_time_varying_surface_values= .false.
 type_of_surface_boundary_conditions = 0 
-surface_conditions_file             = testcases/transition/constrain_setup_forcing.nc
+surface_boundary_input_times = 0
+surface_latent_heat_flux   = 130.052
+surface_sensible_heat_flux = 8.04
 
+#CASIM options
+number_q_fields=5
+option=22000
+l_warm=.true.
 
+aerosol_option=0
+iopt_act=0
+iopt_inuc=0
+process_level=0
+l_override_checks = .true.

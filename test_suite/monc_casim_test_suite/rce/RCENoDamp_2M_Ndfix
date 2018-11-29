@@ -25,22 +25,22 @@ flux_budget_enabled=.true.
 
 # Control configuration
 display_synopsis_frequency=2000
-termination_time=96000.
-dtm=1.00
+termination_time=96100.
+dtm=0.75
 
 # IO server configuration
 ioserver_configuration_file="add_ioconfig_file_path"
-moncs_per_io_server=11
-sampling_frequency=20
-3d_sampling_frequency=100
+moncs_per_io_server=8
+sampling_frequency=200
+3d_sampling_frequency=2400
 mm=3600.
-mm1=60.
+mm1=300.
 diag_write_freq=10800.
 
 # Checkpoint configuration 
 checkpoint_frequency=0   
 checkpoint_file="add_checkpoint_file" 
-check_wall_frequency=10 
+check_walltime_frequency=50
 walltime_limit=00:40:00  
 
 # limit for defining cloud
@@ -55,7 +55,7 @@ advection_q_fields=tvd
 cfl_frequency=100
 cfl_cvismax=0.4
 cfl_cvelmax=0.4
-cfl_dtmmax=3.0
+cfl_dtmmax=0.75
 cfl_dtmmin=.001
 
 # not convinced this works as fixing the gal 
@@ -70,14 +70,14 @@ vgal=0.0
 thref0=298.7259
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=64
-y_size=4
-z_size=99
+x_size=128
+y_size=128
+z_size=83
 dxx=500
 dyy=500
-zztop=40000.0
-kgd=9,17,75,99
-hgd=500.,1500.,16000.,40000.
+zztop=20000.0
+kgd=9,17,75,83
+hgd=500.,1500.,16000.,20000.
 nsmth=20
 galilean_transformation=.true.
 
@@ -91,15 +91,15 @@ use_viscosity_and_diffusion=.true.
 
 # Initialization of fields
 l_init_pl_theta=.true.
-z_init_pl_theta=0.,   800., 1200.,3500.,4100.,8200.,12500.,13500.,14200.,16000.,20000.,24000.,28000.,32000.,36000.,40000.
-f_init_pl_theta=297.0,297.0,300.0,306.5,311.0,318.0,328.5, 333.0, 340.0, 371.0, 483.0, 610.0, 738.0, 928.0, 1227.0,1447.0
+z_init_pl_theta=0.,   800., 1200.,3500.,4100.,8200.,12500.,13500.,14200.,16000.,20000.
+f_init_pl_theta=297.0,297.0,300.0,306.5,311.0,318.0,328.5, 333.0, 340.0, 371.0, 483.0
 l_init_pl_u=.true.
-z_init_pl_u=0.0, 40000.
+z_init_pl_u=0.0, 20000.
 f_init_pl_u=-5.0, -5.0
 l_init_pl_v=.false.
 l_init_pl_q=.true.
 names_init_pl_q=vapour
-z_init_pl_q=0.,     680.,   1300., 3500., 4150.,  4850.,  5200.,  6100.,  7000.,  8150.,  9500.,   10500.,  11500.,  12250.,  13000.,  14000.,   18000., 40000.
+z_init_pl_q=0.,     680.,   1300., 3500., 4150.,  4850.,  5200.,  6100.,  7000.,  8150.,  9500.,   10500.,  11500.,  12250.,  13000.,  14000.,   18000., 20000.
 f_init_pl_q=13.0e-3,12.5e-3,8.5e-3,4.3e-3,2.44e-3,1.52e-3,1.31e-3,0.75e-3,0.48e-3,0.28e-3,0.080e-3,0.038e-3,0.012e-3,0.008e-3,0.003e-3,0.0005e-3,0.0,    0.0
   
 l_matchthref=.true.
@@ -116,10 +116,10 @@ smag-subc=1.43
 
 # Random noise
 l_rand_pl_theta=.true.
-z_rand_pl_theta=0.0, 7000.0, 7001.0, 40000.
+z_rand_pl_theta=0.0, 7000.0, 7001.0, 20000.
 f_rand_pl_theta=0.1, 0.1, 0.0000, 0.0000
 names_rand_pl_q=vapour
-z_rand_pl_q=0.0, 7000.0, 7001.0, 40000.
+z_rand_pl_q=0.0, 7000.0, 7001.0, 20000.
 f_rand_pl_q=0.025e-3, 0.025e-3, 0.0000, 0.0000
 
 # Simple cloud
@@ -138,7 +138,7 @@ surface_geostrophic_wind_y=0.0
 
 # Damping configuration
 dmptim=0.0002
-zdmp=20000.0
+zdmp=17000.0
 hdmp=5000.0
 
 # Subsidence profile
@@ -167,7 +167,7 @@ forcing_timescale_v=21600.
 # Forcing profiles
 l_constant_forcing_theta_z2pressure=.true.
 units_theta_force=K/day
-z_force_pl_theta=0., 12000., 16000, 40000.0
+z_force_pl_theta=0., 12000., 16000, 20000.0
 f_force_pl_theta=-1.5, -2.33, 0.0, 0.0
 
 # surface flux config

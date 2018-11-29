@@ -27,6 +27,7 @@ subroutine rad_ctl(current_state, sw_spectrum, lw_spectrum, &
   use def_socrates_options, only: str_socrates_options
   use def_socrates_derived_fields, only: str_socrates_derived_fields
   use science_constants_mod, only: cp
+  use rad_pcf, only: ip_solar, ip_infra_red
 
   type(model_state_type), target, intent(inout) :: current_state
   TYPE (StrSpecData) :: sw_spectrum
@@ -84,7 +85,7 @@ subroutine rad_ctl(current_state, sw_spectrum, lw_spectrum, &
      call set_atm(sw_control, atm, dimen, sw_spectrum,                 &
           1 , mcc%irad_levs, socrates_opt, merge_fields)
      ! DEPENDS ON: set_bound
-     call set_bound(sw_control, atm, dimen, sw_spectrum, bound,           &
+     call set_bound(sw_control, ip_solar, atm, dimen, sw_spectrum, bound, &
           socrates_derived_fields)
      ! DEPENDS ON: set_cld
      call set_cld(sw_control, atm, dimen, sw_spectrum, cld,              &
@@ -170,7 +171,7 @@ subroutine rad_ctl(current_state, sw_spectrum, lw_spectrum, &
   call set_atm(lw_control, atm, dimen, lw_spectrum,                 &
        1 , mcc%irad_levs, socrates_opt, merge_fields)
   ! DEPENDS ON: set_bound
-  call set_bound(lw_control, atm, dimen, lw_spectrum, bound,           &
+  call set_bound(lw_control, ip_infra_red, atm, dimen, lw_spectrum, bound, &
        socrates_derived_fields)
   ! DEPENDS ON: set_cld
   call set_cld(lw_control, atm, dimen, lw_spectrum, cld ,              &

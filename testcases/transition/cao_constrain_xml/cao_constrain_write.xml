@@ -1,0 +1,51 @@
+<io-configuration>
+	<server-configuration>
+		<thread_pool number=100/>
+	</server-configuration>
+
+#include "testcases/transition/cao_constrain_xml/q_fields_3d.xml"
+#include "testcases/transition/cao_constrain_xml/t_field_3d.xml"
+#include "testcases/transition/cao_constrain_xml/theta_field_3d.xml"
+#include "testcases/transition/cao_constrain_xml/thetali_field_3d.xml"
+#include "testcases/transition/cao_constrain_xml/u_field_3d.xml"
+#include "testcases/transition/cao_constrain_xml/v_field_3d.xml"
+#include "testcases/transition/cao_constrain_xml/w_field_3d.xml"
+#include "testcases/transition/cao_constrain_xml/scalar_fields_2d.xml"
+#include "io/io_cfg_files/profile_fields.xml"
+#include "io/io_cfg_files/scalar_fields.xml"
+#include "io/io_cfg_files/checkpoint.xml"
+
+<data-writing>
+   <file name="{q_3d_diag_file}" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+     <include group="q_fields" time_manipulation="instantaneous" output_frequency="{mm_3d_fields}"/>
+   </file>
+   <file name="{t_3d_diag_file}" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+     <include group="t_field" time_manipulation="instantaneous" output_frequency="{mm_3d_fields}"/>
+   </file>
+   <file name="{theta_3d_diag_file}" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+     <include group="theta_field" time_manipulation="instantaneous" output_frequency="{mm_3d_fields}"/>
+   </file>
+   <file name="{thetali_3d_diag_file}" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+     <include group="thetali_field" time_manipulation="instantaneous" output_frequency="{mm_3d_fields}"/>
+   </file>
+   <file name="{u_3d_diag_file}" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+     <include group="u_field" time_manipulation="instantaneous" output_frequency="{mm_3d_fields}"/>
+   </file>
+   <file name="{v_3d_diag_file}" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+     <include group="v_field" time_manipulation="instantaneous" output_frequency="{mm_3d_fields}"/>
+   </file>
+   <file name="{w_3d_diag_file}" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+     <include group="w_field" time_manipulation="instantaneous" output_frequency="{mm_3d_fields}"/>
+   </file>
+   <file name="diagnostic_files/profiles_ts.nc" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+      <include group="profile_timeseries" time_manipulation="instantaneous" output_frequency="{mm_profiles}"/>
+   </file>
+   <file name="diagnostic_files/scalar_ts.nc" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+      <include group="scalar_timeseries" time_manipulation="instantaneous" output_frequency="{mm_scalars}"/>
+   </file>
+   <file name="diagnostic_files/scalar_2d_ts.nc" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+      <include group="2d_fields" time_manipulation="instantaneous" output_frequency="{mm_profiles}"/>
+   </file>
+</data-writing>
+
+</io-configuration>
