@@ -7,9 +7,10 @@ module cfltest_mod
   use monc_component_mod, only : component_descriptor_type
   use state_mod, only : model_state_type, parallel_state_type
   use collections_mod, only : map_type
-  use logging_mod, only : LOG_WARN, LOG_DEBUG, LOG_ERROR, log_log, log_get_logging_level
+  use logging_mod, only : LOG_WARN, LOG_DEBUG, LOG_ERROR, LOG_INFO, &
+                          log_log, log_get_logging_level, log_newline
   use conversions_mod, only : conv_to_string
-  use optionsdatabase_mod, only : options_get_integer, options_get_real
+  use optionsdatabase_mod, only : options_get_integer, options_get_real, options_get_logical
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
   use mpi, only : MPI_MAX, MPI_MIN  
   implicit none
@@ -20,6 +21,8 @@ module cfltest_mod
 
   !! Configuration options - all are optional and have default values
   real(kind=DEFAULT_PRECISION) :: tollerance, cvismax, cvelmax, dtmmax, dtmmin, rincmax
+  logical l_monitor_cfl
+
   public cfltest_get_descriptor
 contains
 
@@ -44,6 +47,8 @@ contains
     dtmmax=options_get_real(current_state%options_database, "cfl_dtmmax")
     dtmmin=options_get_real(current_state%options_database, "cfl_dtmmin")
     rincmax=options_get_real(current_state%options_database, "cfl_rincmax")
+
+    l_monitor_cfl = options_get_logical(current_state%options_database,"cfl_monitor")
 
     allocate(current_state%abswmax(current_state%local_grid%local_domain_end_index(Z_INDEX)))
   end subroutine initialisation_callback
@@ -79,7 +84,7 @@ contains
         end if
       end if
     end if
-    call update_dtm_based_on_absolute(current_state)
+    call update_dtm_based_on_absolute(current_state, cfl_number)
     current_state%cvis=0.0_DEFAULT_PRECISION
   end subroutine timestep_callback
 
@@ -87,13 +92,18 @@ contains
   !! towards the absolute if that is too large a step, and even if the absolute value has not been updated in this timestep,
   !! this ratcheting will still occur if needed.
   !! @param current_state The current model state
-  subroutine update_dtm_based_on_absolute(current_state)
+  subroutine update_dtm_based_on_absolute(current_state, cfl_number)
     type(model_state_type), intent(inout), target :: current_state
+    real(kind=DEFAULT_PRECISION), intent(in)      :: cfl_number
 
     if (current_state%dtm .ne. current_state%absolute_new_dtm .and. &
          (current_state%dtm .ne. dtmmax .or. current_state%absolute_new_dtm .lt. dtmmax)) then
+
       current_state%update_dtm=.true.
+
       current_state%dtm_new=min(current_state%dtm*(1.0_DEFAULT_PRECISION+rincmax), current_state%absolute_new_dtm, dtmmax)
+
+      !! --- Diagnostic Writing -----------------
       if (current_state%parallel%my_rank==0) then
         if (log_get_logging_level() .eq. LOG_DEBUG) then
           call log_log(LOG_DEBUG, "dtm changed from "//trim(conv_to_string(current_state%dtm, 5))//" to "//&
@@ -103,7 +113,22 @@ contains
           call log_log(LOG_ERROR, "Timestep too small, dtmnew="//trim(conv_to_string(current_state%dtm_new, 5))//&
                " dtmmin="//trim(conv_to_string(dtmmin, 5)))
         end if
-      end if
+        if (l_monitor_cfl) then
+          call log_log(LOG_INFO, " --- CFL Monitoring Information --- ")
+          call log_log(LOG_INFO, "dtm changed from "//trim(conv_to_string(current_state%dtm, 5))//" to "//&
+                                 trim(conv_to_string(current_state%dtm_new, 5)))
+          if (cfl_number .gt. 0.0) then 
+            call log_log(LOG_INFO, "cfl_number :  "//trim(conv_to_string(cfl_number))//"  (change divisor)")
+            call log_log(LOG_INFO, "cvis       :  "//trim(conv_to_string(current_state%cvis)) )
+            call log_log(LOG_INFO, "cvel       :  "//trim(conv_to_string(current_state%cvel)) )
+          else
+            call log_log(LOG_INFO, "dtm change due to ratcheting only. Target dtm unchanged.")
+          end if
+          call log_log(LOG_INFO, "target dtm :  "//trim(conv_to_string(current_state%absolute_new_dtm)) )
+          call log_newline()
+
+        end if ! l_monitor_cfl
+      end if ! Diagnostic Writing
     end if
   end subroutine update_dtm_based_on_absolute  
 

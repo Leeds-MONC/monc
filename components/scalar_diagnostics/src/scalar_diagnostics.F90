@@ -19,7 +19,7 @@ module scalar_diagnostics_mod
        iqg=0
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: dz_rhon_fac
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: ww_prime_res, uu_prime_res, &
-       vv_prime_res
+       vv_prime_res, cloud_content
   real(kind=DEFAULT_PRECISION) :: qlcrit
   real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: vwp, lwp, wmax, wmin, &
        qlmax, hqlmax, cltop, clbas,  senhf, lathf, rwp, iwp, swp, gwp, tot_iwp,      &
@@ -93,6 +93,7 @@ contains
        allocate(vwp(y_size_local, x_size_local), lwp(y_size_local, x_size_local), &
             qlmax(y_size_local, x_size_local), hqlmax(y_size_local, x_size_local), &
             cltop(y_size_local, x_size_local), clbas(y_size_local, x_size_local))
+       allocate(cloud_content(current_state%local_grid%size(Z_INDEX)))
        ! allocate other hydrometeors. Allocation dependent on index being set in
        ! appropriate microphysics scheme (see casim component from example)
        if (current_state%rain_water_mixing_ratio_index > 0) then
@@ -149,7 +150,7 @@ contains
           hqlmax(:,:)=0.0
           ! cloud top height where liqud water content is greater than qlcrit
           cltop(:,:)=0.0
-          ! minimum cloud base where liquid water content is greater than q;crit
+          ! minimum cloud base where liquid water content is greater than qlcrit
           clbas(:,:)=0.0
           ! water vapour path for each column
           vwp(:,:)=0.0
@@ -224,22 +225,26 @@ contains
              !     current_state%global_grid%configuration%vertical% &
              !     zn(maxloc(current_state%q(current_state%liquid_water_mixing_ratio_index)%data &
              !     (:,current_y_index, current_x_index)))
-             !
+             
+
              ! calculate the cloud top maximum and minimum for each column 
              !
+             cloud_content(:) = current_state%q(current_state%liquid_water_mixing_ratio_index)%data( &
+                                                                     :,current_y_index, current_x_index)
+             !> Include ice if present.
+             if (current_state%ice_water_mixing_ratio_index .gt. 0)  &
+                 cloud_content(:) = cloud_content(:) + current_state%q(current_state%ice_water_mixing_ratio_index)%data( &
+                                                                                      :,current_y_index, current_x_index)
              do k = 2, current_state%local_grid%size(Z_INDEX)
-                if (current_state%q(current_state%liquid_water_mixing_ratio_index)%data(k, &
-                     current_y_index, current_x_index) .gt. qlcrit) then
-                   cltop(target_y_index, target_x_index) = &
-                        current_state%global_grid%configuration%vertical%zn(k)
-                endif
-                if (current_state%q(current_state%liquid_water_mixing_ratio_index)%data( &
-                     current_state%local_grid%size(Z_INDEX)+1-k, current_y_index, current_x_index) .gt. &
-                     qlcrit) then
-                   clbas(target_y_index, target_x_index)= &
-                        current_state%global_grid%configuration%vertical%zn(current_state%local_grid%size(Z_INDEX)+1-k)
-                end if
-             enddo
+               if (cloud_content(k) .gt. qlcrit) then
+                 cltop(target_y_index, target_x_index) = &
+                       current_state%global_grid%configuration%vertical%zn(k)
+               endif
+               if (cloud_content(current_state%local_grid%size(Z_INDEX)+1-k) .gt. qlcrit) then
+                  clbas(target_y_index, target_x_index) = &
+                       current_state%global_grid%configuration%vertical%zn(current_state%local_grid%size(Z_INDEX)+1-k)
+               end if
+             enddo ! k loop over height
           endif
           !
           ! calculate the vapour and liquid water path

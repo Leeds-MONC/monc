@@ -44,6 +44,10 @@ module damping_mod
   integer :: diagnostic_generation_frequency
 
 
+  ! tke tendency diagnostic
+  real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: tend_pr_tot_tke
+  logical :: l_tend_pr_tot_tke
+
   public damping_get_descriptor
 
 contains
@@ -59,7 +63,7 @@ contains
 
     damping_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     damping_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
-    allocate(damping_get_descriptor%published_fields(11+11))
+    allocate(damping_get_descriptor%published_fields(11+11+1))
 
     damping_get_descriptor%published_fields(1)= "tend_u_damping_3d_local"
     damping_get_descriptor%published_fields(2)= "tend_v_damping_3d_local"
@@ -84,6 +88,9 @@ contains
     damping_get_descriptor%published_fields(11+9)= "tend_qs_damping_profile_total_local"
     damping_get_descriptor%published_fields(11+10)="tend_qg_damping_profile_total_local"
     damping_get_descriptor%published_fields(11+11)="tend_tabs_damping_profile_total_local"
+
+    damping_get_descriptor%published_fields(11+11+1)="tend_tke_damping_profile_total_local"
+
 
   end function damping_get_descriptor
 
@@ -149,6 +156,8 @@ contains
     l_tend_3d_qg  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qg
     l_tend_3d_tabs = l_tend_3d_th
 
+    l_tend_pr_tot_tke = current_state%u%active .and. current_state%v%active .and. current_state%w%active
+ 
     ! Allocate 3d tendency fields upon availability
     if (l_tend_3d_u) then
       allocate( tend_3d_u(current_state%local_grid%size(Z_INDEX),  &
@@ -247,6 +256,12 @@ contains
       allocate( tend_pr_tot_tabs(current_state%local_grid%size(Z_INDEX)) )
     endif
 
+    ! Allocate profile tendency tke upon availability
+    if (l_tend_pr_tot_tke) then
+      allocate( tend_pr_tot_tke(current_state%local_grid%size(Z_INDEX)) )
+    endif
+
+
     ! Save the sampling_frequency to force diagnostic calculation on select time steps
     diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
 
@@ -279,6 +294,8 @@ contains
     if (allocated(tend_pr_tot_qs)) deallocate(tend_pr_tot_qs)
     if (allocated(tend_pr_tot_qg)) deallocate(tend_pr_tot_qg)
     if (allocated(tend_pr_tot_tabs)) deallocate(tend_pr_tot_tabs)
+
+    if (allocated(tend_pr_tot_tke)) deallocate(tend_pr_tot_tke)
 
   end subroutine finalisation_callback
 
@@ -333,6 +350,10 @@ contains
       endif
       if (l_tend_pr_tot_tabs) then
         tend_pr_tot_tabs(:)=0.0_DEFAULT_PRECISION
+      endif
+
+      if (l_tend_pr_tot_tke) then
+        tend_pr_tot_tke(:)=0.0_DEFAULT_PRECISION
       endif
     endif  ! zero totals
 
@@ -447,6 +468,10 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
     integer, intent(in) ::  cxn, cyn, txn, tyn
 
+    real(kind=DEFAULT_PRECISION), dimension(current_state%local_grid%size(Z_INDEX)) :: &
+                            uu_tendency, vv_tendency, ww_tendency
+    integer :: k
+
     ! Calculate change in tendency due to component
     if (l_tend_3d_u) then
       tend_3d_u(:,tyn,txn)=current_state%su%data(:,cyn,cxn)       - tend_3d_u(:,tyn,txn)
@@ -517,6 +542,52 @@ contains
     endif
     if (l_tend_pr_tot_tabs) then
       tend_pr_tot_tabs(:)=tend_pr_tot_tabs(:) + tend_3d_tabs(:,tyn,txn)
+    endif
+
+! Estimate contribution to TKE budget due to damping.
+! Currently uses mean state at beginning of timestep where mean state at end is really required 
+! (hence 'provisional' comments); assumption is mean state is very slowly varying. 
+
+    if (l_tend_pr_tot_tke) then
+      do k=2, current_state%local_grid%size(Z_INDEX)
+  
+        uu_tendency(k) = ((current_state%zu%data(k,cyn,cxn)                                          &
+                              + tend_3d_u(k,tyn,txn)*current_state%dtm * 2.0_DEFAULT_PRECISION       &
+                           - current_state%global_grid%configuration%vertical%olzubar(k) )**2        & ! provisional
+                          -                                                                          &
+                          (current_state%zu%data(k,cyn,cxn)                                          &
+                           - current_state%global_grid%configuration%vertical%olzubar(k) )**2        & ! n-1
+                         ) /  (current_state%dtm * 2.0_DEFAULT_PRECISION)
+                        
+        vv_tendency(k) = ((current_state%zv%data(k,cyn,cxn)                                          &
+                              + tend_3d_v(k,tyn,txn)*current_state%dtm * 2.0_DEFAULT_PRECISION       &
+                           - current_state%global_grid%configuration%vertical%olzvbar(k) )**2        & ! provisional
+                          -                                                                          &
+                          (current_state%zv%data(k,cyn,cxn)                                          &
+                           - current_state%global_grid%configuration%vertical%olzvbar(k) )**2        & ! n-1
+                         ) /  (current_state%dtm * 2.0_DEFAULT_PRECISION)
+
+        ww_tendency(k) = ((current_state%zw%data(k,cyn,cxn)                                          & ! w_bar assumed zero
+                              + tend_3d_w(k,tyn,txn)*current_state%dtm * 2.0_DEFAULT_PRECISION )**2  & ! provisional
+                          -                                                                          &
+                          current_state%zw%data(k,cyn,cxn)**2                                        & ! n-1
+                         ) /  (current_state%dtm * 2.0_DEFAULT_PRECISION)
+
+
+      enddo
+
+      ! handle surface so that interpolation goes to zero
+      uu_tendency(1) = -uu_tendency(2)
+      vv_tendency(1) = -vv_tendency(2)
+
+      ! interpolate to w-levels    
+      do k=2, current_state%local_grid%size(Z_INDEX)-1
+        tend_pr_tot_tke(k)=tend_pr_tot_tke(k) + 0.5_DEFAULT_PRECISION * (& 
+          0.5_DEFAULT_PRECISION * (uu_tendency(k)+uu_tendency(k+1)) + &
+          0.5_DEFAULT_PRECISION * (vv_tendency(k)+vv_tendency(k+1)) + &
+          ww_tendency(k) )
+      enddo
+
     endif
 
   end subroutine compute_component_tendencies
@@ -601,6 +672,10 @@ contains
         field_information%enabled=l_tend_pr_tot_qg
       else if (name .eq. "tend_tabs_damping_profile_total_local") then
         field_information%enabled=l_tend_pr_tot_tabs
+
+      else if (name .eq. "tend_tke_damping_profile_total_local") then
+        field_information%enabled=l_tend_pr_tot_tke
+
       else
         field_information%enabled=.true.
       end if
@@ -666,6 +741,10 @@ contains
       call set_published_field_value(field_value, real_1d_field=tend_pr_tot_qg)
     else if (name .eq. "tend_tabs_damping_profile_total_local" .and. allocated(tend_pr_tot_tabs)) then
       call set_published_field_value(field_value, real_1d_field=tend_pr_tot_tabs)
+
+    else if (name .eq. "tend_tke_damping_profile_total_local" .and. allocated(tend_pr_tot_tke)) then
+      call set_published_field_value(field_value, real_1d_field=tend_pr_tot_tke)
+
     end if
 
   end subroutine field_value_retrieval_callback
@@ -692,3 +771,4 @@ contains
   end subroutine set_published_field_value
 
 end module damping_mod
+

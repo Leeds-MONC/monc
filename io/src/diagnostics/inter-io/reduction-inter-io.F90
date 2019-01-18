@@ -196,7 +196,8 @@ contains
           call check_thread_status(forthread_mutex_lock(specific_reduction_progress%mutex))
           if (specific_reduction_progress%async_handle /= MPI_REQUEST_NULL) then
             call wait_for_mpi_request(specific_reduction_progress%async_handle)
-            if (completed == 1) then
+            !if (completed == 1) then
+            if (specific_reduction_progress%async_handle == MPI_REQUEST_NULL) then
               if (allocated(specific_reduction_progress%send_buffer)) deallocate(specific_reduction_progress%send_buffer)
               destroy_lock=.true.
               call c_add_string(entries_to_remove, mapentry%key)

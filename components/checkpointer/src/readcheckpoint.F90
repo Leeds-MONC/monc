@@ -20,7 +20,8 @@ module checkpointer_read_checkpoint_mod
        Z_KEY, ZN_KEY, NQFIELDS, UGAL, VGAL, TIME_KEY, TIMESTEP, CREATED_ATTRIBUTE_KEY, TITLE_ATTRIBUTE_KEY, ABSOLUTE_NEW_DTM_KEY, &
        DTM_KEY, DTM_NEW_KEY, Q_INDICES_DIM_KEY, Q_INDICES_KEY, Q_FIELD_ANONYMOUS_NAME, ZQ_FIELD_ANONYMOUS_NAME, &
        MAX_STRING_LENGTH, THREF, OLUBAR, OLZUBAR, OLVBAR, OLZVBAR, OLTHBAR, OLZTHBAR, OLQBAR, OLZQBAR, OLQBAR_ANONYMOUS_NAME, &
-       OLZQBAR_ANONYMOUS_NAME, RAD_LAST_TIME_KEY, STH_LW_KEY, STH_SW_KEY, check_status, remove_null_terminator_from_string
+       OLZQBAR_ANONYMOUS_NAME, RAD_LAST_TIME_KEY, STH_LW_KEY, STH_SW_KEY, check_status, remove_null_terminator_from_string, &
+       WUP, WDWN
   use datadefn_mod, only : DEFAULT_PRECISION
   use q_indices_mod, only : q_metadata_type, set_q_index, get_q_index, get_indices_descriptor, standard_q_names
   implicit none
@@ -56,6 +57,7 @@ contains
     call load_all_fields(current_state, ncid)
     call initalise_source_and_sav_fields(current_state)  
     call load_mean_profiles(current_state, ncid, z_dim)
+    call load_pdf_profiles(current_state, ncid, z_dim)
     call check_status(nf90_close(ncid))
 
     if (current_state%number_q_fields .gt. 0) then
@@ -481,6 +483,25 @@ contains
       end do
     end if
   end subroutine load_mean_profiles  
+
+
+  subroutine load_pdf_profiles(current_state, ncid, z_dim_id)
+    type(model_state_type), intent(inout) :: current_state
+    integer, intent(in) :: ncid, z_dim_id
+
+    integer :: z_size, i
+
+    call check_status(nf90_inquire_dimension(ncid, z_dim_id, len=z_size))
+    if (does_field_exist(ncid, WUP)) then
+      allocate(current_state%global_grid%configuration%vertical%w_up(z_size))
+      call read_single_variable(ncid, WUP, real_data_1d_double=current_state%global_grid%configuration%vertical%w_up)
+    end if
+    if (does_field_exist(ncid, WDWN)) then
+      allocate(current_state%global_grid%configuration%vertical%w_dwn(z_size))
+      call read_single_variable(ncid, WDWN, real_data_1d_double=current_state%global_grid%configuration%vertical%w_dwn)
+    end if
+  end subroutine load_pdf_profiles
+
 
   !> Defines the vertical levels of the grid. This is both the grid points and corresponding height
   !! for each point in metres

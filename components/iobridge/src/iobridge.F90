@@ -25,6 +25,9 @@ module iobridge_mod
   use mpi, only : MPI_COMM_WORLD, MPI_INT, MPI_BYTE, MPI_REQUEST_NULL, MPI_STATUSES_IGNORE, MPI_STATUS_IGNORE, MPI_STATUS_SIZE
   use q_indices_mod, only : q_metadata_type, get_max_number_q_indices, get_indices_descriptor, get_number_active_q_indices
 
+  use conditional_diagnostics_column_mod, only : ncond, ndiag, cond_request, diag_request, cond_long, diag_long
+
+
   implicit none
 
 #ifndef TEST_MODE
@@ -393,6 +396,18 @@ contains
        call c_put_generic(sendable_fields, "sth_sw", raw_generic, .false.)
     endif
        
+    if (is_component_enabled(current_state%options_database, "pdf_analysis")) then
+      if (allocated(current_state%global_grid%configuration%vertical%w_up)) then
+        raw_generic=>generate_sendable_description(z_size)
+        call c_put_generic(sendable_fields, "w_up", raw_generic, .false.)
+      end if
+
+      if (allocated(current_state%global_grid%configuration%vertical%w_dwn)) then
+        raw_generic=>generate_sendable_description(z_size)
+        call c_put_generic(sendable_fields, "w_dwn", raw_generic, .false.)
+      end if
+    end if 
+
   end subroutine populate_globally_visible_sendable_fields  
 
   !> Generates a sendable description based upon the dimension information supplied, missing arguments means that dimension
@@ -449,7 +464,8 @@ contains
     allocate(data_description(number_unique_fields+4))
     request_handles(1)=send_data_field_sizes_to_server(current_state, mpi_type_data_sizing_description, &
        data_description, number_unique_fields)
-    buffer_size=(kind(dreal)*current_state%local_grid%size(Z_INDEX)) + (STRING_LENGTH * current_state%number_q_fields)
+    buffer_size=(kind(dreal)*current_state%local_grid%size(Z_INDEX))*2 + (STRING_LENGTH * current_state%number_q_fields &
+                 + 4*ncond*STRING_LENGTH + 2*ndiag*STRING_LENGTH )
     allocate(buffer(buffer_size))
     request_handles(2)=send_general_monc_information_to_server(current_state, buffer)
     call mpi_waitall(2, request_handles, MPI_STATUSES_IGNORE, ierr)
@@ -494,7 +510,7 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
     character, dimension(:), intent(inout) :: buffer
     
-    character(len=STRING_LENGTH) :: q_field_name
+    character(len=STRING_LENGTH) :: q_field_name, cd_field_name
     type(q_metadata_type) :: q_meta_data
     integer :: current_loc, n, ierr, request_handle    
     
@@ -511,6 +527,29 @@ contains
         current_loc=pack_scalar_field(buffer, current_loc, string_value=q_field_name)
       end do
     end if
+    current_loc=pack_array_field(buffer, current_loc, real_array_1d=current_state%global_grid%configuration%vertical%z)
+
+    do n=1,ncond*2 
+      if (n .le. ncond) then
+        cd_field_name = cond_request(n)
+        current_loc=pack_scalar_field(buffer, current_loc, string_value=cd_field_name)
+       cd_field_name = cond_long(n)
+        current_loc=pack_scalar_field(buffer, current_loc, string_value=cd_field_name)
+      else
+        cd_field_name = ".not. "//trim(cond_request(n-ncond))
+        current_loc=pack_scalar_field(buffer, current_loc, string_value=cd_field_name)
+        cd_field_name = ".not. "//trim(cond_long(n-ncond))
+        current_loc=pack_scalar_field(buffer, current_loc, string_value=cd_field_name)
+      end if
+    end do    
+    do n=1,ndiag
+      cd_field_name = diag_request(n)
+      current_loc=pack_scalar_field(buffer, current_loc, string_value=cd_field_name)
+      cd_field_name = diag_long(n)
+      current_loc=pack_scalar_field(buffer, current_loc, string_value=cd_field_name)
+    end do
+
+
     call mpi_isend(buffer, current_loc-1, MPI_BYTE, current_state%parallel%corresponding_io_server_process, &
          DATA_TAG, MPI_COMM_WORLD, request_handle, ierr)    
     send_general_monc_information_to_server=request_handle
@@ -968,6 +1007,12 @@ contains
     else if (field%name .eq. "sth_sw") then
       pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer,  &
             current_state%sth_sw, current_buffer_point, current_state%local_grid)
+    else if (field%name .eq. "w_up") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_1d=current_state%global_grid%configuration%vertical%w_up)
+    else if (field%name .eq. "w_dwn") then
+      pack_array_into_send_buffer=pack_array_field(data_definition%send_buffer, current_buffer_point, &
+           real_array_1d=current_state%global_grid%configuration%vertical%w_dwn)
 !!$    else if (field%name .eq. "sw_down_surf") then
 !!$      pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer,  &
 !!$            current_state%sth_sw, current_buffer_point, current_state%local_grid)

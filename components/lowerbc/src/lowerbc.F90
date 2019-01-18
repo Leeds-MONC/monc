@@ -764,7 +764,7 @@ contains
 
     if (mostbc .ne. CONVERGENCE_SUCCESS) then
       if (mostbc .eq. CONVERGENCE_RICHARDSON_TOO_LARGE) then
-        call log_log(LOG_WARN, "Richardson number greater than critical value")
+        !call log_log(LOG_WARN, "Richardson number greater than critical value")
       else if(mostbc .eq. CONVERGENCE_FAILURE) then
         call log_log(LOG_ERROR, "Convergence failure after 200 iterations")
       end if

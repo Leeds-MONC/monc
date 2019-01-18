@@ -11,6 +11,8 @@
   <field name="lathf" type="array" data_type="double" size="y,x" collective=true optional=true/>
   <field name="reske" type="array" data_type="double" size="y,x" collective=true optional=true/>
   <field name="subke" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="cltop" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="clbas" type="array" data_type="double" size="y,x" collective=true optional=true/>
 </data-definition>
 
 <group name="2d_fields">
@@ -26,5 +28,7 @@
   <member name="lathf"/>
   <member name="reske"/>
   <member name="subke"/>
+  <member name="cltop"/>
+  <member name="clbas"/>
 </group>
 

@@ -55,7 +55,6 @@
   <field name="diffusion_coef_total_local" type="array" data_type="double" optional=true/>
   <field name="richardson_number_total_local" type="array" data_type="double" optional=true/>
   <field name="richardson_squared_total_local" type="array" data_type="double" optional=true/>
-  <field name="dissipation_total_local" type="array" data_type="double" optional=true/>
   <field name="wqv_sg_total_local" type="array" data_type="double" optional=true/>
   <field name="wql_sg_total_local" type="array" data_type="double" optional=true/>
   <field name="wqr_sg_total_local" type="array" data_type="double" optional=true/>
@@ -118,9 +117,38 @@
   <field name="dqi_mphys_total" type="array" data_type="double" optional=true/>
   <field name="dqs_mphys_total" type="array" data_type="double" optional=true/>
   <field name="dqg_mphys_total" type="array" data_type="double" optional=true/>
+   <!-- Subgrid tke diagnostics -->
+  <field name="dissipation_total_local" type="array" data_type="double" optional=true/>
+  <field name="sed_total_local" type="array" data_type="double" optional=true/>
+  <field name="ssub_total_local" type="array" data_type="double" optional=true/>
+  <field name="buoysg_total_local" type="array" data_type="double" optional=true/>
+   <!-- Cloud fraction diagnostics -->
+  <field name="cloud_mask" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="cloud_mask_total_local" type="array" data_type="double" optional=true/>
+  <field name="cloud_liq_mask_total_local" type="array" data_type="double" optional=true/>
+  <field name="cloud_ice_mask_total_local" type="array" data_type="double" optional=true/>
+   <!--  -->
 </data-definition>
 
 <data-handling namespace="profile_fields">
+   <!-- Subgrid tke diagnostics -->
+   <diagnostic field="subgrid_turbulent_transport"  type="array" data_type="double" size="z" units="m^2/s^3">
+	<operator name="arithmetic" result="subgrid_turbulent_transport" equation="subgrid_turbulent_transport_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="subgrid_turbulent_transport_g" field="sed_total_local" root="auto"/>
+   </diagnostic>
+   <diagnostic field="subgrid_shear_stress"  type="array" data_type="double" size="z" units="m^2/s^3">
+	<operator name="arithmetic" result="subgrid_shear_stress" equation="subgrid_shear_stress_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="subgrid_shear_stress_g" field="ssub_total_local" root="auto"/>
+   </diagnostic>
+   <diagnostic field="subgrid_buoyant_production"  type="array" data_type="double" size="z" units="m^2/s^3">
+	<operator name="arithmetic" result="subgrid_buoyant_production" equation="subgrid_buoyant_production_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="subgrid_buoyant_production_g" field="buoysg_total_local" root="auto"/>
+	</diagnostic>
+   <diagnostic field="dissipation_mean"  type="array" data_type="double" size="z" units="m^2/s^3">
+	<operator name="arithmetic" result="dissipation_mean" equation="dissipation_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="dissipation_g" field="dissipation_total_local" root="auto"/>
+   </diagnostic>
+   <!--  -->
    <diagnostic field="prefn"  type="array" data_type="double" size="zn" units="K">
 	<communication name="reduction" operator="mean" result="prefn" field="prefn_local" root="auto"/>
    </diagnostic>
@@ -391,11 +419,6 @@
     <communication name="reduction" operator="sum" result="richardson_squared_mean_g" field="richardson_squared_total_local" root="auto"/>
   </diagnostic>   
 
-  <diagnostic field="dissipation_mean"  type="array" data_type="double" size="zn" units="K^2">
-     <operator name="arithmetic" result="dissipation_mean" equation="dissipation_mean_g/({x_size}*{y_size})"/>
-    <communication name="reduction" operator="sum" result="dissipation_mean_g" field="dissipation_total_local" root="auto"/>
-  </diagnostic>   
-
   <diagnostic field="th_large_scale_mean"  type="array" data_type="double" size="zn" units="m/s">
 	<operator name="arithmetic" result="th_large_scale_mean" equation="th_large_scale_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="th_large_scale_g" field="th_large_scale" root="auto"/>
@@ -607,6 +630,20 @@
     <communication name="reduction" operator="sum" result="dqg_mphys_total_g" field="dqg_mphys_total" root="auto"/>
   </diagnostic>
   
+   <!-- Cloud fraction diagnostics -->
+  <diagnostic field="total_cloud_fraction"  type="array" data_type="double" size="zn" units="fraction">
+    <operator name="arithmetic" result="total_cloud_fraction" equation="cloud_mask_total_local_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="cloud_mask_total_local_g" field="cloud_mask_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="liquid_cloud_fraction"  type="array" data_type="double" size="zn" units="fraction">
+    <operator name="arithmetic" result="liquid_cloud_fraction" equation="cloud_liq_mask_total_local_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="cloud_liq_mask_total_local_g" field="cloud_liq_mask_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="ice_cloud_fraction"  type="array" data_type="double" size="zn" units="fraction">
+    <operator name="arithmetic" result="ice_cloud_fraction" equation="cloud_ice_mask_total_local_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="cloud_ice_mask_total_local_g" field="cloud_ice_mask_total_local" root="auto"/>
+  </diagnostic>
+
 </data-handling>
 
 <group name="profile_timeseries" namespace="profile_fields">
@@ -720,4 +757,14 @@
   <member name="dqi_mphys_mean"/>
   <member name="dqs_mphys_mean"/>
   <member name="dqg_mphys_mean"/>
+  <!-- Subgrid tke diagnostics -->
+  <member name="subgrid_turbulent_transport"/>
+  <member name="subgrid_buoyant_production"/>
+  <member name="subgrid_shear_stress"/>
+  <!-- Cloud fraction diagnostics -->
+  <member name="cloud_mask"/>
+  <member name="total_cloud_fraction"/>
+  <member name="liquid_cloud_fraction"/>
+  <member name="ice_cloud_fraction"/>
+  <!--  -->
 </group>

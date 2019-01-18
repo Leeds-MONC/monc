@@ -3,12 +3,12 @@ module profile_diagnostics_mod
        COMPONENT_ARRAY_FIELD_TYPE, COMPONENT_INTEGER_DATA_TYPE, &
        component_descriptor_type, component_field_value_type, component_field_information_type
   use grids_mod, only : vertical_grid_configuration_type, Z_INDEX, Y_INDEX, X_INDEX
-  use optionsdatabase_mod, only : options_get_real, options_get_string
+  use optionsdatabase_mod, only : options_get_real, options_get_string, options_get_logical
   use state_mod, only : model_state_type
-  use datadefn_mod, only : DEFAULT_PRECISION
+  use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use q_indices_mod, only: get_q_index, standard_q_names
   use saturation_mod, only: qsaturation
-  
+  use logging_mod, only : LOG_ERROR, log_master_log  
   use def_tvd_diagnostic_terms, only: tvd_dgs_terms, allocate_tvd_diagnostic_terms
 
   implicit none
@@ -18,7 +18,7 @@ module profile_diagnostics_mod
 #endif
 
   integer :: total_points, iqv=0, iql=0, iqr=0, iqi=0, iqs=0,    &
-       iqg=0
+                           iqg=0
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable ::     &
        tempfac, u_wind_tot, uprime_tot, v_wind_tot, vprime_tot,  &
        uprime, vprime, wke_tot, wwww_tot, www_tot, ww_tot,       &
@@ -33,7 +33,15 @@ module profile_diagnostics_mod
        wqv_ad_tot, wql_ad_tot, wqr_ad_tot, wqi_ad_tot,           &
        wqs_ad_tot, wqg_ad_tot
 
-  real(kind=DEFAULT_PRECISION) :: qlcrit
+  ! 3D and local profile total binary cloud masks
+  character(len=STRING_LENGTH)                                :: cloud_mask_method
+  real(kind=DEFAULT_PRECISION), dimension(:,:,:), allocatable :: cloud_mask
+  real(kind=DEFAULT_PRECISION), dimension(:)    , allocatable :: cloud_mask_tot
+  real(kind=DEFAULT_PRECISION), dimension(:)    , allocatable :: cloud_liq_mask_tot
+  real(kind=DEFAULT_PRECISION), dimension(:)    , allocatable :: cloud_ice_mask_tot
+  logical :: l_partial_liq_ice
+
+  real(kind=DEFAULT_PRECISION) :: qlcrit, qicrit
   ! character string to determine the advection scheme
   character(len=5) :: advect_theta, advect_q, advect_flow
 
@@ -55,7 +63,7 @@ contains
 
     profile_diagnostics_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     profile_diagnostics_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
-    allocate(profile_diagnostics_get_descriptor%published_fields(42+26))
+    allocate(profile_diagnostics_get_descriptor%published_fields(42+26+4))
 
     profile_diagnostics_get_descriptor%published_fields(1)="thref_local"
     profile_diagnostics_get_descriptor%published_fields(2)="prefn_local"
@@ -109,7 +117,6 @@ contains
     profile_diagnostics_get_descriptor%published_fields(42+2)="i_vapour_mmr_total_local"
     profile_diagnostics_get_descriptor%published_fields(42+3)="i_liquid_mmr_total_local"
     profile_diagnostics_get_descriptor%published_fields(42+4)="i_u_wind_total_local"
-    profile_diagnostics_get_descriptor%published_fields(42+4)="i_u_wind_total_local"
     profile_diagnostics_get_descriptor%published_fields(42+5)="i_uu_total_local"
     profile_diagnostics_get_descriptor%published_fields(42+6)="i_v_wind_total_local"
     profile_diagnostics_get_descriptor%published_fields(42+7)="i_vv_total_local"
@@ -134,6 +141,14 @@ contains
     profile_diagnostics_get_descriptor%published_fields(42+23)="i_ice_mmr_total_local"
     profile_diagnostics_get_descriptor%published_fields(42+24)="i_snow_mmr_total_local"
     profile_diagnostics_get_descriptor%published_fields(42+25)="i_graupel_mmr_total_local"
+
+!   =====================================================
+!   cloud mask fields
+    profile_diagnostics_get_descriptor%published_fields(42+25+1)="cloud_mask"
+    profile_diagnostics_get_descriptor%published_fields(42+25+2)="cloud_mask_total_local"
+    profile_diagnostics_get_descriptor%published_fields(42+25+3)="cloud_liq_mask_total_local"
+    profile_diagnostics_get_descriptor%published_fields(42+25+4)="cloud_ice_mask_total_local"
+
 
   end function profile_diagnostics_get_descriptor
 
@@ -189,12 +204,13 @@ contains
     advect_flow = options_get_string(current_state%options_database, "advection_flow_fields")
     advect_theta = options_get_string(current_state%options_database, "advection_theta_field")
     advect_q = options_get_string(current_state%options_database, "advection_q_fields")
-    
+
     if (.not. current_state%passive_q .and. current_state%number_q_fields .gt. 0) then 
        iqv=get_q_index(standard_q_names%VAPOUR, 'profile_diags')                         
        iql=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'profile_diags')  
        qlcrit=options_get_real(current_state%options_database, "qlcrit")  
-       
+       qicrit=options_get_real(current_state%options_database, "qicrit")
+ 
        allocate(qv_tot(current_state%local_grid%size(Z_INDEX))  &
             , ql_tot(current_state%local_grid%size(Z_INDEX)),   &
             q_temp(current_state%local_grid%size(Z_INDEX)),   & 
@@ -231,6 +247,24 @@ contains
           allocate(wqg_cn_tot(current_state%local_grid%size(Z_INDEX)))
           allocate(wqg_ad_tot(current_state%local_grid%size(Z_INDEX)))
        endif
+
+       ! arrange and allocate cloud fraction diagnostics...3d mask is optional
+       cloud_mask_method =                                                         &
+           options_get_string(current_state%options_database, "cloud_mask_method")
+       if (.not. (trim(cloud_mask_method) == "DEFAULT"   .or.                      &
+                  trim(cloud_mask_method) == "SOCRATES"      ) )  then
+         call log_master_log(LOG_ERROR,                                            &
+          "Requested cloud_mask_method is invalid.  Check profile_diagnostics.F90") 
+       end if ! cloud_mask_method validity check
+       if (options_get_logical(current_state%options_database, "l_cloud_mask"))    &
+         allocate(cloud_mask(current_state%local_grid%size(Z_INDEX),               &
+                             current_state%local_grid%size(Y_INDEX),               &
+                             current_state%local_grid%size(X_INDEX)))
+       allocate(cloud_mask_tot(current_state%local_grid%size(Z_INDEX)))
+       allocate(cloud_liq_mask_tot(current_state%local_grid%size(Z_INDEX)))
+       allocate(cloud_ice_mask_tot(current_state%local_grid%size(Z_INDEX)))
+       l_partial_liq_ice =                                                           &
+           options_get_logical(current_state%options_database, "l_partial_liq_ice")
     endif
 
     call allocate_tvd_diagnostic_terms(current_state, tvd_dgs_terms)
@@ -304,6 +338,11 @@ contains
              wqg_cn_tot(:) = 0.0_DEFAULT_PRECISION
              wqg_ad_tot(:) = 0.0_DEFAULT_PRECISION
           endif
+
+          if (allocated(cloud_mask)) cloud_mask(:,:,:) = 0.0_DEFAULT_PRECISION
+          cloud_mask_tot(:) = 0.0_DEFAULT_PRECISION
+          cloud_liq_mask_tot(:) = 0.0_DEFAULT_PRECISION
+          cloud_ice_mask_tot(:) = 0.0_DEFAULT_PRECISION
        endif
     end if
     !
@@ -531,6 +570,9 @@ contains
           ! graupel mass
        if (iqg > 0) &
             call calculate_wq(current_state, jcol, icol, iqg, wqg_cn_tot, wqg_ad_tot, advect_q)
+
+       ! cloud mask / cloud fraction
+       call calculate_cloud_mask(current_state, jcol, icol)
     endif ! end q_passive and number q field test
    endif
   end subroutine timestep_callback
@@ -609,8 +651,21 @@ contains
       field_information%enabled=allocated(vprime_tot)
     else if (name .eq. "i_wtheta_cn_total_local") then
       field_information%enabled=current_state%th%active
-   else if (name .eq. "i_th2_total_local") then
+    else if (name .eq. "i_th2_total_local") then
       field_information%enabled=current_state%th%active
+!   ========================================================================
+    else if (name .eq. "cloud_mask") then
+      field_information%number_dimensions=3
+      field_information%dimension_sizes(1)=current_state%local_grid%size(Z_INDEX)
+      field_information%dimension_sizes(2)=current_state%local_grid%size(Y_INDEX)
+      field_information%dimension_sizes(3)=current_state%local_grid%size(X_INDEX)
+      field_information%enabled=allocated(cloud_mask)
+    else if (name .eq. "cloud_mask_total_local") then
+      field_information%enabled=allocated(cloud_mask_tot)
+    else if (name .eq. "cloud_liq_mask_total_local") then
+      field_information%enabled=allocated(cloud_liq_mask_tot)
+    else if (name .eq. "cloud_ice_mask_total_local") then
+      field_information%enabled=allocated(cloud_ice_mask_tot)
 !   ========================================================================
     else 
       field_information%enabled=.true.
@@ -955,6 +1010,26 @@ contains
        do k = 1, current_state%local_grid%size(Z_INDEX)
           field_value%real_1d_array(k)=th2_tot(k)
        enddo
+! =====================================================
+    else if (name .eq. "cloud_mask") then
+       allocate(field_value%real_3d_array(                                     &
+                size(cloud_mask, 1), size(cloud_mask, 2), size(cloud_mask, 3)),&
+                source=cloud_mask)
+    else if (name .eq. "cloud_mask_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=cloud_mask_tot(k)
+       enddo
+    else if (name .eq. "cloud_liq_mask_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=cloud_liq_mask_tot(k)
+       enddo
+    else if (name .eq. "cloud_ice_mask_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=cloud_ice_mask_tot(k)
+       enddo
     end if
   end subroutine field_value_retrieval_callback
 
@@ -989,4 +1064,118 @@ contains
 
   end subroutine calculate_wq
     
+  !---------------------------------------------------------------------
+  !> This routine calculates:
+  !    cloud_mask              a binary 3D total cloud mask
+  !                            optional: l_cloud_mask
+  !    cloud_mask_tot          the total cloud mask profile local sum
+  !    cloud_liq_mask_tot      the liquid cloud mask profile local sum
+  !    cloud_ice_mask_tot      the ice cloud mask profile local sum
+  !  The latter 3 are intended to be transformed into
+  !  cloud fraction profile diagnostics via xml processing.
+  !
+  !
+  !> SOCRATES method
+  !  The definition used here is consistent with that within 
+  !  SOCRATES, where i_cloud_representation = 2, that is, liquid and
+  !  ice cloud are treated separately, with their individual fractions
+  !  within a cell summing to 1 based their mixing ratios relative to
+  !  the cell total.  
+  !  Each element of the SOCRATES calculation is reproduced
+  !  here because the current formulation within SOCRATES will
+  !  not be available here when that component is not enabled.
+  !    See: def_merge_atm.F90
+  !         merge_atm_data.F90
+  !  A better solution might be to have both work from 
+  !  the same source for easy consistency in the case where
+  !  definitions of cloudy cells were to change.
+  !  We do not apply special consideration to the cases where
+  !  MONC is run with SOCRATES and i_cloud_representation != 2.
+  !  That is, values are calculated here even when cloud is 
+  !  off in SOCRATES, and no stratiform/convective distinction
+  !  is made. 
+  !
+  !
+  !> DEFAULT method
+  !  Cloud fraction is based on exceeding qlcrit and qicrit.
+  !  This definition is consistent with that used in the conditional
+  !  diagnostics routine (condition "AC").  It does not include
+  !  consideration of rain, snow, and graupel fields.  Liquid and
+  !  ice cloud are treated separately, with their individual fractions
+  !  within a cell summing to 1 based their mixing ratios relative to
+  !  the cell total.
+  subroutine calculate_cloud_mask(current_state, jcol, icol)
+    type(model_state_type), target, intent(inout) :: current_state
+    integer, intent(in) :: jcol, icol
+    integer :: k, target_y_index, target_x_index
+    logical :: l_prepare_3d_mask, cloud_present
+
+    ! The factors below were derived as part of J. Petch PhD
+    ! These are used in the SOCRATES method.
+    real(kind=DEFAULT_PRECISION) ::                  &
+         rainfac  = 0.02,                            &
+         snowfac  = 0.40,                            &
+         graupfac = 0.05
+
+    ! Local temporary terms
+    real(kind=DEFAULT_PRECISION) :: templ, tempi, tempt
+
+    target_y_index = jcol - current_state%local_grid%halo_size(Y_INDEX)
+    target_x_index = icol - current_state%local_grid%halo_size(X_INDEX)
+
+    templ = 0.0_DEFAULT_PRECISION
+    tempi = 0.0_DEFAULT_PRECISION    
+    tempt = 0.0_DEFAULT_PRECISION
+
+    l_prepare_3d_mask = allocated(cloud_mask)
+
+    do k=1, current_state%local_grid%size(Z_INDEX)
+
+      !> Collect available condensate amounts
+      if (iql > 0) &
+        templ = current_state%q(iql)%data(k, jcol, icol)
+      if (iqi > 0) &
+        tempi = current_state%q(iqi)%data(k, jcol, icol)
+
+      !> Check cloud_mask_method and modify as needed
+
+      !> The SOCRATES method considers rain, snow, and graupel.
+      if (trim(cloud_mask_method) == "SOCRATES") then
+        if (iqr > 0) &
+          templ = templ + rainfac  * current_state%q(iqr)%data(k, jcol, icol)
+        if (iqs > 0) &
+          tempi = tempi + snowfac  * current_state%q(iqs)%data(k, jcol, icol)
+        if (iqg > 0) &
+          tempi = tempi + graupfac * current_state%q(iqg)%data(k, jcol, icol)      
+      endif ! check cloud_mask_method
+
+      !> Work out cloud fractions
+      tempt = templ + tempi
+      if (trim(cloud_mask_method) == "SOCRATES") then
+        cloud_present = (tempt > EPSILON(tempt))
+      else ! DEFAULT
+        cloud_present = (templ > qlcrit .or. tempi > qicrit .or. (templ+tempi) > qlcrit)
+      end if 
+
+      if (cloud_present) then
+        if (l_prepare_3d_mask)    &
+           cloud_mask(k, target_y_index, target_x_index) = 1.0_DEFAULT_PRECISION
+        cloud_mask_tot(k) = cloud_mask_tot(k) + 1.0_DEFAULT_PRECISION
+
+        if (l_partial_liq_ice) then ! separated cloud, partial coverage
+          cloud_liq_mask_tot(k) = cloud_liq_mask_tot(k) + (templ / tempt)
+          cloud_ice_mask_tot(k) = cloud_ice_mask_tot(k) + (tempi / tempt)
+        else ! homogeneous cloud, full coverage for both types of condensate
+          if (templ > qlcrit)         &
+             cloud_liq_mask_tot(k) = cloud_liq_mask_tot(k) + 1.0_DEFAULT_PRECISION
+          if (tempi > qicrit)         &
+             cloud_ice_mask_tot(k) = cloud_ice_mask_tot(k) + 1.0_DEFAULT_PRECISION
+        end if ! check liquid/ice partition method
+      end if ! check cloud_present
+
+    end do ! k loop over vertical model levels
+
+  end subroutine calculate_cloud_mask
+
+
 end module profile_diagnostics_mod

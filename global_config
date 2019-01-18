@@ -54,6 +54,9 @@ casim_enabled=.false.
 casim_profile_dgs_enabled=.false.
 lwrad_exponential_enabled=.false. 
 lateral_bcs_enabled=.false.
+conditional_diagnostics_column_enabled=.false.
+conditional_diagnostics_whole_enabled=.false.
+pdf_analysis_enabled=.false.
 
 # Default disable the test case components (individual user config will enable these)
 bubble_enabled=.false.
@@ -72,16 +75,16 @@ last_group_type=entire
 
 start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral_bcs, setfluxlook
 subgrid_group_contents=lower_bc, smagorinsky
-dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, socrates_couple, lwrad_exponential, simplecloud, casim,diverr, psrce, flux_budget, diagnostics_3d, profile_diagnostics, casim_profile_dgs, subgrid_profile_diagnostics, scalar_diagnostics, stepfields
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, socrates_couple, lwrad_exponential, simplecloud, casim, flux_budget, subgrid_profile_diagnostics, diverr, psrce, diagnostics_3d, profile_diagnostics, casim_profile_dgs, scalar_diagnostics, stepfields
 
-solver_group_contents=mean_profiles, fftsolver, iterativesolver, petsc_solver, cfltest
-pressure-terms_group_contents=pstep, swap_smooth
-last_group_contents=checkpointer, model_synopsis, termination_check, iobridge
+solver_group_contents=pdf_analysis, mean_profiles, fftsolver, iterativesolver, petsc_solver, cfltest
+pressure-terms_group_contents=pstep, swap_smooth, conditional_diagnostics_column
+last_group_contents=conditional_diagnostics_whole, checkpointer, model_synopsis, termination_check, iobridge
 
 # Component ordering for other stages
 
-initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, simplecloud, casim, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iterativesolver, setfluxlook, lower_bc, physicsa, psrce, pw_advection, diffusion, set_consistent_lowbc, viscosity, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, socrates_couple, lwrad_exponential,th_advection, randomnoise, forcing, flux_budget, diagnostics_3d, profile_diagnostics, casim_profile_dgs, subgrid_profile_diagnostics, scalar_diagnostics, lateral_bcs, petsc_solver, pstep, iobridge
-finalisation_stage_ordering=iobridge, checkpointer, diverr, fftsolver, grid_manager, halo_swapper, iterativesolver, physicsa, psrce, smagorinsky, tvd_advection,lwrad_exponential, model_synopsis, mean_profiles, forcing, stepfields, flux_budget, buoyancy, diffusion, lower_bc, viscosity, profile_diagnostics, pw_advection, th_advection, damping, simplecloud
+initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, simplecloud, casim, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iterativesolver, setfluxlook, lower_bc, physicsa, psrce, pw_advection, diffusion, set_consistent_lowbc, viscosity, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, socrates_couple, lwrad_exponential,th_advection, randomnoise, forcing, flux_budget, diagnostics_3d, profile_diagnostics, casim_profile_dgs, conditional_diagnostics_column, conditional_diagnostics_whole, pdf_analysis, subgrid_profile_diagnostics, scalar_diagnostics, lateral_bcs, petsc_solver, pstep, iobridge
+finalisation_stage_ordering=iobridge, checkpointer, diverr, fftsolver, grid_manager, halo_swapper, iterativesolver, physicsa, psrce, smagorinsky, tvd_advection,lwrad_exponential, model_synopsis, mean_profiles, pdf_analysis, forcing, stepfields, flux_budget, buoyancy, diffusion, lower_bc, viscosity, profile_diagnostics, pw_advection, th_advection, damping, simplecloud, pstep, conditional_diagnostics_whole, conditional_diagnostics_column
 
 # Control configuration
 nn_timesteps=-1
@@ -103,6 +106,7 @@ cfl_cvelmax=0.2
 cfl_dtmmax=100.
 cfl_dtmmin=0.0001
 cfl_rincmax=0.05
+cfl_monitor=.false.   # enable writing of cfl and dtm change information to stdout
 
 # Coriolis configuration
 baroclinicity_use_geostrophic_shear=.false.
@@ -181,7 +185,7 @@ thref0=288.0
 surface_pressure=100000.0
 surface_reference_pressure=100000.0
 rmlmax=-1.0
-use_anelastic_equation=.false.
+use_anelastic_equations=.false.
 origional_vertical_grid_setup=.true.
 passive_q=.true.
 passive_th=.true.
@@ -228,6 +232,12 @@ smag-subc=16.0
 # smag-subb=1.43
 # smag-subc=1.43
 
+# Temporary switch to force the
+# LEM dissipation rate diagnostic. This should
+# be removed once Circle-A diagnostic development
+# complete and tested
+l_lem_dissipation_rate = .true.
+
 # Random noise setup
 l_rand_bit_reproducible=.true.
 l_rand_pl_theta=.false.
@@ -262,6 +272,8 @@ forcing_timescale_v=3600.
 relax_to_initial_u_profile=.false.
 relax_to_initial_v_profile=.false.
 relax_to_initial_theta_profile=.false.
+
+convert_input_theta_from_temperature=.false.
 
 l_constant_forcing_theta_z2pressure=.false.
 
@@ -512,3 +524,47 @@ l_pimlt         = .true.
 
 l_tidy_conserve_E = .true.
 l_tidy_conserve_q = .true.
+
+# Conditional diagnostic defaults (all values)
+cond_request=ALL, BYu, BCu, NrBCu, AC, ACu, ACd, WG1, WL1, ALu, ALd, CLu, CLd, AH, AL, AI, PPd, VPd, PVd, MO, BM, AA, AV
+diag_request=area, W, W2, TH, WTH, THP, WTHP, THVP, WTHVP, THP2, WTHSG, W3, RH, U, V, WU, WV, WUSG, WVSG, TEMP, THL, THLP, THLP2, QVLI, QVLIP, QVLIP2, QRSG, QRSGP, QRSGP2, WQVLIP, WQRSGP
+# ctritical thv and up/downdraft thresholds
+thvprcrit=0.0
+wSupcrit=1.0
+wSdwncrit=-1.0
+wupcrit=0.0
+wdwncrit=0.0
+# critical ql, qi and q_hydrometeor for conditional sampling
+#qlcrit= 1.e-5 already defined above
+qicrit= 1.e-5
+qpptcrit= 1.e-5
+vpptcrit= 1.e-4
+# Diff calculations of thv; .false. means thv=th(1+0.61qv) and .true. mean thv=th(1+0.61qv-(ql+qi))
+thv_from_th_with_liqice=.true.
+
+# -----------------------------------------------------------------
+# Parameters used to compute vertical velocity critical thresholds
+# -----------------------------------------------------------------
+# used only when pdf_analysis_enabled=.true.
+# fractional percentiles:
+#    uppercrit=0.05 --> set updraft threshold at top 5% of w
+#    dwnpercrit=0.05 --> set downdraft threshold at bottom 5% of w
+show_critical_w=.false.
+uppercrit=0.05
+dwnpercrit=0.05
+# -----------------------------------------------------------------
+
+# enable 3d binary SOCRATES-based total cloud mask diagnostic
+l_cloud_mask=.false.
+# cloud mask calculation method for cloud fraction diagnostics
+# options are [DEFAULT, SOCRATES]
+cloud_mask_method=DEFAULT
+# In calculating separate liquid and ice cloud fractions, we can
+# assume that coexisting liquid and ice cloud remain separate and 
+# have cell cloud fractions in proportion to their relative 
+# contribution to total cloud mass (.true.) 
+# or
+# if either exceeds the cloud threshold as determined by the
+# cloud_mask_method, the constituent has area 1.0. This is the
+# same as assuming homogeneous clouds.
+l_partial_liq_ice=.false.

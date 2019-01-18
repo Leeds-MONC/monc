@@ -1,5 +1,4 @@
 <data-definition name="checkpoint_data" frequency="{checkpoint_frequency}" namespace="checkpoint" send_on_terminate=true>
-	<field name="z" type="array" data_type="double" size="z"/>
 	<field name="thref" type="array" data_type="double" size="z"/>
 	<field name="w" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
 	<field name="u_nogal" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
@@ -20,6 +19,8 @@
 	<field name="olzthbar" type="array" data_type="double" size="z" optional=true/>
 	<field name="olqbar" type="array" data_type="double" size="z,qfields" optional=true/>
 	<field name="olzqbar" type="array" data_type="double" size="z,qfields" optional=true/>
+        <field name="w_up" type="array" data_type="double" size="z" optional=true/>
+        <field name="w_dwn" type="array" data_type="double" size="z" optional=true/>
 
 	<field name="time" type="scalar" data_type="double"/>
 	<field name="ugal" type="scalar" data_type="double"/>
@@ -29,7 +30,6 @@
 	<field name="dtm" type="scalar" data_type="double"/>
 	<field name="dtm_new" type="scalar" data_type="double"/>
 	<field name="absolute_new_dtm" type="scalar" data_type="double"/>
-	<field name="options_database" type="map" data_type="string" size="number_options"/>
 	<field name="q_indicies" type="map" data_type="string" size="active_q_indicies" optional=true/>
 	<field name="x_resolution" type="scalar" data_type="double"/>
 	<field name="x_top" type="scalar" data_type="double" />
@@ -72,9 +72,7 @@
 	<member name="dtm"/>
 	<member name="dtm_new"/>
 	<member name="absolute_new_dtm"/>
-	<member name="options_database"/>
 	<member name="q_indicies"/>
-	<member name="z"/>
 	<member name="thref"/>
 	<member name="x_resolution"/>
 	<member name="x_top"/>
@@ -85,6 +83,8 @@
 	<member name="sth_lw"/>
 	<member name="sth_sw"/>
 	<member name="rad_last_time"/>
+        <member name="w_up"/>
+        <member name="w_dwn"/>
 </group>
 
 <data-writing>

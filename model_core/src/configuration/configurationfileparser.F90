@@ -44,7 +44,7 @@ contains
     integer, intent(in) :: file_id
     logical, intent(in) :: is_user_file
 
-    integer :: file_status
+    integer :: file_status, comment_point
     logical :: continue_parsing, found_global
     character(len=10000) :: raw_line
 
@@ -61,6 +61,14 @@ contains
       if (is_iostat_end(file_status)) then
         continue_parsing=.false.
       else
+        !> Remove in-line commments.  If there's a comma in the comment, an array is assumed
+        !  and errors will occur.  See has_multiple_values.
+        !> Makes a section of store_configuration redundant.
+        comment_point=index(raw_line,'#')
+        if (comment_point .eq. 0) comment_point=index(raw_line,'!')
+        if (comment_point .ne. 0) raw_line = raw_line(:comment_point - 1)
+        
+        !> Left adjust
         raw_line=adjustl(raw_line)
         if (len_trim(raw_line) .gt. 0) then
           call process_configuration_line(options_database, raw_line, is_user_file, &
@@ -93,8 +101,13 @@ contains
     if (mode .ge. 1 .and. raw_line(1:1) .ne. '#' .and. raw_line(1:1) .ne. '!') then
       config_key=raw_line(1:start_split)
       config_value=adjustl(raw_line(end_split:))     
-
-      if (has_multiple_values(config_value)) then
+      !> If multiple values exist in comma-separated format (a common event) or
+      !  The key already exists with multiple values, treat as an array.
+      !  The second case is important if, for instance, the global_config defaults
+      !  to an array with multiple values, but the option may be acceptably entered
+      !  as a single value.  This ensures the full key will be removed.
+      if (has_multiple_values(config_value) .or.    &
+          options_has_key(options_database, trim(config_key)//"a_size")) then
          call process_configuration_array(options_database, config_key, config_value, mode)        
       else
          if (is_key_array_index_specifier(config_key) .or. mode .eq. 2) then

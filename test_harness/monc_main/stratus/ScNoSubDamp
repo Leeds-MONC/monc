@@ -1,0 +1,155 @@
+# Global configuration
+global_configuration=global_config
+
+# Override global component defaults
+cfltest_enabled=.true.
+checkpointer_enabled=.true.
+fftsolver_enabled=.true.
+iterativesolver_enabled=.false.
+pw_advection_enabled=.true.
+simplesetup_enabled=.true.
+smagorinsky_enabled=.true.
+lower_bc_enabled=.true.
+setfluxlook_enabled=.true. #This must be set to true if running with lower_bc
+viscosity_enabled=.true.
+diffusion_enabled=.true.
+simplecloud_enabled=.true.
+coriolis_enabled=.true.
+damping_enabled=.false.
+forcing_enabled=.true. 
+galilean_transformation=.true. # Needs debugging
+randomnoise_enabled=.true.
+mean_profiles_enabled=.true. #This must be set to true if running with damping
+th_advection_enabled=.false.
+lwrad_exponential_enabled=.true.
+iobridge_enabled=.true.
+scalar_diagnostics_enabled=.true.
+profile_diagnostics_enabled=.true.
+subgrid_profile_diagnostics_enabled=.true.
+flux_budget_enabled=.true.
+
+# Control configuration
+
+display_synopsis_frequency=100
+nn_consolidation=1
+termination_time=7500.
+dtm=0.4
+
+# IO server configuration
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
+diagnostic_file="add_diagnostic_file"
+moncs_per_io_server=8
+sampling_frequency=20
+3d_sampling_frequency=4500
+mm=1800.0
+mm1=20.0
+diag_write_freq=7260.0
+
+# Checkpoint configuration
+checkpoint_frequency=0
+checkpoint_file="add_checkpoint_file"
+check_walltime_frequency=20
+walltime_limit=00:05:00
+# Advection choices
+advection_flow_fields=pw
+advection_theta_field=tvd
+advection_q_fields=tvd
+
+# CFL configuration
+cfl_frequency=1000
+cfl_cvismax=0.4
+cfl_cvelmax=0.4
+cfl_dtmmax=0.4
+cfl_dtmmin=0.001
+
+# Simple setup configuration
+# We'll want to change this reference profile later
+thref0=288.0
+surface_pressure=100000.
+surface_reference_pressure=100000.
+x_size=64
+y_size=64
+z_size=50
+dxx=50
+dyy=50
+zztop=1600.0
+kgd=10, 30, 40, 50 
+hgd=300., 700., 1000., 1600.
+nsmth=40
+rmlmax=6.9
+enable_theta=.true.
+number_q_fields=2
+use_anelastic_equations=.false.
+origional_vertical_grid_setup=.true.
+passive_th=.false.
+passive_q=.false.
+backscatter=.false.
+use_viscosity_and_diffusion=.true.
+
+# Initialization of fields
+l_init_pl_theta=.true.
+z_init_pl_theta=0.0, 600.0, 601.0, 1600.0
+f_init_pl_theta=287.2, 287.2, 297.2, 300.2
+l_init_pl_u=.true.
+z_init_pl_u=0.0, 1601.0
+f_init_pl_u=5.0, 5.0
+l_init_pl_v=.false.
+l_init_pl_q=.true.
+names_init_pl_q=vapour
+z_init_pl_q=0.0, 600.0, 601.0, 1600.0
+f_init_pl_q=9.2e-3, 9.2e-3, 6.2e-3, 6.2e-3
+  
+l_matchthref=.false.
+
+# Random noise
+l_rand_pl_theta=.true.
+z_rand_pl_theta=0.0, 600.0, 601.0, 1600.
+f_rand_pl_theta=0.1, 0.1, 0.0001, 0.0001
+
+# Simple cloud
+max_height_cloud=1600.
+
+# physical constants
+z0=0.002
+z0th=0.0002
+
+# Coriolis
+fcoriol=0.00007
+geostrophic_wind_rate_of_change_in_x=0.0
+geostrophic_wind_rate_of_change_in_y=0.0
+surface_geostrophic_wind_x=5.0
+surface_geostrophic_wind_y=0.0
+
+# Damping configuration
+dmptim=0.001
+zdmp=1000.0
+hdmp=650.0
+
+# Subsidence profile
+l_subs_pl_theta=.false.
+z_subs_pl=0.0, 1600.0
+f_subs_pl=0.000005,0.000005 
+l_subs_pl_q=.false.
+
+#SUBSIDENCE=1, DIVERGENCE=0
+subsidence_input_type=0
+subsidence_local_theta=.false.
+subsidence_local_q=.false.
+
+# surface flux config
+# type_of_surface_boundary_conditions=PRESCRIBED_FLUX=0
+# type_of_surface_boundary_conditions=PRESCRIBED_SURFACE_VALUE=1
+use_surface_boundary_conditions=.true.
+use_time_varying_surface_values= .false.
+type_of_surface_boundary_conditions = 1 
+surface_boundary_input_times = 0
+surface_temperatures  = 288.2
+#surface_latent_heat_flux   = 130.052
+#surface_sensible_heat_flux = 8.04
+
+# Radiation settings - variables and switches for exponential radiation (LWEXP) 
+longwave_exp_decay = 130.0 # longwave rad exponential decay factor
+cltop_longwave_flux = 70.0 # cloud top longwave flux (Wm-2)
+clbase_longwave_flux = 0.0 # cloud base longwave flux (Wm-2)
+
+

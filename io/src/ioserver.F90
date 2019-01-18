@@ -7,7 +7,8 @@ module io_server_mod
   use configuration_parser_mod, only : DATA_SIZE_STRIDE, io_configuration_type, io_configuration_data_definition_type, &
        io_configuration_registered_monc_type, configuration_parse, extend_registered_moncs_array, retrieve_data_definition, &
        build_definition_description_type_from_configuration, build_field_description_type_from_configuration, get_monc_location, &
-       get_io_xml
+       get_io_xml, cond_request, diag_request, cond_long, diag_long, ncond, ndiag
+
   use mpi_communication_mod, only : build_mpi_datatype, data_receive, test_for_command, register_command_receive, &
        cancel_requests, free_mpi_type, get_number_io_servers, get_my_io_rank, test_for_inter_io, lock_mpi, unlock_mpi, &
        waitall_for_mpi_requests, initialise_mpi_communication, pause_for_mpi_interleaving
@@ -33,6 +34,7 @@ module io_server_mod
        threadpool_deactivate, threadpool_is_idle
   use global_callback_inter_io_mod, only : perform_global_callback
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, initialise_logging
+  use optionsdatabase_mod, only : options_get_logical
   use mpi, only : MPI_COMM_WORLD, MPI_STATUSES_IGNORE, MPI_BYTE
   use io_server_state_reader_mod, only : read_io_server_configuration
   implicit none
@@ -72,6 +74,7 @@ contains
     character, dimension(:), allocatable :: data_buffer, io_xml_configuration
     type(hashmap_type) :: diagnostic_generation_frequency
 
+
     if (continuation_run) then
       ! Handle case where we need to allocate this due to no IO server config
       call read_io_server_configuration(options_get_string(options_database, "checkpoint"), &
@@ -87,7 +90,8 @@ contains
         end if
       end if      
     end if    
-    
+
+    call check_for_condi_conflict(io_xml_configuration, options_database)
     call configuration_parse(options_database, io_xml_configuration, io_configuration)
     deallocate(io_xml_configuration)
     call threadpool_init(io_configuration)
@@ -131,6 +135,29 @@ contains
     call free_mpi_type(mpi_type_field_description)    
     call threadpool_finalise()
   end subroutine io_server_run
+
+  !> Handle potential conditional diagnostics conflict
+  !! Provides a more helpful error in the case where conditional diagnostics are requested as output,
+  !! but their components are not enabled.
+  !! We check this by searching the io_xml_configuration.
+  !! @param raw_contents, intended to be the io_xml_configuration character array
+  !! @param options_database
+  subroutine check_for_condi_conflict(raw_contents, options_database)
+    character, dimension(:), intent(in) :: raw_contents
+    type(hashmap_type), intent(inout) :: options_database
+    character(len=size(raw_contents)) :: string_to_process
+    integer :: i
+
+    if (.not. options_get_logical(options_database, "conditional_diagnostics_column_enabled")) then
+      do i=1, size(raw_contents)
+        string_to_process(i:i)=raw_contents(i)
+      end do
+      if (index(string_to_process,"CondDiags_") .ne. 0) then
+        call log_log(LOG_ERROR, &
+            "Conditional diagnostics are DISABLED but requested via xml.  Enable or remove request to resolve.")
+      end if
+    end if
+  end subroutine check_for_condi_conflict
 
   !> Awaits a command or shutdown from MONC processes and other IO servers
   !! @param command The command received is output
@@ -442,7 +469,7 @@ contains
     integer, intent(in) :: source
 
     character, dimension(:), allocatable :: buffer
-    character(len=STRING_LENGTH) :: q_field_name
+    character(len=STRING_LENGTH) :: q_field_name, cd_field_name
     integer :: buffer_size, z_size, num_q_fields, n, current_point, recv_count
     type(data_sizing_description_type) :: field_description
     real(kind=DEFAULT_PRECISION) :: dreal
@@ -452,7 +479,8 @@ contains
     z_size=c_get_integer(io_configuration%dimension_sizing, "z")
     num_q_fields=c_get_integer(io_configuration%dimension_sizing, "qfields")
 
-    buffer_size=(kind(dreal)*z_size) + (STRING_LENGTH * num_q_fields)
+    buffer_size=(kind(dreal)*z_size)*2 + (STRING_LENGTH * num_q_fields) &
+                 + 2*ncond*STRING_LENGTH + 2*ndiag*STRING_LENGTH 
     allocate(buffer(buffer_size))
     recv_count=data_receive(MPI_BYTE, buffer_size, source, buffer)
     if (.not. io_configuration%general_info_set) then
@@ -460,6 +488,7 @@ contains
       if (.not. io_configuration%general_info_set) then
         io_configuration%general_info_set=.true.
         allocate(io_configuration%zn_field(z_size))
+        allocate(io_configuration%z_field(z_size))
         io_configuration%zn_field=transfer(buffer(1:kind(dreal)*z_size), io_configuration%zn_field)
         current_point=(kind(dreal)*z_size)
         if (num_q_fields .gt. 0) then
@@ -470,6 +499,23 @@ contains
             call c_add_string(io_configuration%q_field_names, q_field_name)
           end do
         end if
+        io_configuration%z_field=transfer(buffer(current_point+1:current_point+kind(dreal)*z_size), &
+                                          io_configuration%z_field)
+        current_point=current_point+(kind(dreal)*z_size)
+
+        do n=1,ncond
+          cond_request(n)=transfer(buffer(current_point+1:current_point+STRING_LENGTH), cd_field_name)
+          current_point=current_point+STRING_LENGTH
+          cond_long(n)=transfer(buffer(current_point+1:current_point+STRING_LENGTH), cd_field_name)
+          current_point=current_point+STRING_LENGTH
+        end do
+        do n=1,ndiag
+          diag_request(n)=transfer(buffer(current_point+1:current_point+STRING_LENGTH), cd_field_name)
+          current_point=current_point+STRING_LENGTH
+          diag_long(n)=transfer(buffer(current_point+1:current_point+STRING_LENGTH), cd_field_name)
+          current_point=current_point+STRING_LENGTH
+        end do
+
       end if
       call provide_q_field_names_to_writer_federator(io_configuration%q_field_names)
       call check_thread_status(forthread_mutex_unlock(io_configuration%general_info_mutex))

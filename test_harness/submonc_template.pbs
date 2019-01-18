@@ -1,0 +1,30 @@
+#!/bin/bash --login
+#PBS -N MONC
+#PBS -l select=1
+#PBS -l walltime=01:00:00
+#PBS -j oe
+#PBS -P asci
+#PBS -q normal
+
+# Make sure any symbolic links are resolved to absolute path 
+export PBS_O_WORKDIR=$(readlink -f $PBS_O_WORKDIR)
+
+# Change to the direcotry that the job was submitted from 
+cd $PBS_O_WORKDIR
+
+export SUBMISSION_SCRIPT_NAME=add_scriptname
+export MONC_EXEC=./build/bin/monc_driver.exe
+
+export TESTCASE=add_testcase_mcf
+export STDOUT_DIR=add_stdout_dirname
+export CP_DIR=add_checkpoint_dirname
+export RUN_NAME=add_testsuite_jobname
+export NPES=np
+export MAX_CONTINUATION_RUNS=200
+
+ulimit -c unlimited
+
+. test_harness/continuation.sh
+
+run_monc
+

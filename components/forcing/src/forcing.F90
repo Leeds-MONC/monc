@@ -618,6 +618,8 @@ contains
       end if
       
       ! Unit conversions...
+      convert_input_theta_from_temperature=options_get_logical(current_state%options_database, &
+                                                                       "convert_input_theta_from_temperature")
       if (convert_input_theta_from_temperature)then ! Input is temperature not theta
         current_state%global_grid%configuration%vertical%theta_force(:) =   &
            current_state%global_grid%configuration%vertical%theta_force(:)* &

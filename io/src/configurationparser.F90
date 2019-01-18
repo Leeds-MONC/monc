@@ -8,7 +8,8 @@ module configuration_parser_mod
        c_free, c_size, c_put_integer, c_put_string, c_add_generic, c_add_string
   use conversions_mod, only : conv_to_integer
   use logging_mod, only : LOG_WARN, LOG_ERROR, log_log
-  use optionsdatabase_mod, only : options_has_key, options_get_logical, options_get_integer, options_get_string, options_get_real
+  use optionsdatabase_mod, only : options_has_key, options_get_logical, options_get_integer, options_get_string, options_get_real, &
+                                  options_get_array_size
   use io_server_client_mod, only : ARRAY_FIELD_TYPE, SCALAR_FIELD_TYPE, MAP_FIELD_TYPE, INTEGER_DATA_TYPE, BOOLEAN_DATA_TYPE, &
        STRING_DATA_TYPE, FLOAT_DATA_TYPE, DOUBLE_DATA_TYPE, definition_description_type, field_description_type
   use q_indices_mod, only : get_number_active_q_indices
@@ -113,6 +114,7 @@ module configuration_parser_mod
      type(map_type) :: monc_to_index, dimension_sizing
      type(hashmap_type) :: options_database
      real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: zn_field
+     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_field
      type(list_type) :: q_field_names
      logical :: general_info_set
      character, dimension(:), allocatable :: text_configuration
@@ -140,6 +142,10 @@ module configuration_parser_mod
   type(hashmap_type) :: options_database
   type(hashset_type) :: data_field_names
 
+  character(len=STRING_LENGTH), dimension(:), allocatable :: cond_request, diag_request, cond_long, diag_long
+  integer :: ncond, ndiag
+  
+
   public EQ_OPERATOR_TYPE, LT_OPERATOR_TYPE, GT_OPERATOR_TYPE, LTE_OPERATOR_TYPE, GTE_OPERATOR_TYPE, ADD_OPERATOR_TYPE, &
        SUBTRACT_OPERATOR_TYPE, MULTIPLY_OPERATOR_TYPE, DIV_OPERATOR_TYPE, MOD_OPERATOR_TYPE, DATA_SIZE_STRIDE, &
        TIME_AVERAGED_TYPE, INSTANTANEOUS_TYPE, NONE_TYPE, GROUP_TYPE, FIELD_TYPE, IO_STATE_TYPE, handle_recv_data_from_io_server, &
@@ -149,7 +155,9 @@ module configuration_parser_mod
        extend_registered_moncs_array, retrieve_data_definition, retrieve_monc_definition, extend_inter_io_comm_array, &
        build_definition_description_type_from_configuration, build_field_description_type_from_configuration, &
        get_number_field_dimensions, get_data_value_by_field_name, get_data_value_from_map_entry, get_monc_location, &
-       get_diagnostic_field_configuration, get_prognostic_field_configuration, get_io_xml
+       get_diagnostic_field_configuration, get_prognostic_field_configuration, get_io_xml, &
+       cond_request, diag_request, cond_long, diag_long, ncond, ndiag
+
 contains
 
   !> Reads in textual data from a file and returns this, used to read the IO server XML configuration file. Returned is a
@@ -255,6 +263,7 @@ contains
 
     call c_put_integer(building_config%dimension_sizing, "x", options_get_integer(provided_options_database, "x_size"))
     call c_put_integer(building_config%dimension_sizing, "y", options_get_integer(provided_options_database, "y_size"))
+
     dim_size=options_get_integer(provided_options_database, "z_size")
     call c_put_integer(building_config%dimension_sizing, "z", dim_size)
     call c_put_integer(building_config%dimension_sizing, "zn", dim_size)
@@ -262,6 +271,19 @@ contains
          options_get_integer(provided_options_database, "number_q_fields"))
     call c_put_integer(building_config%dimension_sizing, "number_options", c_size(provided_options_database))
     call c_put_integer(building_config%dimension_sizing, "active_q_indicies", get_number_active_q_indices())
+
+    !> Since the model appears to write each of the items in dimension_sizing as dimensions in every
+    !  netcdf file, only let these exist when the corresponding code is enabled.
+    if (options_get_logical(options_database, "conditional_diagnostics_column_enabled")) then
+      ncond = options_get_array_size(options_database, "cond_request")*2 
+      allocate(cond_request(ncond))
+      allocate(cond_long(ncond))
+      call c_put_integer(building_config%dimension_sizing, "nc", ncond)
+      ndiag = options_get_array_size(options_database, "diag_request")
+      allocate(diag_request(ndiag))
+      allocate(diag_long(ndiag))
+      call c_put_integer(building_config%dimension_sizing, "nd", ndiag)
+    end if 
   end subroutine add_in_dimensions  
   
   !> XML element start (opening) call back. This handles most of the configuration parsing

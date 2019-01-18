@@ -63,6 +63,7 @@
   <field name="tend_qs_damping_profile_total_local" type="array" data_type="double" optional=true/>
   <field name="tend_qg_damping_profile_total_local" type="array" data_type="double" optional=true/>
   <field name="tend_tabs_damping_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tke_damping_profile_total_local" type="array" data_type="double" optional=true/>
 
   <field name="tend_u_coriolis_profile_total_local" type="array" data_type="double" optional=true/>
   <field name="tend_v_coriolis_profile_total_local" type="array" data_type="double" optional=true/>
@@ -138,7 +139,10 @@
      <operator name="arithmetic" result="tend_tabs_pwa_mean" equation="tend_tabs_pwa_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_tabs_pwa_total_g" field="tend_tabs_pwadvection_profile_total_local" root="auto"/>
   </diagnostic>
-
+    <diagnostic field="tend_tke_dam_mean"  type="array" data_type="double" size="zn" units="m^2/s^3">
+  <operator name="arithmetic" result="tend_tke_dam_mean" equation="tend_tke_dam_total_g/({x_size}*{y_size})"/>
+  <communication name="reduction" operator="sum" result="tend_tke_dam_total_g" field="tend_tke_damping_profile_total_local" root="auto"/>
+  </diagnostic>
   <diagnostic field="tend_u_tvda_mean"  type="array" data_type="double" size="zn" units="m/s^2">
      <operator name="arithmetic" result="tend_u_tvda_mean" equation="tend_u_tvda_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_u_tvda_total_g" field="tend_u_tvdadvection_profile_total_local" root="auto"/>
@@ -431,6 +435,8 @@
   <member name="tend_qs_pwa_mean"/>
   <member name="tend_qg_pwa_mean"/>
   <member name="tend_tabs_pwa_mean"/>
+
+  <member name="tend_tke_dam_mean"/>
 
   <member name="tend_u_tvda_mean"/>
   <member name="tend_v_tvda_mean"/>

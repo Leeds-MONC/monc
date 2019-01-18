@@ -57,11 +57,6 @@ CASE (ip_solar)
   control%l_cloud_extinction     = .TRUE.
   control%l_ls_cloud_extinction  = .TRUE.
   control%l_cnv_cloud_extinction = .FALSE.
-  control%l_flux_direct_diag     = .FALSE.
-  control%l_flux_down_diag       = .FALSE.
-  control%l_flux_up_diag         = .FALSE.
-  control%l_flux_down_diag_surf  = .FALSE.
-  control%l_flux_down_clear_diag_surf = .FALSE.
 
 CASE (ip_infra_red)
   control%l_clear = .TRUE.

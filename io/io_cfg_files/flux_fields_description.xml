@@ -93,9 +93,38 @@
 	<field name="qt_qt_diffusion_local" type="array" data_type="double" optional=true/>
 	<field name="wqt_qt_local" type="array" data_type="double" optional=true/>
 	<field name="mflux_local" type="scalar" data_type="double" optional=true/>
+        <!-- Resolved tke diagnostics -->
+	<field name="resolved_pressure_transport_local" type="array" data_type="double" optional=true/>
+	<field name="resolved_shear_production_local" type="array" data_type="double" optional=true/>
+	<field name="resolved_turbulent_transport_local" type="array" data_type="double" optional=true/>
+	<field name="tke_tendency_local" type="array" data_type="double" optional=true/>
+	<field name="resolved_buoyant_production_local" type="array" data_type="double" optional=true/>
+        <!-- -->
 </data-definition>
 
 <data-handling namespace="flux_fields">
+        <!-- Resolved tke diagnostics -->
+        <diagnostic field="pressure_transport"  type="array" data_type="double" size="zn" units="SI">
+                 <operator name="arithmetic" result="pressure_transport" equation="resolved_pressure_transport_g/({x_size}*{y_size})"/>
+	         <communication name="reduction" operator="sum" result="resolved_pressure_transport_g" field="resolved_pressure_transport_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="tke_tendency"  type="array" data_type="double" size="zn" units="SI">
+	         <operator name="arithmetic" result="tke_tendency" equation="tke_tendency_g/({x_size}*{y_size})"/>
+	         <communication name="reduction" operator="sum" result="tke_tendency_g" field="tke_tendency_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="resolved_shear_production"  type="array" data_type="double" size="zn" units="SI">
+	         <operator name="arithmetic" result="resolved_shear_production" equation="resolved_shear_production_g/({x_size}*{y_size})"/>
+	         <communication name="reduction" operator="sum" result="resolved_shear_production_g" field="resolved_shear_production_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="resolved_turbulent_transport"  type="array" data_type="double" size="zn" units="SI">
+	        <operator name="arithmetic" result="resolved_turbulent_transport" equation="resolved_turbulent_transport_g/({x_size}*{y_size})"/>
+	        <communication name="reduction" operator="sum" result="resolved_turbulent_transport_g" field="resolved_turbulent_transport_local" root="auto"/>
+	</diagnostic>
+	<diagnostic field="resolved_buoyant_production"  type="array" data_type="double" size="zn" units="SI">
+	        <operator name="arithmetic" result="resolved_buoyant_production" equation="resolved_buoyant_production_g/({x_size}*{y_size})"/>
+	        <communication name="reduction" operator="sum" result="resolved_buoyant_production_g" field="resolved_buoyant_production_local" root="auto"/>
+	</diagnostic>
+        <!-- -->
 	<diagnostic field="heat_flux_transport"  type="array" data_type="double" size="zn" units="SI">
 		<operator name="arithmetic" result="heat_flux_transport" equation="heat_flux_transport_g/({x_size}*{y_size})"/>
 		<communication name="reduction" operator="sum" result="heat_flux_transport_g" field="heat_flux_transport_local" root="auto"/>
@@ -471,6 +500,13 @@
 </data-handling>
 
 <group name="flux_diagnostics" namespace="flux_fields">
+	 <!-- Resolved tke diagnostics -->
+        <member name="pressure_transport"/>
+	<member name="resolved_shear_production"/>
+	<member name="resolved_turbulent_transport"/>
+        <member name="resolved_buoyant_production"/>
+	<member name="tke_tendency"/>
+	 <!--  -->
 	<member name="heat_flux_transport"/>
 	<member name="heat_flux_gradient"/>
 	<member name="heat_flux_dissipation"/>

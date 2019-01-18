@@ -45,3 +45,6 @@ use lateral_bcs_mod, only : lateral_bcs_get_descriptor
 use casim_mod, only : casim_get_descriptor
 use casim_profile_dgs_mod, only: casim_profile_dgs_get_descriptor
 use socrates_couple_mod, only : socrates_couple_get_descriptor
+use conditional_diagnostics_column_mod, only : conditional_diagnostics_column_get_descriptor
+use conditional_diagnostics_whole_mod, only : conditional_diagnostics_whole_get_descriptor
+use pdf_analysis_mod, only : pdf_analysis_get_descriptor

@@ -1,0 +1,36 @@
+#!/bin/bash --login
+#PBS -N MONC
+#PBS -l select=2
+#PBS -l walltime=01:00:00
+#PBS -j oe
+#PBS -q normal
+
+##############################################################
+#### THIS IS AN EXAMPLE SCRIPT TO DEMONSTRATE HOW TO      ####
+#### SUBMIT A CHECKPOINT JOB WITH THE CONTINUATION SCRIPT ####
+#### Script assumes that there are directories called     ####
+#### monc_stdout , checkpoint_files and diagnostic_files  ####
+#### If these do not exist, MONC will fail                ####
+##############################################################
+
+# Make sure any symbolic links are resolved to absolute path 
+export PBS_O_WORKDIR=$(readlink -f $PBS_O_WORKDIR)
+
+# Change to the direcotry that the job was submitted from 
+cd $PBS_O_WORKDIR
+
+export SUBMISSION_SCRIPT_NAME=testcases/shallow_convection/submonc_scripts/bomex.pbs
+export MONC_EXEC=./build/bin/monc_driver.exe
+
+export TESTCASE=testcases/shallow_convection/bomex.mcf
+export STDOUT_DIR=monc_stdout
+export CP_DIR=checkpoint_files
+export RUN_NAME=bomex_dump_
+export NPES=np
+export MAX_CONTINUATION_RUNS=200
+
+ulimit -c unlimited
+
+. misc/continuation.sh
+
+run_monc
