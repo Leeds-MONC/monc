@@ -108,7 +108,13 @@ module casim_mod
   REAL(wp), allocatable :: AccumInsolNumber(:,:,:)                      ! Accum mode dust number
   REAL(wp), allocatable :: ActiveSolNumber(:,:,:)                      ! Activated soluble number (if we need a tracer)
   REAL(wp), allocatable :: ActiveInsolNumber(:,:,:)                      ! Activated insoluble number (if we need a tracer)
-
+  !!AH - these are dummy arrays to accommodate the hygroscopicity from
+  !!     UKCA-MODE. At present these are only required so that the shipway_microphysics
+  !!     argument list matches between the UM and MONC interface. These may become non-dummy 
+  !!     arguments in the future
+  REAL(wp), allocatable :: AitkenSolBk(:,:,:)
+  REAL(wp), allocatable :: AccumSolBk(:,:,:) 
+  REAL(wp), allocatable :: CoarseSolBk(:,:,:)
 
   ! Tendency from other physics/advection/forcing
   ! NB This is tendency (/s) not an increment over the timestep
@@ -289,6 +295,10 @@ contains
     allocate(AccumInsolNumber(kte,1,1))
     allocate(ActiveSolNumber(kte,1,1))
     allocate(ActiveInsolNumber(kte,1,1))
+    ! allocate the hygoscopicity arrays
+    allocate(AitkenSolBk(kte,1,1))
+    allocate(AccumSolBk(kte,1,1))
+    allocate(CoarseSolBk(kte,1,1))
 
     allocate(dth(kte,1,1))
     allocate(dqv(kte,1,1))
@@ -547,6 +557,9 @@ contains
     dActiveSolNumber = 0.0
     ActiveInsolNumber = 0.0
     dActiveInsolNumber = 0.0
+    AitkenSolBk = 0.0
+    AccumSolBk = 0.0 
+    CoarseSolBk = 0.0
 
     theta(:,1,1) = current_state%zth%data(:, jcol, icol) + current_state%global_grid%configuration%vertical%thref(:)
     dth(:,1,1) = current_state%sth%data(:, jcol, icol)
@@ -692,6 +705,9 @@ contains
        AccumInsolNumber,                           &
        ActiveSolNumber,                            &
        ActiveInsolNumber,                          &
+       AitkenSolBk,                                &
+       AccumSolBk,                                 & 
+       CoarseSolBk,                                &
        exner,                                      &
        pressure, rho,                              &
        w, tke,                                     &

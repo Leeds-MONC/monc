@@ -32,14 +32,14 @@ module subgrid_profile_diagnostics_mod
        ! subgrid tke fluxes
        sed_tot,ssub_tot, dissipation_tot,buoysg_tot, wkesg_tot,  &
        theta_dis_tot, vis_coef_tot, diff_coef_tot,               &
-       richardson_number_tot, richardson_squared_tot, dis_tot,   &
+       richardson_number_tot, richardson_squared_tot,            &
        ! subgrid moisture fluxes
        wqv_sg_tot, wql_sg_tot, wqr_sg_tot, wqi_sg_tot,           &
        wqs_sg_tot, wqg_sg_tot
 ! These arrays should in due course be allocated conditionally,
 ! but let's just get it working first.
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable ::     &
-       dissipation, epsth, ssq, elamr_sq, richardson_number,     &
+       epsth, ssq, elamr_sq, richardson_number,     &
        subgrid_tke
   real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable ::   &
        subke_2d
@@ -148,9 +148,7 @@ contains
          ,   sed_tot(current_state%local_grid%size(Z_INDEX))  &
          ,   buoysg_tot(current_state%local_grid%size(Z_INDEX)) )
 
-!   Allocation of dissipation should in due course be made conditional.
-!   Check sonsistency of any changes with the deallocations later.
-    allocate(dissipation(current_state%local_grid%size(Z_INDEX)))
+!   Check consistency of any changes with the deallocations later.
     allocate(ssq(current_state%local_grid%size(Z_INDEX)))
     allocate(elamr_sq(current_state%local_grid%size(Z_INDEX)))
     allocate(richardson_number(current_state%local_grid%size(Z_INDEX)))
@@ -664,7 +662,7 @@ contains
                   current_state%vis_coefficient%data(k, jcol, icol) )
           end if
           if (l_lem_dissipation_rate) then
-             dissipation = ssq(k) * ( &
+             dissipation_rate = ssq(k) * ( &
                   current_state%vis_coefficient%data(k, jcol, icol) - &
                   richardson_number(k) * &
                   current_state%diff_coefficient%data(k, jcol, icol) )
