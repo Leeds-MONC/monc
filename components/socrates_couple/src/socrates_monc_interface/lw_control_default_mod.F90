@@ -49,7 +49,7 @@ lw_control%l_gas          = .TRUE.
 lw_control%l_continuum    = .TRUE.
 lw_control%l_cloud        = .TRUE.
 lw_control%l_drop         = .TRUE.
-lw_control%l_ice          = .FALSE.
+lw_control%l_ice          = .TRUE.
 lw_control%l_aerosol      = .FALSE.
 lw_control%l_aerosol_ccn  = .FALSE.
 

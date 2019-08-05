@@ -52,7 +52,7 @@ sw_control%l_rayleigh     = .TRUE.
 sw_control%l_continuum    = .TRUE.
 sw_control%l_cloud        = .TRUE.
 sw_control%l_drop         = .TRUE.
-sw_control%l_ice          = .FALSE.
+sw_control%l_ice          = .TRUE.
 sw_control%l_aerosol      = .FALSE.
 sw_control%l_aerosol_ccn  = .FALSE.
 

@@ -127,7 +127,7 @@ hdmp=0.0
 decomposition_method = twodim
 
 # Checkpoint configuration
-checkpoint_freq=10
+checkpoint_frequency=10
 checkpoint_file="monc.nc"
 checkpoint_unique_per_dump=.false.
 
