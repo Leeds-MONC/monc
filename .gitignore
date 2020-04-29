@@ -10,3 +10,4 @@ preprocess/
 *.nc
 *.autogen
 __pycache__/
+.pytest_cache/
