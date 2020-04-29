@@ -52,7 +52,7 @@ install:
   # change to where Travis has checked out our repository
   - cd $TRAVIS_BUILD_DIR
   - ls
-  - fcm make -f fcm-make/monc-ubuntu-14.04-gnu.cfg
+  - fcm make -f fcm-make/monc-ubuntu-16.04-gnu.cfg
 
 script:
   - pytest
