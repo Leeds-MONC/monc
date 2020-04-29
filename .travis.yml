@@ -9,7 +9,7 @@ before_install:
   # install pytest for running tests
   - sudo apt-get install -y python-logilab-common
   # Install HDF5 compiled for parallel use
-  - sudo apt-get install -y libhdf5-mpich2-dev
+  - sudo apt-get install -y libhdf5-mpich-dev
   # Install GNU m4:
   - sudo apt-get install -y m4
 
