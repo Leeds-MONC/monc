@@ -34,6 +34,7 @@ dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, 
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
+diagnostic_file="diagnostic_files/diagnostics.nc"
 moncs_per_io_server=3
 sampling_frequency=4
 3d_sampling_frequency=20
