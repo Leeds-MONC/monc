@@ -19,3 +19,25 @@ is the Met Office Large Eddy Model (LEM) and the development involved the
 complete re-write of the Met Office LEM using modern software design with
 a flexible plug 'n play component based architecture with a focus on high
 performance computing (HPC) scaling and efficiency.  '
+
+
+# Keeping in sync with the Met Office Science Repository (MOSRS)
+
+MOSRS uses SVN which can be used from git using `git svn`. The way this is done
+is to set up a `svn-remote` (pointing to a specific SVN path, for example
+`trunk`) and then fetching this content. Each commit on the MOSRS SVN will then
+have an corresponding git commit. Adding and accessing `trunk` from MOSRS can
+be done with the following commands:
+
+```bash
+export LOCAL_NAME="mosrs-trunk"
+git config --add svn-remote.${LOCAL_NAME}.url https://code.metoffice.gov.uk/svn/monc/main/trunk
+git config --add svn-remote.${LOCAL_NAME}.fetch :refs/remotes/mosrs/trunk
+git svn fetch ${LOCAL_NAME}
+git checkout remotes/mosrs/trunk -b ${LOCAL_NAME}
+unset LOCAL_NAME
+```
+
+You will need a user account for MOSRS to be able to run this command. Once
+done the entire history of `trunk` on MOSRS will then be available on the git
+branch called `mosrs-trunk`, which can then be merged into the current branch.
