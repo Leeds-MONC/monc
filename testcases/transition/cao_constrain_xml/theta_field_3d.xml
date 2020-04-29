@@ -1,0 +1,8 @@
+<data-definition name="theta_field_data" frequency="{3d_sampling_frequency}">
+  <field name="theta" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+ </data-definition>
+
+<group name="theta_field">
+  <member name="theta"/>
+ </group>
+

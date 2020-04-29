@@ -508,10 +508,11 @@ contains
          (current_state%global_grid%configuration%vertical%zlogth- 2.*log(&
          (1.+sqrt(1.+gammah*von_karman_constant*current_state%fbuoy*(current_state%global_grid%configuration%vertical%zn(2)+z0)&
          /ustr**3))/ (1.+sqrt(1.+gammah*von_karman_constant*current_state%fbuoy*z0th/ustr**3))))
-    if (current_state%th%active) th%data(1, current_y_index, current_x_index)=th%data(2, current_y_index, current_x_index)+&
-       current_state%surface_temperature_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
-         current_state%diff_coefficient%data(1, current_y_index, current_x_index)
-
+    if (current_state%th%active) th%data(1, current_y_index, current_x_index)= &
+         (current_state%surface_temperature_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
+         current_state%diff_coefficient%data(1, current_y_index, current_x_index))+th%data(2, current_y_index, current_x_index)-& 
+         current_state%global_grid%configuration%vertical%thref(1)+& 
+         current_state%global_grid%configuration%vertical%thref(2)
 
     ! Surface Flux of vapour
     if (current_state%number_q_fields .gt. 0) then
@@ -563,9 +564,11 @@ contains
     current_state%diff_coefficient%data(1, current_y_index, current_x_index)=&
          current_state%vis_coefficient%data(1, current_y_index, current_x_index)*&
          current_state%global_grid%configuration%vertical%zlogm/(alphah*current_state%global_grid%configuration%vertical%zlogth)
-    if (current_state%th%active) th%data(1, current_y_index, current_x_index)=th%data(2, current_y_index, current_x_index)+&
-         current_state%surface_temperature_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
-         current_state%diff_coefficient%data(1, current_y_index, current_x_index)
+    if (current_state%th%active) th%data(1, current_y_index, current_x_index)=  &
+         (current_state%surface_temperature_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
+         current_state%diff_coefficient%data(1, current_y_index, current_x_index))+th%data(2, current_y_index, current_x_index)-& 
+         current_state%global_grid%configuration%vertical%thref(1)+& 
+         current_state%global_grid%configuration%vertical%thref(2)
 
     ! Flux of vapour
     if (current_state%number_q_fields .gt. 0) then
@@ -612,9 +615,12 @@ contains
            (current_state%global_grid%configuration%vertical%zlogm-betam*current_state%global_grid%configuration%vertical%zn(2)*&
            von_karman_constant*current_state%fbuoy/ustr**3)/(alphah*current_state%global_grid%configuration%vertical%zlogth-betah*&
            von_karman_constant*current_state%fbuoy* (current_state%global_grid%configuration%vertical%zn(2)+ z0-z0th)/ustr**3)
-      if (current_state%th%active) th%data(1, current_y_index, current_x_index)=th%data(2, current_y_index, current_x_index)+&
-           current_state%surface_temperature_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
-           current_state%diff_coefficient%data(1, current_y_index, current_x_index)
+      if (current_state%th%active) th%data(1, current_y_index, current_x_index)= &
+           (current_state%surface_temperature_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
+           current_state%diff_coefficient%data(1, current_y_index, current_x_index))+th%data(2, current_y_index, current_x_index)-& 
+           current_state%global_grid%configuration%vertical%thref(1)+& 
+           current_state%global_grid%configuration%vertical%thref(2)
+
 
       !Flux of vapour
       if (current_state%number_q_fields .gt. 0) then
@@ -758,7 +764,7 @@ contains
 
     if (mostbc .ne. CONVERGENCE_SUCCESS) then
       if (mostbc .eq. CONVERGENCE_RICHARDSON_TOO_LARGE) then
-        call log_log(LOG_WARN, "Richardson number greater than critical value")
+        !call log_log(LOG_WARN, "Richardson number greater than critical value")
       else if(mostbc .eq. CONVERGENCE_FAILURE) then
         call log_log(LOG_ERROR, "Convergence failure after 200 iterations")
       end if

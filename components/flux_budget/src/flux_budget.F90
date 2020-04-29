@@ -9,7 +9,7 @@ module flux_budget_mod
   use registry_mod, only : get_component_field_value, get_component_field_information, is_component_field_available
   use grids_mod, only : local_grid_type, global_grid_type, X_INDEX, Y_INDEX, Z_INDEX
   use state_mod, only : model_state_type
-
+  use science_constants_mod, only: G, ratio_mol_wts
   implicit none
 
 #ifndef TEST_MODE
@@ -27,15 +27,16 @@ module flux_budget_mod
        w_mse_advection, w_mse_viscosity_diffusion, w_mse_buoyancy, ww_mse, mse_mse, smse_mse, mse_mse_advection, &
        mse_mse_diffusion, wmse_mse, us_qt, u_qt_advection, u_qt_viscosity_diffusion, wu_qt, vs_qt, v_qt_advection, &
        v_qt_viscosity_diffusion, wv_qt, w_qt, ws_qt, w_qt_advection, w_qt_viscosity_diffusion, w_qt_buoyancy, &
-       ww_qt, qt_qt, sqt_qt, qt_qt_advection, qt_qt_diffusion, wqt_qt
+       ww_qt, qt_qt, sqt_qt, qt_qt_advection, qt_qt_diffusion, wqt_qt, sres, wke, buoy, wp, tend
   real(kind=DEFAULT_PRECISION) :: mflux, wmfcrit
   real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: q_flux_values, q_gradient, q_diff, q_buoyancy, q_tendency
   type(hashmap_type) :: heat_flux_fields, q_flux_fields, uw_vw_fields, prognostic_budget_fields, thetal_fields, mse_fields, &
-       qt_fields, scalar_fields
+       qt_fields, scalar_fields, tke_fields
 
   logical :: some_theta_flux_diagnostics_enabled, some_q_flux_diagnostics_enabled, some_uw_vw_diagnostics_enabled, &
        some_prognostic_budget_diagnostics_enabled, some_thetal_diagnostics_enabled, some_mse_diagnostics_enabled, &
-       some_qt_diagnostics_enabled
+       some_qt_diagnostics_enabled, some_tke_diagnostics_enabled
+       
   integer :: diagnostic_generation_frequency
 
   public flux_budget_get_descriptor
@@ -57,8 +58,9 @@ contains
     flux_budget_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     flux_budget_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
     call populate_field_names()
-    total_number_published_fields=c_size(heat_flux_fields)+c_size(q_flux_fields)+c_size(uw_vw_fields)+&
-         c_size(prognostic_budget_fields)+c_size(thetal_fields)+c_size(mse_fields)+c_size(qt_fields)+c_size(scalar_fields)
+    total_number_published_fields=c_size(heat_flux_fields) + c_size(q_flux_fields) + c_size(uw_vw_fields) +       &
+                                  c_size(prognostic_budget_fields) + c_size(thetal_fields) + c_size(mse_fields) + &
+                                  c_size(qt_fields) + c_size(scalar_fields) + c_size(tke_fields)
     allocate(flux_budget_get_descriptor%published_fields(total_number_published_fields))
 
     current_index=1
@@ -79,7 +81,13 @@ contains
       mapentry=c_next_mapentry(iterator)
       flux_budget_get_descriptor%published_fields(current_index)=mapentry%key
       current_index=current_index+1
-    end do  
+    end do 
+    iterator=c_get_iterator(tke_fields)
+    do while (c_has_next(iterator))
+      mapentry=c_next_mapentry(iterator)
+      flux_budget_get_descriptor%published_fields(current_index)=mapentry%key
+      current_index=current_index+1
+    end do 
     iterator=c_get_iterator(prognostic_budget_fields)
     do while (c_has_next(iterator))
       mapentry=c_next_mapentry(iterator)
@@ -125,6 +133,7 @@ contains
     call initialise_mse_diagnostics(current_state)
     call initialise_qt_diagnostics(current_state)
     call initialise_scalar_diagnostics(current_state)
+    call initialise_tke_diagnostics(current_state)
     diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
   end subroutine initialisation_callback
 
@@ -142,6 +151,7 @@ contains
         if (some_thetal_diagnostics_enabled) call clear_thetal()
         if (some_mse_diagnostics_enabled) call clear_mse()
         if (some_qt_diagnostics_enabled) call clear_qt()
+        if (some_tke_diagnostics_enabled) call clear_tke()
         call clear_scalars()
       end if
       if (.not. current_state%halo_column) then
@@ -152,6 +162,7 @@ contains
         if (some_thetal_diagnostics_enabled) call compute_thetal_for_column(current_state)
         if (some_mse_diagnostics_enabled) call compute_mse_for_column(current_state)
         if (some_qt_diagnostics_enabled) call compute_qt_for_column(current_state)
+        if (some_tke_diagnostics_enabled) call compute_tke_for_column(current_state)
         call compute_scalars_for_column(current_state)
       end if
     end if
@@ -183,7 +194,13 @@ contains
     if (allocated(vw_tendency)) deallocate(vw_tendency)
     if (allocated(uw_w)) deallocate(uw_w)
     if (allocated(vw_w)) deallocate(vw_w)
-    
+
+    if (allocated(sres)) deallocate(sres)
+    if (allocated(buoy)) deallocate(buoy)
+    if (allocated(wke)) deallocate(wke)
+    if (allocated(wp)) deallocate(wp)
+    if (allocated(tend)) deallocate(tend)
+
     if (allocated(tu_su)) deallocate(tu_su)
     if (allocated(uu_advection)) deallocate(uu_advection)
     if (allocated(uu_viscosity)) deallocate(uu_viscosity)
@@ -275,6 +292,12 @@ contains
     call set_published_field_enabled_state(q_flux_fields, "q_flux_dissipation_local", .false.)
     call set_published_field_enabled_state(q_flux_fields, "q_flux_buoyancy_local", .false.)
     call set_published_field_enabled_state(q_flux_fields, "q_flux_tendency_local", .false.)
+
+    call set_published_field_enabled_state(tke_fields, "resolved_shear_production_local", .false.)
+    call set_published_field_enabled_state(tke_fields, "resolved_buoyant_production_local", .false.)
+    call set_published_field_enabled_state(tke_fields, "resolved_turbulent_transport_local", .false.)
+    call set_published_field_enabled_state(tke_fields, "resolved_pressure_transport_local", .false.)
+    call set_published_field_enabled_state(tke_fields, "tke_tendency_local", .false.)
 
     call set_published_field_enabled_state(uw_vw_fields, "uw_advection_local", .false.)
     call set_published_field_enabled_state(uw_vw_fields, "vw_advection_local", .false.)
@@ -381,7 +404,8 @@ contains
     field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
 
     if (is_field_heat_flux(name) .or. is_field_uw_vw(name) .or. is_field_prognostic_budget(name) &
-         .or. is_field_thetal(name) .or. is_field_mse(name) .or. is_field_qt(name) .or. is_field_scalar(name)) then
+        .or. is_field_thetal(name) .or. is_field_mse(name) .or. is_field_qt(name) .or. is_field_scalar(name) &
+        .or. is_field_tke_flux(name)) then
       field_information%number_dimensions=1
       field_information%dimension_sizes(1)=current_state%local_grid%size(Z_INDEX)      
       if (is_field_heat_flux(name)) then
@@ -392,6 +416,8 @@ contains
         field_information%enabled=get_published_field_enabled_state(prognostic_budget_fields, name)
       else if (is_field_thetal(name)) then
         field_information%enabled=get_published_field_enabled_state(thetal_fields, name)
+      else if (is_field_tke_flux(name)) then
+        field_information%enabled=get_published_field_enabled_state(tke_fields, name)
       else if (is_field_mse(name)) then
         field_information%enabled=get_published_field_enabled_state(mse_fields, name)
       else if (is_field_qt(name)) then
@@ -937,9 +963,9 @@ contains
     uw_w_term_enabled=current_state%w%active .and. current_state%u%active
     vw_w_term_enabled=current_state%w%active .and. current_state%v%active
 
-    some_uw_vw_diagnostics_enabled=uw_buoyancy_term_enabled .or. vw_buoyancy_term_enabled .or. uw_w_term_enabled .or. &
-         vw_w_term_enabled .or. uw_advection_term_enabled .or. vw_advection_term_enabled .or. uw_viscosity_term_enabled .or. &
-         vw_viscosity_term_enabled
+    some_uw_vw_diagnostics_enabled=uw_buoyancy_term_enabled .or. vw_buoyancy_term_enabled .or. uw_w_term_enabled &
+      .or. vw_w_term_enabled .or. uw_advection_term_enabled .or. vw_advection_term_enabled .or. uw_viscosity_term_enabled .or. &
+      vw_viscosity_term_enabled
 
     column_size=current_state%local_grid%size(Z_INDEX)
 
@@ -983,7 +1009,47 @@ contains
       call set_published_field_enabled_state(uw_vw_fields, "vw_w_local", .true.)
       allocate(vw_w(column_size))
     end if
-  end subroutine initialise_uw_vw_diagnostics    
+  end subroutine initialise_uw_vw_diagnostics 
+
+  !> Initialises the TKE diagnostics
+  !! @param current_state The current model state
+  subroutine initialise_TKE_diagnostics(current_state)
+    type(model_state_type), target, intent(inout) :: current_state
+    integer :: column_size
+    logical :: sres_enabled, wp_enabled, wke_enabled, buoy_enabled, tend_enabled 
+
+    column_size=current_state%local_grid%size(Z_INDEX)
+
+    sres_enabled=current_state%u%active .and. current_state%v%active
+    wke_enabled=current_state%w%active
+    buoy_enabled=current_state%w%active
+    wp_enabled=current_state%w%active
+    tend_enabled=current_state%w%active
+
+    some_tke_diagnostics_enabled=wp_enabled .or. sres_enabled .or. wke_enabled .or. buoy_enabled .or. tend_enabled
+
+    if (wp_enabled) then
+      call set_published_field_enabled_state(tke_fields, "resolved_pressure_transport_local", .true.) 
+      allocate(wp(column_size))
+    end if
+    if (tend_enabled) then
+      call set_published_field_enabled_state(tke_fields, "tke_tendency_local", .true.) 
+      allocate(tend(column_size))
+    end if
+    if (sres_enabled) then
+      call set_published_field_enabled_state(tke_fields, "resolved_shear_production_local", .true.) 
+      allocate(sres(column_size))
+    end if
+    if (wke_enabled) then
+      call set_published_field_enabled_state(tke_fields, "resolved_turbulent_transport_local", .true.) 
+      allocate(wke(column_size))
+    end if
+    if (buoy_enabled) then
+      call set_published_field_enabled_state(tke_fields, "resolved_buoyant_production_local", .true.) 
+      allocate(buoy(column_size))
+    end if
+    
+  end subroutine initialise_TKE_diagnostics   
 
   !> Initialises the Q field flux diagnostic areas and enabled flags depending upon the configuration of the model
   !! @param current_state The current model state
@@ -1585,6 +1651,14 @@ contains
     if (allocated(uw_w)) uw_w=0.0_DEFAULT_PRECISION
     if (allocated(vw_w)) vw_w=0.0_DEFAULT_PRECISION    
   end subroutine clear_uw_vw
+  !> Clears the TKE diagnostics
+  subroutine clear_TKE()
+    if (allocated(sres)) sres=0.0_DEFAULT_PRECISION
+    if (allocated(wke)) wke=0.0_DEFAULT_PRECISION
+    if (allocated(wp)) wp=0.0_DEFAULT_PRECISION
+    if (allocated(buoy)) buoy=0.0_DEFAULT_PRECISION
+    if (allocated(tend)) tend=0.0_DEFAULT_PRECISION
+  end subroutine clear_TKE
 
   !> Computes the uw uv diagnostics for a specific column
   !! @param current_state Current model state
@@ -1679,6 +1753,229 @@ contains
     if (allocated(w_viscosity%real_1d_array)) deallocate(w_viscosity%real_1d_array)
     if (allocated(w_buoyancy%real_1d_array)) deallocate(w_buoyancy%real_1d_array)
   end subroutine compute_uw_vw_for_column
+     
+
+  !> Computes the TKE diagnostics for a specific column. 
+  !! @param current_state The current model state
+  subroutine compute_TKE_for_column(current_state)
+  type(model_state_type), target, intent(inout) :: current_state
+
+    real(kind=DEFAULT_PRECISION), dimension(current_state%local_grid%size(Z_INDEX)) :: upr, vpr, uprm1, vprm1, &
+          uu_tendency,vv_tendency,ww_tendency
+    real(kind=DEFAULT_PRECISION), dimension(current_state%local_grid%size(Z_INDEX)) :: umean, wu_umean, vmean, wv_vmean, &
+          w_pprime_at_p, rke1, w_qvprime_at_w, w_qclprime_at_w, w_thprime_at_w, wq, rho, rec_rho, rhon, rec_rhon, &
+          uw_tot, vw_tot,w_upr_at_w,w_vpr_at_w, w_buoyancy
+    real(kind=DEFAULT_PRECISION) :: u_at_p, v_at_p, w_at_p
+    real(kind=DEFAULT_PRECISION) ::  C_virtual
+   
+    integer :: k, n
+
+    C_virtual = (ratio_mol_wts-1.0_DEFAULT_PRECISION)
+    
+    !Resolved diagnostics
+! ***********************Buoyant production 1/2 ***************************
+       
+    do k=1, current_state%local_grid%size(Z_INDEX)
+      rho(k)=current_state%global_grid%configuration%vertical%rho(k)
+      rhon(k)=current_state%global_grid%configuration%vertical%rhon(k)
+      rec_rho(k)=1.0_DEFAULT_PRECISION/rho(k)
+      rec_rhon(k)=1.0_DEFAULT_PRECISION/rhon(k)
+    enddo
+
+   
+! ***********************TKE Tendency ***************************  
+
+    do k=2, current_state%local_grid%size(Z_INDEX)
+
+      uu_tendency(k) = ((current_state%u%data(k,current_state%column_local_y,current_state%column_local_x) - &
+                         current_state%global_grid%configuration%vertical%olubar(k) )**2 - &
+                        (current_state%zu%data(k,current_state%column_local_y,current_state%column_local_x) - &
+                         current_state%global_grid%configuration%vertical%olzubar(k) )**2 ) / &
+                        current_state%dtm
+                        
+      vv_tendency(k) = ((current_state%v%data(k,current_state%column_local_y,current_state%column_local_x) - &
+                         current_state%global_grid%configuration%vertical%olvbar(k) )**2 - &
+                        (current_state%zv%data(k,current_state%column_local_y,current_state%column_local_x) - &
+                         current_state%global_grid%configuration%vertical%olzvbar(k) )**2 ) / &
+                        current_state%dtm                        
+
+      ww_tendency(k) = (current_state%w%data(k,current_state%column_local_y,current_state%column_local_x) * &
+                        current_state%w%data(k,current_state%column_local_y,current_state%column_local_x) - &
+                        current_state%zw%data(k,current_state%column_local_y,current_state%column_local_x) * &
+                        current_state%zw%data(k,current_state%column_local_y,current_state%column_local_x)) / &
+                        current_state%dtm
+
+    enddo
+
+    uu_tendency(1) = -uu_tendency(2)
+    vv_tendency(1) = -vv_tendency(2)
+    
+    if (allocated(tend)) then
+      do k=2, current_state%local_grid%size(Z_INDEX)-1
+        tend(k)=tend(k) + 0.5_DEFAULT_PRECISION * (& 
+          0.5_DEFAULT_PRECISION * (uu_tendency(k)+uu_tendency(k+1)) + &
+          0.5_DEFAULT_PRECISION * (vv_tendency(k)+vv_tendency(k+1)) + &
+          ww_tendency(k) )
+      enddo
+    end if
+        
+! ***********************Shear production ***************************
+
+    do k=2, current_state%local_grid%size(Z_INDEX)-1
+
+      umean(k)=(current_state%global_grid%configuration%vertical%olubar(k+1) -&
+                current_state%global_grid%configuration%vertical%olubar(k))* &
+                current_state%global_grid%configuration%vertical%rdzn(k+1)
+
+      w_upr_at_w(k) =current_state%w%data(k,current_state%column_local_y,current_state%column_local_x) * &
+          (0.25_DEFAULT_PRECISION * ( &
+          (current_state%u%data(k,current_state%column_local_y,current_state%column_local_x-1)  - &
+           current_state%global_grid%configuration%vertical%olubar(k)) + &
+          (current_state%u%data(k+1,current_state%column_local_y,current_state%column_local_x)  - &
+           current_state%global_grid%configuration%vertical%olubar(k+1)) + &
+          (current_state%u%data(k,current_state%column_local_y,current_state%column_local_x)    - &
+           current_state%global_grid%configuration%vertical%olubar(k)) + &
+          (current_state%u%data(k+1,current_state%column_local_y,current_state%column_local_x-1)- &
+           current_state%global_grid%configuration%vertical%olubar(k+1)) ) )
+
+      vmean(k)=(current_state%global_grid%configuration%vertical%olvbar(k+1) - &
+                current_state%global_grid%configuration%vertical%olvbar(k)) * &
+               current_state%global_grid%configuration%vertical%rdzn(k+1)
+
+      w_vpr_at_w(k) =current_state%w%data(k,current_state%column_local_y,current_state%column_local_x) * &
+          (0.25_DEFAULT_PRECISION * ( &
+          (current_state%v%data(k,current_state%column_local_y-1,current_state%column_local_x)  - &
+           current_state%global_grid%configuration%vertical%olvbar(k)) + &
+          (current_state%v%data(k+1,current_state%column_local_y,current_state%column_local_x)  - &
+           current_state%global_grid%configuration%vertical%olvbar(k+1)) + &
+          (current_state%v%data(k,current_state%column_local_y,current_state%column_local_x)    - &
+           current_state%global_grid%configuration%vertical%olvbar(k)) + &
+          (current_state%v%data(k+1,current_state%column_local_y-1,current_state%column_local_x)- &
+           current_state%global_grid%configuration%vertical%olvbar(k+1)) ) )         
+
+      wu_umean(k)=(w_upr_at_w(k)*umean(k))
+      wv_vmean(k)= (w_vpr_at_w(k)*vmean(k))
+
+      if (allocated(sres)) then
+        sres(k)=sres(k) - (wv_vmean(k) + wu_umean(k))
+      end if
+  
+    end do
+    sres(1)=0.0_DEFAULT_PRECISION
+    sres(current_state%local_grid%size(Z_INDEX))=0.0_DEFAULT_PRECISION
+    
+    do k=2, current_state%local_grid%size(Z_INDEX)
+
+! *********************** Pressure transport ***************************	
+        !In current state - p=p/rho (rho here is on same levels as p)
+        ! Note - calculating on z levels (i.e. w) 
+        ! So need w'p' on p levels
+        
+      w_pprime_at_p(k) = 0.5 * & 
+         (current_state%w%data(k,  current_state%column_local_y,current_state%column_local_x) + &
+          current_state%w%data(k-1,current_state%column_local_y,current_state%column_local_x)) * &
+         (current_state%global_grid%configuration%vertical%rhon(k) * &
+          current_state%p%data(k,current_state%column_local_y,current_state%column_local_x))
+        
+      u_at_p = 0.5_DEFAULT_PRECISION * &
+          ((current_state%u%data(k,current_state%column_local_y,current_state%column_local_x-1)- &
+            current_state%global_grid%configuration%vertical%olubar(k)) + &
+           (current_state%u%data(k,current_state%column_local_y,current_state%column_local_x)  - &
+            current_state%global_grid%configuration%vertical%olubar(k))) 
+   
+      v_at_p = 0.5_DEFAULT_PRECISION * &
+          ((current_state%v%data(k,current_state%column_local_y-1,current_state%column_local_x)- &
+            current_state%global_grid%configuration%vertical%olvbar(k)) + &
+           (current_state%v%data(k,current_state%column_local_y,current_state%column_local_x)  - &
+            current_state%global_grid%configuration%vertical%olvbar(k)))
+
+      w_at_p = 0.5_DEFAULT_PRECISION  * &
+          (current_state%w%data(k,  current_state%column_local_y,current_state%column_local_x) + &
+           current_state%w%data(k-1,current_state%column_local_y,current_state%column_local_x))
+   
+      rke1(k)= 0.5_DEFAULT_PRECISION * w_at_p * &
+          ( u_at_p*u_at_p + v_at_p*v_at_p + w_at_p*w_at_p) * rec_rhon(k)
+
+    end do
+           
+    w_pprime_at_p(current_state%local_grid%size(Z_INDEX)) = 0.0_DEFAULT_PRECISION 
+    ! Zero gradient at surface     
+    w_pprime_at_p(1)=w_pprime_at_p(2)
+    if (allocated(wp)) then
+      do k=1, current_state%local_grid%size(Z_INDEX)-1
+        wp(k)= wp(k) - ((w_pprime_at_p(k+1) - w_pprime_at_p(k)) * &
+          current_state%global_grid%configuration%vertical%rdzn(k+1) * rec_rho(k))
+      end do
+    end if
+    
+    rke1(current_state%local_grid%size(Z_INDEX)) = 0.0_DEFAULT_PRECISION
+    ! Zero gradient at surface    
+    rke1(1)=rke1(2)
+    
+    if (allocated(wke)) then
+      do k=1, current_state%local_grid%size(Z_INDEX)-1
+        wke(k) = wke(k) -(rho(k) * (rke1(k+1) - rke1(k) ) * &
+          current_state%global_grid%configuration%vertical%rdzn(k+1))
+      end do
+    end if
+            
+! *********************** Subgrid buoyant production*************************** 
+!!!Using buoyancy.F90
+
+#ifdef W_ACTIVE
+    if (.not. current_state%passive_th .and. current_state%th%active) then
+      do k=2,current_state%local_grid%size(Z_INDEX)-1    
+        w_buoyancy(k)=(0.5_DEFAULT_PRECISION*current_state%global_grid%configuration%vertical%buoy_co(k)) * &
+             ((current_state%th%data(k, current_state%column_local_y, current_state%column_local_x) -       &
+               current_state%global_grid%configuration%vertical%olthbar(k)) +                               &
+              (current_state%th%data(k+1, current_state%column_local_y, current_state%column_local_x) -     &
+               current_state%global_grid%configuration%vertical%olthbar(k+1)))
+       end do
+    end if
+
+    if (.not. current_state%passive_q .and. current_state%number_q_fields .gt. 0) then
+      if (current_state%use_anelastic_equations) then                                                      
+        do n=1,current_state%number_q_fields
+          do k=2,current_state%local_grid%size(Z_INDEX)-1  
+            w_buoyancy(k) = w_buoyancy(k) + &       
+                 (0.5_DEFAULT_PRECISION*current_state%global_grid%configuration%vertical%buoy_co(k)) * &
+                 current_state%cq(n) * &
+                 (current_state%global_grid%configuration%vertical%thref(k)*&
+                  (current_state%q(n)%data(k, current_state%column_local_y, current_state%column_local_x) - &
+                   current_state%global_grid%configuration%vertical%olqbar(k,n)) + & 
+                  current_state%global_grid%configuration%vertical%thref(k+1) * &
+                  (current_state%q(n)%data(k+1, current_state%column_local_y, current_state%column_local_x) - &
+                   current_state%global_grid%configuration%vertical%olqbar(k+1,n)))
+          end do
+        end do
+      else                                                                     
+        do n=1,current_state%number_q_fields
+          do k=2,current_state%local_grid%size(Z_INDEX)-1
+            w_buoyancy(k) = w_buoyancy(k) + & 
+                  G*0.5_DEFAULT_PRECISION*current_state%cq(n)*&
+                  (current_state%q(n)%data(k, current_state%column_local_y, current_state%column_local_x) -&
+                   current_state%global_grid%configuration%vertical%olqbar(k,n) + & 
+                   current_state%q(n)%data(k+1, current_state%column_local_y, current_state%column_local_x)- &
+                   current_state%global_grid%configuration%vertical%olqbar(k,n))
+          end do
+        end do
+      end if
+    end if
+
+    do k=2, current_state%local_grid%size(Z_INDEX)-1
+      if (allocated(buoy)) then
+        buoy(k) = buoy(k) + &
+        current_state%w%data(k,current_state%column_local_y,current_state%column_local_x) * &
+        w_buoyancy(k)
+      end if
+    end do
+   
+#endif
+   
+    buoy(1) = 0.0_DEFAULT_PRECISION
+    buoy(current_state%local_grid%size(Z_INDEX)) = 0.0_DEFAULT_PRECISION
+    
+  end subroutine compute_TKE_for_column
 
   !> Clears the Q flux diagnostics, called at the start of a timestep
   subroutine clear_q_fluxes()
@@ -1835,6 +2132,15 @@ contains
 
     is_field_heat_flux=c_contains(heat_flux_fields, name)
   end function is_field_heat_flux
+  
+  !> Determines whether a specific published field is a TKE budget field
+  !! @param name The name of the field to check
+  !! @returns Whether the field name is a TKE budget field
+  logical function is_field_tke_flux(name)
+    character(len=*), intent(in) :: name
+
+    is_field_tke_flux=c_contains(tke_fields, name)
+  end function is_field_tke_flux
 
   !> Determines whether a specific published field is a q flux field
   !! @param name The name of the field to check
@@ -1948,6 +2254,16 @@ contains
       call set_published_field_value(field_value, real_1d_field=uw_w)
     else if (name .eq. "vw_w_local" .and. allocated(vw_w)) then
       call set_published_field_value(field_value, real_1d_field=vw_w)
+    else if (name .eq. "resolved_pressure_transport_local" .and. allocated(wp)) then
+      call set_published_field_value(field_value, real_1d_field=wp)
+    else if (name .eq. "tke_tendency_local" .and. allocated(tend)) then
+      call set_published_field_value(field_value, real_1d_field=tend)
+    else if (name .eq. "resolved_shear_production_local" .and. allocated(sres)) then
+      call set_published_field_value(field_value, real_1d_field=sres)
+    else if (name .eq. "resolved_turbulent_transport_local" .and. allocated(wke)) then
+      call set_published_field_value(field_value, real_1d_field=wke)
+    else if (name .eq. "resolved_buoyant_production_local" .and. allocated(buoy)) then
+      call set_published_field_value(field_value, real_1d_field=buoy)
     else if (name .eq. "tu_su_local" .and. allocated(tu_su)) then
       call set_published_field_value(field_value, real_1d_field=tu_su)
     else if (name .eq. "uu_advection_local" .and. allocated(uu_advection)) then

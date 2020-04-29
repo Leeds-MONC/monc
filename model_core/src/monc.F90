@@ -13,7 +13,7 @@ module monc_mod
   use logging_mod, only : LOG_INFO, LOG_WARN, LOG_ERROR, LOG_DEBUG, log_log, log_get_logging_level, log_set_logging_level, &
        log_master_log, initialise_logging
   use optionsdatabase_mod, only : load_command_line_into_options_database, options_get_integer, options_has_key, &
-       options_get_string, options_get_logical
+       options_get_string, options_get_logical, options_add
   use configuration_file_parser_mod, only : parse_configuration_file
   use configuration_checkpoint_netcdf_parser_mod, only : parse_configuration_checkpoint_netcdf
   use science_constants_mod, only : initialise_science_constants
@@ -76,6 +76,9 @@ contains
     
     call log_set_logging_level(options_get_integer(state%options_database, "logging"))
 
+    ! Check options_database for conflicts
+    !call perform_options_compatibility_checks(state%options_database)
+
     if (state%io_server_enabled) then
       call mpi_comm_size(MPI_COMM_WORLD, size, ierr)
       if (size==1) call log_log(LOG_ERROR, &
@@ -128,9 +131,31 @@ contains
       call mpi_barrier(MPI_COMM_WORLD) ! All other processes barrier here to ensure 0 displays the message before quit
       stop
     end if
+
     ! Reload command line arguments to override any stuff in the configuration files
     call load_command_line_into_options_database(options_database)
+
   end subroutine load_model_configuration 
+
+  !> Performs options_database compatibility checks.
+  !! @param options_database The options database
+  subroutine perform_options_compatibility_checks(options_database)
+    type(hashmap_type), intent(inout) :: options_database
+
+    !> If conditional diagnostics are operating, both components should be enabled.
+    if (is_present_and_true(options_database, "conditional_diagnostics_column_enabled") .NEQV. &
+        is_present_and_true(options_database, "conditional_diagnostics_whole_enabled")  ) then
+
+      if ( .not. is_present_and_true(options_database, "conditional_diagnostics_column_enabled")) &
+        call options_add(options_database, "conditional_diagnostics_column_enabled", .true.)
+      if ( .not. is_present_and_true(options_database, "conditional_diagnostics_whole_enabled")) &
+        call options_add(options_database, "conditional_diagnostics_whole_enabled", .true.)
+
+      call log_master_log(LOG_INFO, "Only one conditional_diagnostics component is enabled, but both are required to function.")
+      call log_master_log(LOG_INFO, "We assume you would like conditional_diagnostics enabled so have enabled the other, too.")
+    end if
+
+  end subroutine perform_options_compatibility_checks
 
   !> Called by MONC processes to run the MONC model
   !! @param componentDescriptions Descriptions of existing components which should be registered

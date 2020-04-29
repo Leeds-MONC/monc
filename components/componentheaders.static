@@ -6,7 +6,7 @@ use coriolis_mod, only : coriolis_get_descriptor
 use damping_mod, only : damping_get_descriptor
 use debugger_mod, only : debugger_get_descriptor
 use decomposition_mod, only : decomposition_get_descriptor
-use diagnostics_mod, only : diagnostics_get_descriptor
+use diagnostics_3d_mod, only : diagnostics_3d_get_descriptor
 use diffusion_mod, only : diffusion_get_descriptor
 use diverr_mod, only : diverr_get_descriptor
 use fftsolver_mod, only : fftsolver_get_descriptor
@@ -43,3 +43,8 @@ use viscosity_mod, only : viscosity_get_descriptor
 use lwrad_exponential_mod, only : lwrad_exponential_get_descriptor
 use lateral_bcs_mod, only : lateral_bcs_get_descriptor
 use casim_mod, only : casim_get_descriptor
+use casim_profile_dgs_mod, only: casim_profile_dgs_get_descriptor
+use socrates_couple_mod, only : socrates_couple_get_descriptor
+use conditional_diagnostics_column_mod, only : conditional_diagnostics_column_get_descriptor
+use conditional_diagnostics_whole_mod, only : conditional_diagnostics_whole_get_descriptor
+use pdf_analysis_mod, only : pdf_analysis_get_descriptor

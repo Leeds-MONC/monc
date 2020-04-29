@@ -18,7 +18,7 @@ module checkpointer_write_checkpoint_mod
        ZU_KEY, ZV_KEY, ZW_KEY, X_KEY, Y_KEY, Z_KEY, ZN_KEY, NQFIELDS, UGAL, VGAL, TIME_KEY, TIMESTEP, MAX_STRING_LENGTH, &
        CREATED_ATTRIBUTE_KEY, TITLE_ATTRIBUTE_KEY, ABSOLUTE_NEW_DTM_KEY, DTM_KEY, DTM_NEW_KEY, Q_INDICES_KEY, &
        Q_INDICES_DIM_KEY, X_RESOLUTION, Y_RESOLUTION,X_TOP, Y_TOP, X_BOTTOM, Y_BOTTOM, THREF, OLUBAR, OLZUBAR, OLVBAR, &
-       OLZVBAR, OLTHBAR, OLZTHBAR, OLQBAR, OLZQBAR, check_status
+       OLZVBAR, OLTHBAR, OLZTHBAR, OLQBAR, OLZQBAR, check_status, WUP, WDWN
   use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use q_indices_mod, only : q_metadata_type, get_max_number_q_indices, get_indices_descriptor, get_number_active_q_indices
   use mpi, only : MPI_INFO_NULL
@@ -84,6 +84,10 @@ contains
       call write_out_misc_variables(current_state, ncid, timestep_id, time_id, &
            ugal_id, vgal_id, number_q_fields_id, dtm_id, dtm_new_id, absolute_new_dtm_id)
     end if
+
+    !> writeout pdf fields in checkpoint file
+    call define_pdf_fields(current_state, ncid)
+    if (current_state%parallel%my_rank==0) call write_out_pdf_fields(ncid, current_state%global_grid)
 
     call check_status(nf90_close(ncid))
   end subroutine write_checkpoint_file
@@ -650,4 +654,37 @@ contains
     end if
     call check_status(nf90_put_att(ncid, field_id, "units", "m/s"))
   end subroutine define_velocity_variable
+
+  subroutine define_pdf_fields(current_state, ncid)
+    type(model_state_type), intent(inout) :: current_state
+    integer, intent(in) :: ncid
+
+    integer :: var_id, z_dim_id
+
+    call check_status(nf90_inq_dimid(ncid, Z_DIM_KEY, z_dim_id))
+
+    if (allocated(current_state%global_grid%configuration%vertical%w_up)) then
+      call check_status(nf90_def_var(ncid, WUP, NF90_DOUBLE, z_dim_id, var_id))
+    end if
+    if (allocated(current_state%global_grid%configuration%vertical%w_dwn)) then
+      call check_status(nf90_def_var(ncid, WDWN, NF90_DOUBLE, z_dim_id, var_id))
+    end if
+  end subroutine define_pdf_fields
+
+  subroutine write_out_pdf_fields(ncid, grid)
+    integer, intent(in) :: ncid
+    type(global_grid_type), intent(in) :: grid
+
+    integer :: var_id
+
+    if (allocated(grid%configuration%vertical%w_up)) then
+      call check_status(nf90_inq_varid(ncid, WUP, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%configuration%vertical%w_up))
+    end if
+    if (allocated(grid%configuration%vertical%w_dwn)) then
+      call check_status(nf90_inq_varid(ncid, WDWN, var_id))
+      call check_status(nf90_put_var(ncid, var_id, grid%configuration%vertical%w_dwn))
+    end if
+  end subroutine write_out_pdf_fields
+
 end module checkpointer_write_checkpoint_mod

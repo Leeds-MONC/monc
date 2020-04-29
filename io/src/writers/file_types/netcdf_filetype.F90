@@ -1,9 +1,10 @@
 !> The NetCDF file type writer which performs actual writing of NetCDF files to the parallel filesystem. These are opened by
 !! all IO servers and all IO servers can participate as variables might be located across the different IO processes
 module netcdf_filetype_writer_mod
-  use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
+  use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH, SINGLE_PRECISION, DOUBLE_PRECISION
   use configuration_parser_mod, only : INSTANTANEOUS_TYPE, TIME_AVERAGED_TYPE, io_configuration_type, &
-       data_values_type, get_data_value_by_field_name
+       data_values_type, get_data_value_by_field_name, &
+       cond_request, diag_request, cond_long, diag_long
   use collections_mod, only : hashmap_type, hashset_type, list_type, map_type, iterator_type, mapentry_type, &
        c_get_generic, c_get_integer, c_get_string, c_contains, c_generic_at, c_real_at, c_integer_at, c_put_generic, &
        c_put_integer, c_remove, c_free, c_has_next, c_get_iterator, c_next_mapentry, c_next_generic, c_get_real, c_size, &
@@ -26,8 +27,10 @@ module netcdf_filetype_writer_mod
   use mpi, only : MPI_INFO_NULL
   use mpi_communication_mod, only : lock_mpi, unlock_mpi, wait_for_mpi_request
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
+  use optionsdatabase_mod, only : options_size, options_value_at, options_key_at
   use netcdf_misc_mod, only : check_netcdf_status
   use mpi, only : MPI_STATUS_IGNORE, MPI_REQUEST_NULL, MPI_INT
+
   implicit none
 
 #ifndef TEST_MODE
@@ -36,6 +39,10 @@ module netcdf_filetype_writer_mod
 
   type(hashmap_type), volatile :: file_states
   integer, volatile :: file_states_rwlock, netcdf_mutex
+
+  logical :: l_nc_dim, l_nd_dim
+  integer :: nc_dim_id, nd_dim_id, nopt_dim_id
+  integer :: nc_var_id_s, nd_var_id_s, nc_var_id_l, nd_var_id_l, nopt_var_id
 
   public initialise_netcdf_filetype, finalise_netcdf_filetype, define_netcdf_file, write_variable, close_netcdf_file, &
        store_io_server_state, get_writer_entry_from_netcdf
@@ -71,6 +78,7 @@ contains
     type(netcdf_diagnostics_type), pointer :: ncdf_writer_state
     class(*), pointer :: generic
     integer :: zn_var_id
+    integer :: z_var_id
 
     ncdf_writer_state=>get_file_state(file_writer_information%filename, timestep, .true.)
     if (.not. associated(ncdf_writer_state)) then
@@ -102,13 +110,34 @@ contains
         call define_dimensions(ncdf_writer_state, io_configuration%dimension_sizing)
         call define_time_series_dimensions(ncdf_writer_state, file_writer_information, time, time_points, termination_write)
         call define_variables(io_configuration, ncdf_writer_state, file_writer_information)
-        zn_var_id=define_zn_variable(ncdf_writer_state)  
+        zn_var_id = define_coordinate_variable(ncdf_writer_state,"zn")  
+        z_var_id  = define_coordinate_variable(ncdf_writer_state,"z")
+        nopt_var_id = define_options_database_variable(ncdf_writer_state)
         call lock_mpi()
         call check_netcdf_status(nf90_enddef(ncdf_writer_state%ncid))
         call unlock_mpi()
-        call write_zn_variable(ncdf_writer_state, zn_var_id, io_configuration%zn_field)
+
+        !> Isolate these writes, as they may trip over one another
+        if (io_configuration%my_io_rank == 0) then
+          !> Write conditional diagnostics descriptors to file if file contains corresponding dimension.
+          if (l_nc_dim) then
+            call write_condition_variable(ncdf_writer_state, nc_var_id_s, cond_request)
+            call write_condition_variable(ncdf_writer_state, nc_var_id_l, cond_long)
+          end if
+          if (l_nd_dim) then
+            call write_condition_variable(ncdf_writer_state, nd_var_id_s, diag_request)
+            call write_condition_variable(ncdf_writer_state, nd_var_id_l, diag_long)
+          end if
+
+          !> Write options_database and height coordinates to all files.
+          call write_out_options(io_configuration, ncdf_writer_state)
+          call write_coordinate_variable(ncdf_writer_state, zn_var_id, io_configuration%zn_field)
+          call write_coordinate_variable(ncdf_writer_state, z_var_id,  io_configuration%z_field)
+        end if ! end write isolation
+
         call check_thread_status(forthread_mutex_unlock(ncdf_writer_state%mutex))        
         call check_thread_status(forthread_mutex_unlock(netcdf_mutex))
+ 
       else
         call check_thread_status(forthread_rwlock_unlock(file_states_rwlock))
       end if
@@ -273,22 +302,48 @@ contains
     get_dimension_original_size=c_get_integer(dimension_store, dim_name(:dash_idx))
   end function get_dimension_original_size  
 
-  !> Writes the ZN variable into the NetCDF file
+  !> Writes a coordinate variable into the NetCDF file
   !! @param file_state The NetCDF file state
-  !! @param zn_var_id The ZN variable id in the file
+  !! @param coord_var_id The coordinate variable id in the file
   !! @param field_values The field values to write
-  subroutine write_zn_variable(file_state, zn_var_id, field_values)
+  subroutine write_coordinate_variable(file_state, coord_var_id, field_values)
     type(netcdf_diagnostics_type), intent(inout) :: file_state
-    integer, intent(in) :: zn_var_id
+    integer, intent(in) :: coord_var_id
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: field_values
 
     integer :: count_to_write(1)
 
     count_to_write(1)=size(field_values)
     call lock_mpi()
-    call check_netcdf_status(nf90_put_var(file_state%ncid, zn_var_id, field_values, count=count_to_write))
+    call check_netcdf_status(nf90_put_var(file_state%ncid, coord_var_id, field_values, count=count_to_write))
     call unlock_mpi()
-  end subroutine write_zn_variable
+  end subroutine write_coordinate_variable
+
+  !> Writes the conditional diagnostic variable names into the NetCDF file
+  !! @param file_state The NetCDF file state
+  !! @param c_var_id The variable id in the file
+  !! @param field_values The field values to write
+  subroutine write_condition_variable(file_state, c_var_id, field_values)
+    type(netcdf_diagnostics_type), intent(inout) :: file_state
+    integer, intent(in) :: c_var_id 
+    character(len=STRING_LENGTH), dimension(:), intent(in) :: field_values
+
+    integer :: count_to_write(2), start_pos(2)
+    integer :: pos, string_size
+    character(len=STRING_LENGTH) :: dum_string
+
+    count_to_write(2)=1    ! element count
+    start_pos(1)=1         ! string character start position
+    call lock_mpi()
+    do pos=1,size(field_values)
+      dum_string = trim(field_values(pos))
+      count_to_write(1) = len(trim(field_values(pos)))
+      start_pos(2)=pos
+      call check_netcdf_status(nf90_put_var(file_state%ncid, c_var_id, dum_string, &
+                               start=start_pos, count=count_to_write))
+    end do
+    call unlock_mpi()
+  end subroutine write_condition_variable
 
   !> Writes contiguous collective variable blocks into the NetCDF files. These are blocks of data spanning multiple variables
   !! and multiple time points, the idea being to minimise the number of overall writes into the file. These variables are
@@ -743,6 +798,41 @@ contains
     deallocate(items_to_remove)
   end subroutine write_out_map
 
+  !> Writes out the options_database defining this model run.
+  !! @param io_configuration The configuration of the IO server
+  subroutine write_out_options(io_configuration, file_state)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    type(netcdf_diagnostics_type), intent(inout) :: file_state
+
+    integer :: i
+    character(len=STRING_LENGTH), pointer :: sized_raw_character
+    class(*), pointer :: raw_data, raw_to_string
+
+    call lock_mpi()
+    do i=1,options_size(io_configuration%options_database)
+      raw_data=> options_value_at(io_configuration%options_database, i)
+      raw_to_string=>raw_data
+      call check_netcdf_status(nf90_put_var(file_state%ncid, nopt_var_id, &
+           trim(options_key_at(io_configuration%options_database, i)), (/ 1, 1, i /)))
+      select type (raw_data)
+      type is(integer)
+        call check_netcdf_status(nf90_put_var(file_state%ncid, nopt_var_id, trim(conv_to_string(raw_data)), (/ 1, 2, i /)))
+      type is(real(kind=SINGLE_PRECISION))
+        call check_netcdf_status(nf90_put_var(file_state%ncid, nopt_var_id, trim(conv_to_string(raw_data)), (/ 1, 2, i /)))
+      type is(real(kind=DOUBLE_PRECISION))
+        call check_netcdf_status(nf90_put_var(file_state%ncid, nopt_var_id, trim(conv_to_string(raw_data)), (/ 1, 2, i /)))
+      type is(logical)
+        call check_netcdf_status(nf90_put_var(file_state%ncid, nopt_var_id, trim(conv_to_string(raw_data)), (/ 1, 2, i /)))
+      type is(character(len=*))
+        ! Done this way to give the character size information and keep the (unsafe) cast in the conversion module
+        sized_raw_character=>conv_to_string(raw_to_string, .false., STRING_LENGTH)
+        call check_netcdf_status(nf90_put_var(file_state%ncid, nopt_var_id, trim(sized_raw_character), (/ 1, 2, i /)))
+      end select
+    end do
+    call unlock_mpi()
+
+  end subroutine write_out_options
+
   !> Defines dimensions for all required dimensions. This is usually the number required plus one, but in some cases is entirely
   !! required depending how the output frequency and diagnostics write times match up
   !! @param file_state The state of the NetCDF file
@@ -826,20 +916,39 @@ contains
     end do
   end function get_number_timeseries_entries
 
-  !> Defines the ZN variable in the NetCDF file
+  !> Defines a coordinate variable in the NetCDF file
   !! @param file_state The NetCDF file state
-  !! @returns The resulting ZN variable id
-  integer function define_zn_variable(file_state)
+  !! @param coord_name The name of the coordinate
+  !! @returns The resulting coordinate variable id
+  integer function define_coordinate_variable(file_state, coord_name)
     type(netcdf_diagnostics_type), intent(inout) :: file_state
+    character(len=*), intent(in) :: coord_name
 
     integer :: field_id, dimension_ids(1)
 
-    dimension_ids(1)=c_get_integer(file_state%dimension_to_id, "zn")
+    dimension_ids(1)=c_get_integer(file_state%dimension_to_id, trim(coord_name))
     call lock_mpi()
-    call check_netcdf_status(nf90_def_var(file_state%ncid, "zn", NF90_DOUBLE, dimension_ids, field_id))
+    call check_netcdf_status(nf90_def_var(file_state%ncid, trim(coord_name), NF90_DOUBLE, dimension_ids, field_id))
     call unlock_mpi()
-    define_zn_variable=field_id
-  end function define_zn_variable  
+    define_coordinate_variable=field_id
+  end function define_coordinate_variable  
+
+  !> Defines the options_database variable in the NetCDF file
+  !! @param file_state The NetCDF file state
+  !! @returns The resulting options_database variable id
+  integer function define_options_database_variable(file_state)
+    type(netcdf_diagnostics_type), intent(inout) :: file_state
+
+    integer :: field_id, dimension_ids(3)
+
+    dimension_ids(1)=file_state%string_dim_id
+    dimension_ids(2)=file_state%key_value_dim_id
+    dimension_ids(3)=nopt_dim_id
+    call lock_mpi()
+    call check_netcdf_status(nf90_def_var(file_state%ncid, "options_database", NF90_CHAR, dimension_ids, field_id))
+    call unlock_mpi()
+    define_options_database_variable=field_id
+  end function define_options_database_variable
 
   !> Defines all variables in the file writer state
   !! @param file_state The NetCDF file state
@@ -856,6 +965,9 @@ contains
     class(*), pointer :: generic
     type(iterator_type) :: iterator
     type(mapentry_type) :: map_entry
+
+    l_nc_dim = .false.
+    l_nd_dim = .false.
 
     iterator=c_get_iterator(file_state%timeseries_dimension)
     do while (c_has_next(iterator))
@@ -892,9 +1004,18 @@ contains
           end if
         end do
         dimension_ids(j)=retrieve_time_series_dimension_id_for_field(file_state, file_writer_information, i)
+
+        !> Only enable writing of conditional diagnostics descriptor fields to this file if there is
+        !  a data field using its dimensions.
+        if (any(dimension_ids .eq. nc_dim_id) .or. any(dimension_ids .eq. nd_dim_id)) then
+          l_nc_dim = .true.
+          l_nd_dim = .true.
+        end if 
+
         call lock_mpi()
         call check_netcdf_status(nf90_def_var(file_state%ncid, variable_key, &
              data_type, dimension_ids, field_id))
+
         if (file_writer_information%contents(i)%collective_write .and. &
              file_writer_information%contents(i)%collective_contiguous_optimisation .and. &
              io_configuration%number_of_io_servers .gt. 1) then
@@ -926,7 +1047,35 @@ contains
         call unlock_mpi()
       end if
     end do
+
+    !> Provide conditional diagnostic descriptions if data being used in this file.
+    if (l_nc_dim) then
+      allocate(dimension_ids(2))
+      dimension_ids(1)=file_state%string_dim_id
+      dimension_ids(2)=nc_dim_id
+      call lock_mpi()
+      call check_netcdf_status(nf90_def_var(file_state%ncid, "conditions_fields_short", &
+             NF90_CHAR, dimension_ids, nc_var_id_s))
+      call check_netcdf_status(nf90_def_var(file_state%ncid, "conditions_fields_long", &
+             NF90_CHAR, dimension_ids, nc_var_id_l))
+      call unlock_mpi()
+      deallocate(dimension_ids)
+    end if
+    if (l_nd_dim) then
+      allocate(dimension_ids(2))
+      dimension_ids(1)=file_state%string_dim_id
+      dimension_ids(2)=nd_dim_id
+      call lock_mpi()
+      call check_netcdf_status(nf90_def_var(file_state%ncid, "diagnostics_fields_short", &
+             NF90_CHAR, dimension_ids, nd_var_id_s))
+      call check_netcdf_status(nf90_def_var(file_state%ncid, "diagnostics_fields_long", &
+             NF90_CHAR, dimension_ids, nd_var_id_l))
+      call unlock_mpi()
+      deallocate(dimension_ids)
+    end if
+
   end subroutine define_variables
+
 
   !> For a specific field will retrieve the NetCDF id of the time series dimension most appropriate for this field. If
   !! a dimension can not be located then an error is raised
@@ -995,6 +1144,7 @@ contains
     type(iterator_type) :: iterator
     type(mapentry_type) :: map_entry
 
+
     iterator=c_get_iterator(dimension_sizing)
     call lock_mpi()
     do while (c_has_next(iterator))
@@ -1003,6 +1153,15 @@ contains
       if (dim_length .gt. 0) then
         call check_netcdf_status(nf90_def_dim(file_state%ncid, map_entry%key, dim_length, ncdf_dimid))
         call c_put_integer(file_state%dimension_to_id, map_entry%key, ncdf_dimid)
+        if (map_entry%key == "nc") then
+          nc_dim_id=ncdf_dimid
+        end if
+        if (map_entry%key == "nd") then
+          nd_dim_id=ncdf_dimid
+        end if
+        if (map_entry%key == "number_options") then
+          nopt_dim_id=ncdf_dimid
+        end if
       end if
     end do
     call check_netcdf_status(nf90_def_dim(file_state%ncid, "string", STRING_LENGTH, file_state%string_dim_id))

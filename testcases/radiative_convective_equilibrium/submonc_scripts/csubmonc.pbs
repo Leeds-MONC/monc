@@ -1,0 +1,39 @@
+#!/bin/bash --login
+#PBS -N merge_dev
+#PBS -l select=1
+#PBS -l walltime=00:20:00
+#PBS -j oe
+#PBS -A paracon
+#PBS -q development
+
+
+##############################################################
+#### THIS IS AN EXAMPLE SCRIPT TO DEMONSTRATE HOW TO      ####
+#### SUBMIT A CHECKPOINT JOB WITH THE CONTINUATION SCRIPT ####
+#### Script assumes that there are directories called     ####
+#### monc_stdout , checkpoint_files and diagnostic_files  ####
+#### If these do not exist, MONC will fail                ####
+##############################################################
+
+# Make sure any symbolic links are resolved to absolute path 
+export PBS_O_WORKDIR=$(readlink -f $PBS_O_WORKDIR)
+
+# Change to the direcotry that the job was submitted from 
+cd $PBS_O_WORKDIR
+
+export SUBMISSION_SCRIPT_NAME=testcases/radiative_convective_equilibrium/submonc_scripts/csubmonc.pbs
+export MONC_EXEC=./build/bin/monc_driver.exe
+
+export TESTCASE=testcases/radiative_convective_equilibrium/paracon/RCE_merge.mcf
+export STDOUT_DIR=monc_stdout
+export CP_DIR=checkpoint_files
+export RUN_NAME=RCE_dump_
+export NPES=np
+export MAX_CONTINUATION_RUNS=10
+
+ulimit -c unlimited
+
+. misc/continuation.sh
+
+run_monc
+

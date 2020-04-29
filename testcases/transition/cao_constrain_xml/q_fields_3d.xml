@@ -1,0 +1,8 @@
+<data-definition name="q_fields_data" frequency="{sampling_frequency}">
+  <field name="q" type="array" data_type="double" size="z,y,x,qfields" collective=true optional=true/>
+ </data-definition>
+
+<group name="q_fields">
+  <member name="q"/>
+ </group>
+

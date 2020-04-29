@@ -1,0 +1,8 @@
+<data-definition name="t_field_data" frequency="{3d_sampling_frequency}">
+  <field name="temperature" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+ </data-definition>
+
+<group name="t_field">
+  <member name="temperature"/>
+ </group>
+

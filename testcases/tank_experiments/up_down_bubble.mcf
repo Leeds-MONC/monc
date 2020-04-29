@@ -37,24 +37,25 @@ advection_theta_field=tvd
 advection_q_fields=tvd
 
 # Control configuration
-display_synopsis_frequency=20
-termination_time=1800.
-dtm=0.1
+display_synopsis_frequency=100
+termination_time=3700.
+dtm=2.0
+
+# IO server configuration
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
+moncs_per_io_server=8
+sampling_frequency=20
+3d_sampling_frequency=300
+mm=600.0
+mm1=20.0
+diag_write_freq=3600.0
+
 
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="up_down_bubble_dump.nc"
-checkpoint_walltime_frequency=10
+check_walltime_frequency=100
 walltime_limit=00:30:00
-
-# IO server configuration
-ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
-moncs_per_io_server=11
-sampling_frequency=5
-3d_sampling_frequency=100
-mm=300.0
-mm1=10.0
-diag_write_freq=1800.0
 
 # iterative solver
 tolerance=1.e-5
@@ -64,14 +65,14 @@ include_top_level=.false.
 symm_prob=.false.
 
 # CFL configuration
-cfl_frequency=10
-cfl_cvismax=0.2
-cfl_cvelmax=0.2
-cfl_dtmmax=3.
-cfl_dtmmin=0.001
+cfl_frequency=1000
+cfl_cvismax=0.4
+cfl_cvelmax=0.4
+cfl_dtmmax=2.0
+cfl_dtmmin=0.1
 
 # Simple setup configuration
-thref0=298.7
+thref0=300.0
 surface_pressure=100000.
 surface_reference_pressure=100000.
 x_size=64
@@ -91,14 +92,14 @@ origional_vertical_grid_setup=.true.
 passive_th=.false.
 passive_q=.true.
 backscatter=.false.
-use_viscosity_and_diffusion=.false.
+use_viscosity_and_diffusion=.true.
 use_surface_fluxes=.false.
 use_time_varying_surface_values=.false.
 
 # Initialization of fields
 l_init_pl_theta=.true.
 z_init_pl_theta=0.0, 5000.
-f_init_pl_theta=298.7, 298.7
+f_init_pl_theta=300.0, 300.0
 l_init_pl_u=.false.
 l_init_pl_v=.false.
 l_init_pl_q=.false.

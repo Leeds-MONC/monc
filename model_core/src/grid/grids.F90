@@ -27,18 +27,20 @@ module grids_mod
   !> The configuration of the grid vertically
   type, public :: vertical_grid_configuration_type
      real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: &
-          z,&     !< Heights at w levels (m)
-          zn,&    !< Heights at pressure levels (m)
-          dz,&    !< Vertical spacing between K and K-1 w levels
-          dzn,&   !< Vertical spacing between K and K-1 p levels
-          rdz,&   !< Reciprocal of DZ
-          rdzn,&  !< Reciprocal of DZN
-          rho,&   !< Density at w levels (kg/m3)
-          rhon,&  !< Density at p levels (kg/m3)
-          thref,& !< Reference potential temperature (K)
+          z,&      !< Heights at w levels (m)
+          zn,&     !< Heights at pressure levels (m)
+          dz,&     !< Vertical spacing between K and K-1 w levels
+          dzn,&    !< Vertical spacing between K and K-1 p levels
+          rdz,&    !< Reciprocal of DZ
+          rdzn,&   !< Reciprocal of DZN
+          rho,&    !< Density at w levels (kg/m3)
+          rhon,&   !< Density at p levels (kg/m3)
+          thref,&  !< Reference potential temperature (K)
           dthref,& !< Gradient of thref (K)
-          tref,&  !< Reference temperature (K)
-          theta_init,& !< Initial profile of theta
+          tref,&   !< Reference temperature (K)
+          theta_init,& !< Initial profile of potential temperature
+          temp_init,&  !< Initial profile of absolute temperature
+          rh_init, &   !< Initial profile of relative humidity
           u_init,&     !< Initial profile of u
           v_init,&     !< Initial profile of v
           prefn,& !< Reference pressure (Pa)
@@ -75,7 +77,9 @@ module grids_mod
           theta_force, & !<profile of forcing term for theta
           u_force, & !<profile of forcing term for u
           v_force, & !<profile of forcing term for v
-	  w_rand     !<profile of amplitude of w perturbations
+          w_up,    & !<profile of updraft threshold
+          w_dwn,   & !<profile of downdraft threshold
+          w_rand     !<profile of amplitude of w perturbations
 
 
 
@@ -83,7 +87,10 @@ module grids_mod
      real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: q_rand !< Initial profile of amplitude of q perturbations
      real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: q_force !< Profiles of forcing terms for q variables
 
-     real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: olqbar,olzqbar     
+     real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: olqbar,olzqbar
+    ! time varying forcing terms
+     real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: wsubs_time_vary 
+     
      real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: hgd
      real(kind=DEFAULT_PRECISION) :: czn, zlogm, zlogth, vk_on_zlogm
      integer, dimension(:), allocatable :: kgd

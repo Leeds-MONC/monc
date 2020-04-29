@@ -8,6 +8,8 @@ module simplesetup_mod
   use optionsdatabase_mod, only : options_get_integer, options_get_logical, options_get_real, &
        options_get_integer_array, options_get_real_array
   use q_indices_mod, only: get_q_index, standard_q_names
+  use registry_mod, only : is_component_enabled
+
   implicit none
 
 #ifndef TEST_MODE
@@ -89,6 +91,9 @@ contains
       current_state%liquid_water_mixing_ratio_index=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'simplesetup')
     end if
 
+    ! Set arrays for radiative heating rates - Note: this should be protected by a switch
+    call allocate_prognostic(current_state%sth_lw, alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID)
+    call allocate_prognostic(current_state%sth_sw, alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID) 
 
   end subroutine allocate_prognostics
 
@@ -118,7 +123,7 @@ contains
     type(model_state_type), intent(inout) :: current_state
     type(global_grid_type), intent(inout) :: specific_grid
 
-    integer, parameter :: KGD_SIZE=20
+    integer, parameter :: KGD_SIZE=200
     integer :: number_kgd, i, kgd(KGD_SIZE)
     real(kind=DEFAULT_PRECISION) :: hgd(KGD_SIZE)
 

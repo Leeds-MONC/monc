@@ -63,7 +63,12 @@ module checkpointer_common_mod
                                   OLQBAR="olqbar", &
                                   OLQBAR_ANONYMOUS_NAME="olqbar_qfield", &
                                   OLZQBAR="olzqbar", &
-                                  OLZQBAR_ANONYMOUS_NAME="olzqbar_qfield"
+                                  OLZQBAR_ANONYMOUS_NAME="olzqbar_qfield", &
+                                  RAD_LAST_TIME_KEY="rad_last_time", &
+                                  STH_LW_KEY="sth_lw", &
+                                  STH_SW_KEY="sth_sw", &
+                                  WUP='w_up', &
+                                  WDWN='w_dwn'
 
   integer, parameter :: MAX_STRING_LENGTH = 100   !< Maximum string length (stored size)
 

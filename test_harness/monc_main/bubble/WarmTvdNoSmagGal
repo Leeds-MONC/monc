@@ -1,0 +1,137 @@
+# Global configuration
+global_configuration=global_config
+
+# Override global component defaults
+cfltest_enabled=.true.
+checkpointer_enabled=.true.
+fftsolver_enabled=.true.
+iterativesolver_enabled=.false.
+pw_advection_enabled=.true.
+tvd_advection_enabled=.true.
+simplesetup_enabled=.true.
+smagorinsky_enabled=.false.
+lower_bc_enabled=.true.
+setfluxlook_enabled=.true. #This must be set to true if running with lower_bc
+viscosity_enabled=.true.
+diffusion_enabled=.true.
+simplecloud_enabled=.false.
+coriolis_enabled=.false.
+damping_enabled=.false.
+forcing_enabled=.false. 
+galilean_transformation=.false. # Needs debugging
+randomnoise_enabled=.false.
+mean_profiles_enabled=.true. #This must be set to true if running with damping
+th_advection_enabled=.true.
+iobridge_enabled=.true.
+scalar_diagnostics_enabled=.true.
+profile_diagnostics_enabled=.true.
+subgrid_profile_diagnostics_enabled=.false.
+flux_budget_enabled=.false.
+
+# Test case source code
+tank_experiments_enabled=.true.
+
+# Add bubble to initialisation
+initialisation_stage_ordering+=tank_experiments
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, tank_experiments, lwrad_exponential, simplecloud, casim,diverr, psrce, flux_budget, diagnostics, subgrid_profile_diagnostics, profile_diagnostics, scalar_diagnostics, stepfields
+
+# Decomposition configuration
+decomposition_method = onedim
+
+#Advection
+advection_flow_fields=tvd
+advection_theta_field=tvd
+advection_q_fields=tvd
+
+# Control configuration
+
+display_synopsis_frequency=100
+termination_time=3700.
+dtm=2.0
+nsmth=20
+
+# IO server configuration
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
+diagnostic_file="add_diagnostic_file"
+moncs_per_io_server=8
+sampling_frequency=20
+3d_sampling_frequency=300
+mm=600.0
+mm1=20.0
+diag_write_freq=3600.0
+
+
+# Checkpoint configuration
+checkpoint_frequency=0
+checkpoint_file="add_checkpoint_file"
+check_walltime_frequency=1
+walltime_limit=00:05:00
+
+# iterative solver
+tolerance=1.e-5
+max_iterations=500
+preconditioner_iterations=0
+include_top_level=.false.
+symm_prob=.false.
+
+# roughness length so the same as LEM
+z0=2.0e-4
+z0th=2.0e-4
+
+# CFL configuration
+cfl_frequency=1000
+cfl_cvismax=0.4
+cfl_cvelmax=0.4
+cfl_dtmmax=2.0
+cfl_dtmmin=0.1
+
+# Simple setup configuration
+thref0=300.0
+surface_pressure=100000.
+surface_reference_pressure=100000.
+x_size=64
+y_size=64
+z_size=81
+dxx=100
+dyy=100
+zztop=4000.0
+kgd=1,81
+hgd=0.0,4000.0
+
+enable_theta=.true.
+number_q_fields=0
+use_anelastic_equations=.false.
+origional_vertical_grid_setup=.true.
+passive_th=.false.
+passive_q=.true.
+backscatter=.false.
+use_viscosity_and_diffusion=.false.
+use_surface_fluxes=.false.
+use_time_varying_surface_values=.false.
+
+# Initialization of fields
+l_init_pl_theta=.true.
+z_init_pl_theta=0.0, 4000.
+f_init_pl_theta=300.0, 300.0
+l_init_pl_u=.false.
+l_init_pl_v=.false.
+l_init_pl_q=.false.
+  
+l_matchthref=.false.
+
+# Set up the tank
+
+l_bubbles=.true.
+l_splittank=.false.
+l_sources=.false.
+
+bubble_x_cen=3200.0
+bubble_y_cen=3200.0
+bubble_z_cen=1000.0
+bubble_x_rad=600.0
+bubble_y_rad=600.0
+bubble_z_rad=600.0
+bubble_th_pert=+0.1
+bubble_edge=0.25
+bubble_lrandom=.false.
+bubble_lmoist=.false.

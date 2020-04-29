@@ -14,7 +14,7 @@ module writer_federator_mod
   use collections_mod, only : queue_type, list_type, map_type, hashmap_type, hashset_type, iterator_type, mapentry_type, &
        c_contains, c_size, c_get_string, c_get_generic, c_get_integer, c_add_string, c_free, c_put_real, c_put_generic, &
        c_key_at, c_is_empty, c_remove, c_push_generic, c_pop_generic, c_real_at, c_get_real, c_get_iterator, &
-       c_has_next, c_next_mapentry, c_next_string, c_get_real, c_put_integer, c_add_generic
+       c_has_next, c_next_mapentry, c_next_string, c_get_real, c_put_integer, c_add_generic, c_add_string
   use conversions_mod, only : conv_to_string, conv_single_real_to_double, conv_to_integer, conv_to_real
   use io_server_client_mod, only : ARRAY_FIELD_TYPE
   use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_unlock, forthread_mutex_destroy, &
@@ -581,6 +581,7 @@ contains
 
     real :: value_to_test, largest_value_found
     integer :: num_matching
+    logical :: entry_beyond_this_write
     type(iterator_type) :: iterator
     type(mapentry_type) :: map_entry
     type(write_field_collective_values_type), pointer :: multi_monc_entries
@@ -588,6 +589,7 @@ contains
         
     num_matching=0
     largest_value_found=0.0
+    entry_beyond_this_write=.false.
     call check_thread_status(forthread_mutex_lock(specific_field%values_mutex))
     if (.not. c_is_empty(specific_field%values_to_write)) then
       iterator=c_get_iterator(specific_field%values_to_write)
@@ -602,6 +604,7 @@ contains
           end select
           if (c_size(multi_monc_entries%monc_values) .ne. io_configuration%number_of_moncs) cycle
         end if
+        if (value_to_test .gt. write_time) entry_beyond_this_write=.true.
         if (value_to_test .le. write_time .and. value_to_test .gt. previous_write_time) then        
           num_matching=num_matching+1
           if (largest_value_found .lt. value_to_test) largest_value_found=value_to_test
@@ -609,8 +612,8 @@ contains
       end do
     end if
 
-    if (num_matching .gt. 0 .and. specific_field%ready_to_write(largest_value_found, specific_field%output_frequency, write_time, &
-         specific_field%latest_timestep_values, timestep)) then
+    if (num_matching .gt. 0 .and. (specific_field%ready_to_write(largest_value_found, specific_field%output_frequency, write_time, &
+         specific_field%latest_timestep_values, timestep) .or. entry_beyond_this_write)) then
       if (.not. specific_field%collective_write .or. .not. specific_field%collective_contiguous_optimisation) then
         if (specific_field%issue_write) then
           call write_variable(io_configuration, specific_field, writer_entry%filename, timestep, write_time)
@@ -776,6 +779,42 @@ contains
     end if    
   end subroutine issue_actual_write
 
+  !> Cleans out old timepoints which are no longer going to be of any relavence to the file writing. This ensures that we
+  !! don't have lots of stale points that need to be processed and searched beyond but are themselves pointless
+  subroutine clean_time_points()
+    real :: time_entry
+    type(iterator_type) :: iterator
+    type(mapentry_type) :: map_entry
+    type(list_type) :: removed_entries
+    integer :: i
+    logical :: remove_timepoint
+
+    call check_thread_status(forthread_rwlock_rdlock(time_points_rwlock))
+    iterator=c_get_iterator(time_points)
+    do while (c_has_next(iterator))
+      map_entry=c_next_mapentry(iterator)
+      time_entry=real(c_get_real(map_entry))
+      remove_timepoint=.true.
+      do i=1, size(writer_entries)
+        if (writer_entries(i)%previous_write_time .le. time_entry) then
+          remove_timepoint=.false.
+          if (writer_entries(i)%write_on_terminate) then
+            !print *, "Ignore CTP ", time_entry, writer_entries(i)%previous_write_time
+          end if
+          exit
+        end if
+      end do
+      if (remove_timepoint) call c_add_string(removed_entries, map_entry%key)
+    end do
+    iterator=c_get_iterator(removed_entries)
+    do while (c_has_next(iterator))
+      call c_remove(time_points, c_next_string(iterator))
+    end do
+    call check_thread_status(forthread_rwlock_unlock(time_points_rwlock))
+    call c_free(removed_entries)
+  end subroutine clean_time_points
+
+
   !> Extracts the applicable time points from the overall map that lie within a specific range
   !! @param start_time The start time where values must be greater than
   !! @param end_time The end time where values must be equal or less than
@@ -882,6 +921,8 @@ contains
     writer_entry%previous_write_time=writer_entry%write_time
     writer_entry%previous_write_timestep=writer_entry%write_timestep
     writer_entry%defined_write_time=writer_entry%defined_write_time+writer_entry%write_time_frequency
+
+    call clean_time_points()
 
     if (writer_entry%contains_io_status_dump) then
       if (.not. terminated) then

@@ -45,7 +45,7 @@ diag_write_freq=600.0
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="kid_squall_dump.nc"
-checkpoint_walltime_frequency=10
+check_walltime_frequency=10
 walltime_limit=00:30:00
 
 # Simple setup configuration

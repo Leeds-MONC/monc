@@ -55,7 +55,7 @@ dtm=.25
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="straka_dump.nc"
-checkpoint_walltime_frequency=10
+check_walltime_frequency=10
 walltime_limit=00:30:00
 
 # iterative solver

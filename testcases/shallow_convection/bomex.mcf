@@ -25,22 +25,23 @@ flux_budget_enabled=.true.
 
 # Control configuration
 display_synopsis_frequency=100
-termination_time=21600.
+termination_time=21610.
 dtm=0.4
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
-moncs_per_io_server=11
-sampling_frequency=10
-3d_sampling_frequency=600
+diagnostic_file="diagnostic_files/bomex.nc"
+moncs_per_io_server=8
+sampling_frequency=20
+3d_sampling_frequency=4500
 mm=1800.0
 mm1=60.0
 diag_write_freq=7200.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
-checkpoint_file="bomex_dump.nc"
-checkpoint_walltime_frequency=10
+checkpoint_file="checkpoint_files/bomex_dump.nc"
+check_walltime_frequency=100
 walltime_limit=00:30:00
 
 # Advection choices
@@ -52,7 +53,7 @@ advection_q_fields=tvd
 cfl_frequency=10
 cfl_cvismax=0.4
 cfl_cvelmax=0.4
-cfl_dtmmax=1.0
+cfl_dtmmax=0.4
 cfl_dtmmin=0.001
 
 # Simple setup configuration
@@ -60,8 +61,8 @@ cfl_dtmmin=0.001
 thref0=298.7
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=66
-y_size=66
+x_size=64
+y_size=64
 z_size=76
 dxx=100
 dyy=100
@@ -70,7 +71,6 @@ kgd=1,76
 hgd=0.0,3000.0
 nsmth=80
 galilean_transformation=.true.
-
 
 enable_theta=.true.
 number_q_fields=2
@@ -110,6 +110,7 @@ z0th=0.0002
 
 # Coriolis
 fcoriol=0.0000376
+baroclinicity_use_geostrophic_shear=.true.
 geostrophic_wind_rate_of_change_in_x=0.0018
 geostrophic_wind_rate_of_change_in_y=0.0
 surface_geostrophic_wind_x=-10.
@@ -139,6 +140,7 @@ l_constant_forcing_v=.false.
 
 # Unit options are K/s or K/day
 units_theta_force=K/day
+l_constant_forcing_theta_z2pressure=.true.
 z_force_pl_theta=0.0, 1500.0, 2500.0, 3000.
 f_force_pl_theta=-2.0, -2.0, 0.0, 0.0
 

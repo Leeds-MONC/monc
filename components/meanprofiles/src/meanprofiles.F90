@@ -48,7 +48,6 @@ contains
       allocate(current_state%global_grid%configuration%vertical%olubar(current_state%local_grid%size(Z_INDEX)),&
            current_state%global_grid%configuration%vertical%olzubar(current_state%local_grid%size(Z_INDEX)))
     end if
-    allocate(current_state%global_grid%configuration%vertical%savolubar(current_state%local_grid%size(Z_INDEX)))
     bar_fields=bar_fields+2
 #endif
 #ifdef V_ACTIVE
@@ -56,7 +55,6 @@ contains
       allocate(current_state%global_grid%configuration%vertical%olvbar(current_state%local_grid%size(Z_INDEX)),&
            current_state%global_grid%configuration%vertical%olzvbar(current_state%local_grid%size(Z_INDEX)))
     end if
-    allocate(current_state%global_grid%configuration%vertical%savolvbar(current_state%local_grid%size(Z_INDEX)))
     bar_fields=bar_fields+2
 #endif
     if (current_state%th%active) then
@@ -85,10 +83,8 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    current_state%global_grid%configuration%vertical%savolubar=current_state%global_grid%configuration%vertical%olubar
-    current_state%global_grid%configuration%vertical%savolvbar=current_state%global_grid%configuration%vertical%olvbar
-
     call calculate_mean_profiles(current_state)
+    
   end subroutine timestep_callback
 
   !> Frees up the temporary data for the bars

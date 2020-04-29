@@ -1,0 +1,19 @@
+<io-configuration>
+	<server-configuration>
+		<thread_pool number=100/>
+	</server-configuration>
+
+#include "io/io_cfg_files/tendency_profile_fields.xml"
+#include "io/io_cfg_files/tendency_3d_fields.xml"
+#include "io/io_cfg_files/checkpoint.xml"
+#include "io/io_cfg_files/grid.xml"
+
+<data-writing>
+  <file name="diagnostic_files/diagnostics_tendency_ts.nc" write_time_frequency="{diag_write_freq}" title="All tendency diagnostic values">
+    <include group="tendency_profile_timeseries" time_manipulation="averaged" output_frequency="{mm}"/>
+    <include group="tendency_3d_fields" time_manipulation="instantaneous" output_frequency="{mm}"/>i
+    <include group="grid_fields" time_manipulation="instantaneous" output_frequency="{mm}"/>
+  </file>
+</data-writing>
+
+</io-configuration>

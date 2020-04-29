@@ -1,8 +1,10 @@
 !> Computes the viscosity dynamics for the U,V,W source terms
 module viscosity_mod
   use datadefn_mod, only : DEFAULT_PRECISION
-  use monc_component_mod, only : COMPONENT_ARRAY_FIELD_TYPE, COMPONENT_DOUBLE_DATA_TYPE, component_descriptor_type, &
-       component_field_value_type, component_field_information_type
+  use monc_component_mod, only : COMPONENT_ARRAY_FIELD_TYPE, &
+      COMPONENT_DOUBLE_DATA_TYPE, component_descriptor_type, &
+      component_field_value_type, component_field_information_type
+  use optionsdatabase_mod, only : options_get_integer
   use state_mod, only : FORWARD_STEPPING, model_state_type
   use prognostics_mod, only : prognostic_field_type
   use grids_mod, only : Z_INDEX, X_INDEX, Y_INDEX
@@ -11,6 +13,7 @@ module viscosity_mod
        copy_buffer_to_corner
   use registry_mod, only : is_component_enabled
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_master_log
+
   implicit none
 
 #ifndef TEST_MODE
@@ -18,6 +21,18 @@ module viscosity_mod
 #endif
 
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: u_viscosity, v_viscosity, w_viscosity
+
+  ! Local tendency diagnostic variables for this component
+  ! 3D tendency fields and logicals for their use
+  real(kind=DEFAULT_PRECISION), dimension(:,:,:), allocatable ::     &
+       tend_3d_u, tend_3d_v, tend_3d_w
+  logical :: l_tend_3d_u, l_tend_3d_v, l_tend_3d_w
+  ! Local mean tendency profile fields and logicals for their use
+  real(kind=DEFAULT_PRECISION), dimension(:), allocatable ::         &
+       tend_pr_tot_u, tend_pr_tot_v, tend_pr_tot_w
+  logical :: l_tend_pr_tot_u, l_tend_pr_tot_v, l_tend_pr_tot_w
+
+  integer :: diagnostic_generation_frequency
 
   public viscosity_get_descriptor
 
@@ -34,10 +49,20 @@ contains
 
     viscosity_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     viscosity_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
-    allocate(viscosity_get_descriptor%published_fields(3))
+    allocate(viscosity_get_descriptor%published_fields(3+3+3))
+
     viscosity_get_descriptor%published_fields(1)="u_viscosity"
     viscosity_get_descriptor%published_fields(2)="v_viscosity"
     viscosity_get_descriptor%published_fields(3)="w_viscosity"
+
+    viscosity_get_descriptor%published_fields(3+1)= "tend_u_viscosity_3d_local"
+    viscosity_get_descriptor%published_fields(3+2)= "tend_v_viscosity_3d_local"
+    viscosity_get_descriptor%published_fields(3+3)= "tend_w_viscosity_3d_local"
+
+    viscosity_get_descriptor%published_fields(3+3+1)= "tend_u_viscosity_profile_total_local"
+    viscosity_get_descriptor%published_fields(3+3+2)= "tend_v_viscosity_profile_total_local"
+    viscosity_get_descriptor%published_fields(3+3+3)= "tend_w_viscosity_profile_total_local"
+
   end function viscosity_get_descriptor
 
   !> Field information retrieval callback, this returns information for a specific components published field
@@ -48,6 +73,7 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
     character(len=*), intent(in) :: name
     type(component_field_information_type), intent(out) :: field_information
+    integer :: strcomp
 
     ! Field description is the same regardless of the specific field being retrieved
     field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
@@ -55,7 +81,51 @@ contains
     field_information%number_dimensions=1
     field_information%dimension_sizes(1)=current_state%local_grid%size(Z_INDEX)
     field_information%enabled=.true.
+
+    ! Field information for 3d
+    strcomp=INDEX(name, "viscosity_3d_local")
+    if (strcomp .ne. 0) then
+      field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
+      field_information%number_dimensions=3
+      field_information%dimension_sizes(1)=current_state%local_grid%size(Z_INDEX)
+      field_information%dimension_sizes(2)=current_state%local_grid%size(Y_INDEX)
+      field_information%dimension_sizes(3)=current_state%local_grid%size(X_INDEX)
+      field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
+
+      if      (name .eq. "tend_u_viscosity_3d_local") then
+        field_information%enabled=l_tend_3d_u
+      else if (name .eq. "tend_v_viscosity_3d_local") then
+        field_information%enabled=l_tend_3d_v
+      else if (name .eq. "tend_w_viscosity_3d_local") then
+        field_information%enabled=l_tend_3d_w
+      else
+        field_information%enabled=.true.
+      end if
+
+    end if !end 3d check
+
+    ! Field information for profiles
+    strcomp=INDEX(name, "viscosity_profile_total_local")
+    if (strcomp .ne. 0) then
+      field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
+      field_information%number_dimensions=1
+      field_information%dimension_sizes(1)=current_state%local_grid%size(Z_INDEX)
+      field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
+
+      if      (name .eq. "tend_u_viscosity_profile_total_local") then
+        field_information%enabled=l_tend_pr_tot_u
+      else if (name .eq. "tend_v_viscosity_profile_total_local") then
+        field_information%enabled=l_tend_pr_tot_v
+      else if (name .eq. "tend_w_viscosity_profile_total_local") then
+        field_information%enabled=l_tend_pr_tot_w
+      else
+        field_information%enabled=.true.
+      end if
+
+    end if !end profile check
+
   end subroutine field_information_retrieval_callback
+
 
   !> Field value retrieval callback, this returns the value of a specific published field
   !! @param current_state Current model state
@@ -72,7 +142,25 @@ contains
       allocate(field_value%real_1d_array(size(v_viscosity)), source=v_viscosity)
     else if (name .eq. "w_viscosity") then
       allocate(field_value%real_1d_array(size(w_viscosity)), source=w_viscosity)
+
+    ! 3d Tendency Fields
+    else if (name .eq. "tend_u_viscosity_3d_local" .and. allocated(tend_3d_u)) then
+      call set_published_field_value(field_value, real_3d_field=tend_3d_u)
+    else if (name .eq. "tend_v_viscosity_3d_local" .and. allocated(tend_3d_v)) then
+      call set_published_field_value(field_value, real_3d_field=tend_3d_v)
+    else if (name .eq. "tend_w_viscosity_3d_local" .and. allocated(tend_3d_w)) then
+      call set_published_field_value(field_value, real_3d_field=tend_3d_w)
+
+    ! Profile Tendency Fields
+    else if (name .eq. "tend_u_viscosity_profile_total_local" .and. allocated(tend_pr_tot_u)) then
+      call set_published_field_value(field_value, real_1d_field=tend_pr_tot_u)
+    else if (name .eq. "tend_v_viscosity_profile_total_local" .and. allocated(tend_pr_tot_v)) then
+      call set_published_field_value(field_value, real_1d_field=tend_pr_tot_v)
+    else if (name .eq. "tend_w_viscosity_profile_total_local" .and. allocated(tend_pr_tot_w)) then
+      call set_published_field_value(field_value, real_1d_field=tend_pr_tot_w)
     end if
+
+
   end subroutine field_value_retrieval_callback
 
   !> Sets up the stencil_mod (used in interpolation) and allocates data for the flux fields
@@ -89,7 +177,47 @@ contains
 
     z_size=current_state%global_grid%size(Z_INDEX)
     allocate(u_viscosity(z_size), v_viscosity(z_size), w_viscosity(z_size))
-   
+
+    ! Tendency Logicals
+    l_tend_pr_tot_u   = current_state%u%active 
+    l_tend_pr_tot_v   = current_state%v%active
+    l_tend_pr_tot_w   = current_state%w%active
+
+    l_tend_3d_u   = current_state%u%active .or. l_tend_pr_tot_u
+    l_tend_3d_v   = current_state%v%active .or. l_tend_pr_tot_v
+    l_tend_3d_w   = current_state%w%active .or. l_tend_pr_tot_w
+
+    ! Allocate 3d tendency fields upon availability
+    if (l_tend_3d_u) then
+      allocate( tend_3d_u(current_state%local_grid%size(Z_INDEX),  &
+                          current_state%local_grid%size(Y_INDEX),  &
+                          current_state%local_grid%size(X_INDEX)   )    )
+    endif
+    if (l_tend_3d_v) then
+      allocate( tend_3d_v(current_state%local_grid%size(Z_INDEX),  &
+                          current_state%local_grid%size(Y_INDEX),  &
+                          current_state%local_grid%size(X_INDEX)   )    )
+    endif
+    if (l_tend_3d_w) then
+      allocate( tend_3d_w(current_state%local_grid%size(Z_INDEX),  &
+                          current_state%local_grid%size(Y_INDEX),  &
+                          current_state%local_grid%size(X_INDEX)   )    )
+    endif
+
+    ! Allocate profile tendency fields upon availability
+    if (l_tend_pr_tot_u) then
+      allocate( tend_pr_tot_u(current_state%local_grid%size(Z_INDEX)) )
+    endif
+    if (l_tend_pr_tot_v) then
+      allocate( tend_pr_tot_v(current_state%local_grid%size(Z_INDEX)) )
+    endif
+    if (l_tend_pr_tot_w) then
+      allocate( tend_pr_tot_w(current_state%local_grid%size(Z_INDEX)) )
+    endif
+
+    ! Save the sampling_frequency to force diagnostic calculation on select time steps
+    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
+
   end subroutine initialisation_callback
 
   subroutine finalisation_callback(current_state)
@@ -98,6 +226,15 @@ contains
     if (allocated(u_viscosity)) deallocate(u_viscosity)
     if (allocated(v_viscosity)) deallocate(v_viscosity)
     if (allocated(w_viscosity)) deallocate(w_viscosity)
+
+    if (allocated(tend_3d_u)) deallocate(tend_3d_u)
+    if (allocated(tend_3d_v)) deallocate(tend_3d_v)
+    if (allocated(tend_3d_w)) deallocate(tend_3d_w)
+
+    if (allocated(tend_pr_tot_u)) deallocate(tend_pr_tot_u)
+    if (allocated(tend_pr_tot_v)) deallocate(tend_pr_tot_v)
+    if (allocated(tend_pr_tot_w)) deallocate(tend_pr_tot_w)
+
   end subroutine finalisation_callback  
 
   !> At each timestep will compute the viscosity U,V,W source terms
@@ -105,19 +242,40 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    integer :: local_y, locaL_x, k
+    integer :: local_y, locaL_x, k, target_x_index, target_y_index
     real(kind=DEFAULT_PRECISION), dimension(current_state%local_grid%size(Z_INDEX)) :: tau12, tau12_ym1, tau12m1, &
          tau11, tau22, tau22_yp1, tau33, tau23_ym1, tau11p1, tau13, tau13m1, tau23
 
+    local_y=current_state%column_local_y
+    local_x=current_state%column_local_x
+    target_y_index=local_y-current_state%local_grid%halo_size(Y_INDEX)
+    target_x_index=local_x-current_state%local_grid%halo_size(X_INDEX)
+
+    ! Zero profile tendency totals on first instance in the sum
+    if (current_state%first_timestep_column) then
+      if (l_tend_pr_tot_u) then
+        tend_pr_tot_u(:)= 0.0_DEFAULT_PRECISION
+      endif
+      if (l_tend_pr_tot_v) then
+        tend_pr_tot_v(:)= 0.0_DEFAULT_PRECISION
+      endif
+      if (l_tend_pr_tot_w) then
+        tend_pr_tot_w(:)= 0.0_DEFAULT_PRECISION
+      endif
+    endif  ! zero totals
+
     if (.not. current_state%use_viscosity_and_diffusion .or. current_state%halo_column) return
+
     if (current_state%viscosity_halo_swap_state%swap_in_progress) then
       ! If there is a viscosity halo swap in progress then complete it
       call complete_nonblocking_halo_swap(current_state, current_state%viscosity_halo_swap_state, &
            perform_local_data_copy_for_vis, copy_halo_buffer_to_vis, copy_halo_buffer_to_vis_corners)
     end if
 
-    local_y=current_state%column_local_y
-    local_x=current_state%column_local_x
+    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
+      call save_precomponent_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
+    end if
+
     if (current_state%field_stepping == FORWARD_STEPPING) then
       call calculate_tau(current_state, local_y, local_x, current_state%u, current_state%v, current_state%w, tau12, tau12_ym1, &
            tau12m1, tau11, tau22, tau22_yp1, tau33, tau11p1, tau13, tau13m1, tau23, tau23_ym1)
@@ -127,6 +285,11 @@ contains
     end if
     call calculate_viscous_sources(current_state, local_y, local_x, tau12, tau12_ym1, tau12m1, tau11, tau22, tau22_yp1, tau33, &
          tau11p1, tau13, tau13m1, tau23, tau23_ym1)
+
+    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
+      call compute_component_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
+    end if
+
   end subroutine timestep_callback
 
   !> Calculates the viscous sources based upon TAU for the U,V and W fields
@@ -397,4 +560,84 @@ contains
 
     current_page(neighbour_location)=current_page(neighbour_location)+1
   end subroutine copy_halo_buffer_to_vis_corners  
+
+   !> Save the 3d tendencies coming into the component.
+  !! @param current_state Current model state
+  !! @param cxn The current slice, x, index
+  !! @param cyn The current column, y, index.
+  !! @param txn target_x_index
+  !! @param tyn target_y_index
+  subroutine save_precomponent_tendencies(current_state, cxn, cyn, txn, tyn)
+    type(model_state_type), target, intent(in) :: current_state
+    integer, intent(in) ::  cxn, cyn, txn, tyn
+
+    ! Save 3d tendency fields upon request (of 3d or profiles) and availability
+    if (l_tend_3d_u) then
+      tend_3d_u(:,tyn,txn)=current_state%su%data(:,cyn,cxn)
+    endif
+    if (l_tend_3d_v) then
+      tend_3d_v(:,tyn,txn)=current_state%sv%data(:,cyn,cxn)
+    endif
+    if (l_tend_3d_w) then
+      tend_3d_w(:,tyn,txn)=current_state%sw%data(:,cyn,cxn)
+    endif
+
+  end subroutine save_precomponent_tendencies
+
+
+   !> Computation of component tendencies
+  !! @param current_state Current model state
+  !! @param cxn The current slice, x, index
+  !! @param cyn The current column, y, index.
+  !! @param txn target_x_index
+  !! @param tyn target_y_index
+  subroutine compute_component_tendencies(current_state, cxn, cyn, txn, tyn)
+    type(model_state_type), target, intent(inout) :: current_state
+    integer, intent(in) ::  cxn, cyn, txn, tyn
+
+    ! Calculate change in tendency due to component
+    if (l_tend_3d_u) then
+      tend_3d_u(:,tyn,txn)=current_state%su%data(:,cyn,cxn) - tend_3d_u(:,tyn,txn)
+    endif
+    if (l_tend_3d_v) then
+      tend_3d_v(:,tyn,txn)=current_state%sv%data(:,cyn,cxn) - tend_3d_v(:,tyn,txn)
+    endif
+    if (l_tend_3d_w) then
+      tend_3d_w(:,tyn,txn)=current_state%sw%data(:,cyn,cxn) - tend_3d_w(:,tyn,txn)
+    endif
+
+   ! Add local tendency fields to the profile total
+    if (l_tend_pr_tot_u) then
+      tend_pr_tot_u(:)=tend_pr_tot_u(:) + tend_3d_u(:,tyn,txn)
+    endif
+    if (l_tend_pr_tot_v) then
+      tend_pr_tot_v(:)=tend_pr_tot_v(:) + tend_3d_v(:,tyn,txn)
+    endif
+    if (l_tend_pr_tot_w) then
+      tend_pr_tot_w(:)=tend_pr_tot_w(:) + tend_3d_w(:,tyn,txn)
+    endif
+
+  end subroutine compute_component_tendencies
+
+
+  !> Sets the published field value from the temporary diagnostic values held by this component.
+  !! @param field_value Populated with the value of the field
+  !! @param real_1d_field Optional one dimensional real of values to publish
+  !! @param real_2d_field Optional two dimensional real of values to publish
+  subroutine set_published_field_value(field_value, real_1d_field, real_2d_field, real_3d_field)
+    type(component_field_value_type), intent(inout) :: field_value
+    real(kind=DEFAULT_PRECISION), dimension(:), optional :: real_1d_field
+    real(kind=DEFAULT_PRECISION), dimension(:,:), optional :: real_2d_field
+    real(kind=DEFAULT_PRECISION), dimension(:,:,:), optional :: real_3d_field
+
+    if (present(real_1d_field)) then
+      allocate(field_value%real_1d_array(size(real_1d_field)), source=real_1d_field)
+    else if (present(real_2d_field)) then
+      allocate(field_value%real_2d_array(size(real_2d_field, 1), size(real_2d_field, 2)), source=real_2d_field)
+    else if (present(real_3d_field)) then
+      allocate(field_value%real_3d_array(size(real_3d_field, 1), size(real_3d_field, 2), size(real_3d_field, 3)), &
+               source=real_3d_field)
+    end if
+  end subroutine set_published_field_value
+
 end module viscosity_mod

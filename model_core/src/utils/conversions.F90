@@ -10,6 +10,8 @@ module conversions_mod
   private
 #endif
 
+  ! logical to determine whether to use the original rounding method 
+  logical :: l_original_rounding = .False.
   ! This is the rounding applied when going from single to double precision numbers
   integer, parameter :: REAL_ROUNDING_PRECISION=int(1e8)
 
@@ -111,8 +113,18 @@ contains
   real(kind=DOUBLE_PRECISION) function conv_single_real_to_double(input_real)
     real(kind=SINGLE_PRECISION), intent(in) :: input_real
 
-    conv_single_real_to_double=dnint(real(input_real, kind=DEFAULT_PRECISION) * &
-         REAL_ROUNDING_PRECISION) / REAL_ROUNDING_PRECISION
+    if (l_original_rounding) then 
+       ! This rounding methods only works for values than 1.e-8. Aerosol masses 
+       ! are smaller than this value and hence this rounding method can cause 
+       ! issues
+       conv_single_real_to_double=dnint(real(input_real, kind=DEFAULT_PRECISION)* &
+            REAL_ROUNDING_PRECISION) / REAL_ROUNDING_PRECISION
+    else
+       ! This method will round to the precision of the machine. 
+       conv_single_real_to_double=real(input_real, kind=DEFAULT_PRECISION)
+       if (abs(conv_single_real_to_double) < epsilon(1.0_DEFAULT_PRECISION)) &
+            conv_single_real_to_double = 0.0_DEFAULT_PRECISION
+    endif
   end function conv_single_real_to_double
 
 
@@ -125,7 +137,7 @@ contains
     integer :: integer_value, ierr
 
     if (len(trim(string)) .ne. 0) then
-      read(string, '(i10)', iostat=ierr ) integer_value
+      read(string, '(i11)', iostat=ierr ) integer_value
       string_is_integer = ierr == 0
     else
       string_is_integer=.false.
@@ -142,7 +154,7 @@ contains
     real :: real_value
 
     if (len(trim(string)) .ne. 0) then
-      read(string, '(f10.2)', iostat=ierr ) real_value
+      read(string, '(f12.2)', iostat=ierr ) real_value
       string_is_real = ierr == 0
     else
       string_is_real=.false.
@@ -447,8 +459,8 @@ contains
 
     if (scan(string, "E") .ne. 0 .or. scan(string, "e") .ne. 0) then
       read(string, '(es30.10)' ) string_to_real
-    else
-      read(string, '(f10.0)' ) string_to_real
+   else
+      read(string, '(f11.2)' ) string_to_real
     end if
   end function string_to_real
 

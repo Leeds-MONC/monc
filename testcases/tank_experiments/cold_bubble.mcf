@@ -24,13 +24,15 @@ th_advection_enabled=.true.
 iobridge_enabled=.true.
 scalar_diagnostics_enabled=.true.
 profile_diagnostics_enabled=.true.
+subgrid_profile_diagnostics_enabled=.true.
+flux_budget_enabled=.true.
 
 # Test case source code
 tank_experiments_enabled=.true.
 
 # Add bubble to initialisation
 initialisation_stage_ordering+=tank_experiments
-dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, tank_experiments, lwrad_exponential, simplecloud, casim,diverr, psrce, flux_budget, diagnostics, profile_diagnostics, scalar_diagnostics, stepfields
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, tank_experiments, lwrad_exponential, simplecloud, casim,diverr, psrce, flux_budget, diagnostics, subgrid_profile_diagnostics, profile_diagnostics, scalar_diagnostics, stepfields
 
 # Decomposition configuration
 decomposition_method = twodim
@@ -49,17 +51,18 @@ nsmth=20
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
-moncs_per_io_server=11
-sampling_frequency=5
-3d_sampling_frequency=100
+diagnostic_file="diagnostic_files/cold_bubble.nc"
+moncs_per_io_server=8
+sampling_frequency=20
+3d_sampling_frequency=300
 mm=600.0
 mm1=20.0
 diag_write_freq=3600.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
-checkpoint_file="cold_bubble_dump.nc"
-checkpoint_walltime_frequency=10
+checkpoint_file="checkpoint_files/cold_bubble_dump.nc"
+check_walltime_frequency=100
 walltime_limit=00:30:00
 
 # iterative solver
@@ -75,8 +78,8 @@ z0th=2.0e-4
 
 # CFL configuration
 cfl_frequency=1000
-cfl_cvismax=0.2
-cfl_cvelmax=0.2
+cfl_cvismax=0.4
+cfl_cvelmax=0.4
 cfl_dtmmax=2.0
 cfl_dtmmin=0.1
 
