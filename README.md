@@ -22,7 +22,7 @@ performance computing (HPC) scaling and efficiency.  '
 
 # Contributing
 
-To work on the MONC sourcecode you'll first need your own copy:
+To work on the MONC source code you'll first need your own copy:
 
 1. [Create your own fork](https://github.com/Leeds-MONC/monc/fork) on
    github.com of the main Leeds-MONC repository at
