@@ -22,6 +22,12 @@ performance computing (HPC) scaling and efficiency.  '
 
 # Contributing
 
+> **Note**: Github have written their own guides on [what git
+is](https://guides.github.com/activities/hello-world/) and [forking
+projects](https://guides.github.com/activities/forking/). A quick-start
+guide for working specifically with MONC follows below, see those for more
+detail.
+
 To work on the MONC source code you'll first need your own copy:
 
 1. [Create your own fork](https://github.com/Leeds-MONC/monc/fork) on
