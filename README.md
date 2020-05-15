@@ -20,6 +20,84 @@ complete re-write of the Met Office LEM using modern software design with
 a flexible plug 'n play component based architecture with a focus on high
 performance computing (HPC) scaling and efficiency.  '
 
+# Contributing
+
+> **Note**: Github have written their own guides on [what git
+is](https://guides.github.com/activities/hello-world/) and [forking
+projects](https://guides.github.com/activities/forking/). A quick-start
+guide for working specifically with MONC follows below, see those for more
+detail.
+
+To work on the MONC source code you'll first need your own copy:
+
+1. [Create your own fork](https://github.com/Leeds-MONC/monc/fork) on
+   github.com of the main Leeds-MONC repository at
+   https://github.com/Leeds-MONC/monc/fork
+
+2. Clone your fork locally
+
+    ```bash
+    $> git clone https://github.com/{your-github-username}/monc
+    ```
+
+Then you can start work on your new feature/bug fix :rocket: and
+contribute it back to the main MONC repository:
+
+3. Create your own branch or commit to `master` locally (remember you can
+   do as many commits as you want, they are free and fast)
+
+    ```bash
+    $> git checkout -b cool-new-feature-for-monc
+    (change files...)
+    $> git add .
+    $> git commit -m 'Add cool feature to MONC'
+    ```
+
+    ... (repeat `git add` and `git commit` as necessary)
+
+4. Once your happy with your feature push it to github, check out and
+   resolve any issues caught by the automated tests
+
+    ```bash
+    $> git push origin cool-new-feature-for-monc
+    ```
+
+5. [Create a pull request on
+   github.com](https://github.com/Leeds-MONC/monc/pull/new/master) to
+   request that your change is included into `master` on the main fork at
+   https://github.com/Leeds-MONC/monc
+
+6. Resolve any issues/ask for review by the rest of the Leeds-MONC
+   community on your pull request. Once ready, **merge**!
+
+7. Celebrate :smiley: :tada: :confetti_ball:, and thank you for your hard
+   work! :star:
+
+To make sure your fork is up-to-date with master (and `master` on your
+laptop) you'll need to add the main MONC repository as a "remote" that git
+knows about (the convention is to call this `upstream`) and "pull" down
+any changes:
+
+8. Add the main repository as an upstream (if you don't already have it):
+    
+    ```bash
+    $> git remote add upstream https://github.com/Leeds-MONC/monc
+    ```
+
+9. Pull in the changes to your local `master` branch (or any other branch where
+   you want recent changes into)
+
+    ```bash
+    $> git pull upstream master
+    ```
+
+10. To update `master` on your fork on github you can now push the changes to
+    there
+
+    ```bash
+    $> git push origin master
+    ```
+
 
 # Keeping in sync with the Met Office Science Repository (MOSRS)
 
