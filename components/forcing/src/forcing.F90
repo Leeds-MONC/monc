@@ -892,8 +892,7 @@ contains
     logical :: calculate_diagnostics
     real(kind=DEFAULT_PRECISION), dimension(current_state%local_grid%size(Z_INDEX)) :: temp_prof
 
-    calculate_diagnostics = ((current_state%time_basis .and. current_state%timestep == current_state%sample_timestep) .or.      &
-                      (.not. current_state%time_basis .and. mod(current_state%timestep, diagnostic_generation_frequency) == 0))
+    calculate_diagnostics = (mod(current_state%timestep, diagnostic_generation_frequency) == 0)
 
     current_x_index=current_state%column_local_x
     current_y_index=current_state%column_local_y
