@@ -1033,6 +1033,7 @@ contains
 
     integer :: key_location
     class(*), pointer :: raw_map_node
+    type(mapnode_type), pointer :: ptr
 
     raw_map_node=>map_getnode(specificmap, key, key_location)
 
@@ -1042,7 +1043,8 @@ contains
         if (raw_map_node%memory_allocation_automatic) then
           if (associated(raw_map_node%value)) deallocate(raw_map_node%value)
         end if
-        deallocate(raw_map_node)
+        ptr => raw_map_node
+        deallocate(ptr)
       end select
       call list_remove(specificmap%map_ds, key_location)      
     end if
@@ -1670,6 +1672,7 @@ contains
 
     integer :: key_location
     class(*), pointer :: raw_map_node
+    type(mapnode_type), pointer :: ptr
 
     raw_map_node=>hashmap_getnode(specificmap, key, key_location)
     
@@ -1679,7 +1682,8 @@ contains
         if (raw_map_node%memory_allocation_automatic) then
           if (associated(raw_map_node%value)) deallocate(raw_map_node%value)
         end if
-        deallocate(raw_map_node)
+        ptr => raw_map_node
+        deallocate(ptr)
       end select
       call list_remove(specificmap%map_ds(get_hashkey(key)), key_location)      
       specificmap%size=specificmap%size-1
@@ -3216,8 +3220,13 @@ contains
       select type(generic)
         type is (setnode_type)
           iterator_get_next_string=generic%key
+        type is (character(len=*))
+          iterator_get_next_string = generic
         class default
-          iterator_get_next_string=conv_to_string(generic, .false., STRING_LENGTH)
+          ! Intel compiler complains about the below line
+          ! iterator_get_next_string=conv_to_string(generic, .false., STRING_LENGTH)
+          ! Workaround to make Intel compiler happy
+          iterator_get_next_string = ""
       end select      
     else
       call log_log(LOG_ERROR, "Can not get next string in iterator as iterator has reached end of collection")

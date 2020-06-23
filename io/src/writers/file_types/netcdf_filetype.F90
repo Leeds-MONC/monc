@@ -196,6 +196,7 @@ contains
     integer :: timestep
 
     type(iterator_type) :: iterator
+    type(netcdf_diagnostics_timeseries_type), pointer :: ptr
     class(*), pointer :: generic
 
     type(netcdf_diagnostics_type), pointer :: file_state
@@ -216,7 +217,8 @@ contains
       generic=>c_get_generic(c_next_mapentry(iterator))
       select type(generic)
       type is(netcdf_diagnostics_timeseries_type)
-        deallocate(generic)
+        ptr => generic
+        deallocate(ptr)
       end select      
     end do  
     call c_free(file_state%timeseries_dimension)

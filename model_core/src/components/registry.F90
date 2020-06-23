@@ -8,7 +8,8 @@ module registry_mod
        c_get_string, c_get_generic, c_remove, c_put_generic, c_put_string, c_put_integer, c_put_real, c_is_empty, &
        c_contains, c_add_generic, c_add_string, c_free, c_get_iterator, c_has_next, c_next_mapentry
   use monc_component_mod, only : component_descriptor_type, component_field_value_type, component_field_information_type, &
-       FINALISATION_PRIORITY_INDEX, INIT_PRIORITY_INDEX, TIMESTEP_PRIORITY_INDEX
+       FINALISATION_PRIORITY_INDEX, INIT_PRIORITY_INDEX, TIMESTEP_PRIORITY_INDEX, &
+       pointer_wrapper_value_type, pointer_wrapper_info_type
   use conversions_mod, only : conv_to_string
   use state_mod, only : model_state_type
   use optionsdatabase_mod, only : options_has_key, options_get_string, options_get_logical, options_get_array_size
@@ -150,7 +151,7 @@ contains
     if (c_contains(field_procedure_retrievals, name)) then
       data=>c_get_generic(field_procedure_retrievals, name)
       select type(data)
-      type is (pointer_wrapper_type)
+      type is (pointer_wrapper_value_type)
         call data%ptr(current_state, name, get_component_field_value)
       end select
     else
@@ -168,10 +169,10 @@ contains
 
     class(*), pointer :: data
 
-    if (c_contains(field_procedure_retrievals, name)) then
+    if (c_contains(field_procedure_sizings, name)) then
       data=>c_get_generic(field_procedure_sizings, name)
       select type(data)
-      type is (pointer_wrapper_type)
+      type is (pointer_wrapper_info_type)
         call data%ptr(current_state, name, get_component_field_information)
       end select
     else
@@ -194,7 +195,8 @@ contains
 
     integer :: i
     class(*), pointer :: field_generic_description
-    type(pointer_wrapper_type), pointer :: wrapper
+    type(pointer_wrapper_info_type), pointer :: wrapper_info
+    type(pointer_wrapper_value_type), pointer :: wrapper_value
     class(*), pointer :: genericwrapper
 
     if (associated(descriptor%published_fields) .and. associated(descriptor%field_value_retrieval) .and. &
@@ -202,13 +204,15 @@ contains
       do i=1, size(descriptor%published_fields)
         field_generic_description=>descriptor%published_fields(i)
         call c_add_generic(field_information, field_generic_description, .false.)
-        allocate(wrapper) ! We allocate our own copy of the descriptor here to ensure the consistency of registry information
-        wrapper%ptr => descriptor%field_value_retrieval
-        genericwrapper=>wrapper
+        
+        allocate(wrapper_value) ! We allocate our own copy of the descriptor here to ensure the consistency of registry information
+        wrapper_value%ptr => descriptor%field_value_retrieval
+        genericwrapper=>wrapper_value
         call c_put_generic(field_procedure_retrievals, descriptor%published_fields(i), genericwrapper, .false.)
-        allocate(wrapper)
-        wrapper%ptr => descriptor%field_information_retrieval
-        genericwrapper=>wrapper
+        
+        allocate(wrapper_info)
+        wrapper_info%ptr => descriptor%field_information_retrieval
+        genericwrapper=>wrapper_info
         call c_put_generic(field_procedure_sizings, descriptor%published_fields(i), genericwrapper, .false.)
       end do
 
@@ -635,6 +639,12 @@ contains
       select type(data)
         type is (pointer_wrapper_type)
         call data%ptr(current_state)
+!        type is (pointer_wrapper_init_type)
+!          call data%ptr(current_state)
+!        type is (pointer_wrapper_timestep_type)
+!          call data%ptr(current_state)
+!        type is (pointer_wrapper_finalisation_type)
+!          call data%ptr(current_state)
       end select
     end do
   end subroutine execute_callbacks
@@ -656,4 +666,47 @@ contains
     genericwrapper=>wrapper
     call c_put_generic(callback_map, name, genericwrapper, .false.)
   end subroutine add_callback
+  
+!  subroutine add_callback_init(callback_map, name, procedure_pointer)
+!    type(map_type), intent(inout) :: callback_map
+!    procedure(component_initialisation), pointer :: procedure_pointer
+!    character(len=*), intent(in) :: name
+
+!    type(pointer_wrapper_init_type), pointer :: wrapper
+!    class(*), pointer :: genericwrapper
+
+!    allocate(wrapper) ! We allocate our own copy of the descriptor here to ensure the consistency of registry information
+!    wrapper%ptr => procedure_pointer
+!    genericwrapper=>wrapper
+!    call c_put_generic(callback_map, name, genericwrapper, .false.)
+!  end subroutine add_callback_init
+  
+!  subroutine add_callback_timestep(callback_map, name, procedure_pointer)
+!    type(map_type), intent(inout) :: callback_map
+!    procedure(component_timestep), pointer :: procedure_pointer
+!    character(len=*), intent(in) :: name
+
+!    type(pointer_wrapper_timestep_type), pointer :: wrapper
+!    class(*), pointer :: genericwrapper
+
+!    allocate(wrapper)
+!    wrapper%ptr => procedure_pointer
+!    genericwrapper=>wrapper
+!    call c_put_generic(callback_map, name, genericwrapper, .false.)
+!  end subroutine add_callback_timestep
+  
+!  subroutine add_callback_finalisation(callback_map, name, procedure_pointer)
+!    type(map_type), intent(inout) :: callback_map
+!    procedure(component_finalisation), pointer :: procedure_pointer
+!    character(len=*), intent(in) :: name
+
+!    type(pointer_wrapper_finalisation_type), pointer :: wrapper
+!    class(*), pointer :: genericwrapper
+
+!    allocate(wrapper)
+!    wrapper%ptr => procedure_pointer
+!    genericwrapper=>wrapper
+!    call c_put_generic(callback_map, name, genericwrapper, .false.)
+!  end subroutine add_callback_finalisation
+  
 end module registry_mod

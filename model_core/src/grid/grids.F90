@@ -3,7 +3,7 @@
 !!
 !! Currently MONC supports the Arakawa C grid
 module grids_mod
-  use datadefn_mod, only : DEFAULT_PRECISION
+  use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION
   implicit none
 
 #ifndef TEST_MODE
@@ -126,4 +126,5 @@ module grids_mod
      integer, dimension(:,:), allocatable :: neighbours , corner_neighbours !< Neighbouring process Id per dimension
      integer :: dimensions = 0 !< Number of active dimensions
   end type local_grid_type
+
 end module grids_mod

@@ -354,9 +354,12 @@ contains
          casdiags % dqr(1,1,:)
     
     if (.not. l_warm) then
-       if ( casdiags % l_precip ) & 
-            casim_monc_dgs % precip(target_y_index,target_x_index) = &
+       if ( casdiags % l_precip .and. casdiags % l_surface_snow ) & 
+         casim_monc_dgs % precip(target_y_index,target_x_index) = &
             casdiags % SurfaceRainR(1,1) + casdiags % SurfaceSnowR(1,1)
+      if ( casdiags % l_precip .and. .not. casdiags % l_surface_snow ) & 
+         casim_monc_dgs % precip(target_y_index,target_x_index) = &
+            casdiags % SurfaceRainR(1,1)
        if ( casdiags % l_surface_snow ) & 
             casim_monc_dgs % SurfaceSnowR(target_y_index,target_x_index) = &
             casdiags % SurfaceSnowR(1,1)

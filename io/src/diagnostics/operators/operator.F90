@@ -12,6 +12,7 @@ module operator_mod
   use fieldcoarsener_operator_mod, only : perform_fieldcoarsener_operator, fieldcoarsener_operator_get_required_fields, &
        fieldcoarsener_operator_get_auto_size
   use logging_mod, only : LOG_ERROR, log_log
+  use iso_c_binding, only: c_funptr, c_funloc
   implicit none
 
 #ifndef TEST_MODE
@@ -53,18 +54,18 @@ contains
   !! @returns The execution procedure which can be called to run the operator
   function get_operator_perform_procedure(operator_name)
     character(len=*), intent(in) :: operator_name
-    procedure(perform_activity), pointer :: get_operator_perform_procedure
+    type(c_funptr) :: get_operator_perform_procedure
 
     if (trim(operator_name) .eq. "arithmetic") then
-      get_operator_perform_procedure=>perform_arithmetic_operator
+      get_operator_perform_procedure = c_funloc(perform_arithmetic_operator)
     else if (trim(operator_name) .eq. "localreduce") then
-      get_operator_perform_procedure=>perform_localreduce_operator
+      get_operator_perform_procedure = c_funloc(perform_localreduce_operator)
     else if (trim(operator_name) .eq. "reductionlocation") then
-      get_operator_perform_procedure=>perform_reductionlocation_operator
+      get_operator_perform_procedure = c_funloc(perform_reductionlocation_operator)
     else if (trim(operator_name) .eq. "field_slicer") then
-      get_operator_perform_procedure=>perform_fieldslicer_operator
+      get_operator_perform_procedure = c_funloc(perform_fieldslicer_operator)
     else if (trim(operator_name) .eq. "field_coarsener") then
-      get_operator_perform_procedure=>perform_fieldcoarsener_operator
+      get_operator_perform_procedure = c_funloc(perform_fieldcoarsener_operator)
     else
       call log_log(LOG_ERROR, "Operator '"//trim(operator_name)//"' not found so ignoring")
     end if    

@@ -99,6 +99,7 @@ contains
     call mpi_type_free(mpi_type_field_description, ierr)
 
     call build_mpi_data_types()
+    
   end subroutine init_callback
 
   !> Model dump call back, called for each model dump phase
@@ -655,7 +656,9 @@ contains
          COMMAND_TAG, MPI_COMM_WORLD, ierr)
 
     call mpi_probe(current_state%parallel%corresponding_io_server_process, DATA_TAG, MPI_COMM_WORLD, status, ierr)
+
     call mpi_get_count(status, mpi_type_definition_description, number_defns, ierr)
+
     allocate(definition_descriptions(number_defns))
 
     call mpi_recv(definition_descriptions, number_defns, mpi_type_definition_description, &
@@ -667,6 +670,7 @@ contains
          current_state%parallel%corresponding_io_server_process, DATA_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
     call populate_data_definition_configuration(definition_descriptions, number_defns, field_descriptions, number_fields)
     deallocate(definition_descriptions)
+    
   end subroutine register_with_io_server
 
   !> Retrieve the total number of fields, which is all the fields in all the data definitions

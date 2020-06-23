@@ -963,6 +963,7 @@ contains
     type(io_configuration_type), intent(inout) :: io_configuration
     type(writer_type), intent(inout) :: writer_entry
 
+    type(pending_write_type), pointer :: ptr
     class(*), pointer :: generic
 
     call check_thread_status(forthread_mutex_lock(writer_entry%pending_writes_mutex))
@@ -977,7 +978,8 @@ contains
         end if
         call issue_actual_write(io_configuration, writer_entry, generic%timestep, &
              generic%write_time, generic%terminated_write)
-        deallocate(generic)
+        ptr => generic
+        deallocate(ptr)
       end select
     else
       check_for_and_issue_chain_write=.false.
@@ -1105,7 +1107,7 @@ contains
   !! @returns The number of fields that make up this field
   integer function get_field_number_of_fields(io_configuration, field_name, field_namespace, num_q_fields)
     type(io_configuration_type), intent(inout) :: io_configuration
-    character(len=STRING_LENGTH), intent(in) :: field_name, field_namespace
+    character(len=*), intent(in) :: field_name, field_namespace
     integer, intent(in) :: num_q_fields
 
     type(io_configuration_field_type) :: prognostic_field_configuration

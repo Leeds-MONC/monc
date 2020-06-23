@@ -1,6 +1,6 @@
 !> Reads the IO server state that was stored in a NetCDF checkpoint file
 module io_server_state_reader_mod
-  use iso_c_binding, only: c_int, c_char, c_null_char, c_size_t, c_ptrdiff_t, c_ptr, c_loc, c_sizeof, c_long
+  use iso_c_binding, only: c_int, c_char, c_null_char, c_size_t, c_intptr_t, c_ptr, c_loc, c_sizeof, c_long
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use netcdf, only : nf90_global, nf90_nowrite, nf90_inquire_attribute, nf90_open, nf90_inq_dimid, nf90_inquire_dimension, &
        nf90_inq_varid, nf90_get_var, nf90_get_att, nf90_close
@@ -203,7 +203,7 @@ contains
     integer(kind=c_size_t)     :: cdlen
     character(len=256) :: tmpname
     integer(KIND=c_size_t), target :: cstart(1), ccounts(1)
-    Integer(KIND=c_ptrdiff_t), target :: cstrides(1)
+    Integer(KIND=c_intptr_t), target :: cstrides(1)
     type(c_ptr) :: cstartptr, ccountsptr, cstridesptr
 
     cncid=ncid
