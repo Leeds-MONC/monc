@@ -74,7 +74,15 @@ module casim_mod
      , l_pssub & ! sublimation of snow
      , l_pgsub & ! sublimation of graupel
      , l_pisub & ! sublimation of ice
-     , l_pimlt   ! ice melting
+     , l_pimlt & ! ice melting
+     ! New switches for sedimentation (these are sort-of temporary)
+     , l_gamma_online & ! when true use standard vn0.3.3 sed, when false use precalced gamma
+     , l_subseds_maxv & ! Use a CFL criteria based on max terminal velocity
+                    ! and sed_1M_2M 
+     , l_sed_eulexp & ! switch for eulexp sed based on UM. Default is false
+                      ! so standard casim sed used
+     , cfl_vt_max & ! cfl limit for sedimentation (default = 1.0)
+     , l_kfsm
 
   use micro_main, only: shipway_microphysics
   use generic_diagnostic_variables, ONLY: casdiags, allocate_diagnostic_space, &
@@ -838,7 +846,7 @@ contains
     ! and surface
     ! snow rate (precip_s), which is the sum of ice, snow and graupel (See micromain.F90 in casim for
     ! calculation).
-    if (l_warm) then
+    if (l_warm .or. .not. casdiags % l_surface_snow ) then
        surface_precip(target_y_index,target_x_index) = &
             casdiags % SurfaceRainR(1,1)
     else
@@ -947,6 +955,11 @@ contains
     l_pgsub         = options_get_logical(current_state%options_database, 'l_pgsub')
     l_pisub         = options_get_logical(current_state%options_database, 'l_pisub')
     l_pimlt         = options_get_logical(current_state%options_database, 'l_pimlt')
+    l_gamma_online  = options_get_logical(current_state%options_database, 'l_gamma_online')
+    l_subseds_maxv  = options_get_logical(current_state%options_database, 'l_subseds_maxv')
+    l_sed_eulexp  = options_get_logical(current_state%options_database, 'l_sed_eulexp')
+    cfl_vt_max      = options_get_real(current_state%options_database, 'cfl_vt_max')
+    l_kfsm          = options_get_logical(current_state%options_database, 'l_kfsm')
 
   end subroutine read_configuration
 

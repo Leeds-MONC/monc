@@ -39,7 +39,7 @@ module state_mod
   type, public :: model_state_type
     logical :: continue_timestep=.true., initialised=.false., continuation_run=.false.
     logical :: use_viscosity_and_diffusion=.true., &
-       use_surface_boundary_conditions=.true., backscatter=.true.
+       use_surface_boundary_conditions=.false., backscatter=.true.
 
     type(hashmap_type) :: options_database
     type(global_grid_type) :: global_grid

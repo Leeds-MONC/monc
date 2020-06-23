@@ -3,7 +3,7 @@
 !! multiple areas of the code base which might otherwise result in circular dependencies if 
 !! they lived in a specific module of functionality
 module communication_types_mod
-  use datadefn_mod, only : DEFAULT_PRECISION
+  use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION
   implicit none
 
 #ifndef TEST_MODE
@@ -13,7 +13,11 @@ module communication_types_mod
   ! A wrapper type (as F doesn't allow an array of 3D arrays) to point to field data
   type field_data_wrapper_type
      real(kind=DEFAULT_PRECISION), dimension(:,:,:), pointer :: data
-  end type field_data_wrapper_type      
+  end type field_data_wrapper_type
+
+  type field_data_wrapper_single_prec_type
+     real(kind=SINGLE_PRECISION), dimension(:,:,:), pointer :: data
+  end type field_data_wrapper_single_prec_type
 
   !> Describes the neighbours of a process in a specific dimension and contains the 
   !! communication buffers associated with these
@@ -24,6 +28,15 @@ module communication_types_mod
           recv_halo_buffer, send_corner_buffer, recv_corner_buffer
   end type neighbour_description_type
 
+!> Describes the neighbours of a process in a specific dimension and contains the 
+  !! communication buffers associated with these
+  type neighbour_description_single_prec_type
+     integer :: pid, halo_pages=0, halo_corners=0, dimension, recv_size, send_size, &
+          recv_corner_size, send_corner_size
+     real(kind=SINGLE_PRECISION), dimension(:,:,:), allocatable :: send_halo_buffer, &
+          recv_halo_buffer, send_corner_buffer, recv_corner_buffer
+  end type neighbour_description_single_prec_type
+
   !> Maintains the state of a halo swap and contains buffers, neighbours etc
   type halo_communication_type
      integer :: number_distinct_neighbours, fields_per_cell, halo_depth, cell_match(3,4)
@@ -32,5 +45,14 @@ module communication_types_mod
      logical :: initialised = .false., swap_in_progress=.false., involve_corners=.false.
   end type halo_communication_type
 
-  public halo_communication_type, neighbour_description_type, field_data_wrapper_type
+  type halo_communication_single_prec_type
+     integer :: number_distinct_neighbours, fields_per_cell, halo_depth, cell_match(3,4)
+     type(neighbour_description_single_prec_type), dimension(:), allocatable :: halo_swap_neighbours     
+     integer, dimension(:), allocatable :: send_requests, recv_requests
+     logical :: initialised = .false., swap_in_progress=.false., involve_corners=.false.
+  end type halo_communication_single_prec_type
+
+  public halo_communication_type, neighbour_description_type, field_data_wrapper_type, &
+    field_data_wrapper_single_prec_type, neighbour_description_single_prec_type, &
+    halo_communication_single_prec_type
 end module communication_types_mod

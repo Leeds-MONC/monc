@@ -14,9 +14,11 @@ module datadefn_mod
   integer, public, parameter :: DOUBLE_PRECISION = selected_real_kind(15,307) !< Double precision (64 bit) kind
 
   !< Default precision which is used for prognostic data and calculations
-  integer, public, parameter :: DEFAULT_PRECISION = DOUBLE_PRECISION  
+  integer, public, parameter :: DEFAULT_PRECISION = DOUBLE_PRECISION 
+  !< Solver precision is used in the interative solver
+  integer, public, parameter :: SOLVER_PRECISION = DOUBLE_PRECISION 
   !< MPI communication type which we use for the prognostic and calculation data
-  integer, public :: PRECISION_TYPE  
+  integer, public :: PRECISION_TYPE, SINGLE_PRECISION_TYPE, DOUBLE_PRECISION_TYPE
 
   public init_data_defn
 
@@ -29,5 +31,10 @@ contains
     else
       PRECISION_TYPE = MPI_REAL
     endif
+  !> Initialise single and double precision type for use of mixed precision, e.g
+  !> in the iterative solver
+    SINGLE_PRECISION_TYPE = MPI_REAL
+    DOUBLE_PRECISION_TYPE = MPI_DOUBLE_PRECISION
+
   end subroutine init_data_defn
 end module datadefn_mod

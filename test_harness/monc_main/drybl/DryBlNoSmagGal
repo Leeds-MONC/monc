@@ -4,7 +4,10 @@ global_configuration=global_config
 # Override global component defaults
 coriolis_enabled=.true.
 checkpointer_enabled=.true.
-fftsolver_enabled=.true.
+fftsolver_enabled=.false.
+iterativesolver_enabled=.false.
+iterativesolver_single_prec_enabled=.true.
+petsc_solver_enabled=.false.
 pw_advection_enabled=.true.
 simplesetup_enabled=.true.
 smagorinsky_enabled=.false.

@@ -29,6 +29,7 @@ flux_budget_enabled=.false.
 forcing_enabled=.false.
 iobridge_enabled=.false.
 iterativesolver_enabled=.false.
+iterativesolver_single_prec_enabled=.false.
 kidreader_enabled=.false.
 lower_bc_enabled=.false.
 mean_profiles_enabled=.false.
@@ -77,14 +78,14 @@ start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral
 subgrid_group_contents=lower_bc, smagorinsky
 dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, socrates_couple, lwrad_exponential, simplecloud, casim, flux_budget, subgrid_profile_diagnostics, diverr, psrce, diagnostics_3d, profile_diagnostics, casim_profile_dgs, scalar_diagnostics, stepfields
 
-solver_group_contents=pdf_analysis, mean_profiles, fftsolver, iterativesolver, petsc_solver, cfltest
+solver_group_contents=pdf_analysis, mean_profiles, fftsolver, iterativesolver, iterativesolver_single_prec, petsc_solver, cfltest
 pressure-terms_group_contents=pstep, swap_smooth, conditional_diagnostics_column
 last_group_contents=conditional_diagnostics_whole, checkpointer, model_synopsis, termination_check, iobridge
 
 # Component ordering for other stages
 
-initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, simplecloud, casim, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iterativesolver, setfluxlook, lower_bc, physicsa, psrce, pw_advection, diffusion, set_consistent_lowbc, viscosity, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, socrates_couple, lwrad_exponential,th_advection, randomnoise, forcing, flux_budget, diagnostics_3d, profile_diagnostics, casim_profile_dgs, conditional_diagnostics_column, conditional_diagnostics_whole, pdf_analysis, subgrid_profile_diagnostics, scalar_diagnostics, lateral_bcs, petsc_solver, pstep, iobridge
-finalisation_stage_ordering=iobridge, checkpointer, diverr, fftsolver, grid_manager, halo_swapper, iterativesolver, physicsa, psrce, smagorinsky, tvd_advection,lwrad_exponential, model_synopsis, mean_profiles, pdf_analysis, forcing, stepfields, flux_budget, buoyancy, diffusion, lower_bc, viscosity, profile_diagnostics, pw_advection, th_advection, damping, simplecloud, pstep, conditional_diagnostics_whole, conditional_diagnostics_column
+initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, simplecloud, casim, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iterativesolver, iterativesolver_single_prec, setfluxlook, lower_bc, physicsa, psrce, pw_advection, diffusion, set_consistent_lowbc, viscosity, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, socrates_couple, lwrad_exponential,th_advection, randomnoise, forcing, flux_budget, diagnostics_3d, profile_diagnostics, casim_profile_dgs, conditional_diagnostics_column, conditional_diagnostics_whole, pdf_analysis, subgrid_profile_diagnostics, scalar_diagnostics, lateral_bcs, petsc_solver, pstep, iobridge
+finalisation_stage_ordering=iobridge, checkpointer, diverr, fftsolver, grid_manager, halo_swapper, iterativesolver, iterativesolver_single_prec, physicsa, psrce, smagorinsky, tvd_advection,lwrad_exponential, model_synopsis, mean_profiles, pdf_analysis, forcing, stepfields, flux_budget, buoyancy, diffusion, lower_bc, viscosity, profile_diagnostics, pw_advection, th_advection, damping, simplecloud, pstep, conditional_diagnostics_whole, conditional_diagnostics_column
 
 # Control configuration
 nn_timesteps=-1
@@ -144,7 +145,7 @@ qlcrit=1.e-8
 # Iterative solver configuration
 tolerance=1.e-4
 max_iterations=500
-preconditioner_iterations=1
+preconditioner_iterations=0
 include_top_level=.true.
 symm_prob=.false.
 solver_type=cg
@@ -444,7 +445,7 @@ iopt_inuc       = 4
 process_level   = 0
 aerosol_option  = 2
 max_step_length = 120.0
-max_sed_length  = 20.0
+max_sed_length  = 2.0
 
 p1              = 3.0
 p2              = 0.0
@@ -520,7 +521,11 @@ l_pssub         = .true.
 l_pgsub         = .true.
 l_pisub         = .true.
 l_pimlt         = .true.
-
+l_gamma_online  = .false.
+l_subseds_maxv  = .false.
+l_sed_eulexp  = .true.
+cfl_vt_max = 1.0
+l_kfsm = .false.
 
 l_tidy_conserve_E = .true.
 l_tidy_conserve_q = .true.

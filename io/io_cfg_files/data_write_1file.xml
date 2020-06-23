@@ -4,23 +4,17 @@
 	</server-configuration>
 
 #include "io/io_cfg_files/scalar_fields.xml"
-#include "io/io_cfg_files/profile_fields.xml"
+#include "io/io_cfg_files/profile_fields.xml"        
 #include "io/io_cfg_files/3d_fields.xml"
 #include "io/io_cfg_files/2d_fields.xml"
-#include "io/io_cfg_files/tendency_profile_fields.xml"
-#include "io/io_cfg_files/flux_fields_description.xml"
-#include "io/io_cfg_files/socrates_fields.xml"
 #include "io/io_cfg_files/checkpoint.xml"
 
 <data-writing>
   <file name="{diagnostic_file}" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
-    <include group="profile_timeseries" time_manipulation="averaged" output_frequency="{mm}"/>
-    <include group="tendency_profile_timeseries" time_manipulation="averaged" output_frequency="{mm}"/>
-    <include group="flux_diagnostics" time_manipulation="instantaneous" output_frequency="{mm}"/>
+     <include group="profile_timeseries" time_manipulation="instantaneous" output_frequency="{mm}"/>
     <include group="scalar_timeseries" time_manipulation="instantaneous" output_frequency="{mm1}"/>
     <include group="3d_fields" time_manipulation="instantaneous" output_frequency="{mm}"/>
     <include group="2d_fields" time_manipulation="instantaneous" output_frequency="{mm}"/>
-    <include group="socrates_fields" time_manipulation="instantaneous" output_frequency="{mm}"/>
   </file>
 </data-writing>
 

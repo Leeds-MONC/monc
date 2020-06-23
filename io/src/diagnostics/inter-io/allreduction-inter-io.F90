@@ -105,7 +105,7 @@ contains
   subroutine internal_reduction_completion_procedure(io_configuration, values, field_name, timestep)
     type(io_configuration_type), intent(inout) :: io_configuration
     real(DEFAULT_PRECISION), dimension(:) :: values
-    character(len=*) :: field_name
+    character(len=STRING_LENGTH) :: field_name
     integer :: timestep
 
     type(allreduce_type), pointer :: allreduce_information

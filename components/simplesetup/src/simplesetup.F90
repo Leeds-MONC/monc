@@ -41,6 +41,7 @@ contains
       current_state%initialised=.true.
 
     end if
+
   end subroutine initialisation_callback
 
   

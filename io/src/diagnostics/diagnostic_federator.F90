@@ -29,6 +29,7 @@ module diagnostic_federator_mod
        get_operator_perform_procedure, get_operator_auto_size
   use io_server_client_mod, only : DOUBLE_DATA_TYPE, INTEGER_DATA_TYPE
   use writer_field_manager_mod, only : provide_field_to_writer_federator
+  use iso_c_binding, only : c_f_procpointer
   implicit none
 
 #ifndef TEST_MODE
@@ -1142,7 +1143,7 @@ contains
               item%activity_name=activity_name
               item%required_fields=get_operator_required_fields(activity_name, misc_action%embellishments)
               item%activity_attributes=misc_action%embellishments
-              item%operator_procedure=>get_operator_perform_procedure(activity_name)
+              call c_f_procpointer(get_operator_perform_procedure(activity_name), item%operator_procedure)
               item%activity_type=OPERATOR_TYPE          
             else if (misc_action%type .eq. "communication") then
               if (item%root .lt. 0) call log_log(LOG_ERROR, "Root must be supplied and 0 or greater for communication actions")
