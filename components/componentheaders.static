@@ -49,3 +49,4 @@ use socrates_couple_mod, only : socrates_couple_get_descriptor
 use conditional_diagnostics_column_mod, only : conditional_diagnostics_column_get_descriptor
 use conditional_diagnostics_whole_mod, only : conditional_diagnostics_whole_get_descriptor
 use pdf_analysis_mod, only : pdf_analysis_get_descriptor
+use tracers_mod, only: tracers_get_descriptor

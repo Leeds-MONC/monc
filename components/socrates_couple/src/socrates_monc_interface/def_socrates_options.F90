@@ -75,7 +75,7 @@ module def_socrates_options
           hfc125_mmr,                &
           hfc134a_mmr
      ! logical to decide if it is a radiation timestep. This is true
-     ! if (time > ((rad_last_time + rad_int_time)) > 0.0)). Derived
+     ! if (time > ((rad_last_time + rad_int_time)) .ge. 0.0)). Derived
      ! in the timestep_callback in socrates_couple
      logical :: l_rad_calc
       

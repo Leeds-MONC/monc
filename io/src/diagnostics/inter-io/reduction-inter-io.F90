@@ -11,7 +11,7 @@ module reduction_inter_io_mod
   use forthread_mod, only : forthread_mutex_init, forthread_mutex_lock, forthread_mutex_trylock, &
        forthread_mutex_unlock, forthread_mutex_destroy, forthread_rwlock_rdlock, forthread_rwlock_wrlock, &
        forthread_rwlock_unlock, forthread_rwlock_init, forthread_rwlock_destroy, forthread_rwlock_trywrlock
-  use threadpool_mod, only : check_thread_status, threadpool_start_thread
+  use threadpool_mod, only : check_thread_status
   use logging_mod, only : LOG_ERROR, log_log
   use inter_io_specifics_mod, only : handle_completion, register_inter_io_communication, find_inter_io_from_name, &
        package_inter_io_communication_message, unpackage_inter_io_communication_message
@@ -90,7 +90,7 @@ contains
   subroutine finalise_reduction_inter_io(io_configuration)
     type(io_configuration_type), intent(inout) :: io_configuration
 
-    type(reduction_progress_type) :: progress
+    type(reduction_progress_type), pointer :: progress
     type(iterator_type) :: iterator
 
     if (initialised) then
@@ -98,7 +98,7 @@ contains
       if (.not. c_is_empty(reduction_progresses)) then
         iterator=c_get_iterator(reduction_progresses)
         do while (c_has_next(iterator))
-          progress=retrieve_reduction_progress(c_next_mapentry(iterator))
+          progress=>retrieve_reduction_progress(c_next_mapentry(iterator))
           if (progress%async_handle /= MPI_REQUEST_NULL) then
             call wait_for_mpi_request(progress%async_handle)
           end if
@@ -196,7 +196,6 @@ contains
           call check_thread_status(forthread_mutex_lock(specific_reduction_progress%mutex))
           if (specific_reduction_progress%async_handle /= MPI_REQUEST_NULL) then
             call wait_for_mpi_request(specific_reduction_progress%async_handle)
-            !if (completed == 1) then
             if (specific_reduction_progress%async_handle == MPI_REQUEST_NULL) then
               if (allocated(specific_reduction_progress%send_buffer)) deallocate(specific_reduction_progress%send_buffer)
               destroy_lock=.true.
@@ -208,7 +207,7 @@ contains
           call check_thread_status(forthread_mutex_unlock(specific_reduction_progress%mutex))
           if (destroy_lock) call check_thread_status(forthread_mutex_destroy(specific_reduction_progress%mutex))
         end if
-      end do
+      end do ! loop over specific_reduction_progress items
       call check_thread_status(forthread_rwlock_unlock(reduction_progress_rwlock))
 
       if (.not. c_is_empty(entries_to_remove)) then

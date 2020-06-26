@@ -13,6 +13,7 @@ module gridmanager_mod
   use saturation_mod, only : qsaturation, dqwsatdt
   use q_indices_mod, only: get_q_index, standard_q_names
   use interpolation_mod, only: piecewise_linear_1d
+  use tracers_mod, only: reinitialise_trajectories
 
   implicit none
 
@@ -167,7 +168,7 @@ contains
 
     integer :: nq_init ! The number of q fields to initialize
     integer :: nzq     ! The number of input levels for q_init
-    integer :: i,j,n, k ! loop counters
+    integer :: i,j,n, k,  i_tracer ! loop counters
     integer :: iq  ! temporary q varible index
 
     real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: f_init_pl_q       ! Initial node values for q variables
@@ -226,21 +227,23 @@ contains
     l_thref=options_get_logical(current_state%options_database, "l_thref")
     l_matchthref=options_get_logical(current_state%options_database, "l_matchthref")
 
-    if (l_thref)then
-      if (.not. l_matchthref)then
-        allocate(z_thref(options_get_array_size(current_state%options_database, "z_thref")), &
-             f_thref(options_get_array_size(current_state%options_database, "f_thref")))
-        call options_get_real_array(current_state%options_database, "z_thref", z_thref)
-        call options_get_real_array(current_state%options_database, "f_thref", f_thref)
-        call check_top(zztop, z_thref(size(z_thref)), 'z_thref')
-        zgrid=current_state%global_grid%configuration%vertical%zn(:)
-        call piecewise_linear_1d(z_thref(1:size(z_thref)), f_thref(1:size(f_thref)), zgrid, &
-           current_state%global_grid%configuration%vertical%thref)
-        deallocate(z_thref, f_thref)
+    if (.not. current_state%continuation_run) then  ! For continuations, ensure thref is that from checkpoint
+      if (l_thref)then
+        if (.not. l_matchthref)then
+          allocate(z_thref(options_get_array_size(current_state%options_database, "z_thref")), &
+               f_thref(options_get_array_size(current_state%options_database, "f_thref")))
+          call options_get_real_array(current_state%options_database, "z_thref", z_thref)
+          call options_get_real_array(current_state%options_database, "f_thref", f_thref)
+          call check_top(zztop, z_thref(size(z_thref)), 'z_thref')
+          zgrid=current_state%global_grid%configuration%vertical%zn(:)
+          call piecewise_linear_1d(z_thref(1:size(z_thref)), f_thref(1:size(f_thref)), zgrid, &
+             current_state%global_grid%configuration%vertical%thref)
+          deallocate(z_thref, f_thref)
+        end if
+      else
+        current_state%global_grid%configuration%vertical%thref(:)=current_state%thref0
       end if
-    else
-      current_state%global_grid%configuration%vertical%thref(:)=current_state%thref0
-    end if
+    end if 
 
     if (l_init_pl_theta)then
       allocate(z_init_pl_theta(options_get_array_size(current_state%options_database, "z_init_pl_theta")), &
@@ -252,7 +255,7 @@ contains
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
       call piecewise_linear_1d(z_init_pl_theta(1:size(z_init_pl_theta)), f_init_pl_theta(1:size(f_init_pl_theta)), zgrid, &
          current_state%global_grid%configuration%vertical%theta_init)
-      if (l_matchthref) then
+      if (l_matchthref .and. .not. current_state%continuation_run) then ! For continuations, ensure thref is that from checkpoint
          if(.not. current_state%use_anelastic_equations) then
            call log_master_log(LOG_ERROR, "Non-anelastic equation set and l_maththref are incompatible")
          end if
@@ -337,7 +340,23 @@ contains
         end if
       end do
       deallocate(f_init_pl_q_tmp, z_init_pl_q, f_init_pl_q, names_init_pl_q)
-   end if
+    end if
+   
+    if (current_state%n_tracers .gt. 0) then
+      if (.not. current_state%continuation_run) then
+        do i_tracer = 1,current_state%n_tracers
+          current_state%tracer(i_tracer)%data(:,:,:) = 0.0_DEFAULT_PRECISION
+          current_state%ztracer(i_tracer)%data(:,:,:) = 0.0_DEFAULT_PRECISION
+        end do
+      end if
+    end if
+    
+    if (current_state%traj_tracer_index .gt. 0) then
+      if (.not. current_state%continuation_run) then
+        call reinitialise_trajectories(current_state)
+      end if
+    end if
+    
     deallocate(zgrid)      
   end subroutine calculate_initial_profiles
 
@@ -908,9 +927,6 @@ contains
             qsat=qsaturation(TdegK(k), current_state%global_grid%configuration%vertical%prefn(k)/100.)    
             current_state%global_grid%configuration%vertical%q_init(k, iq) = & 
                  (current_state%global_grid%configuration%vertical%rh_init(k)/100.0)*qsat
-            !print *,  current_state%global_grid%configuration%vertical%rh_init(k), &
-            !     current_state%global_grid%configuration%vertical%q_init(k, iq), &
-            !     TdegK(k)
          enddo
          if (.not. current_state%continuation_run) then
             do i=current_state%local_grid%local_domain_start_index(X_INDEX), &

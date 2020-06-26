@@ -45,7 +45,7 @@ setfluxlook_enabled=.true.
 simplecloud_enabled=.false. 
 simplesetup_enabled=.false.
 smagorinsky_enabled=.false.
-subgrid_profile_diagnostics_enabled=.false
+subgrid_profile_diagnostics_enabled=.false.
 socrates_couple_enabled=.false.
 th_advection_enabled=.false.
 tvd_advection_enabled=.true.
@@ -58,11 +58,16 @@ lateral_bcs_enabled=.false.
 conditional_diagnostics_column_enabled=.false.
 conditional_diagnostics_whole_enabled=.false.
 pdf_analysis_enabled=.false.
+tracers_enabled=.false.
+trajectories_enabled=.false.
+radioactive_tracers_enabled=.false.
 
 # Default disable the test case components (individual user config will enable these)
 bubble_enabled=.false.
 drybl_enabled=.false.
 kidtestcase_enabled=.false.
+shallow_convection_enabled=.false.
+
 
 # Component timestepping groups
 group_names= start, subgrid, dynamics, solver, pressure-terms, last
@@ -76,7 +81,7 @@ last_group_type=entire
 
 start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral_bcs, setfluxlook
 subgrid_group_contents=lower_bc, smagorinsky
-dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, socrates_couple, lwrad_exponential, simplecloud, casim, flux_budget, subgrid_profile_diagnostics, diverr, psrce, diagnostics_3d, profile_diagnostics, casim_profile_dgs, scalar_diagnostics, stepfields
+dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, socrates_couple, lwrad_exponential, simplecloud, casim, tracers, flux_budget, subgrid_profile_diagnostics, diverr, psrce, diagnostics_3d, profile_diagnostics, casim_profile_dgs, scalar_diagnostics, stepfields
 
 solver_group_contents=pdf_analysis, mean_profiles, fftsolver, iterativesolver, iterativesolver_single_prec, petsc_solver, cfltest
 pressure-terms_group_contents=pstep, swap_smooth, conditional_diagnostics_column
@@ -84,8 +89,8 @@ last_group_contents=conditional_diagnostics_whole, checkpointer, model_synopsis,
 
 # Component ordering for other stages
 
-initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, simplecloud, casim, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iterativesolver, iterativesolver_single_prec, setfluxlook, lower_bc, physicsa, psrce, pw_advection, diffusion, set_consistent_lowbc, viscosity, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, socrates_couple, lwrad_exponential,th_advection, randomnoise, forcing, flux_budget, diagnostics_3d, profile_diagnostics, casim_profile_dgs, conditional_diagnostics_column, conditional_diagnostics_whole, pdf_analysis, subgrid_profile_diagnostics, scalar_diagnostics, lateral_bcs, petsc_solver, pstep, iobridge
-finalisation_stage_ordering=iobridge, checkpointer, diverr, fftsolver, grid_manager, halo_swapper, iterativesolver, iterativesolver_single_prec, physicsa, psrce, smagorinsky, tvd_advection,lwrad_exponential, model_synopsis, mean_profiles, pdf_analysis, forcing, stepfields, flux_budget, buoyancy, diffusion, lower_bc, viscosity, profile_diagnostics, pw_advection, th_advection, damping, simplecloud, pstep, conditional_diagnostics_whole, conditional_diagnostics_column
+initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, simplecloud, casim, tracers, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iterativesolver, iterativesolver_single_prec, setfluxlook, lower_bc, physicsa, psrce, pw_advection, diffusion, set_consistent_lowbc, viscosity, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, socrates_couple, lwrad_exponential,th_advection, randomnoise, forcing, flux_budget, diagnostics_3d, profile_diagnostics, casim_profile_dgs, conditional_diagnostics_column, conditional_diagnostics_whole, pdf_analysis, subgrid_profile_diagnostics, scalar_diagnostics, lateral_bcs, petsc_solver, pstep, iobridge
+finalisation_stage_ordering=iobridge, checkpointer, diverr, fftsolver, grid_manager, halo_swapper, iterativesolver, iterativesolver_single_prec, physicsa, psrce, smagorinsky, tvd_advection, lwrad_exponential, model_synopsis, mean_profiles, pdf_analysis, forcing, stepfields, flux_budget, coriolis, buoyancy, diffusion, lower_bc, viscosity, profile_diagnostics, pw_advection, th_advection, damping, simplecloud, tracers, pstep, conditional_diagnostics_whole, conditional_diagnostics_column
 
 # Control configuration
 nn_timesteps=-1
@@ -98,6 +103,26 @@ logging=3  #INFO level logging
 check_msg_frequency=500
 check_walltime_frequency=200
 msg_filename=messages
+retain_model_time=.false.
+only_compute_on_sample_timestep=.false.
+force_output_on_interval=.false.
+l_constant_dtm=.false.
+
+# Debug assistance parameters
+print_debug_data=.false.         # Prints data for specific variables/points after each component call when .true.
+l_thoff=.false.                  # When .true., disables threading in the IOserver
+
+#Tracer configuration
+traj_interval=                   # name of config variable used to set 3d_tracers output_frequency
+                                 #   ensures trajectory reinitialization at data write time
+n_radioactive_tracers=0          # number of radioactive tracers
+tracer_decay_rate=0.0            # tracer decay rate for each n_radioactive_tracers [per hour]
+                                 #   default value causes no decay.
+tracer_surface_bc_option=0       # tracer surface BC option
+                                 # 0 = flux computed from decay rate.
+                                 # 1 = specified flux.
+                                 # 2 = specified value.                                   
+tracer_surface_bc=0.0            # tracer surface bc value.
 
 # CFL configuration
 cfl_frequency=10
@@ -167,9 +192,34 @@ max_change_buoyancy_flux=12.0
 use_surface_boundary_conditions=.false.
 type_of_surface_boundary_conditions=0
 use_time_varying_surface_values=.false.
-use_time_varying_subsidence=.false.
 surface_conditions_file=None
 max_change_buoyancy_flux=12.0
+
+# Time-varying forcing --------------------------------------------------------------------------------------------
+# enter files as the base directory-relative path to file
+# specify the vertical coordinate of the forcing as 'height' [m] or 'pressure' [Pa]
+#  - expecting NetCDF variable names to be "wsubs", "theta_tendency", or "q_tendency" for
+#    subsidence, theta, and water vapour forcing time-height profiles, respectively.
+#  - expecting temporal coordinate variable/dimension to be called "time".
+#  - expecting wsubs as m/s
+#     - This is a subsidence velocity only, not divergence rate.
+#     - When using use_time_varying_subsidence=.true., subsidence_input_type is ignored.
+#  - expecting theta_tendency as K/s
+#     - Allowed to be temperature (instead of theta), but requires convert_input_theta_from_temperature=.true.
+#     - convert_input_theta_from_temperature will also apply to any additional constant forcing.
+#  - expecting q_tendecy as kg/kg/s
+use_time_varying_subsidence=.false.
+varying_subsidence_file=               # .nc file, DEFAULT: unset
+varying_subsidence_coordinate=         # 'height' [m] or 'pressure' [Pa]
+
+use_time_varying_theta=.false.
+varying_theta_file=                    # .nc file, DEFAULT: unset
+varying_theta_coordinate=              # 'height' [m] or 'pressure' [Pa]
+
+use_time_varying_q=.false.
+varying_q_file=                        # .nc file, DEFAULT: unset
+varying_q_coordinate=                  # 'height' [m] or 'pressure' [Pa]
+
 
 # Simplesetup options
 x_size=1
@@ -276,7 +326,7 @@ relax_to_initial_theta_profile=.false.
 
 convert_input_theta_from_temperature=.false.
 
-l_constant_forcing_theta_z2pressure=.false.
+l_constant_forcing_theta_height=.true.  # Forcing in height coordinates (.true.) or pressure (.false.)
 
 units_u_force=m_per_second_per_day
 units_v_force=m_per_second_per_day
@@ -557,6 +607,11 @@ thv_from_th_with_liqice=.true.
 show_critical_w=.false.
 uppercrit=0.05
 dwnpercrit=0.05
+
+# vertical velocity histogram parameters
+n_w_bins=50                        # number of bins (max-min)/bin_size (max determined by these parameters)
+w_bin_size=1.0                     # size of bin [m/s]
+w_bin_min=-25.0                    # lower bound of historgram [m/s]
 # -----------------------------------------------------------------
 
 # enable 3d binary SOCRATES-based total cloud mask diagnostic
@@ -573,3 +628,8 @@ cloud_mask_method=DEFAULT
 # cloud_mask_method, the constituent has area 1.0. This is the
 # same as assuming homogeneous clouds.
 l_partial_liq_ice=.false.
+
+
+# Diagnostic sampling basis (unit selection)
+time_basis=.false.      # logical for sampling and output intervals [ .false. (timestep, DEFAULT) | .true. (time) ]
+

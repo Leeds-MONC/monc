@@ -175,10 +175,12 @@ mcc_temperature_profile  = components/socrates_couple/data/mcc_profiles/one_km/m
 mcc_vapour_profile       = components/socrates_couple/data/mcc_profiles/one_km/mlw.q.nc
 mcc_ozone_profile        = components/socrates_couple/data/mcc_profiles/one_km/mlw.o3.nc
 # Add options for rad_cntrl
-spectral_file_lw           = /data/d04/fra23/socrates_trunk/data/spectra/ga7/sp_lw_ga7
-spectral_file_sw           = /data/d04/fra23/socrates_trunk/data/spectra/ga7/sp_sw_ga7
+#spectral_file_lw           = /data/d04/fra23/socrates_trunk/data/spectra/ga7/sp_lw_ga7
+#spectral_file_sw           = /data/d04/fra23/socrates_trunk/data/spectra/ga7/sp_sw_ga7
 #spectral_file_lw           = components/socrates_couple/data/spectra/ga7/sp_lw_ga7
 #spectral_file_sw           = components/socrates_couple/data/spectra/ga7/sp_sw_ga7
+spectral_file_lw           = /projects/monc/fra23/socrates_spectra/ga7/sp_lw_ga7
+spectral_file_sw           = /projects/monc/fra23/socrates_spectra/ga7/sp_sw_ga7
 
 # 5 is clear sky, 2 is cloud (ice and liquid no overlap), 1 (ice and liquid full overlap)
 i_cloud_representation  = 2

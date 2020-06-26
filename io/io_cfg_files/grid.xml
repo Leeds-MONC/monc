@@ -1,5 +1,4 @@
 <data-definition name="grid_data" frequency="{3d_sampling_frequency}" namespace="grid">
-        <field name="z" type="array" data_type="double" size="z"/>
         <field name="x_resolution" type="scalar" data_type="double"/>
         <field name="x_top" type="scalar" data_type="double" />
         <field name="x_bottom" type="scalar" data_type="double"/>
@@ -9,7 +8,6 @@
 </data-definition>
 
 <group name="grid_fields" namespace="grid">
-        <member name="z"/>
         <member name="x_resolution"/>
         <member name="x_top"/>
         <member name="x_bottom"/>

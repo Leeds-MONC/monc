@@ -2,7 +2,7 @@
 !! and only issues one call (and one results call to completion) for that combination
 module broadcast_inter_io_mod
   use datadefn_mod, only : DEFAULT_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
-  use configuration_parser_mod, only : io_configuration_type, io_configuration_inter_communication_description
+  use configuration_parser_mod, only : io_configuration_type, io_configuration_inter_communication_description,l_thoff
   use collections_mod, only : hashmap_type, list_type, iterator_type, mapentry_type, c_add_string, c_remove, c_free, &
        c_get_generic, c_get_string, c_put_generic, c_generic_at, c_get_iterator, c_has_next, c_next_mapentry, c_next_string, &
        c_is_empty
@@ -243,8 +243,11 @@ contains
     call c_put_generic(thread_callback_params, trim(conv_to_string(thread_callback_params_id)), generic, .false.)
     thread_callback_params_id=thread_callback_params_id+1
     call check_thread_status(forthread_mutex_unlock(thread_callback_params_mutex))
-
-    call threadpool_start_thread(thread_call_to_completion, (/ thread_callback_params_id-1 /))
+    if (l_thoff) then
+      call thread_call_to_completion((/ thread_callback_params_id-1 /))
+    else
+        call threadpool_start_thread(thread_call_to_completion, (/ thread_callback_params_id-1 /))
+    end if
   end subroutine issue_thread_call_to_completion
 
   !> Called by the thread pool, this will call onto the completion procedure before cleaning up
