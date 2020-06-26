@@ -2,11 +2,13 @@ module simplesetup_mod
   use datadefn_mod, only : DEFAULT_PRECISION
   use monc_component_mod, only : component_descriptor_type
   use state_mod, only : PRESCRIBED_SURFACE_FLUXES, model_state_type
-  use logging_mod, only : LOG_ERROR, log_log
+  use conversions_mod, only : conv_to_string
+  use logging_mod, only :  LOG_INFO, LOG_ERROR, log_log, log_master_log
   use grids_mod, only : local_grid_type, global_grid_type, X_INDEX, Y_INDEX, Z_INDEX, PRIMAL_GRID, DUAL_GRID
   use prognostics_mod, only : prognostic_field_type
   use optionsdatabase_mod, only : options_get_integer, options_get_logical, options_get_real, &
        options_get_integer_array, options_get_real_array
+  use tracers_mod, only : get_tracer_options
   use q_indices_mod, only: get_q_index, standard_q_names
   use registry_mod, only : is_component_enabled
 
@@ -19,6 +21,7 @@ module simplesetup_mod
   integer :: x_size, y_size, z_size
   real(kind=DEFAULT_PRECISION) :: zztop, dxx, dyy
   logical :: enable_theta=.false.
+
   public simplesetup_get_descriptor
 contains
 
@@ -78,9 +81,11 @@ contains
       call allocate_prognostic(current_state%zth, alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID)
       call allocate_prognostic(current_state%sth, alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID)
     end if
+    
     if (current_state%number_q_fields .gt. 0) then
       allocate(current_state%q(current_state%number_q_fields), &
-           current_state%zq(current_state%number_q_fields), current_state%sq(current_state%number_q_fields))
+               current_state%zq(current_state%number_q_fields),&
+               current_state%sq(current_state%number_q_fields))
       do i=1, current_state%number_q_fields
         call allocate_prognostic(current_state%q(i), alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID)
         call allocate_prognostic(current_state%zq(i), alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID)
@@ -91,6 +96,18 @@ contains
       current_state%water_vapour_mixing_ratio_index=get_q_index(standard_q_names%VAPOUR, 'simplesetup')
       current_state%liquid_water_mixing_ratio_index=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'simplesetup')
     end if
+    
+    if (current_state%n_tracers .gt. 0) then
+      allocate( current_state%tracer(current_state%n_tracers),  &
+                current_state%ztracer(current_state%n_tracers), &
+                current_state%stracer(current_state%n_tracers))
+      do i=1, current_state%n_tracers
+        call allocate_prognostic(current_state%tracer(i), alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID)
+        call allocate_prognostic(current_state%ztracer(i), alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID)
+        call allocate_prognostic(current_state%stracer(i), alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID)
+      end do
+      
+    endif ! allocate tracers
 
     ! Set arrays for radiative heating rates - Note: this should be protected by a switch
     call allocate_prognostic(current_state%sth_lw, alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID)
@@ -217,6 +234,12 @@ contains
       if (current_state%fix_ugal)current_state%ugal=options_get_real(current_state%options_database, "ugal")
       if (current_state%fix_vgal)current_state%vgal=options_get_real(current_state%options_database, "vgal")
     end if
+
+    current_state%print_debug_data = options_get_logical(current_state%options_database, "print_debug_data")
+
+    if (.not. current_state%reconfig_run) then        
+      call get_tracer_options(current_state)
+    end if ! not reconfig
 
   end subroutine read_configuration
 end module simplesetup_mod

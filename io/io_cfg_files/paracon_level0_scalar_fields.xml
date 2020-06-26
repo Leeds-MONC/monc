@@ -1,0 +1,211 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+   1.  This set of fields consists of nearly the full set of fields available from scalar_fields.xml
+       (found on the trunk).  It eliminates surface_precip_min, as this is always zero. It adds min 
+       and max for reske and subke.
+
+   2.  DO NOT expect all of these field to be written.  It may be the case that not all water 
+       species are specified in a given configuration.
+
+   3.  Requires:  
+          scalar_diagnostics_enabled=.true.
+
+-->
+
+<data-definition name="scalar_timeseries_fields" frequency="{sampling_frequency}" namespace="scalar_fields">
+  <field name="vwp" type="array" data_type="double" optional=true/>
+  <field name="lwp" type="array" data_type="double" optional=true/>
+  <field name="rwp" type="array" data_type="double" optional=true/>
+  <field name="iwp" type="array" data_type="double" optional=true/>
+  <field name="swp" type="array" data_type="double" optional=true/>
+  <field name="gwp" type="array" data_type="double" optional=true/>
+  <field name="tot_iwp" type="array" data_type="double" optional=true/>
+  <field name="wmax" type="array" data_type="double" optional=true/>
+  <field name="wmin" type="array" data_type="double" optional=true/>
+  <field name="senhf" type="array" data_type="double" optional=true/>
+  <field name="lathf" type="array" data_type="double" optional=true/>
+  <field name="surface_precip" type="array" data_type="double" optional=true/>
+  <field name="reske" type="array" data_type="double" optional=true/>
+  <field name="subke" type="array" data_type="double" optional=true/>
+</data-definition>
+
+<data-handling namespace="scalar_fields">
+  <diagnostic field="VWP_mean"  type="scalar" data_type="double" units="kg/m^2">
+	<operator name="arithmetic" result="VWP_mean" equation="VWP_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="VWP_mean_g" field="VWP_mean_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="sum" result="VWP_mean_loc_reduced" field="vwp"/>
+  </diagnostic>
+  <diagnostic field="LWP_mean"  type="scalar" data_type="double" units="kg/m^2">
+	<operator name="arithmetic" result="LWP_mean" equation="LWP_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="LWP_mean_g" field="LWP_mean_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="sum" result="LWP_mean_loc_reduced" field="lwp"/>
+  </diagnostic>
+  <diagnostic field="RWP_mean"  type="scalar" data_type="double" units="kg/m^2">
+	<operator name="arithmetic" result="RWP_mean" equation="RWP_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="RWP_mean_g" field="RWP_mean_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="sum" result="RWP_mean_loc_reduced" field="rwp"/>
+  </diagnostic>
+  <diagnostic field="IWP_mean"  type="scalar" data_type="double" units="kg/m^2">
+	<operator name="arithmetic" result="IWP_mean" equation="IWP_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="IWP_mean_g" field="IWP_mean_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="sum" result="IWP_mean_loc_reduced" field="iwp"/>
+  </diagnostic>  
+  <diagnostic field="SWP_mean"  type="scalar" data_type="double" units="kg/m^2">
+	<operator name="arithmetic" result="SWP_mean" equation="SWP_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="SWP_mean_g" field="SWP_mean_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="sum" result="SWP_mean_loc_reduced" field="swp"/>
+  </diagnostic>
+  <diagnostic field="GWP_mean"  type="scalar" data_type="double" units="kg/m^2">
+	<operator name="arithmetic" result="GWP_mean" equation="GWP_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="GWP_mean_g" field="GWP_mean_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="sum" result="GWP_mean_loc_reduced" field="gwp"/>
+  </diagnostic>
+  <diagnostic field="TOT_IWP_mean"  type="scalar" data_type="double" units="kg/m^2">
+	<operator name="arithmetic" result="TOT_IWP_mean" equation="TOT_IWP_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="TOT_IWP_mean_g" field="TOT_IWP_mean_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="sum" result="TOT_IWP_mean_loc_reduced" field="tot_iwp"/>
+  </diagnostic>
+  
+  <diagnostic field="VWP_max"  type="scalar" data_type="double" units="kg/m^2">
+    <communication name="reduction" operator="max" result="VWP_max" field="VWP_max_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="max" result="VWP_max_loc_reduced" field="vwp"/>
+  </diagnostic>
+  <diagnostic field="LWP_max"  type="scalar" data_type="double" units="kg/m^2">
+    <communication name="reduction" operator="max" result="LWP_max" field="LWP_max_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="max" result="LWP_max_loc_reduced" field="lwp"/>
+  </diagnostic>
+  <diagnostic field="RWP_max"  type="scalar" data_type="double" units="kg/m^2">
+    <communication name="reduction" operator="max" result="RWP_max" field="RWP_max_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="max" result="RWP_max_loc_reduced" field="rwp"/>
+  </diagnostic>
+  <diagnostic field="IWP_max"  type="scalar" data_type="double" units="kg/m^2">
+    <communication name="reduction" operator="max" result="IWP_max" field="IWP_max_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="max" result="IWP_max_loc_reduced" field="iwp"/>
+  </diagnostic>
+  <diagnostic field="SWP_max"  type="scalar" data_type="double" units="kg/m^2">
+    <communication name="reduction" operator="max" result="SWP_max" field="SWP_max_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="max" result="SWP_max_loc_reduced" field="swp"/>
+  </diagnostic>
+  <diagnostic field="GWP_max"  type="scalar" data_type="double" units="kg/m^2">
+    <communication name="reduction" operator="max" result="GWP_max" field="GWP_max_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="max" result="GWP_max_loc_reduced" field="gwp"/>
+  </diagnostic>
+  <diagnostic field="TOT_IWP_max"  type="scalar" data_type="double" units="kg/m^2">
+    <communication name="reduction" operator="max" result="TOT_IWP_max" field="TOT_IWP_max_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="max" result="TOT_IWP_max_loc_reduced" field="tot_iwp"/>
+  </diagnostic>
+
+  
+  <diagnostic field="w_max"  type="scalar" data_type="double" units="m/s">
+    <communication name="reduction" operator="max" result="w_max" field="wmax_loc_reduced" root="auto"/>
+    <operator name="localreduce" field="wmax" result="wmax_loc_reduced" operator="max"/>
+  </diagnostic>  
+  <diagnostic field="w_min"  type="scalar" data_type="double" units="m/s">
+    <communication name="reduction" operator="min" result="w_min" field="wmin_loc_reduced" root="auto"/>
+    <operator name="localreduce" field="wmin" result="wmin_loc_reduced" operator="min"/>
+  </diagnostic>
+
+
+ <diagnostic field="senhf_max"  type="scalar" data_type="double" units="W/m^2">
+	<communication name="reduction" operator="max" result="senhf_max" field="senhf_max_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="max" result="senhf_max_loc_reduced" field="senhf"/>
+  </diagnostic>
+ <diagnostic field="lathf_max"  type="scalar" data_type="double" units="W/m^2">
+	<communication name="reduction" operator="max" result="lathf_max" field="lathf_max_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="max" result="lathf_max_loc_reduced" field="lathf"/>
+  </diagnostic>
+ <diagnostic field="senhf_min"  type="scalar" data_type="double" units="W/m^2">
+	<communication name="reduction" operator="min" result="senhf_min" field="senhf_min_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="min" result="senhf_min_loc_reduced" field="senhf"/>
+  </diagnostic>
+ <diagnostic field="lathf_min"  type="scalar" data_type="double" units="W/m^2">
+	<communication name="reduction" operator="min" result="lathf_min" field="lathf_min_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="min" result="lathf_min_loc_reduced" field="lathf"/>
+  </diagnostic>
+  <diagnostic field="senhf_mean"  type="scalar" data_type="double" units="W/m^2">
+	<operator name="arithmetic" result="senhf_mean" equation="senhf_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="senhf_mean_g" field="senhf_mean_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="sum" result="senhf_mean_loc_reduced" field="senhf"/>
+  </diagnostic>
+  <diagnostic field="lathf_mean"  type="scalar" data_type="double" units="W/m^2">
+	<operator name="arithmetic" result="lathf_mean" equation="lathf_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="lathf_mean_g" field="lathf_mean_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="sum" result="lathf_mean_loc_reduced" field="lathf"/>
+  </diagnostic>
+
+
+  <diagnostic field="reske_mean"  type="scalar" data_type="double" units="J/m^2">
+        <operator name="arithmetic" result="reske_mean" equation="reske_mean_g/({x_size}*{y_size})"/>
+        <communication name="reduction" operator="sum" result="reske_mean_g" field="reske_mean_loc_reduced" root="auto"/>
+        <operator name="localreduce" operator="sum" result="reske_mean_loc_reduced" field="reske"/>
+  </diagnostic>
+  <diagnostic field="subke_mean"  type="scalar" data_type="double" units="J/m^2">
+        <operator name="arithmetic" result="subke_mean" equation="subke_mean_g/({x_size}*{y_size})"/>
+        <communication name="reduction" operator="sum" result="subke_mean_g" field="subke_mean_loc_reduced" root="auto"/>
+        <operator name="localreduce" operator="sum" result="subke_mean_loc_reduced" field="subke"/>
+  </diagnostic>
+ <diagnostic field="reske_max"  type="scalar" data_type="double" units="J/m^2">
+        <communication name="reduction" operator="max" result="reske_max" field="reske_max_loc_reduced" root="auto"/>
+        <operator name="localreduce" operator="max" result="reske_max_loc_reduced" field="reske"/>
+  </diagnostic>
+ <diagnostic field="subke_max"  type="scalar" data_type="double" units="J/m^2">
+        <communication name="reduction" operator="max" result="subke_max" field="subke_max_loc_reduced" root="auto"/>
+        <operator name="localreduce" operator="max" result="subke_max_loc_reduced" field="subke"/>
+  </diagnostic>
+ <diagnostic field="reske_min"  type="scalar" data_type="double" units="J/m^2">
+        <communication name="reduction" operator="min" result="reske_min" field="reske_min_loc_reduced" root="auto"/>
+        <operator name="localreduce" operator="min" result="reske_min_loc_reduced" field="reske"/>
+  </diagnostic>
+ <diagnostic field="subke_min"  type="scalar" data_type="double" units="J/m^2">
+        <communication name="reduction" operator="min" result="subke_min" field="subke_min_loc_reduced" root="auto"/>
+        <operator name="localreduce" operator="min" result="subke_min_loc_reduced" field="subke"/>
+  </diagnostic>
+
+
+  <diagnostic field="surface_precip_mean"  type="scalar" data_type="double" units="kg/m^2/s">
+    <operator name="arithmetic" result="surface_precip_mean" equation="surface_precip_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="surface_precip_mean_g" field="surface_precip_mean_loc_reduced" root="auto"/>
+    <operator name="localreduce" operator="sum" result="surface_precip_mean_loc_reduced" field="surface_precip"/>
+  </diagnostic>
+  <diagnostic field="surface_precip_max"  type="scalar" data_type="double" units="kg/m^2/s">
+	<communication name="reduction" operator="max" result="surface_precip_max" field="surface_precip_max_loc_reduced" root="auto"/>
+	<operator name="localreduce" operator="max" result="surface_precip_max_loc_reduced" field="surface_precip"/>
+  </diagnostic> 
+</data-handling>
+
+<group name="scalar_timeseries" namespace="scalar_fields">
+  <member name="VWP_mean"/>
+  <member name="LWP_mean"/>
+  <member name="RWP_mean"/>
+  <member name="IWP_mean"/>
+  <member name="SWP_mean"/>
+  <member name="GWP_mean"/>
+  <member name="TOT_IWP_mean"/>
+  <member name="VWP_max"/>
+  <member name="LWP_max"/>
+  <member name="RWP_max"/>
+  <member name="IWP_max"/>
+  <member name="SWP_max"/>
+  <member name="GWP_max"/>
+  <member name="TOT_IWP_max"/>
+
+  <member name="w_max"/>
+  <member name="w_min"/>  
+
+  <member name="senhf_mean"/>
+  <member name="lathf_mean"/>
+  <member name="senhf_max"/>
+  <member name="lathf_max"/>
+  <member name="senhf_min"/>
+  <member name="lathf_min"/>
+
+  <member name="reske_mean"/>
+  <member name="subke_mean"/>
+  <member name="reske_max"/>
+  <member name="subke_max"/>
+  <member name="reske_min"/>
+  <member name="subke_min"/>
+
+  <member name="surface_precip_mean"/>
+  <member name="surface_precip_max"/>
+</group>

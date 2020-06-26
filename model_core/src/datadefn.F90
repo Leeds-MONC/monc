@@ -20,6 +20,13 @@ module datadefn_mod
   !< MPI communication type which we use for the prognostic and calculation data
   integer, public :: PRECISION_TYPE, SINGLE_PRECISION_TYPE, DOUBLE_PRECISION_TYPE
 
+
+!trj
+! Likely temporary configuration precision toggle
+! Original intent was to read as double.
+logical, public, parameter :: l_config_double = .true.  ! read config reals as DOUBLE_PRECISION
+!logical, public, parameter :: l_config_double = .false.  ! read config reals as fortran reals, as original
+
   public init_data_defn
 
 contains

@@ -144,7 +144,7 @@ l_constant_forcing_v=.false.
 
 # Unit options are K/s or K/day
 units_theta_force=K/day
-l_constant_forcing_theta_z2pressure=.true.
+l_constant_forcing_theta_height=.true.
 z_force_pl_theta=0.0, 1500.0, 2500.0, 3000.
 f_force_pl_theta=-2.0, -2.0, 0.0, 0.0
 

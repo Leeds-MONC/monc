@@ -29,16 +29,22 @@ contains
   !! @param field_name The field name
   !! @param timestep The timestep
   !! @param time The model time
+  !! @param time_basis True for diagnostics interval in time coordinates, False for timestep coordinates
   !! @returns An allocated array of reals if data is to be stored, otherwise this is unallocated
   type(data_values_type) function perform_none_time_manipulation(instant_values, output_frequency, &
-       field_name, timestep, time)
+       field_name, timestep, time, time_basis)
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: instant_values
     real, intent(in) :: output_frequency
     real(kind=DEFAULT_PRECISION), intent(in) :: time
     character(len=*), intent(in) :: field_name
     integer, intent(in) :: timestep
+    logical, intent(in) :: time_basis
+
+    integer :: i
 
     allocate(perform_none_time_manipulation%values(size(instant_values)))
-    perform_none_time_manipulation%values=instant_values
+    do i=1,size(instant_values)
+      perform_none_time_manipulation%values(i)=instant_values(i)
+    end do
   end function perform_none_time_manipulation 
 end module none_time_manipulation_mod

@@ -55,6 +55,9 @@ contains
     if (current_state%number_q_fields .gt. 0) then
        call set_q_lowbc(current_state, current_x_index, current_y_index)
     endif
+    if (current_state%n_tracers .gt. 0) then
+       call set_tracer_lowbc(current_state, current_x_index, current_y_index)
+    endif
   end subroutine timestep_callback
 
   subroutine set_flow_lowbc(current_state, current_x_index, current_y_index)
@@ -119,5 +122,20 @@ contains
     endif
 
   end subroutine set_q_lowbc
+
+  subroutine set_tracer_lowbc(current_state, current_x_index, current_y_index)
+    type(model_state_type), target, intent(inout) :: current_state
+    integer, intent(in) ::  current_x_index, current_y_index
+
+    integer :: i  
+    
+    if (current_state%n_tracers .gt. 0) then
+       do n=1,current_state%n_tracers
+          current_state%stracer(n)%data(1, current_y_index, current_x_index)= &
+               current_state%stracer(n)%data(2,current_y_index, current_x_index)
+       enddo
+    endif
+
+  end subroutine set_tracer_lowbc
 
 end module set_consistent_lowbc_mod

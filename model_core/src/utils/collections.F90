@@ -1413,7 +1413,7 @@ contains
   end function hashmap_contains_key
 
   !> Retrieves the key currently being held at a specific index in the hashmap or "" if the index > map elements. Note
-  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !! that this is an expensive operation as it has to potentially process all internal hashed lists so avoid if can
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved
@@ -1438,7 +1438,7 @@ contains
   end function hashmap_key_at
 
   !> Retrieves the value held at the specific hashmap index. Note
-  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !! that this is an expensive operation as it has to potentially process all internal hashed lists so avoid if can
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved
@@ -1457,7 +1457,7 @@ contains
   end function hashmap_integer_at
 
   !> Retrieves the value held at the specific hashmap index. Note
-  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !! that this is an expensive operation as it has to potentially process all internal hashed lists so avoid if can
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved
@@ -1476,7 +1476,7 @@ contains
   end function hashmap_string_at
 
   !> Retrieves the value held at the specific hashmap index. Converts between precision and from int. Note
-  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !! that this is an expensive operation as it has to potentially process all internal hashed lists so avoid if can
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved
@@ -1502,7 +1502,7 @@ contains
   end function hashmap_real_at
 
   !> Retrieves the value held at the specific hashmap index. Note
-  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !! that this is an expensive operation as it has to potentially process all internal hashed lists so avoid if can
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved
@@ -1521,7 +1521,7 @@ contains
   end function hashmap_logical_at
 
   !> Retrieves the value held at the specific hashmap index or null if index > map elements. Note
-  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !! that this is an expensive operation as it has to potentially process all internal hashed lists so avoid if can
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved

@@ -123,17 +123,17 @@ contains
   end subroutine interpolate_point_linear_1d
 
   !> Does a simple 1d linear interpolation to a point
-  !! @param zvals input z nodes
-  !! @param vals  input nodal values
-  !! @param z location to interpolate onto
+  !! @param zvals_in input z nodes
+  !! @param vals_in input nodal values
+  !! @param z_out location to interpolate onto
   !! @param f output interpolated value
-  subroutine piecewise_linear_2d(zvals, time_vals, vals, z, field)
+  subroutine piecewise_linear_2d(zvals_in, time_vals, vals_in, z_out, field)
 
     ! Assumes input variables (vals) are 2-D, with dims (z, time) 
 
-    real(kind=DEFAULT_PRECISION), intent(in) :: zvals(:), time_vals(:)
-    real(kind=DEFAULT_PRECISION), intent(in) :: vals(:,:)
-    real(kind=DEFAULT_PRECISION), intent(in) :: z(:)
+    real(kind=DEFAULT_PRECISION), intent(in) :: zvals_in(:), time_vals(:)
+    real(kind=DEFAULT_PRECISION), intent(in) :: vals_in(:,:)
+    real(kind=DEFAULT_PRECISION), intent(in) :: z_out(:)
     real(kind=DEFAULT_PRECISION), intent(out) :: field(:,:)
 
     real(kind=DEFAULT_PRECISION) :: scale_tmp
@@ -141,18 +141,30 @@ contains
     integer :: nn, k_monc, k_force                     ! loop counter
     integer :: nz_force, nt_force, nz_monc, nt_monc    ! time and height array sizes for forcing and monc grids
     integer :: nnodes                                  ! number of input values
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: zvals, z
+    real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: vals
     
-    nz_force = size(zvals)
+
+    nz_force = size(zvals_in)
     nt_force = size(time_vals)
-    nz_monc  = size(z)
+    nz_monc  = size(z_out)
     nt_monc  = size(time_vals) ! time is intepolated in the timestep callback
 
+    allocate(zvals(nz_force),z(nz_monc),vals(nz_force,nt_force))
+
+    zvals=zvals_in
+
     if ( zvals(1) .GT. zvals(nz_force) ) then   ! pressure
-       call log_master_log(LOG_ERROR, "Input forcing uses pressure, this has not been coded"// &
-            " - please modify your forcing file to using height coordinates or modify the" // &
-            " interpolation routine in model_core to work with pressure coords - STOP") 
+      zvals=log10(zvals_in(nz_force:1:-1))
+      z=log10(z_out(nz_monc:1:-1))
+      vals=vals_in(nz_force:1:-1,:)
     else
-       do k_monc=2,nz_monc                                                     
+      zvals=zvals_in
+      z=z_out
+      vals=vals_in
+    end if
+
+       do k_monc=1,nz_monc                                                     
           do k_force=1,nz_force-1                                          
              if( z(k_monc) >= zvals(k_force) .AND. z(k_monc) < zvals(k_force+1) ) then                  
                 scale_tmp = ( z(k_monc) - zvals(k_force) ) /              &
@@ -168,8 +180,8 @@ contains
        ! now examine the cases below and above forlevs(1) and forlevs(ktmfor
        ! uses the local vertical gradient in the forcing to determine the   
        ! new values                                                         
-       do k_monc=2,nz_monc                                                
-          if ( z(k_monc) >= zvals(nt_force) ) then                    
+       do k_monc=1,nz_monc                                                
+          if ( z(k_monc) >= zvals(nz_force) ) then                    
              scale_tmp = ( z(k_monc) - zvals(nz_force) )                   &                
                   / ( zvals(nz_force) - zvals(nz_force-1) )           
              do nn=1,nt_force                                            
@@ -188,17 +200,26 @@ contains
           endif
        enddo
        !                                                                    
-    endif   ! pressure or height   
+    if ( zvals(nz_force) .GT. zvals(1) ) then   ! pressure (flipped coordinates)
+      field=field(nz_monc:1:-1,:)
+    endif
 
   end subroutine piecewise_linear_2d
 
+
+
+  ! "extrapolate" is a bad name for this option, as extrapolate is only used to determine how to 
+  ! do the interpolation so that it is either linear or constant (not actually interpolation)
+  ! Actual extrapolation is only constant and automatic, it's just constantly replicated. Oy.
+  ! Pleasantly, the default is to do internal linear interpolation.
+  !  See interpolate_point_linear_1d for what looks to be the intended implementation.
   subroutine interpolate_point_linear_2d(zvals, vals, z, f, extrapolate)
 
     ! 2-d because the "vals" array is 2d, probably height and time
 
-    real(kind=DEFAULT_PRECISION), intent(in) :: zvals(:), vals(:,:)
-    real(kind=DEFAULT_PRECISION), intent(in) :: z
-    real(kind=DEFAULT_PRECISION), intent(out) :: f(:) ! height
+    real(kind=DEFAULT_PRECISION), intent(in) :: zvals(:), vals(:,:)  ! forcing_times(:),forcing_values(height,time)
+    real(kind=DEFAULT_PRECISION), intent(in) :: z                    ! time to interpolate to
+    real(kind=DEFAULT_PRECISION), intent(out) :: f(:)                ! output profile(height)
     character(*), intent(in), optional :: extrapolate
     
     integer :: nn  ! loop counter

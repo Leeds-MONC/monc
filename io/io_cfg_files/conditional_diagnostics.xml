@@ -1,4 +1,4 @@
-<data-definition name="conditional_diagnostics_data" frequency="{3d_sampling_frequency}" namespace="condi_fields"> 
+<data-definition name="conditional_diagnostics_data" frequency="{sampling_frequency}" namespace="condi_fields"> 
   <field name="CondDiags_tot" type="array" data_type="double" optional=true/> 
 </data-definition> 
 

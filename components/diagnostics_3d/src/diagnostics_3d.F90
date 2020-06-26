@@ -21,7 +21,7 @@ module diagnostics_3d_mod
   private
 #endif
 
-  integer :: total_points, iqv, iql, iqr
+  integer :: iqv, iql, iqr
   real(kind=DEFAULT_PRECISION), dimension(:,:,:), allocatable ::     &
        TdegK,               & ! absolute temperature in kelvin
        theta,               & ! potential temperature in kelvin (th + thref)
@@ -111,8 +111,8 @@ contains
        endif
        TdegK(:,target_y_index, target_x_index) =                            &
             (current_state%th%data(:,current_y_index,current_x_index)       &
-            + current_state%global_grid%configuration%vertical%thref(:)     &
-            * current_state%global_grid%configuration%vertical%rprefrcp(:))       
+            + current_state%global_grid%configuration%vertical%thref(:))    &
+            * current_state%global_grid%configuration%vertical%rprefrcp(:)       
     endif
     
   end subroutine timestep_callback

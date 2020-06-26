@@ -7,7 +7,7 @@ module io_server_mod
   use configuration_parser_mod, only : DATA_SIZE_STRIDE, io_configuration_type, io_configuration_data_definition_type, &
        io_configuration_registered_monc_type, configuration_parse, extend_registered_moncs_array, retrieve_data_definition, &
        build_definition_description_type_from_configuration, build_field_description_type_from_configuration, get_monc_location, &
-       get_io_xml, cond_request, diag_request, cond_long, diag_long, ncond, ndiag
+       get_io_xml, cond_request, diag_request, cond_long, diag_long, ncond, ndiag, l_thoff
 
   use mpi_communication_mod, only : build_mpi_datatype, data_receive, test_for_command, register_command_receive, &
        cancel_requests, free_mpi_type, get_number_io_servers, get_my_io_rank, test_for_inter_io, lock_mpi, unlock_mpi, &
@@ -15,14 +15,14 @@ module io_server_mod
   use diagnostic_federator_mod, only : initialise_diagnostic_federator, finalise_diagnostic_federator, &
        check_diagnostic_federator_for_completion, pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available
   use writer_federator_mod, only : initialise_writer_federator, finalise_writer_federator, check_writer_for_trigger, &
-       inform_writer_federator_fields_present, inform_writer_federator_time_point, provide_q_field_names_to_writer_federator
+       inform_writer_federator_fields_present, inform_writer_federator_time_point, provide_q_field_names_to_writer_federator, &
+       provide_tracer_names_to_writer_federator, any_pending
   use writer_field_manager_mod, only : initialise_writer_field_manager, finalise_writer_field_manager, &
        provide_monc_data_to_writer_federator
   use collections_mod, only : hashset_type, hashmap_type, map_type, iterator_type, c_get_integer, c_put_integer, c_is_empty, &
        c_remove, c_add_string, c_integer_at, c_free, c_get_iterator, c_has_next, c_next_mapentry
   use conversions_mod, only : conv_to_string
   use string_utils_mod, only : replace_character
-  use optionsdatabase_mod, only : options_get_string
   use io_server_client_mod, only : REGISTER_COMMAND, DEREGISTER_COMMAND, INTER_IO_COMMUNICATION, DATA_COMMAND_START, DATA_TAG, &
        LOCAL_SIZES_KEY, LOCAL_START_POINTS_KEY, LOCAL_END_POINTS_KEY, NUMBER_Q_INDICIES_KEY, SCALAR_FIELD_TYPE, &
        data_sizing_description_type, definition_description_type, field_description_type, build_mpi_type_data_sizing_description,&
@@ -34,8 +34,8 @@ module io_server_mod
        threadpool_deactivate, threadpool_is_idle
   use global_callback_inter_io_mod, only : perform_global_callback
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, initialise_logging
-  use optionsdatabase_mod, only : options_get_logical
-  use mpi, only : MPI_COMM_WORLD, MPI_STATUSES_IGNORE, MPI_BYTE
+  use optionsdatabase_mod, only : options_get_logical, options_get_string
+  use mpi, only : MPI_COMM_WORLD, MPI_STATUSES_IGNORE, MPI_BYTE, MPI_INT
   use io_server_state_reader_mod, only : read_io_server_configuration
   implicit none
 
@@ -47,11 +47,12 @@ module io_server_mod
        mpi_type_definition_description, & !< The MPI data type for data descriptions sent to MONCs
        mpi_type_field_description !< The MPI data type for field descriptions sent to MONCs
   type(io_configuration_type), volatile, save :: io_configuration !< Internal representation of the IO configuration
-  logical, volatile :: contine_poll_messages, & !< Whether to continue waiting command messages from any MONC processes
+  logical, volatile :: continue_poll_messages, & !< Whether to continue waiting command messages from any MONC processes
        initialised_present_data
-  logical, volatile :: contine_poll_interio_messages, already_registered_finishing_call
+  logical, volatile :: continue_poll_interio_messages, already_registered_finishing_call
   type(field_description_type), dimension(:), allocatable :: registree_field_descriptions
   type(definition_description_type), dimension(:), allocatable :: registree_definition_descriptions
+  integer, dimension(:,:), allocatable :: sample_output_pairs
 
   integer, volatile :: monc_registration_lock
 
@@ -64,10 +65,12 @@ contains
   !! @param io_communicator_arg The IO communicator containing just the IO servers
   !! @param io_xml_configuration Textual XML configuration that is used to set up the IO server
   subroutine io_server_run(options_database, io_communicator_arg, &
-       provided_threading, total_global_processes, continuation_run, io_configuration_file)
+       provided_threading, total_global_processes, continuation_run, reconfig_initial_time, io_configuration_file, &
+       my_global_rank)
     type(hashmap_type), intent(inout) :: options_database
-    integer, intent(in) :: io_communicator_arg, provided_threading, total_global_processes
+    integer, intent(in) :: io_communicator_arg, provided_threading, total_global_processes, my_global_rank
     logical, intent(in) :: continuation_run
+    real(kind=DEFAULT_PRECISION), intent(in) :: reconfig_initial_time
     character(len=LONG_STRING_LENGTH), intent(in) :: io_configuration_file
 
     integer :: command, source, my_rank, ierr
@@ -99,21 +102,22 @@ contains
     call check_thread_status(forthread_rwlock_init(monc_registration_lock, -1))
     call check_thread_status(forthread_mutex_init(io_configuration%general_info_mutex, -1))
     initialised_present_data=.false.
-    contine_poll_messages=.true.
-    contine_poll_interio_messages=.true.
+    continue_poll_messages=.true.
+    continue_poll_interio_messages=.true.
     already_registered_finishing_call=.false.
     io_configuration%io_communicator=io_communicator_arg
     io_configuration%number_of_io_servers=get_number_io_servers(io_communicator_arg)
     io_configuration%number_of_global_moncs=total_global_processes-io_configuration%number_of_io_servers
     io_configuration%my_io_rank=get_my_io_rank(io_communicator_arg)
+    io_configuration%my_global_rank=my_global_rank
     call initialise_logging(io_configuration%my_io_rank)
     registree_definition_descriptions=build_definition_description_type_from_configuration(io_configuration)
     registree_field_descriptions=build_field_description_type_from_configuration(io_configuration)
     diagnostic_generation_frequency=initialise_diagnostic_federator(io_configuration)
-    call initialise_writer_federator(io_configuration, diagnostic_generation_frequency, continuation_run)
+    call initialise_writer_federator(io_configuration, diagnostic_generation_frequency, continuation_run, &
+                                     reconfig_initial_time, sample_output_pairs)
     call c_free(diagnostic_generation_frequency)
-    call initialise_writer_field_manager(io_configuration, continuation_run)
-
+    call initialise_writer_field_manager(io_configuration, continuation_run, reconfig_initial_time)
     mpi_type_data_sizing_description=build_mpi_type_data_sizing_description()
     mpi_type_definition_description=build_mpi_type_definition_description()
     mpi_type_field_description=build_mpi_type_field_description()
@@ -172,14 +176,14 @@ contains
     completed=.false.
     await_command=.false.
     do while(.not. completed)
-      if (.not. contine_poll_messages .and. .not. contine_poll_interio_messages) return
-      if (contine_poll_messages) then
+      if (.not. continue_poll_messages .and. .not. continue_poll_interio_messages) return
+      if (continue_poll_messages) then
         if (test_for_command(command, source)) then
           await_command=.true.
           return
         end if
       end if
-      if (contine_poll_interio_messages .and. allocated(io_configuration%inter_io_communications)) then       
+      if (continue_poll_interio_messages .and. allocated(io_configuration%inter_io_communications)) then       
         inter_io_complete=test_for_inter_io(io_configuration%inter_io_communications, &
              io_configuration%number_inter_io_communications, io_configuration%io_communicator, command, source, data_buffer) 
         if (inter_io_complete) then
@@ -187,8 +191,9 @@ contains
           return
         end if
       end if
-      if (.not. contine_poll_messages .and. .not. already_registered_finishing_call) then
-        if (check_diagnostic_federator_for_completion(io_configuration) .and. threadpool_is_idle()) then
+      if (.not. continue_poll_messages .and. .not. already_registered_finishing_call) then
+        if (check_diagnostic_federator_for_completion(io_configuration) .and. &
+            (.not. any_pending()) .and. threadpool_is_idle()) then
           already_registered_finishing_call=.true.          
           call perform_global_callback(io_configuration, "termination", 1, termination_callback)          
         end if
@@ -209,7 +214,7 @@ contains
     character(len=STRING_LENGTH) :: field_name
     integer :: timestep
 
-    contine_poll_interio_messages=.false.
+    continue_poll_interio_messages=.false.
   end subroutine termination_callback  
 
   !> Called to handle a specific command that has been recieved
@@ -220,11 +225,23 @@ contains
     character, dimension(:), allocatable, intent(inout) :: data_buffer
 
     if (command == REGISTER_COMMAND) then
-      call threadpool_start_thread(handle_monc_registration, (/ source /))
+      if (l_thoff) then
+        call handle_monc_registration((/ source /))
+      else
+        call threadpool_start_thread(handle_monc_registration, (/ source /))
+      end if
     else if (command == DEREGISTER_COMMAND) then
-      call threadpool_start_thread(handle_deregistration_command, (/ source /))
+      if (l_thoff) then
+        call handle_deregistration_command((/ source /))
+      else
+        call threadpool_start_thread(handle_deregistration_command, (/ source /))
+      end if
     else if (command == INTER_IO_COMMUNICATION) then
-      call threadpool_start_thread(handle_inter_io_communication_command, (/ source /), data_buffer=data_buffer)      
+      if (l_thoff) then
+        call handle_inter_io_communication_command((/ source /), data_buffer=data_buffer)
+      else
+        call threadpool_start_thread(handle_inter_io_communication_command, (/ source /), data_buffer=data_buffer)      
+      end if
       deallocate(data_buffer)
     else if (command .ge. DATA_COMMAND_START) then      
       call pull_back_data_message_and_handle(source, command-DATA_COMMAND_START)
@@ -285,7 +302,7 @@ contains
     call check_thread_status(forthread_mutex_unlock(io_configuration%registered_moncs(monc_location)%active_mutex))
     call check_thread_status(forthread_rwlock_wrlock(monc_registration_lock))
     io_configuration%active_moncs=io_configuration%active_moncs-1
-    if (io_configuration%active_moncs==0) contine_poll_messages=.false.
+    if (io_configuration%active_moncs==0) continue_poll_messages=.false.
     call check_thread_status(forthread_rwlock_unlock(monc_registration_lock))
   end subroutine handle_deregistration_command
 
@@ -296,7 +313,7 @@ contains
   subroutine pull_back_data_message_and_handle(source, data_set)
     integer, intent(in) :: source, data_set
 
-    integer :: specific_monc_data_type, specific_monc_buffer_size, recv_count, monc_location
+    integer :: specific_monc_data_type, specific_monc_buffer_size, recv_count, monc_location, matched_datadefn_index
     character, dimension(:), allocatable :: data_buffer
 
     call check_thread_status(forthread_rwlock_rdlock(monc_registration_lock))
@@ -310,8 +327,22 @@ contains
     allocate(data_buffer(specific_monc_buffer_size))
     recv_count=data_receive(specific_monc_data_type, 1, source, dump_data=data_buffer, data_dump_id=data_set)
 
+
+    ! This call is not handled by threading...should aid in ensuring that all time points are listed appropriately
+    matched_datadefn_index=retrieve_data_definition(io_configuration, &
+         io_configuration%registered_moncs(monc_location)%definition_names(data_set))
+    if (matched_datadefn_index .gt. 0) then
+      call inform_writer_federator_time_point(io_configuration, source, data_set, data_buffer)
+    end if
+
     call check_thread_status(forthread_rwlock_unlock(monc_registration_lock))
-    call threadpool_start_thread(handle_data_message, (/ source,  data_set /), data_buffer=data_buffer)
+
+    if (l_thoff) then
+      call handle_data_message((/ source,  data_set /), data_buffer=data_buffer)
+    else
+      call threadpool_start_thread(handle_data_message, (/ source,  data_set /), data_buffer=data_buffer)
+    end if
+
     deallocate(data_buffer)
   end subroutine pull_back_data_message_and_handle  
 
@@ -338,9 +369,7 @@ contains
     
     matched_datadefn_index=retrieve_data_definition(io_configuration, &
          io_configuration%registered_moncs(monc_location)%definition_names(data_set))
-
     if (matched_datadefn_index .gt. 0) then
-      call inform_writer_federator_time_point(io_configuration, source, data_set, data_buffer)
       call pass_fields_to_diagnostics_federator(io_configuration, source, data_set, data_buffer)
       call provide_monc_data_to_writer_federator(io_configuration, source, data_set, data_buffer)
       call check_writer_for_trigger(io_configuration, source, data_set, data_buffer)
@@ -365,7 +394,7 @@ contains
     integer, dimension(:), intent(in) :: arguments
     character, dimension(:), allocatable, intent(inout), optional :: data_buffer
 
-    integer :: configuration_send_request(2), ierr, number_data_definitions, this_monc_index, source
+    integer :: configuration_send_request(3), ierr, number_data_definitions, this_monc_index, source
 
     source=arguments(1)
     configuration_send_request=send_configuration_to_registree(source)
@@ -400,7 +429,7 @@ contains
          io_configuration%registered_moncs(this_monc_index)%dimensions(number_data_definitions))
 
     ! Wait for configuration to have been sent to registree
-    call waitall_for_mpi_requests(configuration_send_request, 2)
+    call waitall_for_mpi_requests(configuration_send_request, 3)
     call init_data_definition(source, io_configuration%registered_moncs(this_monc_index))
   end subroutine handle_monc_registration
 
@@ -409,15 +438,17 @@ contains
   !! @returns The nonblocking send request handles which can be waited for completion later (overlap compute and communication)
   function send_configuration_to_registree(source)
     integer, intent(in) :: source
-    integer :: send_configuration_to_registree(2)
+    integer :: send_configuration_to_registree(3)
     
-    integer :: ierr, srequest(2)
+    integer :: ierr, srequest(3)
 
     call lock_mpi()
     call mpi_isend(registree_definition_descriptions, size(registree_definition_descriptions), mpi_type_definition_description, &
          source, DATA_TAG, MPI_COMM_WORLD, srequest(1), ierr)
     call mpi_isend(registree_field_descriptions, size(registree_field_descriptions), mpi_type_field_description, &
          source, DATA_TAG, MPI_COMM_WORLD, srequest(2), ierr)
+    call mpi_isend(sample_output_pairs, size(sample_output_pairs), MPI_INT, &
+         source, DATA_TAG, MPI_COMM_WORLD, srequest(3), ierr)
     call unlock_mpi()
 
     send_configuration_to_registree=srequest    
@@ -469,8 +500,8 @@ contains
     integer, intent(in) :: source
 
     character, dimension(:), allocatable :: buffer
-    character(len=STRING_LENGTH) :: q_field_name, cd_field_name
-    integer :: buffer_size, z_size, num_q_fields, n, current_point, recv_count
+    character(len=STRING_LENGTH) :: q_field_name, tracer_name, cd_field_name
+    integer :: buffer_size, z_size, num_q_fields, num_tracers, n, current_point, recv_count
     type(data_sizing_description_type) :: field_description
     real(kind=DEFAULT_PRECISION) :: dreal
     logical :: field_found
@@ -478,8 +509,9 @@ contains
 
     z_size=c_get_integer(io_configuration%dimension_sizing, "z")
     num_q_fields=c_get_integer(io_configuration%dimension_sizing, "qfields")
+    num_tracers=c_get_integer(io_configuration%dimension_sizing, "tfields")
 
-    buffer_size=(kind(dreal)*z_size)*2 + (STRING_LENGTH * num_q_fields) &
+    buffer_size=(kind(dreal)*z_size)*2 + (STRING_LENGTH * num_q_fields) + STRING_LENGTH * num_tracers &
                  + 2*ncond*STRING_LENGTH + 2*ndiag*STRING_LENGTH 
     allocate(buffer(buffer_size))
     recv_count=data_receive(MPI_BYTE, buffer_size, source, buffer)
@@ -499,6 +531,15 @@ contains
             call c_add_string(io_configuration%q_field_names, q_field_name)
           end do
         end if
+    
+        if (num_tracers .gt. 0) then
+          do n=1, num_tracers
+            tracer_name=transfer(buffer(current_point+1:current_point+STRING_LENGTH), tracer_name)
+            current_point=current_point+STRING_LENGTH
+            call c_add_string(io_configuration%tracer_names, tracer_name)
+          end do
+        end if
+
         io_configuration%z_field=transfer(buffer(current_point+1:current_point+kind(dreal)*z_size), &
                                           io_configuration%z_field)
         current_point=current_point+(kind(dreal)*z_size)
@@ -509,6 +550,7 @@ contains
           cond_long(n)=transfer(buffer(current_point+1:current_point+STRING_LENGTH), cd_field_name)
           current_point=current_point+STRING_LENGTH
         end do
+
         do n=1,ndiag
           diag_request(n)=transfer(buffer(current_point+1:current_point+STRING_LENGTH), cd_field_name)
           current_point=current_point+STRING_LENGTH
@@ -518,6 +560,7 @@ contains
 
       end if
       call provide_q_field_names_to_writer_federator(io_configuration%q_field_names)
+      call provide_tracer_names_to_writer_federator(io_configuration%tracer_names)
       call check_thread_status(forthread_mutex_unlock(io_configuration%general_info_mutex))
     end if
     deallocate(buffer)

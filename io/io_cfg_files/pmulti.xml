@@ -1,0 +1,76 @@
+<!--  Please enter any necessary conditions for the use of this file here. 
+
+   1.  This control file uses the configuration-referencing 'diagnostic_file' parameter to direct 
+       and name diagnostic files.  This is the 'newer' way of doing this in MONC.
+
+   2.  To write to multiple files, create multiple unique parameters in the configuration for 
+       directing and naming each file, and use them in unique file blocks within data-writing.
+-->
+
+<io-configuration>
+	<server-configuration>
+		<thread_pool number=500/>
+	</server-configuration>
+
+<!--  paracon level0 fields  -->
+#include "io/io_cfg_files/paracon_level0_scalar_fields.xml"
+#include "io/io_cfg_files/paracon_level0_tendency_profile_fields.xml"
+#include "io/io_cfg_files/paracon_2d_fields.xml"
+#include "io/io_cfg_files/paracon_level0_profile_resolved.xml"
+
+<!--  additional paracon xml packages -->
+#include "io/io_cfg_files/paracon_3d_fields.xml"
+#include "io/io_cfg_files/paracon_CASIM_process.xml"
+#include "io/io_cfg_files/paracon_tendency_3d_fields.xml"
+#include "io/io_cfg_files/paracon_socrates_fields.xml" 
+#include "io/io_cfg_files/paracon_subgrid_profiles.xml" 
+#include "io/io_cfg_files/paracon_TKE_diagnostics.xml"
+#include "io/io_cfg_files/paracon_pdf_analysis.xml"
+#include "io/io_cfg_files/conditional_diagnostics.xml"
+#include "io/io_cfg_files/paracon_tracers_3d.xml"
+#include "io/io_cfg_files/paracon_tracers_2d.xml"
+
+#include "io/io_cfg_files/grid.xml"
+
+<!--  Make this the last include, but before data-writing -->
+#include "io/io_cfg_files/checkpoint.xml"
+
+<data-writing>
+
+  <file name="{diagnostic_file_3d}" write_time_frequency="{diag_write_freq}" title="3d" write_precision="fLOaT" >
+    <include group="3d_fields" time_manipulation="instantaneous" output_frequency="{mm1}"/>
+    <include group="tendency_3d_fields" time_manipulation="instantaneous" output_frequency="{mm1}"/>
+    <include group="3d_tracers" time_manipulation="instantaneous" output_frequency="{mm1}"/>
+  </file>
+
+
+  <file name="{diagnostic_file_2d}" write_time_frequency="{diag_write_freq}" title="2d" write_precision="fLOaT" >
+    <include group="2d_fields" time_manipulation="instantaneous" output_frequency="{mm}"/>
+    <include group="2d_tracers" time_manipulation="instantaneous" output_frequency="{mm1}"/>
+  </file>
+
+
+  <file name="{diagnostic_file_1d}" write_time_frequency="{diag_write_freq}" title="1d" write_precision="fLOaT" >
+    <include group="profile_resolved" time_manipulation="averaged" output_frequency="{mm}"/>
+    <include group="tendency_profile_timeseries"  time_manipulation="averaged" output_frequency="{mm}"/>
+    <include group="subgrid_profiles" time_manipulation="averaged" output_frequency="{mm}"/>
+    <include group="tke_fields" time_manipulation="averaged" output_frequency="{mm}"/>
+    <include group="CASIM_process_rate_profiles" time_manipulation="averaged" output_frequency="{mm}"/>
+    <include group="pdfa_fields" time_manipulation="averaged" output_frequency="{mm}"/>
+  </file>
+
+
+  <file name="{diagnostic_file_0d}" write_time_frequency="{diag_write_freq}" title="0d" write_precision="fLOaT" >
+    <include group="scalar_timeseries" time_manipulation="averaged" output_frequency="{mm}"/>
+  </file>
+
+
+  <file name="{diagnostic_file_ed}" write_time_frequency="{diag_write_freq}" title="ed" write_precision="fLOaT" >
+    <include group="socrates_fields" time_manipulation="averaged" output_frequency="{mm1}"/>
+    <include group="conditional_diagnostics" time_manipulation="instantaneous" output_frequency="{mm}"/>
+  </file>
+
+</data-writing>
+
+</io-configuration>
+

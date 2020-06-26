@@ -102,7 +102,8 @@ module conversions_mod
   end interface conv_is_logical
 
   public conv_to_generic, conv_to_string, conv_to_integer, conv_to_real, conv_to_logical, &
-            conv_is_integer, conv_is_real, conv_is_logical, conv_single_real_to_double, generic_to_double_real
+         conv_is_integer, conv_is_real, conv_is_logical, conv_single_real_to_double, generic_to_double_real, &
+         conv_to_uppercase, conv_to_lowercase, string_to_double
 
 contains
 
@@ -459,10 +460,24 @@ contains
 
     if (scan(string, "E") .ne. 0 .or. scan(string, "e") .ne. 0) then
       read(string, '(es30.10)' ) string_to_real
-   else
+    else
       read(string, '(f11.2)' ) string_to_real
     end if
   end function string_to_real
+
+  !> Converts a string to a double precision real
+  !! @param string The string to convert into a double precision real
+  !! @returns The double precision real
+  real(kind=DOUBLE_PRECISION) function string_to_double(string)
+    character(len=*), intent(in) :: string
+
+    if (scan(string, "E") .ne. 0 .or. scan(string, "e") .ne. 0) then
+      read(string, '(es30.10)' ) string_to_double
+    else
+      read(string, '(f11.2)' ) string_to_double
+    end if
+  end function string_to_double
+
 
   !> Converts an integer to a real
   !! @param input The integer to convert into a real
@@ -617,4 +632,46 @@ contains
       logical_to_generic=>input
     end if
   end function logical_to_generic
+
+
+  !> Converts all lowercase alphabetic characters in a character string to UPPERCASE
+  !!  Other types of characters are returned unchanged
+  !! @param instring The input string
+  !! returns a string of the same length as instring
+  function conv_to_uppercase(instring) result(outstring)
+    character(len=*), intent(in) :: instring
+    character(len=len(instring)) :: outstring
+    character :: single
+    integer  :: inc,jnc
+
+    do inc = 1 , len(instring)
+      jnc = iachar(instring(inc:inc))
+      if ( jnc .ge. iachar("a") .and. jnc .le. iachar("z") ) then
+        outstring(inc:inc) = achar(iachar(instring(inc:inc)) - 32)
+      else
+        outstring(inc:inc) = instring(inc:inc)
+      end if
+    end do
+  end function conv_to_uppercase
+
+  !> CONVERTS ALL UPPERCASE ALPHABETIC CHARACTERS IN A CHARACTER STRING TO lowercase
+  !!  Other types of characters are returned unchanged
+  !! @param instring The input string
+  !! returns a string of the same length as instring
+  function conv_to_lowercase(instring) result(outstring)
+    character(len=*), intent(in) :: instring
+    character(len=len(instring)) :: outstring
+    character :: single
+    integer  :: inc,jnc
+
+    do inc = 1 , len(instring)
+      jnc = iachar(instring(inc:inc))
+      if ( jnc .ge. iachar("A") .and. jnc .le. iachar("Z") ) then
+        outstring(inc:inc) = achar(iachar(instring(inc:inc)) + 32)
+      else
+        outstring(inc:inc) = instring(inc:inc)
+      end if
+    end do
+  end function conv_to_lowercase
+
 end module conversions_mod
