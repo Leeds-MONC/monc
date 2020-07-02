@@ -101,7 +101,7 @@ module casim_mod
      , nc(:,:,:), qr(:,:,:), nr(:,:,:), m3r(:,:,:),rho(:,:,:) &
      , exner(:,:,:), w(:,:,:), tke(:,:,:)                               &
      , qi(:,:,:), ni(:,:,:), qs(:,:,:), ns(:,:,:), m3s(:,:,:) &
-     , qg(:,:,:), ng(:,:,:), m3g(:,:,:) 
+     , qg(:,:,:), ng(:,:,:), m3g(:,:,:), cfliq(:,:,:), cfice(:,:,:)
 
   REAL(wp), allocatable :: AccumSolMass(:,:,:), AccumSolNumber(:,:,:) ! Accumulation mode aerosol
   REAL(wp), allocatable :: ActiveSolLiquid(:,:,:)                      ! Activated aerosol
@@ -285,6 +285,8 @@ contains
     allocate(qg(kte,1,1))
     allocate(ng(kte,1,1))
     allocate(m3g(kte,1,1))
+    allocate(cfliq(kte,1,1))
+    allocate(cfice(kte,1,1))
 
     allocate(AccumSolMass(kte,1,1))
     allocate(AccumSolNumber(kte,1,1))
@@ -589,6 +591,7 @@ contains
       iqx = iql
       qc(:,1,1) = current_state%zq(iqx)%data(:,jcol,icol)
       dqc(:,1,1) = current_state%sq(iqx)%data(:,jcol,icol)
+      cfliq(:,1,1) = 1.0
     end IF
     IF (nq_r > 0)then
       iqx = iqr
@@ -616,6 +619,7 @@ contains
       iqx = iqi
       qi(:,1,1) = current_state%zq(iqx)%data(:,jcol,icol)
       dqi(:,1,1) = current_state%sq(iqx)%data(:,jcol,icol)
+      cfice(:,1,1) = 1.0
     end IF
     IF (nq_s > 0)then
       iqx = iqs
@@ -720,7 +724,7 @@ contains
        pressure, rho,                              &
        w, tke,                                     &
        z_half, z_centre,                           &
-       dz,                                         &
+       dz, cfliq, cfice,                           &
                                 ! in/out
        dqv, dqc, dqr, dnc, dnr, dm3r,              &
        dqi, dqs, dqg, dni, dns, dng, dm3s, dm3g,   &
