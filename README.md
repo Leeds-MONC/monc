@@ -103,19 +103,18 @@ any changes:
 
 MOSRS uses SVN which can be used from git using `git svn`. The way this is done
 is to set up a `svn-remote` (pointing to a specific SVN path, for example
-`trunk`) and then fetching this content. Each commit on the MOSRS SVN will then
-have an corresponding git commit. Adding and accessing `trunk` from MOSRS can
-be done with the following commands:
+`trunk`) and then fetching this content. Each commit on the MOSRS SVN will
+then have an corresponding git commit. Adding and accessing `trunk` (or
+any other branch) from MOSRS can be done with the script in
+[utils/add_mosrs_remote.sh](utils/add_mosrs_remote.sh). This script
+ensures that your local `master` is in sync with `master` on the Leeds
+fork, fetches the remote content from MOSRS, creates a branch from that
+content and ensures the history syncs up.
 
-```bash
-export LOCAL_NAME="mosrs-trunk"
-git config --add svn-remote.${LOCAL_NAME}.url https://code.metoffice.gov.uk/svn/monc/main/trunk
-git config --add svn-remote.${LOCAL_NAME}.fetch :refs/remotes/mosrs/trunk
-git svn fetch ${LOCAL_NAME}
-git checkout remotes/mosrs/trunk -b ${LOCAL_NAME}
-unset LOCAL_NAME
-```
+    ```bash
+    $> ./utils/add_mosrs_remote.sh <mosrs_svn_remote_path> <local_branch_name>
+    ```
 
-You will need a user account for MOSRS to be able to run this command. Once
-done the entire history of `trunk` on MOSRS will then be available on the git
-branch called `mosrs-trunk`, which can then be merged into the current branch.
+You will need a user account for MOSRS to be able to run this command.
+Once done the entire history on MOSRS will then be available on the to git
+(and can be merged into existing branches etc).
