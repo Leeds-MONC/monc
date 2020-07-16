@@ -11,14 +11,21 @@ module monc_mod
        display_callbacks_in_order_at_each_stage
   use timestepper_mod, only : init_timestepper, timestep, finalise_timestepper
   use logging_mod, only : LOG_INFO, LOG_WARN, LOG_ERROR, LOG_DEBUG, log_log, log_get_logging_level, log_set_logging_level, &
-       log_master_log, initialise_logging
+       log_master_log, initialise_logging, log_master_newline
   use optionsdatabase_mod, only : load_command_line_into_options_database, options_get_integer, options_has_key, &
-       options_get_string, options_get_logical, options_add
+       options_get_string, options_get_logical, options_add, options_remove_key
   use configuration_file_parser_mod, only : parse_configuration_file
   use configuration_checkpoint_netcdf_parser_mod, only : parse_configuration_checkpoint_netcdf
   use science_constants_mod, only : initialise_science_constants
   use mpi, only : MPI_COMM_WORLD, MPI_THREAD_MULTIPLE, MPI_THREAD_SERIALIZED, MPI_THREAD_SINGLE, MPI_THREAD_FUNNELED, mpi_wtime
   use datadefn_mod, only : DEFAULT_PRECISION, init_data_defn
+#ifndef TEST_MODE
+  use netcdf, only : nf90_nowrite, nf90_open, nf90_inq_varid, nf90_get_var, nf90_close
+#else
+  use dummy_netcdf_mod, only : nf90_nowrite, nf90_open, nf90_inq_varid, nf90_get_var, nf90_close
+#endif
+  use checkpointer_common_mod, only : TIME_KEY, check_status
+
   implicit none
 
 #ifndef TEST_MODE
@@ -29,11 +36,13 @@ module monc_mod
      !! @param io_communicator_arg The IO communicator
      !! @param io_xml_configuration The IO server textual configuration
      subroutine io_server_run_procedure(options_database, io_communicator_arg, provided_threading, &
-          total_global_processes, continuation_run, io_configuration_file)
-       import hashmap_type, LONG_STRING_LENGTH
+          total_global_processes, continuation_run, reconfig_initial_time, io_configuration_file,  &
+          my_global_rank)
+       import hashmap_type, LONG_STRING_LENGTH, DEFAULT_PRECISION
        type(hashmap_type), intent(inout) :: options_database
-       integer, intent(in) :: io_communicator_arg, provided_threading, total_global_processes
+       integer, intent(in) :: io_communicator_arg, provided_threading, total_global_processes, my_global_rank
        logical, intent(in) :: continuation_run
+       real(kind=DEFAULT_PRECISION), intent(in) :: reconfig_initial_time
        character(len=LONG_STRING_LENGTH), intent(in) :: io_configuration_file
      end subroutine io_server_run_procedure
   end interface
@@ -55,30 +64,38 @@ contains
     type(model_state_type) :: state
     integer :: ierr, myrank, size, io_server_placement_period, provided_threading, selected_threading_mode
     logical :: i_am_monc_process
+    logical :: io_continuation
+    real(kind=DEFAULT_PRECISION) :: reconfig_initial_time
     character(len=LONG_STRING_LENGTH) :: io_server_config_file
-    
+
+    ! Initialise MPI
     selected_threading_mode=get_mpi_threading_mode()
     call mpi_init_thread(selected_threading_mode, provided_threading, ierr)
+
+    call init_data_defn()
+
+    ! Set up the logging with comm world PIDs initially for logging from the configuration parsing
+    call mpi_comm_rank(MPI_COMM_WORLD, myrank, ierr)
+    state%parallel%my_global_rank = myrank
+    call initialise_logging(myrank)
+    call log_master_log(LOG_INFO, "Starting MONC...")
+    call log_master_newline()
+
     if (selected_threading_mode .gt. provided_threading) then
       call log_master_log(LOG_ERROR, "You have selected to thread at level '"//&
            trim(mpi_threading_level_to_string(selected_threading_mode))//&
            "' but the maximum level your MPI implementation can provide is '"//&
            trim(mpi_threading_level_to_string(provided_threading))//"'")
-    end if    
-    call load_model_configuration(state, state%options_database)
+    end if
 
-    state%io_server_enabled=determine_if_io_server_enabled(state%options_database)
-    
-    call init_data_defn()
-    ! Set up the logging with comm world PIDs initially for logging from the configuration parsing
-    call mpi_comm_rank(MPI_COMM_WORLD, myrank, ierr)
-    call initialise_logging(myrank)
-    
+    ! Load model configuration
+    reconfig_initial_time = 0.0_DEFAULT_PRECISION ! set locally, should precede load_model_configuration
+    call load_model_configuration(state, state%options_database, io_continuation, reconfig_initial_time)
     call log_set_logging_level(options_get_integer(state%options_database, "logging"))
+    call perform_options_compatibility_checks(state%options_database)
 
-    ! Check options_database for conflicts
-    !call perform_options_compatibility_checks(state%options_database)
-
+    ! Check on io_server settings and start MONC
+    state%io_server_enabled=determine_if_io_server_enabled(state%options_database)
     if (state%io_server_enabled) then
       call mpi_comm_size(MPI_COMM_WORLD, size, ierr)
       if (size==1) call log_log(LOG_ERROR, &
@@ -88,7 +105,7 @@ contains
            state%parallel%io_communicator, i_am_monc_process, state%parallel%corresponding_io_server_process)
       if (.not. i_am_monc_process) then        
         call io_server_run(state%options_database, state%parallel%io_communicator, provided_threading, &
-             size, state%continuation_run, io_server_config_file)
+             size, io_continuation, reconfig_initial_time, io_server_config_file, myrank)
       else  
         call monc_run(component_descriptions, state)
       end if
@@ -114,26 +131,78 @@ contains
 
   !> Loads the configuration into the options database, either from a file or checkpoint
   !! @param options_database The options database
-  subroutine load_model_configuration(state, options_database)
+  !! @param io_continuation  Whether the io_server should be reinitialized from the checkpoint.
+  subroutine load_model_configuration(state, options_database, io_continuation, reconfig_initial_time)
     type(model_state_type), intent(inout) :: state
     type(hashmap_type), intent(inout) :: options_database
+    logical, intent(out) :: io_continuation
+    real(kind=DEFAULT_PRECISION), intent(inout) :: reconfig_initial_time
 
     call load_command_line_into_options_database(options_database)
+
+    ! Cold start from mcf config file.
     if (options_has_key(options_database, "config")) then
       state%continuation_run=.false.
+      io_continuation=.false.
+      call log_master_log(LOG_INFO, "This cycle is a cold start using config: '"//&
+                          trim(options_get_string(options_database, "config"))//"'")
+      call log_master_newline()
       call parse_configuration_file(options_database, options_get_string(options_database, "config"))
+
+    ! Reconfiguration reads configuration from mcf and data from netcdf checkpoint.  
+    ! Calling it reconfig allows this startup option.
+    ! This is a continuation run for MONCs, but not for the IOserver.
+    else if (options_has_key(options_database, "reconfig") .and. &
+             options_has_key(options_database, "checkpoint")) then
+      state%reconfig_run=.true.    ! this is specific to the initial cycle of this kind of run
+      state%continuation_run=.true.
+      io_continuation=.false.
+      call log_master_log(LOG_INFO, "This cycle is a reconfigured start using config: '"//&
+             trim(options_get_string(options_database, "reconfig"))//&
+             "' from checkpoint: '"//trim(options_get_string(options_database, "checkpoint"))//"'")
+                  
+      if (options_get_logical(options_database, "retain_model_time")) then
+        call extract_time_from_checkpoint_file(options_get_string(options_database, "checkpoint"),&
+                                               reconfig_initial_time)
+        state%retain_model_time = .true.
+      end if
+
+      call log_master_log(LOG_INFO, "Reconfiguration starting from time: "//trim(conv_to_string(reconfig_initial_time)))
+      call log_master_newline()
+
+      call parse_configuration_file(options_database, &
+               options_get_string(options_database, "reconfig"))
+
+    ! Continuation
     else if (options_has_key(options_database, "checkpoint")) then
       state%continuation_run=.true.
+      io_continuation=.true.
+      call log_master_log(LOG_INFO, "This cycle is a continuation from checkpoint: '"//&
+                          trim(options_get_string(options_database, "checkpoint"))//"'")
       call parse_configuration_checkpoint_netcdf(options_database, &
-           options_get_string(options_database, "checkpoint"), MPI_COMM_WORLD)
+               options_get_string(options_database, "checkpoint"), MPI_COMM_WORLD)
+      call log_master_log(LOG_INFO, "Continuation uses config: '"//&
+                          trim(options_get_string(options_database, "config"))//"'")
+      call log_master_newline()
+
+    ! Error - appropriate start conditions not met.
     else
-      call log_master_log(LOG_ERROR, "You must either provide a configuration file or checkpoint to restart from")
+      call log_master_log(LOG_ERROR, "You must provide a configuration file for a cold start,"//&
+       " a checkpoint to restart from, or a reconfig file and a checkpoint to reconfigure from.")
       call mpi_barrier(MPI_COMM_WORLD) ! All other processes barrier here to ensure 0 displays the message before quit
       stop
     end if
 
     ! Reload command line arguments to override any stuff in the configuration files
-    call load_command_line_into_options_database(options_database)
+    call load_command_line_into_options_database(options_database, .true.)
+
+    ! In the case of reconfig, we won't want it to do this again on a later continuation cycle, so we'll remove
+    ! the reconfig key, after recording the source file as config.
+    if (options_has_key(options_database, "reconfig")) then
+      call options_add(options_database, "config", options_get_string(options_database, "reconfig"))
+      call options_remove_key(options_database, "reconfig")
+      call options_remove_key(options_database, "retain_model_time")
+    end if
 
   end subroutine load_model_configuration 
 
@@ -154,6 +223,18 @@ contains
       call log_master_log(LOG_INFO, "Only one conditional_diagnostics component is enabled, but both are required to function.")
       call log_master_log(LOG_INFO, "We assume you would like conditional_diagnostics enabled so have enabled the other, too.")
     end if
+
+    !> In order to use time_basis or force_output_on_interval as intended, the cfltest and iobridge
+    !  components need to be enabled, and the io_server must be enabled.
+    if (is_present_and_true(options_database, "time_basis") .or.   &
+        is_present_and_true(options_database, "force_output_on_interval") ) then
+      if ( .not. (is_present_and_true(options_database, "iobridge_enabled") .and.  &
+                  is_present_and_true(options_database, "cfltest_enabled")  .and.  &
+                  is_present_and_true(options_database, "enable_io_server")          )) &
+        call log_master_log(LOG_ERROR, "In order to use time_basis or force_output_on_interval"//&
+         " as intended, the cfltest and iobridge components need to be enabled, and the"//&
+         " io_server must be enabled (to permit full function of iobridge).")
+    end if 
 
   end subroutine perform_options_compatibility_checks
 
@@ -454,4 +535,25 @@ contains
       mpi_threading_level_to_string="unknown"
     end if
   end function mpi_threading_level_to_string  
+
+  !> Reads the NetCDF checkpoint file to obtain model time
+  !! @param filename The filename of the checkpoint file to load
+  !! @param checkpoint_time The model time from the the checkpoint file
+  subroutine extract_time_from_checkpoint_file(filename, checkpoint_time)
+    character(len=*), intent(in) :: filename
+    real(kind=DEFAULT_PRECISION), intent(out) :: checkpoint_time
+
+    integer :: ncid, variable_id
+    real(kind=DEFAULT_PRECISION) :: r_data(1)
+
+    call check_status(nf90_open(path = filename, mode = nf90_nowrite, ncid = ncid))
+    call check_status(nf90_inq_varid(ncid, TIME_KEY, variable_id))
+    call check_status(nf90_get_var(ncid, variable_id, r_data))
+
+    checkpoint_time = r_data(1)
+
+    call check_status(nf90_close(ncid))
+  end subroutine extract_time_from_checkpoint_file
+
+
 end module monc_mod

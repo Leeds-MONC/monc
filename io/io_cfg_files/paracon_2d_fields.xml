@@ -1,0 +1,46 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+   1. This data is a match to that in 2d_fields.xml from the trunk. 
+
+   2. cltop and clbas consider ice if it is available. 
+
+   3. Requires:
+         casim_enabled=.true.
+         scalar_diagnostics_enabled=.true.
+
+-->
+
+<data-definition name="2d_fields_data" frequency="{sampling_frequency}">
+  <field name="surface_precip" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="vwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="lwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="rwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="iwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="swp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="gwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="tot_iwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="senhf" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="lathf" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="reske" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="subke" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="cltop" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="clbas" type="array" data_type="double" size="y,x" collective=true optional=true/>
+</data-definition>
+
+<group name="2d_fields">
+  <member name="surface_precip"/>
+  <member name="vwp"/>
+  <member name="lwp"/>
+  <member name="rwp"/>
+  <member name="iwp"/>
+  <member name="swp"/>
+  <member name="gwp"/>
+  <member name="tot_iwp"/>
+  <member name="senhf"/>
+  <member name="lathf"/>
+  <member name="reske"/>
+  <member name="subke"/>
+  <member name="cltop"/>
+  <member name="clbas"/>
+</group>
+

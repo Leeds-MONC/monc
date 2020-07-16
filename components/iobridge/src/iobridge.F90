@@ -8,12 +8,10 @@ module iobridge_mod
   use conversions_mod, only : conv_to_string
   use state_mod, only : model_state_type
   use grids_mod, only : X_INDEX, Y_INDEX, Z_INDEX, local_grid_type
-  use optionsdatabase_mod, only : options_size, options_get_logical
+  use optionsdatabase_mod, only : options_size, options_get_logical, options_get_integer, options_get_string, options_get_real
   use prognostics_mod, only : prognostic_field_type
   use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log, log_master_log
-  use optionsdatabase_mod, only : options_get_integer
-  use q_indices_mod, only : q_metadata_type, get_indices_descriptor
   use registry_mod, only : get_all_component_published_fields, get_component_field_value, &
        get_component_field_information, is_component_enabled
   use io_server_client_mod, only : COMMAND_TAG, DATA_TAG, REGISTER_COMMAND, DEREGISTER_COMMAND, DATA_COMMAND_START, &
@@ -24,6 +22,7 @@ module iobridge_mod
        get_mpi_datatype_from_internal_representation, pack_scalar_field, pack_array_field, pack_map_field
   use mpi, only : MPI_COMM_WORLD, MPI_INT, MPI_BYTE, MPI_REQUEST_NULL, MPI_STATUSES_IGNORE, MPI_STATUS_IGNORE, MPI_STATUS_SIZE
   use q_indices_mod, only : q_metadata_type, get_max_number_q_indices, get_indices_descriptor, get_number_active_q_indices
+  use tracers_mod, only : get_tracer_name, reinitialise_trajectories, traj_interval
 
   use conditional_diagnostics_column_mod, only : ncond, ndiag, cond_request, diag_request, cond_long, diag_long
 
@@ -57,6 +56,8 @@ module iobridge_mod
   type(map_type) :: unique_field_names, sendable_fields, component_field_descriptions
   logical :: io_server_enabled, in_finalisation_callback
 
+  real(kind=DEFAULT_PRECISION) :: dtmmin
+
   public iobridge_get_descriptor
 
 contains 
@@ -75,6 +76,7 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
 
     integer :: mpi_type_data_sizing_description, mpi_type_definition_description, mpi_type_field_description, ierr
+    integer :: sample_nts, next_sample_time, i
 
     if (.not. options_get_logical(current_state%options_database, "enable_io_server")) then
       io_server_enabled=.false.
@@ -99,6 +101,76 @@ contains
     call mpi_type_free(mpi_type_field_description, ierr)
 
     call build_mpi_data_types()
+
+    ! Obtain logical switch for "as-needed" diagnostic calculations (only when sampling)
+    current_state%only_compute_on_sample_timestep = &
+       options_get_logical(current_state%options_database, "only_compute_on_sample_timestep")
+
+    ! Obtain logical switch to ensure that samples are sent on the requestes output_frequency
+    ! time_basis=.true. does this automatically
+    current_state%force_output_on_interval = &
+       options_get_logical(current_state%options_database, "force_output_on_interval")
+
+    ! Obtain logical switch for time_basis handling
+    current_state%time_basis = options_get_logical(current_state%options_database, "time_basis")
+
+    ! Send logical behaviour message
+    if (current_state%force_output_on_interval .and. current_state%time_basis) &
+      call log_master_log(LOG_WARN, "Both force_output_on_interval and time_basis are set to "//&
+                                    ".true..  Behaviour defaults to that of time_basis.")
+
+    ! Check l_constant_dtm for consistency
+    if (options_get_logical(current_state%options_database, "l_constant_dtm")) then
+      if (current_state%time_basis) then
+        if (any(mod(real( current_state%sampling(:)%interval), real(current_state%dtm)) .gt. 0)) then
+          call log_master_log(LOG_ERROR, "All sampling intervals must be a multiple of dtm "//&
+                                         "when l_constant_dtm=.true.")
+        end if
+      else if (current_state%force_output_on_interval) then
+        call log_master_log(LOG_ERROR, "Use of l_constant_dtm requires force_output_on_interval"//&
+                            "=.false. and time_basis=.false. or time_basis=.true. with all"//&
+                            " sampling intervals a multiple of dtm.")
+      end if
+    end if
+
+    ! Set up the sampling times for time_basis or force_output_on_interval
+    if (current_state%time_basis) then 
+      dtmmin = options_get_real(current_state%options_database, "cfl_dtmmin")
+      current_state%sampling(:)%next_time = ((int(current_state%time + dtmmin)             &
+                                               / current_state%sampling(:)%interval) + 1)  &
+                                            * current_state%sampling(:)%interval
+
+    else if (current_state%force_output_on_interval) then
+      dtmmin = options_get_real(current_state%options_database, "cfl_dtmmin")
+      do i=1,size(current_state%sampling(:))
+        current_state%sampling(i)%next_time = minval(((int(current_state%time + dtmmin)    &
+                                                 / current_state%sampling(i)%output(:)) + 1)  &
+                                              * current_state%sampling(i)%output(:))
+        current_state%sampling(i)%next_step = (current_state%timestep &
+                                               / current_state%sampling(i)%interval + 1) &
+                                              * current_state%sampling(i)%interval
+        if (mod(current_state%sampling(i)%interval,minval(current_state%sampling(:)%interval)) &
+            .ne. 0) then
+          call log_master_log(LOG_ERROR, "Use of force_output_on_interval requires that all"//&
+             " sampling intervals be evenly divisible by the smallest sampling interval.  "//&
+             "Smallest: "//trim(conv_to_string(minval(current_state%sampling(:)%interval)))//&
+             "Conflicting: "//trim(conv_to_string(current_state%sampling(i)%interval)))
+        end if
+      end do
+    end if ! time_basis=.true. or force_output_on_interval=.true.
+
+    ! If we are restarting from a NON-normal_step under time_basis, then the next sample steps need to be set now.
+    ! This is similar to the code in cfltest's evaluate_time_basis.
+    if (.not. current_state%normal_step .and. current_state%time_basis) then
+
+      next_sample_time = minval(current_state%sampling(:)%next_time)
+      sample_nts = nint((next_sample_time - current_state%time) / current_state%dtm_new) - 1
+
+      ! Record the next sampling step for intervals matching the next time
+      where(next_sample_time .eq. current_state%sampling(:)%next_time)        &
+        current_state%sampling(:)%next_step = current_state%timestep + sample_nts
+    end if
+
   end subroutine init_callback
 
   !> Model dump call back, called for each model dump phase
@@ -106,17 +178,65 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    integer :: i
+    integer :: i, snc
+    logical :: data_sent
+
+    data_sent=.false.
 
     if (.not. io_server_enabled) return
 
-    do i=1, size(data_definitions)
-      if (data_definitions(i)%frequency .gt. 0) then
-        if (mod(current_state%timestep, data_definitions(i)%frequency) == 0) then
-          call send_data_to_io_server(current_state, i)
-        end if
+    ! Send data definitions for active sampling intervals
+    do snc=1,size(current_state%sampling(:)%interval)
+      if (current_state%sampling(snc)%active) then
+        do i=1, size(data_definitions)
+          if (data_definitions(i)%frequency == current_state%sampling(snc)%interval) then
+            call send_data_to_io_server(current_state, i)
+            data_sent=.true.
+          end if
+        end do
       end if
     end do
+
+    ! Update time parameters if data was sent
+    if (data_sent) then
+      if (current_state%time_basis) then
+        ! Release the time_basis dtm lock and eliminate accumulated rounding error on 'time'
+        if (current_state%diagnostic_sample_timestep) then
+          current_state%normal_step=.true.
+          current_state%time =                                                            &
+                real(nint(current_state%time + current_state%dtm),kind=DEFAULT_PRECISION) &
+                                             - current_state%dtm
+        end if
+        ! Increment next sample time if data was written for this interval
+        where(current_state%sampling(:)%active)                                        &
+          current_state%sampling(:)%next_time = current_state%sampling(:)%next_time +     &
+                                                current_state%sampling(:)%interval
+  
+      ! force_output_on_interval
+      else if (current_state%force_output_on_interval) then
+        do i=1,size(current_state%sampling(:))
+          if (current_state%timestep .eq. current_state%sampling(i)%next_step) then
+            ! Release the time_basis dtm lock and eliminate accumulated rounding error on 'time'
+            if (abs(current_state%time+current_state%dtm - current_state%sampling(i)%next_time) &
+                  .lt. dtmmin/10) then
+              current_state%normal_step=.true.
+              current_state%time =                                                          &
+                  real(nint(current_state%time + current_state%dtm),kind=DEFAULT_PRECISION) &
+                                               - current_state%dtm
+              ! Update next output time
+              current_state%sampling(i)%next_time = &
+                   minval(((nint(current_state%time + current_state%dtm)     &
+                            / current_state%sampling(i)%output(:)) + 1)      &
+                          * current_state%sampling(i)%output(:))
+            end if
+            !Update next sample step.
+            current_state%sampling(i)%next_step = current_state%sampling(i)%next_step &
+                                                  + current_state%sampling(i)%interval
+          end if
+        end do
+      end if ! time_basis or force_output_on_interval check
+    end if ! Update time parameters if data was sent
+
   end subroutine timestep_callback
 
   !> Sends data to the IO server
@@ -389,6 +509,11 @@ contains
       raw_generic=>generate_sendable_description(z_size, y_size, x_size)
       call c_put_generic(sendable_fields, "p", raw_generic, .false.)   
     end if
+    if (current_state%n_tracers .gt. 0) then
+      raw_generic=>generate_sendable_description(z_size, y_size, x_size, current_state%n_tracers)
+      call c_put_generic(sendable_fields, "tracer", raw_generic, .false.)
+      call c_put_generic(sendable_fields, "ztracer", raw_generic, .false.)
+    end if
     ! need to dump heating rate tendency from socrates radiation
     if (is_component_enabled(current_state%options_database, "socrates_couple")) then
        raw_generic=>generate_sendable_description(z_size, y_size, x_size)
@@ -465,7 +590,7 @@ contains
     request_handles(1)=send_data_field_sizes_to_server(current_state, mpi_type_data_sizing_description, &
        data_description, number_unique_fields)
     buffer_size=(kind(dreal)*current_state%local_grid%size(Z_INDEX))*2 + (STRING_LENGTH * current_state%number_q_fields &
-                 + 4*ncond*STRING_LENGTH + 2*ndiag*STRING_LENGTH )
+                 + STRING_LENGTH * current_state%n_tracers + 4*ncond*STRING_LENGTH + 2*ndiag*STRING_LENGTH )
     allocate(buffer(buffer_size))
     request_handles(2)=send_general_monc_information_to_server(current_state, buffer)
     call mpi_waitall(2, request_handles, MPI_STATUSES_IGNORE, ierr)
@@ -510,7 +635,7 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
     character, dimension(:), intent(inout) :: buffer
     
-    character(len=STRING_LENGTH) :: q_field_name, cd_field_name
+    character(len=STRING_LENGTH) :: q_field_name, tracer_name, cd_field_name
     type(q_metadata_type) :: q_meta_data
     integer :: current_loc, n, ierr, request_handle    
     
@@ -527,6 +652,16 @@ contains
         current_loc=pack_scalar_field(buffer, current_loc, string_value=q_field_name)
       end do
     end if
+    
+    if (current_state%n_tracers .gt. 0) then
+      do n=1, current_state%n_tracers
+        tracer_name=get_tracer_name(n, current_state%traj_tracer_index, &
+                      current_state%radioactive_tracer_index, &
+                      current_state%n_radioactive_tracers, current_state%n_tracers)
+        current_loc=pack_scalar_field(buffer, current_loc, string_value=tracer_name)
+      end do
+    end if
+    
     current_loc=pack_array_field(buffer, current_loc, real_array_1d=current_state%global_grid%configuration%vertical%z)
 
     do n=1,ncond*2 
@@ -557,7 +692,7 @@ contains
 
   !> Packages the local MONC decomposition information into descriptions for communication
   !! @param current_state The current model state
-  !! @param data_description THe data description to pack into
+  !! @param data_description The data description to pack into
   subroutine package_local_monc_decomposition_into_descriptions(current_state, data_description)
     type(model_state_type), target, intent(inout) :: current_state
     type(data_sizing_description_type), dimension(:), intent(inout) :: data_description
@@ -640,6 +775,8 @@ contains
   !> Registers this MONC with the corresponding IO server. This will encapsulate the entire protocol, which is sending the
   !! registration command, receiving the data and field definitions from the IO server and then sending back the sizing
   !! for the fields that this MONC will contribute.
+  !! Additionally, this receives the unique sampling/output interval pairs from the IO server and 
+  !! stores them in the current_state%sampling structure.
   !! @param current_state The current model state
   !! @param mpi_type_definition_description MPI data type for data definition message
   !! @param mpi_type_field_description MPI data type for field definition message
@@ -649,13 +786,17 @@ contains
 
     type(definition_description_type), dimension(:), allocatable :: definition_descriptions
     type(field_description_type), dimension(:), allocatable :: field_descriptions
-    integer :: number_defns, number_fields, status(MPI_STATUS_SIZE), ierr
+    integer :: number_defns, number_fields, status(MPI_STATUS_SIZE), ierr, nvalues, i
+    integer, dimension(:,:), allocatable :: tmparr
+    logical, dimension(:), allocatable :: mask
 
     call mpi_send(REGISTER_COMMAND, 1, MPI_INT, current_state%parallel%corresponding_io_server_process, &
          COMMAND_TAG, MPI_COMM_WORLD, ierr)
 
     call mpi_probe(current_state%parallel%corresponding_io_server_process, DATA_TAG, MPI_COMM_WORLD, status, ierr)
+
     call mpi_get_count(status, mpi_type_definition_description, number_defns, ierr)
+
     allocate(definition_descriptions(number_defns))
 
     call mpi_recv(definition_descriptions, number_defns, mpi_type_definition_description, &
@@ -667,6 +808,33 @@ contains
          current_state%parallel%corresponding_io_server_process, DATA_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
     call populate_data_definition_configuration(definition_descriptions, number_defns, field_descriptions, number_fields)
     deallocate(definition_descriptions)
+
+    call mpi_probe(current_state%parallel%corresponding_io_server_process, DATA_TAG, MPI_COMM_WORLD, status, ierr)
+    call mpi_get_count(status, MPI_INT, nvalues, ierr)
+    allocate(tmparr(nvalues/2,2))
+    call mpi_recv(tmparr, nvalues, MPI_INT, &
+         current_state%parallel%corresponding_io_server_process, DATA_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
+
+    ! Store all unique non-zero user-selected sampling intervals (as integers of time or timestep)
+    allocate(mask(nvalues/2))
+    mask(:) = .false.
+    do i=1,nvalues/2
+      if ((count( tmparr(i,1) == tmparr(:,1)) .eq. 1)  &
+         .or. .not. any(tmparr(i,1) == tmparr(:,1) .and. mask)) &
+         mask(i) = .true.
+    end do
+    allocate(current_state%sampling(count(mask)))
+    current_state%sampling(:)%interval = pack(tmparr(:,1), mask)
+    do i=1,size(current_state%sampling(:))
+      mask(:) = tmparr(:,1) == current_state%sampling(i)%interval .and. &
+                tmparr(:,2) .gt. 0
+      nvalues=count(mask)
+      allocate(current_state%sampling(i)%output(nvalues))
+      current_state%sampling(i)%output(:) = pack(tmparr(:,2), mask)
+    end do
+    deallocate(mask)
+    deallocate(tmparr)
+
   end subroutine register_with_io_server
 
   !> Retrieve the total number of fields, which is all the fields in all the data definitions
@@ -764,6 +932,13 @@ contains
         end if
       end if
     end do
+
+    if (current_state%traj_tracer_index .gt. 0 .and. data_definition%name == "3d_tracer_data"    &
+        .and. mod(nint(current_state%time+current_state%dtm),traj_interval) .eq. 0) then
+      call reinitialise_trajectories(current_state)
+       current_state%reinit_tracer=.true.
+    end if
+      
   end subroutine pack_send_buffer
 
   !> Packs scalar fields into the send bufer
@@ -777,6 +952,10 @@ contains
     type(io_configuration_data_definition_type), intent(inout) :: data_definition
     type(io_configuration_field_type), intent(in) :: field
     integer, intent(in) :: current_buffer_point
+
+    integer :: normal_step_int
+
+    normal_step_int = 0
 
     if (field%name .eq. "timestep") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
@@ -824,6 +1003,12 @@ contains
     else if (field%name .eq. "nqfields") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
            int_value=current_state%number_q_fields)
+    else if (field%name .eq. "ntracers") then
+      pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
+           int_value=current_state%n_tracers)
+    else if (field%name .eq. "nradtracers") then
+      pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
+           int_value=current_state%n_radioactive_tracers)
     else if (field%name .eq. "dtm") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
            real_value=current_state%dtm)
@@ -833,9 +1018,16 @@ contains
     else if (field%name .eq. "absolute_new_dtm") then
       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
            real_value=current_state%absolute_new_dtm)
+    else if (field%name .eq. "normal_step") then
+       if (current_state%normal_step) normal_step_int = 1
+       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
+           int_value=normal_step_int)
     else if (field%name .eq. "rad_last_time") then
        pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
             real_value=current_state%rad_last_time)
+    else if (field%name .eq. "last_cfl_timestep") then
+       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
+            int_value=current_state%last_cfl_timestep)
     else
       ! Handle component field here
       pack_scalar_into_send_buffer=handle_component_field_scalar_packing_into_send_buffer(current_state, &
@@ -991,6 +1183,12 @@ contains
            current_buffer_point, current_state%local_grid)
     else if (field%name .eq. "zq") then
       pack_array_into_send_buffer=pack_q_fields(data_definition%send_buffer, current_state%zq, current_state%number_q_fields, &
+           current_buffer_point, current_state%local_grid)
+    else if (field%name .eq. "tracer") then
+      pack_array_into_send_buffer=pack_q_fields(data_definition%send_buffer, current_state%tracer, current_state%n_tracers, &
+           current_buffer_point, current_state%local_grid)
+    else if (field%name .eq. "ztracer") then
+      pack_array_into_send_buffer=pack_q_fields(data_definition%send_buffer, current_state%ztracer, current_state%n_tracers, &
            current_buffer_point, current_state%local_grid)
     else if (field%name .eq. "th") then
       pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer, current_state%th, current_buffer_point,&

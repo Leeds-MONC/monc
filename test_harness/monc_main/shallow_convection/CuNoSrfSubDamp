@@ -3,7 +3,10 @@ global_configuration=global_config
 
 # Override global component defaults
 checkpointer_enabled=.true.
-fftsolver_enabled=.true.
+fftsolver_enabled=.false.
+iterativesolver_enabled=.true.
+iterativesolver_single_prec_enabled=.false.
+petsc_solver_enabled=.false.
 pw_advection_enabled=.true.
 simplesetup_enabled=.true.
 smagorinsky_enabled=.true.
@@ -141,7 +144,7 @@ l_constant_forcing_v=.false.
 
 # Unit options are K/s or K/day
 units_theta_force=K/day
-l_constant_forcing_theta_z2pressure=.true.
+l_constant_forcing_theta_height=.true.
 z_force_pl_theta=0.0, 1500.0, 2500.0, 3000.
 f_force_pl_theta=-2.0, -2.0, 0.0, 0.0
 

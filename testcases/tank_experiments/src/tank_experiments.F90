@@ -234,7 +234,7 @@ contains
           end if
 
           if (l_moist)then
-            TdegK=(current_state%global_grid%configuration%vertical%thref(k)+current_state%th%data(k,j,i))*exner	
+            TdegK=(current_state%global_grid%configuration%vertical%thref(k)+current_state%th%data(k,j,i))*exner
             qsat=qsaturation(TdegK, current_state%global_grid%configuration%vertical%prefn(k)/100.)
             RH_tank=RH
             if (l_splittank)then
@@ -280,7 +280,7 @@ contains
                   current_state%th%data(k,j,i) = current_state%th%data(k,j,i)+th_pert_loc * xi * xi
                 end if
                 if (l_moist)then
-                  TdegK=(current_state%global_grid%configuration%vertical%thref(k)+current_state%th%data(k,j,i))*exner	
+                  TdegK=(current_state%global_grid%configuration%vertical%thref(k)+current_state%th%data(k,j,i))*exner
                   qsat=qsaturation(TdegK, current_state%global_grid%configuration%vertical%prefn(k)/100.)
                   current_state%q(iqv)%data(k,j,i)  = qsat*bubble_RH(ibub)/100.
                   do n=1,nq_bubbles

@@ -760,6 +760,19 @@ contains
          halo_swap_neighbours
 
     integer :: i
+    
+    !! AH - test code to see if this corrects the allocation error on restart with gcc 7
+     do i=1,number_distinct_neighbours
+       if (allocated(halo_swap_neighbours(i)%send_halo_buffer)) &
+            deallocate(halo_swap_neighbours(i)%send_halo_buffer)
+       if (allocated(halo_swap_neighbours(i)%recv_halo_buffer)) &
+            deallocate(halo_swap_neighbours(i)%recv_halo_buffer)
+       if (allocated(halo_swap_neighbours(i)%send_corner_buffer)) &
+           deallocate(halo_swap_neighbours(i)%send_corner_buffer) 
+       if (allocated(halo_swap_neighbours(i)%recv_corner_buffer)) &
+           deallocate(halo_swap_neighbours(i)%recv_corner_buffer)   
+     end do
+    !!
 
     do i=1,number_distinct_neighbours
       if (halo_swap_neighbours(i)%halo_pages .gt. 0) then

@@ -3,9 +3,9 @@
       3D fields, just written out no processing
 <!-- -->
   <field name="w" type="array" data_type="double" size="z,y,x" collective=true />
-  <field name="u" type="array" data_type="double" size="z,y,x" collective=true />
-  <field name="v" type="array" data_type="double" size="z,y,x" collective=true />
-  <field name="q" type="array" data_type="double" size="z,y,x,qfields" collective=true />
+  <field name="u" type="array" data_type="double" size="zn,y,x" collective=true />
+  <field name="v" type="array" data_type="double" size="zn,y,x" collective=true />
+  <field name="q" type="array" data_type="double" size="zn,y,x,qfields" collective=true />
 <!-- --
       scalar fields - calculated in scalar_diagnostic component
 <!-- -->

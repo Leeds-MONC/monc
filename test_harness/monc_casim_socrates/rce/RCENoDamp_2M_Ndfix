@@ -2,7 +2,8 @@
 global_configuration=global_config
 
 # Override global component defaults
-fftsolver_enabled=.true.
+fftsolver_enabled=.false.
+iterativesolver_enabled=.true.
 pw_advection_enabled=.true.
 simplesetup_enabled=.true.
 smagorinsky_enabled=.true.
@@ -166,7 +167,7 @@ forcing_timescale_u=21600.
 forcing_timescale_v=21600.
 
 # Forcing profiles
-l_constant_forcing_theta_z2pressure=.true.
+l_constant_forcing_theta_height=.true.
 units_theta_force=K/day
 z_force_pl_theta=0., 12000., 16000, 20000.0
 f_force_pl_theta=-1.5, -2.33, 0.0, 0.0

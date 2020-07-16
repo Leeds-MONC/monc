@@ -178,7 +178,7 @@ contains
        socrates_opt%rad_int_time = options_get_real(current_state%options_database, "rad_int_time")
        if (socrates_opt%rad_int_time <= 0.0) then
           call log_master_log &
-               (LOG_WARN, "Socrates - rad_int_time less than 0.0, SOCRATES will be called every timestep")
+               (LOG_WARN, "Socrates - rad_int_time <= 0.0; SOCRATES will be called every timestep")
        endif
        
        ! Now get the surface albedo variables

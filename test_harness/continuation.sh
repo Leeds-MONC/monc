@@ -59,8 +59,10 @@ run_monc() {
 				exit			
 			fi
 		fi
+        elif [ ! -z "$checkpoint_filename" ] && [ -z "$crun" ] && [ -z "$cpfile" ]; then
+		RUN_MONC_CONFIG=2
 	else
-		if [ -z "$crun" ]; then 
+		if [ -z "$crun" ]; then
 			RUN_MONC_CONFIG=1
 		else
 			echo "Error, this is configured as a continuation run but output and/or checkpoint file not found, check your script parameters"
@@ -68,21 +70,39 @@ run_monc() {
 		fi
 	fi
 
-	if [ $RUN_MONC_CONFIG -eq 1 ] || [ $RUN_MONC_CP -eq 1 ]; then
+	if [ $RUN_MONC_CONFIG -ge 1 ] || [ $RUN_MONC_CP -eq 1 ]; then
 		export OMP_NUM_THREADS=1
 		export MPICH_MAX_THREAD_SAFETY=multiple
-	
+                
 		local submittedId=$(qsub -W depend=afterany:$PBS_JOBID -v crun=$outputid,cpfile=$checkpoint_filename $SUBMISSION_SCRIPT_NAME)
 
 		((outputid++))
 		local outputfn=$STDOUT_DIR"/output_"$RUN_NAME$outputid
 
+                echo "This cycle is controlled by:$SUBMISSION_SCRIPT_NAME" > $outputfn
+                echo "This cycle job:$PBS_JOBID:$PBS_JOBNAME" >> $outputfn
+                echo "Next cycle job:$submittedId" >> $outputfn
+                echo "" >> $outputfn
+
+                echo ""
+
+                # Cold start
 		if [ $RUN_MONC_CONFIG -eq 1 ]; then
-    		    echo "Start MONC with configuration file $config"
-		    eval 'aprun -n $NPES $MONC_EXEC --config=$TESTCASE &> $outputfn'
+    		    echo "Start MONC with configuration file $TESTCASE"
+		    eval 'aprun -n $NPES $MONC_EXEC --config=$TESTCASE >> $outputfn 2>&1'
+
+                # Reconfiguration
+                elif [ $RUN_MONC_CONFIG -eq 2 ]; then
+                    echo "Reconfigure MONC with configuration file:"
+                    echo "  $TESTCASE and its linked xml file,"
+                    echo "  starting from checkpoint file:"
+                    echo "     $checkpoint_filename"
+                    eval 'aprun -n $NPES $MONC_EXEC --reconfig=$TESTCASE --checkpoint=$checkpoint_filename --retain_model_time=.true. >> $outputfn 2>&1'
+
+                # Restart
 		else
 		    echo "Restarting MONC with checkpoint file $checkpoint_filename"
-		    eval 'aprun -n $NPES $MONC_EXEC --checkpoint=$checkpoint_filename &> $outputfn'
+		    eval 'aprun -n $NPES $MONC_EXEC --checkpoint=$checkpoint_filename >> $outputfn 2>&1'
   	fi
 fi
 }

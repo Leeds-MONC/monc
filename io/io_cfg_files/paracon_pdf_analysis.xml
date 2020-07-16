@@ -1,0 +1,48 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+   1. Produces updraft and downdraft critical values and vertical velocity histograms on theta/rho-levels.
+
+   2. Depends on:
+        uppercrit=0.05    # set updraft threshold at top 5% of w
+        dwnpercrit=0.05   # set downdraft threshold at bottom 5% of w
+        n_w_bins=750      # number of bins (max-min)/bin_size (max determined by these parameters)
+        w_bin_size=0.1    # size of bin [m/s]
+        w_bin_min=-25.0   # lower bound of historgram [m/s]
+
+   3. Requires:
+        pdf_analysis_enabled=.true.
+
+-->
+
+<data-definition name="pdfa_data" frequency="{sampling_frequency}" namespace="pdfa">
+        <field name="critical_updraft_local" type="array" data_type="double" size="zn" optional=true/>
+        <field name="critical_downdraft_local" type="array" data_type="double" size="zn" optional=true/>
+        <field name="w_histogram_profile_local" type="array" data_type="double" size="zn,n_w_bins" optional=true/>
+        <field name="w_histogram_bins_local" type="array" data_type="double" size="n_w_bins" optional=true/>
+</data-definition>
+
+<data-handling namespace="pdfa">
+   <diagnostic field="critical_updraft"  type="array" data_type="double" size="z" units="m/s">
+        <communication name="reduction" operator="mean" result="critical_updraft" field="critical_updraft_local" root="auto"/>
+   </diagnostic>
+   <diagnostic field="critical_downdraft"  type="array" data_type="double" size="z" units="m/s">
+        <communication name="reduction" operator="mean" result="critical_downdraft" field="critical_downdraft_local" root="auto"/>
+   </diagnostic>
+   <diagnostic field="w_histogram_profile"  type="array" data_type="double" size="z,n_w_bins" units="number of hoizontal grid points in bin">
+        <!--operator name="arithmetic" result="w_histogram_profile" equation="w_histogram_profile_t/({x_size}*{y_size})"/-->
+        <communication name="reduction" operator="sum" result="w_histogram_profile" field="w_histogram_profile_local" root="auto"/>
+   </diagnostic>
+   <diagnostic field="w_histogram_bins"  type="array" data_type="double" size="n_w_bins" units="m/s">
+        <communication name="reduction" operator="mean" result="w_histogram_bins" field="w_histogram_bins_local" root="auto"/>
+   </diagnostic>
+
+</data-handling>
+
+
+<group name="pdfa_fields" namespace="pdfa">
+        <member name="critical_updraft"/>
+        <member name="critical_downdraft"/>
+        <member name="w_histogram_profile"/>
+        <member name="w_histogram_bins"/>
+</group>
+

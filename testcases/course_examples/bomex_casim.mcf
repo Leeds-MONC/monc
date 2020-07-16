@@ -135,7 +135,7 @@ l_constant_forcing_u=.false.
 l_constant_forcing_v=.false.
 
 # Forcing profiles
-l_constant_forcing_theta_z2pressure=.true.
+l_constant_forcing_theta_height=.true.
 
 # Unit options are K/s or K/day
 units_theta_force=K/day

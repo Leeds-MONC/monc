@@ -3,16 +3,16 @@
 module configuration_parser_mod
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use sax_xml_parser_mod, only : xml_parse
-  use conversions_mod, only : conv_to_string, conv_to_integer, conv_to_real, conv_to_integer
+  use conversions_mod, only : conv_to_string, conv_to_integer, conv_to_real, conv_to_uppercase
   use collections_mod, only : hashmap_type, hashset_type, map_type, list_type, mapentry_type, c_get_generic, c_get_integer, &
        c_free, c_size, c_put_integer, c_put_string, c_add_generic, c_add_string
-  use conversions_mod, only : conv_to_integer
-  use logging_mod, only : LOG_WARN, LOG_ERROR, log_log
+  use logging_mod, only : LOG_WARN, LOG_INFO, LOG_ERROR, log_log, log_master_log, log_master_newline
   use optionsdatabase_mod, only : options_has_key, options_get_logical, options_get_integer, options_get_string, options_get_real, &
                                   options_get_array_size
   use io_server_client_mod, only : ARRAY_FIELD_TYPE, SCALAR_FIELD_TYPE, MAP_FIELD_TYPE, INTEGER_DATA_TYPE, BOOLEAN_DATA_TYPE, &
        STRING_DATA_TYPE, FLOAT_DATA_TYPE, DOUBLE_DATA_TYPE, definition_description_type, field_description_type
   use q_indices_mod, only : get_number_active_q_indices
+  use netcdf, only : NF90_DOUBLE, NF90_REAL
   implicit none
 
 #ifndef TEST_MODE
@@ -94,7 +94,7 @@ module configuration_parser_mod
 
   type io_configuration_file_writer_type
      character(len=STRING_LENGTH) :: file_name, title
-     integer :: number_of_contents, write_timestep_frequency
+     integer :: number_of_contents, write_timestep_frequency, write_precision
      real :: write_time_frequency
      logical :: write_on_model_time, write_on_terminate, include_in_io_state_write
      type(io_configuration_file_writer_facet_type), dimension(:), allocatable :: contents     
@@ -104,7 +104,7 @@ module configuration_parser_mod
   type io_configuration_type
      integer :: number_of_data_definitions, number_of_diagnostics, io_communicator, number_of_moncs, &
           number_of_io_servers, my_io_rank, active_moncs, number_inter_io_communications, number_of_threads, number_of_groups, &
-          number_of_writers, number_of_distinct_data_fields, number_of_global_moncs, general_info_mutex
+          number_of_writers, number_of_distinct_data_fields, number_of_global_moncs, general_info_mutex, my_global_rank
      type(io_configuration_data_definition_type), dimension(:), allocatable :: data_definitions
      type(io_configuration_diagnostic_field_type), dimension(:), allocatable :: diagnostics
      type(io_configuration_group_type), dimension(:), allocatable :: groups
@@ -116,6 +116,7 @@ module configuration_parser_mod
      real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: zn_field
      real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: z_field
      type(list_type) :: q_field_names
+     type(list_type) :: tracer_names
      logical :: general_info_set
      character, dimension(:), allocatable :: text_configuration
   end type io_configuration_type
@@ -145,6 +146,7 @@ module configuration_parser_mod
   character(len=STRING_LENGTH), dimension(:), allocatable :: cond_request, diag_request, cond_long, diag_long
   integer :: ncond, ndiag
   
+  logical :: l_thoff=.false.
 
   public EQ_OPERATOR_TYPE, LT_OPERATOR_TYPE, GT_OPERATOR_TYPE, LTE_OPERATOR_TYPE, GTE_OPERATOR_TYPE, ADD_OPERATOR_TYPE, &
        SUBTRACT_OPERATOR_TYPE, MULTIPLY_OPERATOR_TYPE, DIV_OPERATOR_TYPE, MOD_OPERATOR_TYPE, DATA_SIZE_STRIDE, &
@@ -156,7 +158,7 @@ module configuration_parser_mod
        build_definition_description_type_from_configuration, build_field_description_type_from_configuration, &
        get_number_field_dimensions, get_data_value_by_field_name, get_data_value_from_map_entry, get_monc_location, &
        get_diagnostic_field_configuration, get_prognostic_field_configuration, get_io_xml, &
-       cond_request, diag_request, cond_long, diag_long, ncond, ndiag
+       cond_request, diag_request, cond_long, diag_long, ncond, ndiag, l_thoff
 
 contains
 
@@ -172,6 +174,9 @@ contains
     character(len=FILE_LINE_LEN) :: temp_line, adjusted_io_line
     character(len=FILE_STR_STRIDE) :: reading_buffer
     integer :: ierr, first_quote, last_quote, chosen_unit
+    logical :: comment_block
+
+    comment_block = .false.
 
     if (present(funit_num)) then
       chosen_unit=funit_num
@@ -185,6 +190,11 @@ contains
     do while (ierr == 0)
       read(chosen_unit,"(A)",iostat=ierr) temp_line
       adjusted_io_line=adjustl(temp_line)
+      if (adjusted_io_line(1:4) .eq. "<!--" .or. comment_block) then
+        comment_block = .true.
+        if (index(temp_line, "-->") .ne. 0) comment_block = .false.
+        cycle
+      end if
       if (ierr == 0 .and. adjusted_io_line(1:1) .ne. "!" .and. adjusted_io_line(1:2) .ne. "//") then
         if (index(temp_line, "#include") .ne. 0) then
           first_quote=index(temp_line, """")
@@ -220,6 +230,8 @@ contains
     type(io_configuration_type), intent(out) :: parsed_configuration
 
     options_database=provided_options_database
+
+    l_thoff = options_get_logical(provided_options_database, "l_thoff")
 
     inside_data_definition=.false.
     inside_handling_definition=.false.
@@ -259,7 +271,7 @@ contains
   subroutine add_in_dimensions(provided_options_database)
     type(hashmap_type), intent(inout) :: provided_options_database
 
-    integer :: dim_size
+    integer :: dim_size, n_tracers=0
 
     call c_put_integer(building_config%dimension_sizing, "x", options_get_integer(provided_options_database, "x_size"))
     call c_put_integer(building_config%dimension_sizing, "y", options_get_integer(provided_options_database, "y_size"))
@@ -269,8 +281,19 @@ contains
     call c_put_integer(building_config%dimension_sizing, "zn", dim_size)
     call c_put_integer(building_config%dimension_sizing, "qfields", &
          options_get_integer(provided_options_database, "number_q_fields"))
+    
     call c_put_integer(building_config%dimension_sizing, "number_options", c_size(provided_options_database))
     call c_put_integer(building_config%dimension_sizing, "active_q_indicies", get_number_active_q_indices())
+         
+    if (options_get_logical(options_database, "tracers_enabled")) then
+      if (options_get_logical(options_database, "trajectories_enabled")) then
+        n_tracers = 5
+      end if    
+      if (options_get_logical(options_database, "radioactive_tracers_enabled")) then
+        n_tracers = n_tracers + options_get_integer(provided_options_database, "n_radioactive_tracers")
+      end if
+    end if  ! tracers_enabled
+    call c_put_integer(building_config%dimension_sizing, "tfields", n_tracers)
 
     !> Since the model appears to write each of the items in dimension_sizing as dimensions in every
     !  netcdf file, only let these exist when the corresponding code is enabled.
@@ -284,6 +307,11 @@ contains
       allocate(diag_long(ndiag))
       call c_put_integer(building_config%dimension_sizing, "nd", ndiag)
     end if 
+    if (options_get_logical(options_database, "pdf_analysis_enabled" )) then
+      dim_size = options_get_integer(options_database, "n_w_bins")
+      call c_put_integer(building_config%dimension_sizing, "n_w_bins", dim_size)
+    end if 
+
   end subroutine add_in_dimensions  
   
   !> XML element start (opening) call back. This handles most of the configuration parsing
@@ -614,6 +642,7 @@ contains
 
     integer :: field_index
 
+
     if (current_building_file_writer .gt. size(building_config%file_writers)) call extend_file_writer_array()
 
     field_index=get_field_index_from_name(attribute_names, "name")
@@ -652,6 +681,8 @@ contains
     if (field_index .gt. 0) then 
       building_config%file_writers(current_building_file_writer)%write_on_terminate=&
            retrieve_string_value(attribute_values(field_index), STRING_DATA_TYPE) == "true"
+      if (building_config%file_writers(current_building_file_writer)%write_on_model_time) &
+        call log_log(LOG_ERROR, "Inconsitent settings.  write_on_terminate cannot be used with write_on_model_time")
     else
       building_config%file_writers(current_building_file_writer)%write_on_terminate=.false.
     end if
@@ -663,6 +694,19 @@ contains
     else
       building_config%file_writers(current_building_file_writer)%include_in_io_state_write=.true.
     end if
+
+    field_index=get_field_index_from_name(attribute_names, "write_precision")
+    if (field_index .gt. 0) then
+      building_config%file_writers(current_building_file_writer)%write_precision=&
+           merge(NF90_REAL, NF90_DOUBLE, &
+                 conv_to_uppercase(retrieve_string_value(attribute_values(field_index), STRING_DATA_TYPE)) == "FLOAT")
+      call log_master_newline()
+      call log_master_log(LOG_INFO, "Data will be written in FLOAT precision for file: "//&
+                   trim(building_config%file_writers(current_building_file_writer)%file_name))
+    else
+      building_config%file_writers(current_building_file_writer)%write_precision = NF90_DOUBLE
+    end if
+
     
     building_config%file_writers(current_building_file_writer)%number_of_contents=0
     allocate(building_config%file_writers(current_building_file_writer)%contents(DATA_SIZE_STRIDE))    

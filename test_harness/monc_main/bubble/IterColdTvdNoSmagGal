@@ -6,6 +6,8 @@ cfltest_enabled=.true.
 checkpointer_enabled=.true.
 fftsolver_enabled=.false.
 iterativesolver_enabled=.true.
+iterativesolver_single_prec_enabled=.false.
+petsc_solver_enabled=.false.
 pw_advection_enabled=.true.
 tvd_advection_enabled=.true.
 simplesetup_enabled=.true.
@@ -36,7 +38,7 @@ initialisation_stage_ordering+=tank_experiments
 dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, tank_experiments, lwrad_exponential, simplecloud, casim,diverr, psrce, flux_budget, diagnostics, subgrid_profile_diagnostics, profile_diagnostics, scalar_diagnostics, stepfields
 
 # Decomposition configuration
-decomposition_method = onedim
+decomposition_method = twodim
 
 #Advection
 advection_flow_fields=tvd
@@ -71,7 +73,7 @@ walltime_limit=00:05:00
 tolerance=1.e-6
 max_iterations=999
 preconditioner_iterations=2
-include_top_level=.false.
+include_top_level=.true.
 symm_prob=.false.
 
 # roughness length so the same as LEM

@@ -1,6 +1,6 @@
 !> The IO server state module which will write out the current state of the IO server to a NetCDF file
 module io_server_state_writer_mod
-  use iso_c_binding, only: c_int, c_char, c_null_char, c_size_t, c_ptrdiff_t, c_ptr, c_loc, c_sizeof, c_long
+  use iso_c_binding, only: c_int, c_char, c_null_char, c_size_t, c_intptr_t, c_ptr, c_loc, c_sizeof, c_long
   use datadefn_mod, only : DEFAULT_PRECISION
   use netcdf, only : NF90_CHAR, NF90_BYTE, NF90_INT, nf90_def_var, nf90_put_var, nf90_def_dim
   use configuration_parser_mod, only : io_configuration_type
@@ -373,7 +373,7 @@ contains
 
     integer(kind=c_int) :: cncid, cvarid, cndims, cstat1, cstatus
     integer(kind=c_size_t), target :: cstart(1), ccounts(1)
-    integer(kind=c_ptrdiff_t), target :: cstrides(1)
+    integer(kind=c_intptr_t), target :: cstrides(1)
     integer(kind=c_long) :: c_writer_corrected_start_point
     type(c_ptr) :: cstartptr, ccountsptr, cstridesptr
 

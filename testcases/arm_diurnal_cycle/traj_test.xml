@@ -1,0 +1,22 @@
+<io-configuration>
+	<server-configuration>
+		<thread_pool number=500/>
+	</server-configuration>
+#include "io/io_cfg_files/profile_fields.xml"
+#include "io/io_cfg_files/3d_fields.xml"
+#include "io/io_cfg_files/paracon_tracers.xml"
+
+#include "io/io_cfg_files/checkpoint.xml"
+
+<data-writing>
+  <file name="diagnostic_files/diagnostics_ts.nc" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+    <include group="profile_timeseries" time_manipulation="averaged" output_frequency="{mm}"/>
+  </file>
+  <file name="diagnostic_files/diagnostics_3d_ts.nc" write_time_frequency="{diag_write_freq}" title="All diagnostic values">
+    <include group="3d_fields" time_manipulation="instantaneous" output_frequency="{mm2}"/>
+    <include group="3d_tracers" time_manipulation="instantaneous" output_frequency="{mm2}"/>
+  </file>
+</data-writing>
+
+</io-configuration>
+

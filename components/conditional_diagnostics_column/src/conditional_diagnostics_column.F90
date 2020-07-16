@@ -55,8 +55,6 @@ module conditional_diagnostics_column_mod
   integer, dimension(:), allocatable :: diag_locations, cond_locations
   integer :: requested_area
 
-  integer :: diagnostic_generation_frequency
-
   public conditional_diagnostics_column_get_descriptor, CondDiags_tot, ncond, ndiag, gpts_total, requested_area, &
          cond_request, diag_request, cond_long, diag_long
 
@@ -351,9 +349,6 @@ contains
     cond_long=master_conditions_list(cond_locations)
     diag_long=master_diagnostics_list(diag_locations)
 
-    ! Save the sampling_frequency to force diagnostic calculation on select time steps
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
-
   end subroutine initialisation_callback  
 
 
@@ -400,7 +395,9 @@ contains
 
     integer :: k, j, i
     integer :: inc     ! loop increment variable
-    integer :: local_y, locaL_x, target_x_index, target_y_index
+    logical :: calculate_diagnostics
+
+    calculate_diagnostics = current_state%diagnostic_sample_timestep
 
     j=current_state%column_local_y
     i=current_state%column_local_x
@@ -415,7 +412,7 @@ contains
     if ( .not. (current_state%th%active .and.       &
                 .not. current_state%passive_q .and. &
                 current_state%number_q_fields .gt. 0) ) return
-    if (.not. mod(current_state%timestep, diagnostic_generation_frequency) == 0) return
+    if (.not. calculate_diagnostics) return
 
     !> Begin the calculations
     !> Loop over levels

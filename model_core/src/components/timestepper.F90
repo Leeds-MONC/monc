@@ -6,6 +6,7 @@ module timestepper_mod
   use grids_mod, only : X_INDEX, Y_INDEX
   use registry_mod, only : GROUP_TYPE_WHOLE, GROUP_TYPE_COLUMN, group_descriptor_type, get_ordered_groups, &
        execute_timestep_callbacks
+
   implicit none
 
 #ifndef TEST_MODE
@@ -30,6 +31,8 @@ contains
     type(model_state_type), intent(inout) :: current_state
 
     integer :: i
+
+    call handle_sampling(current_state)
 
     do i=1,size(group_descriptors)      
       if (group_descriptors(i)%type == GROUP_TYPE_WHOLE) then
@@ -78,6 +81,10 @@ contains
     type(model_state_type), intent(inout) :: current_state
     type(group_descriptor_type), intent(in) :: group_descriptor
 
+    if (current_state%print_debug_data) then
+      current_state%column_local_x =current_state%local_grid%local_domain_start_index(X_INDEX) 
+      current_state%column_local_y =current_state%local_grid%local_domain_start_index(Y_INDEX)
+    end if
     call execute_timestep_callbacks(current_state, group_descriptor%id)
   end subroutine timestep_whole
 
@@ -100,4 +107,43 @@ contains
          current_state%column_local_y .gt. current_state%local_grid%local_domain_end_index(Y_INDEX) .or.&
          current_state%column_local_x .gt. current_state%local_grid%local_domain_end_index(X_INDEX)
   end subroutine update_state_sitation_flags
+
+  !> Updates the diagnostic sampling flag for the new timestep
+  !! @param state The current model state
+  subroutine handle_sampling(current_state)
+    type(model_state_type), intent(inout) :: current_state
+
+    integer :: i
+
+    current_state%diagnostic_sample_timestep = .false.
+    current_state%sampling(:)%active = .false.
+
+    if (.not. current_state%only_compute_on_sample_timestep) then
+      ! always compute the diagnostic in this case
+      current_state%diagnostic_sample_timestep = .true.
+    end if
+
+    ! The following three cases will only compute diangnostics at requested intervals.
+    ! However, it does ALL diagnostics regardless of specific request.
+    ! MONC isn't STATSH-smart...
+    if (current_state%time_basis) then
+      ! enable calculation and sampling at specified step only 
+      ! (at sampling time interval, which is also an output or write interval)
+      do i=1, size(current_state%sampling)
+        if (current_state%timestep .eq. current_state%sampling(i)%next_step) then
+          current_state%diagnostic_sample_timestep = .true.
+          current_state%sampling(i)%active = .true.
+        end if
+      end do
+    else ! timestep basis or force_output_on_interval
+      ! enable calculation and sampling on the sampling timestep interval.
+      do i=1,size(current_state%sampling)
+        if (mod(current_state%timestep, current_state%sampling(i)%interval) == 0) then
+          current_state%diagnostic_sample_timestep = .true.
+          current_state%sampling(i)%active = .true.
+        end if
+      end do
+    end if
+  end subroutine handle_sampling
+
 end module timestepper_mod

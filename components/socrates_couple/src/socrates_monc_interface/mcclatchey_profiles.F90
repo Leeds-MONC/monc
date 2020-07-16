@@ -246,7 +246,7 @@ contains
     real(kind=DEFAULT_PRECISION), parameter ::       &
          fracdp = 0.75,        &
          ! fraction of to dp which the 1st rad leevl can be from top
-         mindp = 2000.,        &
+         mindp = 2.,        &
          ! Minimum values dp in Pa
          maxdp = 10000.
          ! Maximum dp we will allow from top

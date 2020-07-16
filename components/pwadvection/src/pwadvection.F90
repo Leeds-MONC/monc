@@ -39,8 +39,6 @@ implicit none
              l_tend_pr_tot_tabs
   ! q indices
   integer :: iqv=0, iql=0, iqr=0, iqi=0, iqs=0, iqg=0
-  integer :: diagnostic_generation_frequency
-
 
  public pwadvection_get_descriptor
 contains
@@ -220,9 +218,6 @@ contains
       allocate( tend_pr_tot_tabs(current_state%local_grid%size(Z_INDEX)) )
     endif
 
-    ! Save the sampling_frequency to force diagnostic calculation on select time steps
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
-
   end subroutine initialisation_callback
 
 
@@ -262,8 +257,10 @@ contains
   !!                           not include halos and to prevent array out-of-bounds
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
-
     integer :: current_x_index, current_y_index, target_x_index, target_y_index
+    logical :: calculate_diagnostics
+
+    calculate_diagnostics = current_state%diagnostic_sample_timestep
 
     current_x_index=current_state%column_local_x
     current_y_index=current_state%column_local_y
@@ -311,17 +308,15 @@ contains
 
     if (current_state%halo_column) return
     
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
-      call save_precomponent_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) &
+        call save_precomponent_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
 
     if (advect_flow) call advect_flow_fields(current_state, current_x_index, current_y_index)
     if (advect_th) call advect_th_field(current_state, current_x_index, current_y_index)
     if (advect_q) call advect_q_field(current_state, current_x_index, current_y_index)
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
-      call compute_component_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) &
+        call compute_component_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
 
   end subroutine timestep_callback
 

@@ -1,0 +1,426 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+   1. This group contains resolved profile terms from profile diagnostics and the forcing component.
+
+   2. The 'large_scale' forcing terms should be equivalent to the tendencies from the forcing component.
+
+   3. Cloud fraction profiles depend on cloud_mask_method, l_partial_liq_ice, and whether ice is 
+      enabled.
+
+   4. Do not expect the full set of 'large_scale' or subsidence terms to be produced, as these
+      depend upon whether forcing or subsidence are applied to specific prognostics.
+
+   5. Requires:
+        profile_diagnostics_enabled=.true.
+
+-->
+
+
+<data-definition name="profile_timeseries_fields" frequency="{sampling_frequency}" namespace="profile_fields">
+  <!-- resolved profile terms (from profile_diagnostics) -->
+  <field name="prefn_local" type="array" data_type="double" optional=true />
+  <field name="rho_local" type="array" data_type="double" optional=true />
+  <field name="rhon_local" type="array" data_type="double" optional=true />
+  <field name="thinit_local" type="array" data_type="double" optional=true />
+  <field name="thref_local" type="array" data_type="double" optional=true />
+  <field name="u_wind_total_local" type="array" data_type="double" optional=true/>
+  <field name="v_wind_total_local" type="array" data_type="double" optional=true/>
+  <field name="w_wind_total_local" type="array" data_type="double" optional=true/>
+  <field name="uu_total_local" type="array" data_type="double" optional=true/>
+  <field name="vv_total_local" type="array" data_type="double" optional=true/>
+  <field name="ww_total_local" type="array" data_type="double" optional=true/>
+  <field name="www_total_local" type="array" data_type="double" optional=true/>
+  <field name="wwww_total_local" type="array" data_type="double" optional=true/>
+  <field name="theta_total_local" type="array" data_type="double" optional=true/>
+  <field name="vapour_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="rh_total_local" type="array" data_type="double" optional=true/>
+  <field name="liquid_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="rain_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="ice_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="snow_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="graupel_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="uw_total_local" type="array" data_type="double" optional=true/>
+  <field name="vw_total_local" type="array" data_type="double" optional=true/>
+  <field name="uv_total_local" type="array" data_type="double" optional=true/>
+  <field name="th2_total_local" type="array" data_type="double" optional=true/>
+  <field name="wke_total_local" type="array" data_type="double" optional=true/>
+  <field name="wtheta_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wtheta_cn_total_local" type="array" data_type="double" optional=true/> 
+  <field name="wqv_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqv_cn_total_local" type="array" data_type="double" optional=true/>
+  <field name="wql_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wql_cn_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqr_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqr_cn_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqi_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqi_cn_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqs_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqs_cn_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqg_ad_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqg_cn_total_local" type="array" data_type="double" optional=true/>
+  <!-- Large-scale forcing terms (from forcing component) -->
+  <field name="u_large_scale" type="array" data_type="double" optional=true />
+  <field name="v_large_scale" type="array" data_type="double" optional=true />
+  <field name="th_large_scale" type="array" data_type="double" optional=true />
+  <field name="vapour_mmr_large_scale" type="array" data_type="double" optional=true />
+  <field name="cloud_mmr_large_scale" type="array" data_type="double" optional=true />
+  <field name="rain_mmr_large_scale" type="array" data_type="double" optional=true />
+  <field name="ice_mmr_large_scale" type="array" data_type="double" optional=true />
+  <field name="snow_mmr_large_scale" type="array" data_type="double" optional=true />
+  <field name="graupel_mmr_large_scale" type="array" data_type="double" optional=true />
+  <field name="u_subsidence" type="array" data_type="double" optional=true />
+  <field name="v_subsidence" type="array" data_type="double" optional=true />
+  <field name="th_subsidence" type="array" data_type="double" optional=true />
+  <field name="vapour_mmr_subsidence" type="array" data_type="double" optional=true />
+  <field name="cloud_mmr_subsidence" type="array" data_type="double" optional=true />
+  <field name="rain_mmr_subsidence" type="array" data_type="double" optional=true />
+  <field name="ice_mmr_subsidence" type="array" data_type="double" optional=true />
+  <field name="snow_mmr_subsidence" type="array" data_type="double" optional=true />
+  <field name="graupel_mmr_subsidence" type="array" data_type="double" optional=true />
+  <!-- Cloud fraction diagnostics -->
+  <field name="cloud_mask_total_local" type="array" data_type="double" optional=true/>
+  <field name="cloud_liq_mask_total_local" type="array" data_type="double" optional=true/>
+  <field name="cloud_ice_mask_total_local" type="array" data_type="double" optional=true/>
+   <!--  -->
+</data-definition>
+
+<data-handling namespace="profile_fields">
+   <!--  -->
+   <diagnostic field="prefn"  type="array" data_type="double" size="zn" units="hPa">
+	<communication name="reduction" operator="mean" result="prefn" field="prefn_local" root="auto"/>
+   </diagnostic>
+   <diagnostic field="rho"  type="array" data_type="double" size="z" units="kg/m^3">
+	<communication name="reduction" operator="mean" result="rho" field="rho_local" root="auto"/>
+   </diagnostic>  
+   <diagnostic field="rhon"  type="array" data_type="double" size="zn" units="kg/m^3">
+	<communication name="reduction" operator="mean" result="rhon" field="rhon_local" root="auto"/>
+   </diagnostic>
+   <diagnostic field="thinit"  type="array" data_type="double" size="zn" units="K">
+	<communication name="reduction" operator="mean" result="thinit" field="thinit_local" root="auto"/>
+  </diagnostic>
+   <diagnostic field="thref"  type="array" data_type="double" size="zn" units="K">
+	<communication name="reduction" operator="mean" result="thref" field="thref_local" root="auto"/>
+  </diagnostic>  
+  <diagnostic field="u_wind_mean"  type="array" data_type="double" size="zn" units="m/s">
+	<operator name="arithmetic" result="u_wind_mean" equation="u_wind_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="u_wind_mean_g" field="u_wind_total_local" root="auto"/>
+  </diagnostic> 
+  <diagnostic field="v_wind_mean"  type="array" data_type="double" size="zn" units="m/s">
+	<operator name="arithmetic" result="v_wind_mean" equation="v_wind_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="v_wind_mean_g" field="v_wind_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="w_wind_mean"  type="array" data_type="double" size="z" units="m/s">
+	<operator name="arithmetic" result="w_wind_mean" equation="w_wind_total_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="w_wind_total_g" field="w_wind_total_local" root="auto"/>
+  </diagnostic>   
+  <diagnostic field="uu_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+	<operator name="arithmetic" result="uu_mean" equation="uu_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="uu_mean_g" field="uu_total_local" root="auto"/>
+  </diagnostic> 
+  <diagnostic field="vv_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+	<operator name="arithmetic" result="vv_mean" equation="vv_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="vv_mean_g" field="vv_total_local" root="auto"/>
+  </diagnostic>  
+  <diagnostic field="ww_mean"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="ww_mean" equation="ww_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="ww_mean_g" field="ww_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="www_mean"  type="array" data_type="double" size="z" units="m^3/s^3">
+	<operator name="arithmetic" result="www_mean" equation="www_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="www_mean_g" field="www_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="wwww_mean"  type="array" data_type="double" size="z" units="m^4/s^4">
+	<operator name="arithmetic" result="wwww_mean" equation="wwww_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wwww_mean_g" field="wwww_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="theta_mean"  type="array" data_type="double" size="zn" units="K">
+	<operator name="arithmetic" result="theta_mean" equation="theta_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="theta_mean_g" field="theta_total_local" root="auto"/>
+  </diagnostic>  
+  <diagnostic field="vapour_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+	<operator name="arithmetic" result="vapour_mmr_mean" equation="vapour_mmr_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="vapour_mmr_mean_g" field="vapour_mmr_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="rh_mean"  type="array" data_type="double" size="zn" units="fraction">
+        <operator name="arithmetic" result="rh_mean" equation="(rh_total_g/({x_size}*{y_size})*100)"/>
+        <communication name="reduction" operator="sum" result="rh_total_g" field="rh_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="liquid_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    	<operator name="arithmetic" result="liquid_mmr_mean" equation="liquid_mmr_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="liquid_mmr_mean_g" field="liquid_mmr_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="rain_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <operator name="arithmetic" result="rain_mmr_mean" equation="rain_mmr_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="rain_mmr_mean_g" field="rain_mmr_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="ice_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <operator name="arithmetic" result="ice_mmr_mean" equation="ice_mmr_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="ice_mmr_mean_g" field="ice_mmr_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="snow_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <operator name="arithmetic" result="snow_mmr_mean" equation="snow_mmr_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="snow_mmr_mean_g" field="snow_mmr_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="graupel_mmr_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <operator name="arithmetic" result="graupel_mmr_mean" equation="graupel_mmr_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="graupel_mmr_mean_g" field="graupel_mmr_total_local" root="auto"/>
+  </diagnostic>
+
+
+  <diagnostic field="uw_mean"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="uw_mean" equation="uw_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="uw_mean_g" field="uw_total_local" root="auto"/>
+  </diagnostic>  
+
+  <diagnostic field="vw_mean"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="vw_mean" equation="vw_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="vw_mean_g" field="vw_total_local" root="auto"/>
+  </diagnostic>
+  
+  <diagnostic field="uv_mean"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="uv_mean" equation="uv_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="uv_mean_g" field="uv_total_local" root="auto"/>
+  </diagnostic>
+ 
+  <diagnostic field="wke_mean"  type="array" data_type="double" size="z" units="J/m^2/s">
+	<operator name="arithmetic" result="wke_mean" equation="wke_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wke_mean_g" field="wke_total_local" root="auto"/>
+  </diagnostic> 
+  
+  <diagnostic field="th2_mean"  type="array" data_type="double" size="zn" units="K^2">
+	<operator name="arithmetic" result="th2_mean" equation="th2_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="th2_mean_g" field="th2_total_local" root="auto"/>
+  </diagnostic>  
+
+  <diagnostic field="wtheta_ad_mean"  type="array" data_type="double" size="z" units="Km/s">
+	<operator name="arithmetic" result="wtheta_ad_mean" equation="wtheta_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wtheta_ad_mean_g" field="wtheta_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wtheta_cn_mean"  type="array" data_type="double" size="z" units="Km/s">
+	<operator name="arithmetic" result="wtheta_cn_mean" equation="wtheta_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wtheta_cn_mean_g" field="wtheta_cn_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wqv_ad_mean"  type="array" data_type="double" size="z" units="m/s">
+	<operator name="arithmetic" result="wqv_ad_mean" equation="wqv_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqv_ad_mean_g" field="wqv_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wqv_cn_mean"  type="array" data_type="double" size="z" units="m/s">
+	<operator name="arithmetic" result="wqv_cn_mean" equation="wqv_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqv_cn_mean_g" field="wqv_cn_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wql_ad_mean"  type="array" data_type="double" size="z" units="m/s">
+	<operator name="arithmetic" result="wql_ad_mean" equation="wql_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wql_ad_mean_g" field="wql_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wql_cn_mean"  type="array" data_type="double" size="z" units="m/s">
+	<operator name="arithmetic" result="wql_cn_mean" equation="wql_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wql_cn_mean_g" field="wql_cn_total_local" root="auto"/>
+  </diagnostic>
+
+   <diagnostic field="wqr_ad_mean"  type="array" data_type="double" size="z" units="m/s">
+	<operator name="arithmetic" result="wqr_ad_mean" equation="wqr_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqr_ad_mean_g" field="wqr_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wqr_cn_mean"  type="array" data_type="double" size="z" units="m/s">
+	<operator name="arithmetic" result="wqr_cn_mean" equation="wqr_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqr_cn_mean_g" field="wqr_cn_total_local" root="auto"/>
+  </diagnostic>
+
+   <diagnostic field="wqi_ad_mean"  type="array" data_type="double" size="z" units="m/s">
+	<operator name="arithmetic" result="wqi_ad_mean" equation="wqi_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqi_ad_mean_g" field="wqi_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wqi_cn_mean"  type="array" data_type="double" size="z" units="m/s">
+	<operator name="arithmetic" result="wqi_cn_mean" equation="wqi_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqi_cn_mean_g" field="wqi_cn_total_local" root="auto"/>
+  </diagnostic>
+
+   <diagnostic field="wqs_ad_mean"  type="array" data_type="double" size="z" units="m/s">
+	<operator name="arithmetic" result="wqs_ad_mean" equation="wqs_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqs_ad_mean_g" field="wqs_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wqs_cn_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqs_cn_mean" equation="wqs_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqs_cn_mean_g" field="wqs_cn_total_local" root="auto"/>
+  </diagnostic>
+
+   <diagnostic field="wqg_ad_mean"  type="array" data_type="double" size="z" units="m/s">
+	<operator name="arithmetic" result="wqg_ad_mean" equation="wqg_ad_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqg_ad_mean_g" field="wqg_ad_total_local" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="wqg_cn_mean"  type="array" data_type="double" size="z" units="m/s">
+	<operator name="arithmetic" result="wqg_cn_mean" equation="wqg_cn_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqg_cn_mean_g" field="wqg_cn_total_local" root="auto"/>
+  </diagnostic>
+
+
+  <diagnostic field="th_large_scale_mean"  type="array" data_type="double" size="zn" units="K/s">
+	<operator name="arithmetic" result="th_large_scale_mean" equation="th_large_scale_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="th_large_scale_g" field="th_large_scale" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="u_large_scale_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+    <operator name="arithmetic" result="u_large_scale_mean" equation="u_large_scale_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="u_large_scale_g" field="u_large_scale" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="v_large_scale_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+    <operator name="arithmetic" result="v_large_scale_mean" equation="v_large_scale_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="v_large_scale_g" field="v_large_scale" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="vapour_mmr_large_scale_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="vapour_mmr_large_scale_mean" equation="vapour_mmr_large_scale_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="vapour_mmr_large_scale_g" field="vapour_mmr_large_scale" root="auto"/>
+  </diagnostic>
+  <diagnostic field="cloud_mmr_large_scale_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="cloud_mmr_large_scale_mean" equation="cloud_mmr_large_scale_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="cloud_mmr_large_scale_g" field="cloud_mmr_large_scale" root="auto"/>
+  </diagnostic>
+  <diagnostic field="rain_mmr_large_scale_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="rain_mmr_large_scale_mean" equation="rain_mmr_large_scale_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="rain_mmr_large_scale_g" field="rain_mmr_large_scale" root="auto"/>
+  </diagnostic>
+  <diagnostic field="ice_mmr_large_scale_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="ice_mmr_large_scale_mean" equation="ice_mmr_large_scale_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="ice_mmr_large_scale_g" field="ice_mmr_large_scale" root="auto"/>
+  </diagnostic>
+  <diagnostic field="snow_mmr_large_scale_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="snow_mmr_large_scale_mean" equation="snow_mmr_large_scale_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="snow_mmr_large_scale_g" field="snow_mmr_large_scale" root="auto"/>
+  </diagnostic>
+  <diagnostic field="graupel_mmr_large_scale_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="graupel_mmr_large_scale_mean" equation="graupel_mmr_large_scale_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="graupel_mmr_large_scale_g" field="graupel_mmr_large_scale" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="th_subsidence_mean"  type="array" data_type="double" size="zn" units="K/s">
+	<operator name="arithmetic" result="th_subsidence_mean" equation="th_subsidence_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="th_subsidence_g" field="th_subsidence" root="auto"/>
+  </diagnostic> 
+
+  <diagnostic field="u_subsidence_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+    <operator name="arithmetic" result="u_subsidence_mean" equation="u_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="u_subsidence_g" field="u_subsidence" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="v_subsidence_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+    <operator name="arithmetic" result="v_subsidence_mean" equation="v_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="v_subsidence_g" field="v_subsidence" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="vapour_mmr_subsidence_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="vapour_mmr_subsidence_mean" equation="vapour_mmr_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="vapour_mmr_subsidence_g" field="vapour_mmr_subsidence" root="auto"/>
+  </diagnostic>
+  <diagnostic field="cloud_mmr_subsidence_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="cloud_mmr_subsidence_mean" equation="cloud_mmr_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="cloud_mmr_subsidence_g" field="cloud_mmr_subsidence" root="auto"/>
+  </diagnostic>
+  <diagnostic field="rain_mmr_subsidence_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="rain_mmr_subsidence_mean" equation="rain_mmr_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="rain_mmr_subsidence_g" field="rain_mmr_subsidence" root="auto"/>
+  </diagnostic>
+  <diagnostic field="ice_mmr_subsidence_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="ice_mmr_subsidence_mean" equation="ice_mmr_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="ice_mmr_subsidence_g" field="ice_mmr_subsidence" root="auto"/>
+  </diagnostic>
+  <diagnostic field="snow_mmr_subsidence_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="snow_mmr_subsidence_mean" equation="snow_mmr_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="snow_mmr_subsidence_g" field="snow_mmr_subsidence" root="auto"/>
+  </diagnostic>
+  <diagnostic field="graupel_mmr_subsidence_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="graupel_mmr_subsidence_mean" equation="graupel_mmr_subsidence_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="graupel_mmr_subsidence_g" field="graupel_mmr_subsidence" root="auto"/>
+  </diagnostic>
+ 
+
+   <!-- Cloud fraction diagnostics -->
+  <diagnostic field="total_cloud_fraction"  type="array" data_type="double" size="zn" units="fraction">
+    <operator name="arithmetic" result="total_cloud_fraction" equation="cloud_mask_total_local_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="cloud_mask_total_local_g" field="cloud_mask_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="liquid_cloud_fraction"  type="array" data_type="double" size="zn" units="fraction">
+    <operator name="arithmetic" result="liquid_cloud_fraction" equation="cloud_liq_mask_total_local_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="cloud_liq_mask_total_local_g" field="cloud_liq_mask_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="ice_cloud_fraction"  type="array" data_type="double" size="zn" units="fraction">
+    <operator name="arithmetic" result="ice_cloud_fraction" equation="cloud_ice_mask_total_local_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="cloud_ice_mask_total_local_g" field="cloud_ice_mask_total_local" root="auto"/>
+  </diagnostic>
+
+</data-handling>
+
+<group name="profile_resolved" namespace="profile_fields">
+  <member name="prefn"/>
+  <member name="rho"/>
+  <member name="rhon"/>
+  <member name="thref"/>
+  <member name="thinit"/>
+  <member name="u_wind_mean"/>
+  <member name="v_wind_mean"/>
+  <member name="w_wind_mean"/>
+  <member name="uu_mean"/>
+  <member name="vv_mean"/>
+  <member name="ww_mean"/>
+  <member name="www_mean"/>
+  <member name="wwww_mean"/>
+  <member name="theta_mean"/>
+  <member name="vapour_mmr_mean"/>
+  <member name="rh_mean"/>
+  <member name="liquid_mmr_mean"/>
+  <member name="rain_mmr_mean"/>
+  <member name="ice_mmr_mean"/>
+  <member name="snow_mmr_mean"/>
+  <member name="graupel_mmr_mean"/>
+  <member name="wqv_ad_mean"/>
+  <member name="wql_ad_mean"/>
+  <member name="wqr_ad_mean"/>
+  <member name="wqi_ad_mean"/>
+  <member name="wqs_ad_mean"/>
+  <member name="wqg_ad_mean"/>
+  <member name="wqv_cn_mean"/>
+  <member name="wql_cn_mean"/>
+  <member name="wqr_cn_mean"/>
+  <member name="wqi_cn_mean"/>
+  <member name="wqs_cn_mean"/>
+  <member name="wqg_cn_mean"/>
+  <member name="uw_mean"/>
+  <member name="vw_mean"/>
+  <member name="uv_mean"/>
+  <member name="wtheta_cn_mean"/>
+  <member name="wtheta_ad_mean"/>
+  <member name="wke_mean"/>
+  <member name="th2_mean"/>
+  <member name="u_large_scale_mean"/>
+  <member name="th_large_scale_mean"/>
+  <member name="v_large_scale_mean"/>
+  <member name="vapour_mmr_large_scale_mean"/>
+  <member name="cloud_mmr_large_scale_mean"/>
+  <member name="rain_mmr_large_scale_mean"/>
+  <member name="ice_mmr_large_scale_mean"/>
+  <member name="snow_mmr_large_scale_mean"/>
+  <member name="graupel_mmr_large_scale_mean"/>
+  <member name="u_subsidence_mean"/>
+  <member name="th_subsidence_mean"/>
+  <member name="v_subsidence_mean"/>
+  <member name="vapour_mmr_subsidence_mean"/>
+  <member name="cloud_mmr_subsidence_mean"/>
+  <member name="rain_mmr_subsidence_mean"/>
+  <member name="ice_mmr_subsidence_mean"/>
+  <member name="snow_mmr_subsidence_mean"/>
+  <member name="graupel_mmr_subsidence_mean"/>
+  <member name="total_cloud_fraction"/>
+  <member name="liquid_cloud_fraction"/>
+  <member name="ice_cloud_fraction"/>
+  <!--  -->
+</group>

@@ -1,9 +1,9 @@
 #!/bin/bash --login
-#PBS -N MONC
+#PBS -N add_jobname
 #PBS -l select=1
 #PBS -l walltime=01:00:00
+#PBS -o add_pbs_dir
 #PBS -j oe
-#PBS -P asci
 #PBS -q normal
 
 # Make sure any symbolic links are resolved to absolute path 
@@ -13,7 +13,7 @@ export PBS_O_WORKDIR=$(readlink -f $PBS_O_WORKDIR)
 cd $PBS_O_WORKDIR
 
 export SUBMISSION_SCRIPT_NAME=add_scriptname
-export MONC_EXEC=./build/bin/monc_driver.exe
+export MONC_EXEC=add_build_exec
 
 export TESTCASE=add_testcase_mcf
 export STDOUT_DIR=add_stdout_dirname

@@ -18,13 +18,15 @@ module writer_types_mod
 
   abstract interface
      !> Time manipulation interface which is implemented by the instantaneous and time averaged manipulations
-     type(data_values_type) function perform_time_manipulation(instant_values, output_frequency, field_name, timestep, time)
+     type(data_values_type) function perform_time_manipulation(instant_values, output_frequency, field_name, timestep, &
+                                                               time, time_basis)
        import DEFAULT_PRECISION, data_values_type
        real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: instant_values
        real, intent(in) :: output_frequency
        real(kind=DEFAULT_PRECISION), intent(in) :: time
        character(len=*), intent(in) :: field_name
        integer, intent(in) :: timestep
+       logical, intent(in) :: time_basis
      end function perform_time_manipulation
 
      logical function is_field_ready_to_write(latest_time, output_frequency, write_time, latest_timestep, write_timestep)
@@ -76,8 +78,9 @@ module writer_types_mod
   type writer_type
      character(len=STRING_LENGTH) :: filename, title
      type(writer_field_type), dimension(:), allocatable :: contents
-     integer :: trigger_and_write_mutex, write_timestep, previous_write_timestep, num_fields_to_write, &
-          num_fields_to_write_mutex, pending_writes_mutex, write_timestep_frequency, latest_pending_write_timestep
+     integer :: trigger_and_write_mutex, write_timestep, previous_write_timestep, num_fields_to_write,              &
+          num_fields_to_write_mutex, pending_writes_mutex, write_timestep_frequency, latest_pending_write_timestep, &
+          write_precision
      real :: write_time_frequency, previous_write_time, latest_pending_write_time, write_time, defined_write_time
      logical :: write_on_model_time, contains_io_status_dump, write_on_terminate, include_in_io_state_write
      type(queue_type) :: pending_writes
@@ -87,6 +90,11 @@ module writer_types_mod
   type collective_q_field_representation_type
      integer, dimension(:), allocatable :: dimensions
   end type collective_q_field_representation_type
+
+  !< Represents the dimension information associated with a tracer field that is written collectively
+  type collective_tracer_representation_type
+     integer, dimension(:), allocatable :: dimensions
+  end type collective_tracer_representation_type
 
   type netcdf_diagnostics_timeseries_type
      integer :: netcdf_dim_id, netcdf_var_id, num_entries
@@ -104,7 +112,8 @@ module writer_types_mod
   end type netcdf_diagnostics_type
 
   public writer_type, writer_field_type, write_field_collective_values_type, pending_write_type, &
-       perform_time_manipulation, collective_q_field_representation_type, netcdf_diagnostics_timeseries_type, &
+       perform_time_manipulation, collective_q_field_representation_type,  collective_tracer_representation_type, &
+       netcdf_diagnostics_timeseries_type, &
        netcdf_diagnostics_type, serialise_writer_type, unserialise_writer_type, serialise_data_values_type, &
        unserialise_data_values_type, write_field_collective_descriptor_type, write_field_collective_monc_info_type, &
        prepare_to_serialise_data_values_type, prepare_to_serialise_writer_type
@@ -122,7 +131,6 @@ contains
          (kind(writer_to_serialise%previous_write_time) * 4) + &
          c_size(writer_to_serialise%pending_writes) * (kind(writer_to_serialise%write_timestep) + &
          kind(writer_to_serialise%previous_write_time))
-
     call check_thread_status(forthread_mutex_lock(writer_to_serialise%num_fields_to_write_mutex))
 
     if (size(writer_to_serialise%contents) .gt. 0) then
