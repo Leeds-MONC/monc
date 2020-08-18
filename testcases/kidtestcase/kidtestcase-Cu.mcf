@@ -18,12 +18,13 @@ pstep_enabled=.false.
 pw_advection_enabled=.false.
 lower_bc_enabled=.false.
 setfluxlook_enabled=.false.
-simplecloud_enabled=.true.
+simplecloud_enabled=.false.
 simplesetup_enabled=.true.
 smagorinsky_enabled=.false.
 tvd_advection_enabled=.true.
 viscosity_enabled=.false.
-casim_enabled=.false.
+casim_enabled=.true.
+casim_profile_dgs_enabled=.true.
 lateral_bcs_enabled=.true.
 iobridge_enabled=.true.
 scalar_diagnostics_enabled=.true.
@@ -72,7 +73,6 @@ kgd=1,27
 hgd=0.0, 2700.0
 rmlmax=15.0
 enable_theta=.true.
-number_q_fields=5
 use_anelastic_equations=.true.
 origional_vertical_grid_setup=.true.
 passive_th=.false.
@@ -93,4 +93,15 @@ advection_q_fields=tvd
 
 # Kinematic options
 case_number=1
+
+#CASIM options
+number_q_fields=11
+option=22222
+l_warm=.false.
+
+aerosol_option=0
+iopt_act=0
+iopt_inuc=0
+process_level=0
+l_override_checks = .true.
 
