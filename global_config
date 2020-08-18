@@ -177,6 +177,9 @@ solver_type=cg
 preconditioner_type=auto
 norm_type=auto
 
+# Switch for FFTE 
+FFTE = .true.
+
 # Lower BC configuration
 ntmhf=0
 shflx_sen=0.0

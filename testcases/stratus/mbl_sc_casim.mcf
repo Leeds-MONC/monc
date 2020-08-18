@@ -16,7 +16,7 @@ viscosity_enabled=.true.
 diffusion_enabled=.true.
 simplecloud_enabled=.false.
 casim_enabled=.true.
-casim_profile_dgs_enabled=.true.
+casim_profile_dgs_enabled=.false.
 coriolis_enabled=.true.
 damping_enabled=.true.
 forcing_enabled=.true. 
@@ -29,25 +29,25 @@ iobridge_enabled=.true.
 scalar_diagnostics_enabled=.true.
 profile_diagnostics_enabled=.true.
 subgrid_profile_diagnostics_enabled=.true.
-flux_budget_enabled=.true.
+flux_budget_enabled=.false.
 socrates_couple_enabled=.true.
 
 # Control configuration
 
 display_synopsis_frequency=100
 nn_consolidation=1
-termination_time=7500.
-dtm=0.4
+termination_time=130.
+dtm=0.15
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 diagnostic_file="diagnostic_files/mbl_sc_casim_dg.nc"
 moncs_per_io_server=8
-sampling_frequency=75
-3d_sampling_frequency=4500
-mm=1800.0
-mm1=60.0
-diag_write_freq=7260.0
+sampling_frequency=10
+3d_sampling_frequency=30
+mm=30.0
+mm1=10.0
+diag_write_freq=60.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
@@ -64,7 +64,7 @@ advection_q_fields=tvd
 cfl_frequency=100
 cfl_cvismax=0.4
 cfl_cvelmax=0.4
-cfl_dtmmax=0.4
+cfl_dtmmax=0.15
 cfl_dtmmin=0.001
 
 # Simple setup configuration
@@ -72,8 +72,8 @@ cfl_dtmmin=0.001
 thref0=288.0
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=128
-y_size=128
+x_size=64
+y_size=2
 z_size=100
 dxx=50
 dyy=50
@@ -172,8 +172,8 @@ mcc_temperature_profile  = components/socrates_couple/data/mcc_profiles/one_km/t
 mcc_vapour_profile       = components/socrates_couple/data/mcc_profiles/one_km/tro.q.nc
 mcc_ozone_profile        = components/socrates_couple/data/mcc_profiles/one_km/tro.o3.nc
 # Add options for rad_cntrl
-spectral_file_lw           = /projects/monc/fra23/socrates_spectra/ga7/sp_lw_ga7
-spectral_file_sw           = /projects/monc/fra23/socrates_spectra/ga7/sp_sw_ga7
+spectral_file_lw           = /data/users/fra23/spectra_ga7/sp_lw_ga7
+spectral_file_sw           = /data/users/fra23/spectra_ga7/sp_sw_ga7
 
 # 5 is clear sky, 2 is cloud (ice and liquid no overlap), 1 (ice and liquid full overlap)
 i_cloud_representation  = 2

@@ -75,11 +75,12 @@ contains
     integer, intent(inout) :: request
     integer, intent(inout), optional :: status(MPI_STATUS_SIZE)
 
-    integer :: ierr, flag
+    integer :: ierr
+    logical :: flag
 
     if (manage_mpi_thread_safety) then
-      flag=0
-      do while (flag .ne. 1)
+      flag=.false.
+      do while (.not. flag)
         call lock_mpi()
         if (present(status)) then
           call mpi_test(request, flag, status, ierr)
@@ -87,7 +88,7 @@ contains
           call mpi_test(request, flag, MPI_STATUS_IGNORE, ierr)
         end if
         call unlock_mpi()      
-        if (flag .ne. 1) call pause_for_mpi_interleaving()
+        if (.not. flag) call pause_for_mpi_interleaving()
       end do
     else
       if (present(status)) then
@@ -106,15 +107,16 @@ contains
     integer, dimension(:), intent(inout) :: requests
     integer, intent(in) :: count
 
-    integer :: ierr, flag
+    integer :: ierr
+    logical ::  flag
 
     if (manage_mpi_thread_safety) then
-      flag=0
-      do while (flag .ne. 1)
+      flag=.false.
+      do while (.not. flag)
         call lock_mpi()
         call mpi_testall(count, requests, flag, MPI_STATUSES_IGNORE, ierr)
         call unlock_mpi()      
-        if (flag .ne. 1) call pause_for_mpi_interleaving()
+        if (.not. flag) call pause_for_mpi_interleaving()
       end do
     else
       call mpi_waitall(count, requests, MPI_STATUSES_IGNORE, ierr)
@@ -218,13 +220,14 @@ contains
   logical function test_for_command(command, source)
     integer, intent(out) :: command, source
 
-    integer :: ierr, status(MPI_STATUS_SIZE), complete
+    integer :: ierr, status(MPI_STATUS_SIZE)
+    logical :: stat, complete
 
     call lock_mpi()
     call mpi_test(command_request_handle, complete, status, ierr)
     call unlock_mpi()
 
-    if (complete .eq. 1) then
+    if (complete) then
       command = command_buffer
       source = status(MPI_SOURCE)
       call register_command_receive()

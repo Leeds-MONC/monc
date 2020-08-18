@@ -293,10 +293,10 @@ contains
   !> Performs a clean of the broadcast progresses that no longer need to be stored
   subroutine clean_broadcast_progress()
     type(inter_io_broadcast), pointer :: specific_broadcast_item_at_index
-    integer :: completion_flag, ierr, num_to_remove, have_lock
+    integer :: ierr, num_to_remove, have_lock
     character(len=STRING_LENGTH) :: entry_key
     type(list_type) :: entries_to_remove
-    logical :: destroy_lock
+    logical :: destroy_lock, completion_flag
     type(iterator_type) :: iterator
     type(mapentry_type) :: mapentry
     class(*), pointer :: generic
@@ -315,7 +315,7 @@ contains
           call mpi_testall(size(specific_broadcast_item_at_index%send_requests), specific_broadcast_item_at_index%send_requests, &
                completion_flag, MPI_STATUSES_IGNORE, ierr)
           call unlock_mpi()
-          if (completion_flag == 1) then
+          if (completion_flag) then
             deallocate(specific_broadcast_item_at_index%send_requests)
             if (allocated(specific_broadcast_item_at_index%send_buffer)) deallocate(specific_broadcast_item_at_index%send_buffer)
             call c_add_string(entries_to_remove, mapentry%key)
