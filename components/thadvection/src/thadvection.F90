@@ -66,7 +66,7 @@ contains
        if (current_state%passive_q) then 
           l_advect_mean_baroclinicity = .true.
        else
-          call log_master_log(LOG_WARN, "The combination if baroclinicity and active q is not allowed, code will run but"// & 
+          call log_master_log(LOG_WARN, "The combination of baroclinicity and active q is not allowed, code will run but"// & 
                " no advection of mean baroclinicity")
           l_advect_mean_baroclinicity = .false.
        endif

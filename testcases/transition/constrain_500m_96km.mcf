@@ -213,11 +213,11 @@ l_solar_fixed  = .false. # true equals fixed insolation using value in sol_fixed
 solar_fixed    = 1361.0  # prescribed insolation value
 sec_fixed      = 1.15470054   # prescribed 1/cos(solar_zenith_angle)
 latitude       = 65.0    # latitude for the location of radiation calc
-longitude      = -10.  # longitude for the location of radiation calc
+longitude      = -10.    # longitude for the location of radiation calc
 rad_start_year = 2010.0  # simulation year for earth sun distance
-rad_start_day  = 31.0   # day number from January 1st
-rad_int_time   = 30.0   # Radiation integration timestep
+rad_start_day  = 31.0    # day number from January 1st
 rad_start_time = 6.00    # Start time for the radiation
+rad_interval   = 120     # Radiation calculation interval [integer, unit depends on time_basis]
 
 ## Surface albedo variables for socrates
 l_variable_srf_albedo = .false. # not coded yet but will allow variable

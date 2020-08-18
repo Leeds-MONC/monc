@@ -301,7 +301,7 @@ contains
     timestepping_time=0.0_DEFAULT_PRECISION
     modeldump_time=0.0_DEFAULT_PRECISION
 
-    call init_timestepper()
+    call init_timestepper(state)
 
     logging_mod_level = log_get_logging_level()
     call execute_initialisation_callbacks(state)

@@ -57,8 +57,6 @@ module socrates_couple_mod
   real(kind=DEFAULT_PRECISION), dimension(:),     allocatable :: tend_pr_tot_th_lw,    tend_pr_tot_tabs_lw,   &
                                                                  tend_pr_tot_th_sw,    tend_pr_tot_tabs_sw,   &
                                                                  tend_pr_tot_th_total, tend_pr_tot_tabs_total
-  ! Ensures diagnostic availability.  Likely to add a radiation calculation to those expected.
-  logical :: diagnostics_initialised
 
   public socrates_couple_get_descriptor
 contains
@@ -112,8 +110,6 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
 
     integer :: k ! look counter
-
-    diagnostics_initialised = .false.
 
     k_top=current_state%local_grid%size(Z_INDEX) + current_state%local_grid%halo_size(Z_INDEX) * 2
     y_local=current_state%local_grid%size(Y_INDEX) + current_state%local_grid%halo_size(Y_INDEX) * 2
@@ -288,27 +284,20 @@ contains
     !       in current_state. 
     if (current_state%first_nonhalo_timestep_column) then
        !i) 1 call radiation on timestep 2 to initialise the heating rates
-       !ii) if rad_int_time less than or equal to 0.0, SOCRATES called on every timestep
-       if (socrates_opt%rad_int_time <= 0.0 .or. current_state%timestep == 2 ) then
+       !ii) if rad_interval less than or equal to 0, SOCRATES called on every timestep
+       if (socrates_opt%rad_interval .le. 0 .or. current_state%timestep .eq. 2 ) then
           socrates_opt%l_rad_calc = .true.
-       else
-          socrates_opt%l_rad_calc = &
-               ((current_state%time - &
-               (current_state%rad_last_time + socrates_opt%rad_int_time)) .ge. 0.0)
-         !iii) ensure that the diagnostics have non-trivial values
-         if (.not. diagnostics_initialised) socrates_opt%l_rad_calc = .true.
+       else  ! compute on specified interval (determined by 
+             ! model_core/src/components/timestepper.F90, depends on time_basis)
+          socrates_opt%l_rad_calc = current_state%radiation_timestep
        endif
     endif
 
-
     if (socrates_opt%l_rad_calc) then
-       ! Set flag
-       diagnostics_initialised = .true.
-
        if (current_state%first_nonhalo_timestep_column) then
           call log_master_log &
                (LOG_INFO, "Socrates called, time ="//trim(conv_to_string(current_state%time))//&
-               " rad_int_time="//trim(conv_to_string(socrates_opt%rad_int_time))//&
+               " rad_interval="//trim(conv_to_string(socrates_opt%rad_interval))//&
                " local dtm="//trim(conv_to_string(local_dtm)))
           call log_master_log &
                (LOG_INFO, "methane ="//trim(conv_to_string(socrates_opt%ch4_mmr))//&
@@ -322,10 +311,10 @@ contains
                (socrates_opt%rad_start_time + ((current_state%time+local_dtm)/3600.0))  &
                - (24.0*(socrates_opt%rad_day-socrates_opt%rad_start_day))
           ! set the radiation timestep
-          if (socrates_opt%rad_int_time .le. 0) then
+          if (socrates_opt%rad_interval .le. 0) then
              socrates_derived_fields%dt_secs = local_dtm
           else
-             socrates_derived_fields%dt_secs = socrates_opt%rad_int_time
+             socrates_derived_fields%dt_secs = current_state%time - current_state%rad_last_time
           endif
           ! Finally,  if we will calculate radiative fluxes on this timestep update the last
           ! radiative timetep to this one.

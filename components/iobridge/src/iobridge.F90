@@ -25,6 +25,7 @@ module iobridge_mod
   use tracers_mod, only : get_tracer_name, reinitialise_trajectories, traj_interval
 
   use conditional_diagnostics_column_mod, only : ncond, ndiag, cond_request, diag_request, cond_long, diag_long
+  use socrates_couple_mod, only : socrates_couple_get_descriptor
 
 
   implicit none
@@ -54,8 +55,9 @@ module iobridge_mod
 
   type(io_configuration_data_definition_type), dimension(:), allocatable :: data_definitions
   type(map_type) :: unique_field_names, sendable_fields, component_field_descriptions
-  logical :: io_server_enabled, in_finalisation_callback
-
+  logical :: io_server_enabled, in_finalisation_callback, socrates_enabled
+  integer :: radiation_interval
+  type(component_descriptor_type) :: socrates_descriptor
   real(kind=DEFAULT_PRECISION) :: dtmmin
 
   public iobridge_get_descriptor
@@ -76,7 +78,6 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
 
     integer :: mpi_type_data_sizing_description, mpi_type_definition_description, mpi_type_field_description, ierr
-    integer :: sample_nts, next_sample_time, i
 
     if (.not. options_get_logical(current_state%options_database, "enable_io_server")) then
       io_server_enabled=.false.
@@ -86,6 +87,8 @@ contains
 
     io_server_enabled=.true.
     in_finalisation_callback=.false.
+
+    call read_and_check_timing_options(current_state)
 
     call populate_sendable_fields(current_state)
 
@@ -102,74 +105,7 @@ contains
 
     call build_mpi_data_types()
 
-    ! Obtain logical switch for "as-needed" diagnostic calculations (only when sampling)
-    current_state%only_compute_on_sample_timestep = &
-       options_get_logical(current_state%options_database, "only_compute_on_sample_timestep")
-
-    ! Obtain logical switch to ensure that samples are sent on the requestes output_frequency
-    ! time_basis=.true. does this automatically
-    current_state%force_output_on_interval = &
-       options_get_logical(current_state%options_database, "force_output_on_interval")
-
-    ! Obtain logical switch for time_basis handling
-    current_state%time_basis = options_get_logical(current_state%options_database, "time_basis")
-
-    ! Send logical behaviour message
-    if (current_state%force_output_on_interval .and. current_state%time_basis) &
-      call log_master_log(LOG_WARN, "Both force_output_on_interval and time_basis are set to "//&
-                                    ".true..  Behaviour defaults to that of time_basis.")
-
-    ! Check l_constant_dtm for consistency
-    if (options_get_logical(current_state%options_database, "l_constant_dtm")) then
-      if (current_state%time_basis) then
-        if (any(mod(real( current_state%sampling(:)%interval), real(current_state%dtm)) .gt. 0)) then
-          call log_master_log(LOG_ERROR, "All sampling intervals must be a multiple of dtm "//&
-                                         "when l_constant_dtm=.true.")
-        end if
-      else if (current_state%force_output_on_interval) then
-        call log_master_log(LOG_ERROR, "Use of l_constant_dtm requires force_output_on_interval"//&
-                            "=.false. and time_basis=.false. or time_basis=.true. with all"//&
-                            " sampling intervals a multiple of dtm.")
-      end if
-    end if
-
-    ! Set up the sampling times for time_basis or force_output_on_interval
-    if (current_state%time_basis) then 
-      dtmmin = options_get_real(current_state%options_database, "cfl_dtmmin")
-      current_state%sampling(:)%next_time = ((int(current_state%time + dtmmin)             &
-                                               / current_state%sampling(:)%interval) + 1)  &
-                                            * current_state%sampling(:)%interval
-
-    else if (current_state%force_output_on_interval) then
-      dtmmin = options_get_real(current_state%options_database, "cfl_dtmmin")
-      do i=1,size(current_state%sampling(:))
-        current_state%sampling(i)%next_time = minval(((int(current_state%time + dtmmin)    &
-                                                 / current_state%sampling(i)%output(:)) + 1)  &
-                                              * current_state%sampling(i)%output(:))
-        current_state%sampling(i)%next_step = (current_state%timestep &
-                                               / current_state%sampling(i)%interval + 1) &
-                                              * current_state%sampling(i)%interval
-        if (mod(current_state%sampling(i)%interval,minval(current_state%sampling(:)%interval)) &
-            .ne. 0) then
-          call log_master_log(LOG_ERROR, "Use of force_output_on_interval requires that all"//&
-             " sampling intervals be evenly divisible by the smallest sampling interval.  "//&
-             "Smallest: "//trim(conv_to_string(minval(current_state%sampling(:)%interval)))//&
-             "Conflicting: "//trim(conv_to_string(current_state%sampling(i)%interval)))
-        end if
-      end do
-    end if ! time_basis=.true. or force_output_on_interval=.true.
-
-    ! If we are restarting from a NON-normal_step under time_basis, then the next sample steps need to be set now.
-    ! This is similar to the code in cfltest's evaluate_time_basis.
-    if (.not. current_state%normal_step .and. current_state%time_basis) then
-
-      next_sample_time = minval(current_state%sampling(:)%next_time)
-      sample_nts = nint((next_sample_time - current_state%time) / current_state%dtm_new) - 1
-
-      ! Record the next sampling step for intervals matching the next time
-      where(next_sample_time .eq. current_state%sampling(:)%next_time)        &
-        current_state%sampling(:)%next_step = current_state%timestep + sample_nts
-    end if
+    call setup_timing_parameters(current_state)
 
   end subroutine init_callback
 
@@ -209,7 +145,7 @@ contains
         end if
         ! Increment next sample time if data was written for this interval
         where(current_state%sampling(:)%active)                                        &
-          current_state%sampling(:)%next_time = current_state%sampling(:)%next_time +     &
+          current_state%sampling(:)%next_time = current_state%sampling(:)%next_time +  &
                                                 current_state%sampling(:)%interval
   
       ! force_output_on_interval
@@ -236,6 +172,17 @@ contains
         end do
       end if ! time_basis or force_output_on_interval check
     end if ! Update time parameters if data was sent
+
+    ! Adjust radiation timings under time_basis
+    if (current_state%radiation_timestep .and. current_state%time_basis) then
+      current_state%normal_step=.true.
+      current_state%time =                                                            &
+            real(nint(current_state%time + current_state%dtm),kind=DEFAULT_PRECISION) &
+                                         - current_state%dtm
+      where (current_state%sampling(:)%radiation)                                     &
+          current_state%sampling(:)%next_time = current_state%sampling(:)%next_time + &
+                                                current_state%sampling(:)%interval
+    end if
 
   end subroutine timestep_callback
 
@@ -786,7 +733,7 @@ contains
 
     type(definition_description_type), dimension(:), allocatable :: definition_descriptions
     type(field_description_type), dimension(:), allocatable :: field_descriptions
-    integer :: number_defns, number_fields, status(MPI_STATUS_SIZE), ierr, nvalues, i
+    integer :: number_defns, number_fields, status(MPI_STATUS_SIZE), ierr, nvalues, i, psize
     integer, dimension(:,:), allocatable :: tmparr
     logical, dimension(:), allocatable :: mask
 
@@ -815,18 +762,36 @@ contains
     call mpi_recv(tmparr, nvalues, MPI_INT, &
          current_state%parallel%corresponding_io_server_process, DATA_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE, ierr)
 
-    ! Store all unique non-zero user-selected sampling intervals (as integers of time or timestep)
+    ! Store all unique non-zero user-selected sampling intervals (integers of time or timestep)
+    ! tmparr contains unique sample/output pairs
+    ! tmparr index(:,1)=sampling intervals
+    ! tmparr ineex(:,2)=output intervals
+    psize = 0
     allocate(mask(nvalues/2))
     mask(:) = .false.
+    ! Isolate unique sampling intervals
     do i=1,nvalues/2
       if ((count( tmparr(i,1) == tmparr(:,1)) .eq. 1)  &
          .or. .not. any(tmparr(i,1) == tmparr(:,1) .and. mask)) &
          mask(i) = .true.
     end do
-    allocate(current_state%sampling(count(mask)))
-    current_state%sampling(:)%interval = pack(tmparr(:,1), mask)
-    do i=1,size(current_state%sampling(:))
-      mask(:) = tmparr(:,1) == current_state%sampling(i)%interval .and. &
+
+    ! If radiation is enabled under time_basis and not required every timestep,
+    !   add a sampling entry to track the radiation calculation
+    if (socrates_enabled .and. current_state%time_basis .and. radiation_interval .gt. 0) then
+      psize = count(mask) + 1
+    else
+      psize = count(mask)
+    end if
+
+    ! Allocate the sampling structure and enter the interval values
+    allocate(current_state%sampling(psize))
+    current_state%sampling(1:count(mask))%interval = pack(tmparr(:,1), mask)
+
+    ! For each unique diagnostic sample interval, 
+    !   find all non-zero, associated output intervals and store
+    do i=1,size(current_state%sampling(1:count(mask)))
+      mask(:) = tmparr(:,1) == current_state%sampling(i)%interval .and.     &
                 tmparr(:,2) .gt. 0
       nvalues=count(mask)
       allocate(current_state%sampling(i)%output(nvalues))
@@ -834,6 +799,14 @@ contains
     end do
     deallocate(mask)
     deallocate(tmparr)
+
+    ! Populate the radiation interval if not already used
+    if (socrates_enabled .and. current_state%time_basis .and. radiation_interval .gt. 0) then
+      current_state%sampling(psize)%radiation = .true.
+      current_state%sampling(psize)%interval = radiation_interval
+      allocate(current_state%sampling(psize)%output(1))
+      current_state%sampling(psize)%output(1) = -9999  ! this is a dummy item in this case
+    end if
 
   end subroutine register_with_io_server
 
@@ -888,6 +861,25 @@ contains
         call c_put_integer(unique_field_names, field_descriptions(i)%field_name, 1)
       end if
       if (.not. field_descriptions(i)%optional) data_definitions(definition_index)%fields(field_index)%enabled=.true.
+
+      ! Verify valid configuration of SOCRATES radiation diagnostics
+      if (socrates_enabled .and. radiation_interval .gt. 0 .and. &
+          definition_descriptions(definition_index)%frequency .gt. 0) then
+        if (any(field_descriptions(i)%field_name .eq. socrates_descriptor%published_fields(:))) then
+          if (mod(definition_descriptions(definition_index)%frequency, radiation_interval) .ne. 0 .or. &
+              definition_descriptions(definition_index)%frequency .lt. radiation_interval) then
+            call log_master_log(LOG_ERROR, "To guarantee availability of radiation "//&
+             "diagnostics, the sampling interval (currently: "//&
+                trim(conv_to_string(definition_descriptions(definition_index)%frequency))//&
+             ") of the diagnostic ("//trim(field_descriptions(i)%field_name)//&
+             ") must be a MULTIPLE of AND .GE. the radiation calculation interval "//&
+             "(currently: rad_interval="//trim(conv_to_string(radiation_interval))//&
+             ").  This means radiation diagnostics cannot be sampled between calculations."//&
+             "  Check variable's sampling interval (frequency=#) in the xml data-definition." )
+          end if !err
+        end if !compare
+      end if !enabled
+
     end do    
   end subroutine populate_data_definition_configuration
 
@@ -1317,4 +1309,97 @@ contains
     end do
     pack_q_fields=target_end+1
   end function pack_q_fields   
+
+
+  !> Reads in and checks the timing options
+  subroutine read_and_check_timing_options(current_state)
+    type(model_state_type), target, intent(inout) :: current_state
+
+    ! Obtain logical switch for "as-needed" diagnostic calculations (only when sampling)
+    current_state%only_compute_on_sample_timestep = &
+       options_get_logical(current_state%options_database, "only_compute_on_sample_timestep")
+
+    ! Obtain logical switch to ensure that samples are sent on the requestes output_frequency
+    ! time_basis=.true. does this automatically
+    current_state%force_output_on_interval = &
+       options_get_logical(current_state%options_database, "force_output_on_interval")
+
+    ! Obtain logical switch for time_basis handling
+    current_state%time_basis = options_get_logical(current_state%options_database, "time_basis")
+
+    ! Send logical behaviour message
+    if (current_state%force_output_on_interval .and. current_state%time_basis) &
+      call log_master_log(LOG_WARN, "Both force_output_on_interval and time_basis are set to "//&
+                                    ".true..  Behaviour defaults to that of time_basis.")
+
+    ! Check l_constant_dtm for consistency
+    if (options_get_logical(current_state%options_database, "l_constant_dtm")) then
+      if (current_state%time_basis) then
+        if (any(mod(real( current_state%sampling(:)%interval), real(current_state%dtm)) .gt. 0)) then
+          call log_master_log(LOG_ERROR, "All sampling intervals must be a multiple of dtm "//&
+                                         "when l_constant_dtm=.true.")
+        end if
+      else if (current_state%force_output_on_interval) then
+        call log_master_log(LOG_ERROR, "Use of l_constant_dtm requires force_output_on_interval"//&
+                            "=.false. and time_basis=.false. or time_basis=.true. with all"//&
+                            " sampling intervals a multiple of dtm.")
+      end if
+    end if
+
+    ! Record SOCRATES information, if enabled
+    socrates_enabled = is_component_enabled(current_state%options_database, "socrates_couple")
+    radiation_interval = options_get_integer(current_state%options_database, "rad_interval")
+    if (socrates_enabled) then
+      socrates_descriptor = socrates_couple_get_descriptor()
+    end if
+
+  end subroutine read_and_check_timing_options
+
+
+  !> Initialises timimg paramters
+  !! @param current_state The current model state
+  subroutine setup_timing_parameters(current_state)
+    type(model_state_type), target, intent(inout) :: current_state
+    integer :: sample_nts, next_sample_time, i
+
+    ! Set up the sampling times for time_basis or force_output_on_interval
+    if (current_state%time_basis) then 
+      dtmmin = options_get_real(current_state%options_database, "cfl_dtmmin")
+      current_state%sampling(:)%next_time = ((int(current_state%time + dtmmin)             &
+                                               / current_state%sampling(:)%interval) + 1)  &
+                                            * current_state%sampling(:)%interval
+
+    else if (current_state%force_output_on_interval) then
+      dtmmin = options_get_real(current_state%options_database, "cfl_dtmmin")
+      do i=1,size(current_state%sampling(:))
+        current_state%sampling(i)%next_time = minval(((int(current_state%time + dtmmin)    &
+                                                 / current_state%sampling(i)%output(:)) + 1)  &
+                                              * current_state%sampling(i)%output(:))
+        current_state%sampling(i)%next_step = (current_state%timestep &
+                                               / current_state%sampling(i)%interval + 1) &
+                                              * current_state%sampling(i)%interval
+        if (mod(current_state%sampling(i)%interval,minval(current_state%sampling(:)%interval)) &
+            .ne. 0) then
+          call log_master_log(LOG_ERROR, "Use of force_output_on_interval requires that all"//&
+             " sampling intervals be evenly divisible by the smallest sampling interval.  "//&
+             "Smallest: "//trim(conv_to_string(minval(current_state%sampling(:)%interval)))//&
+             "Conflicting: "//trim(conv_to_string(current_state%sampling(i)%interval)))
+        end if
+      end do
+    end if ! time_basis=.true. or force_output_on_interval=.true.
+
+    ! If we are restarting from a NON-normal_step under time_basis, 
+    !   then the next sample steps need to be set now.
+    ! This is similar to the code in cfltest's evaluate_time_basis.
+    if (.not. current_state%normal_step .and. current_state%time_basis) then
+
+      next_sample_time = minval(current_state%sampling(:)%next_time)
+      sample_nts = nint((next_sample_time - current_state%time) / current_state%dtm_new) - 1
+
+      ! Record the next sampling step for intervals matching the next time
+      where(next_sample_time .eq. current_state%sampling(:)%next_time)        &
+        current_state%sampling(:)%next_step = current_state%timestep + sample_nts
+    end if
+  end subroutine setup_timing_parameters
+
 end module iobridge_mod

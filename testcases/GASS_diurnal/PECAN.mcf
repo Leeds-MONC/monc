@@ -75,47 +75,50 @@ thv_from_th_with_liqice=.true.
 # fractional percentiles: 
 #    uppercrit=0.05 --> set updraft threshold at top 5% of w
 #    dwnpercrit=0.05 --> set downdraft threshold at bottom 5% of w
-show_critical_w=.false.             # Diagnostic printing
+show_critical_w=.false.    # Diagnostic printing
 uppercrit=0.05
 dwnpercrit=0.05
 
 # vertical velocity histogram parameters
-n_w_bins=750                       # number of bins (max-min)/bin_size (max determined by these parameters)
-w_bin_size=0.1                     # size of bin [m/s]
-w_bin_min=-25.0                    # lower bound of historgram [m/s]
+n_w_bins=750               # number of bins (max-min)/bin_size 
+                           #   - max determined by these parameters
+w_bin_size=0.1             # size of bin [m/s]
+w_bin_min=-25.0            # lower bound of historgram [m/s]
 # -----------------------------------------------------------------
 
 
 # Control configuration
-display_synopsis_frequency=20       # Status output write frequency [ts]
-termination_time=86400.             # Model run end time [s]
-dtm=1.0                             # Initial model time step [s]
+display_synopsis_frequency=20    # Status output write frequency [ts]
+termination_time=86400.          # Model run end time [s]
+dtm=1.0                          # Initial model time step [s]
 
 # IO server configuration
-#ioserver_configuration_file="io/io_cfg_files/data_write_with_conditionals.xml"
-ioserver_configuration_file="io/io_cfg_files/paracon_level0_control.xml"
-moncs_per_io_server=8              # Set to 8 for MetOffice machines
+ioserver_configuration_file="io/io_cfg_files/paracon_multi.xml"
+moncs_per_io_server=8            # Set to 8 for MetOffice machines
 
-time_basis=.true.                 # logical for sampling and output intervals [ .false. (timestep, DEFAULT) | .true. (time) ]
-                                  #   - either unit is an integer (no fractional-second time intervals)
-sampling_frequency=300            # Sampling interval for time averaging [ s | ts ]
-3d_sampling_frequency=3600        # 3d Sampling interval for time averaging [ s | ts ]
-mm=900.                           # An output interval [ s | ts ]
-mm1=3600.                         # An output interval [ s | ts ]
-diag_write_freq=3600.             # Reinitialization interval for diagnostic files [s]
+time_basis=.true.                # logical for sampling and output intervals 
+                                 #    [ .false. (timestep, DEFAULT) | .true. (time) ]
+                                 #  - both treated as integers (no fractional-s time intervals)
+sampling_frequency=90            # Sampling interval for time averaging,        integer [ ts | s ]
+3d_sampling_frequency=360        # 3d Sampling interval for time averaging,     integer [ ts | s ]
+mm=90.                           # An output interval,                             real [ s ]
+mm1=360.                         # An output interval,                             real [ s ]
+diag_write_freq=360.             # Reinitialization interval for diagnostic files, real [ s ]
 
-diagnostic_file="diagnostic_files/PECAN_diagnostic_data.nc" # diagnostic file location and prefix
-
-# CRMStyle configuration
-#crms_file="diagnostic_files/crmstyle_ts.nc"        # CRMStyle file location and prefix
+diagnostic_file_3d="diagnostic_files/PECAN_diagnostic_3d.nc"
+diagnostic_file_2d="diagnostic_files/PECAN_diagnostic_2d.nc"
+diagnostic_file_1d="diagnostic_files/PECAN_diagnostic_1d.nc"
+diagnostic_file_0d="diagnostic_files/PECAN_diagnostic_0d.nc"
+diagnostic_file_sd="diagnostic_files/PECAN_diagnostic_sd.nc"
+diagnostic_file_cd="diagnostic_files/PECAN_diagnostic_cd.nc"
 
 # Checkpoint configuration 
 checkpoint_frequency=0                             # Checkpoint file creation frequency [ts]
 checkpoint_file="checkpoint_files/PECAN_dump.nc"   # Checkpoint file location and prefix
 
 # Internal walltime configuration
-check_walltime_frequency=100                  # Frequency to check wall clock against walltime_limit [ts]
-walltime_limit=00:18:00                       # Internal wall clock time limit on simulation [hh:mm:ss]
+check_walltime_frequency=100     # Frequency to check wall clock against walltime_limit [ts]
+walltime_limit=00:10:00          # Internal wall clock time limit on simulation [hh:mm:ss]
 
 # Advection choices (choose pw or tvd component schemes for flow, theta, and q advection)
 advection_flow_fields=pw
@@ -303,14 +306,15 @@ solar_fixed    = 1361.0  # prescribed insolation value
 sec_fixed      = 1.15470054   # prescribed 1/cos(solar_zenith_angle)
 latitude       = 38.5    # latitude for the location of radiation calc [match to coriolis!]
 longitude      = -98.75  # longitude for the location of radiation calc
+  # Collectively, the next 3 times, rad_start_(year, day time), will constitute the model start
+  # date, as far as the insolation is concerned.  Model times will be seconds from that date.
 rad_start_year = 2015.0  # simulation year for earth sun distance
 rad_start_day  = 152.0   # day number from January 1st
-rad_int_time   = 300.0   # Radiation integration timestep [s]; if <= 0, call every timestep
-                         #  [trj: if time_basis=.true. above, this should get some consideration 
-                         #        based on those timings.
-                         #        Might be best to set it to the sampling_frequency]
-rad_start_time = 0.0     # Start time for the radiation 
-                         #  [trj: I think this is seconds in model time, and it should probably always be zero]
+rad_start_time = 0.0     # Start time [hour] for the radiation 
+rad_interval   = 30      # If time_basis=.true.: time [ s ] between radiation calls
+                         # If time_basis=.false.: timesteps [ ts ] between radiation calls
+                         # If .le. zero, radiation called every timestep, otherwise (gt than 0)
+                         #   radiation will be called less frequently
 
 ## Surface albedo variables for socrates
 l_variable_srf_albedo = .false. # not coded yet but will allow variable

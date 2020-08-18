@@ -10,7 +10,7 @@
 
 -->
 
-<data-definition name="2d_fields_data" frequency="{sampling_frequency}">
+<data-definition name="2d_fields_data" frequency="{3d_sampling_frequency}">
   <field name="surface_precip" type="array" data_type="double" size="y,x" collective=true optional=true/>
   <field name="vwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
   <field name="lwp" type="array" data_type="double" size="y,x" collective=true optional=true/>

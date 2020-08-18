@@ -9,7 +9,7 @@
      ###      THIS CONFIGURATION IS SUITABLE FOR RUNNING QUICKLY IN DEBUG MODE.       ###
      ###              (especially if output intervals are divided by 10)              ###
      ###                                                                              ###
-     ###             MANY COMPONENTS ARE BEING TESTED...BUT NOT SOCRATES.             ###
+     ###             MANY COMPONENTS ARE TESTED HERE...BUT NOT SOCRATES.              ###
      ###                                                                              ###
      ### ### ###  ##  ##  ##   #   #   #    NOTICE    #   #   #   ##  ##  ##  ### ### ###
 
@@ -121,25 +121,24 @@ termination_time=30000.            # Model run end time [s]
 dtm=1.0                            # Initial model time step [s]
 
 # IO server configuration
-ioserver_configuration_file="io/io_cfg_files/pmulti.xml"
+ioserver_configuration_file="io/io_cfg_files/paracon_multi.xml"
+moncs_per_io_server=8          # Set to 8 for MetOffice machines
 
-moncs_per_io_server=8              # Set to 8 for MetOffice machines
+time_basis=.true.              # logical for sampling and output intervals 
+                               #    [ .false. (timestep, DEFAULT) | .true. (time) ]
+                               #  - both treated as integers (no fractional-s time intervals)
+sampling_frequency=300         # Sampling interval for time averaging,        integer [ ts | s ]
+3d_sampling_frequency=1800     # 3d Sampling interval for time averaging,     integer [ ts | s ]
+mm=900.                        # An output interval,                             real [ s ]
+mm1=1800.                      # An output interval,                             real [ s ]
+diag_write_freq=1800.          # Reinitialization interval for diagnostic files, real [ s ]
 
-time_basis=.true.                  # logical for sampling and output intervals 
-                                   #   [ .false. (timestep, DEFAULT) | .true. (time) ]
-                                   #   - Either unit is a whole number.
-                                   #   - There are no fractional-second time intervals.
-sampling_frequency=300             # Sampling interval for time averaging,     integer [ ts | s ]
-3d_sampling_frequency=1800         # 3d Sampling interval for time averaging,  integer [ ts | s ]
-mm=900.                            # An output interval,                             real [ s ]
-mm1=1800.                          # An output interval,                             real [ s ]
-diag_write_freq=1800.              # Reinitialization interval for diagnostic files, real [ s ]
-
-diagnostic_file_3d="diagnostic_files/diagnostic_3d.nc"
-diagnostic_file_2d="diagnostic_files/diagnostic_2d.nc"
-diagnostic_file_1d="diagnostic_files/diagnostic_1d.nc"
-diagnostic_file_0d="diagnostic_files/diagnostic_0d.nc"
-diagnostic_file_ed="diagnostic_files/diagnostic_ed.nc"
+diagnostic_file_3d="diagnostic_files/RCE_diagnostic_3d.nc"
+diagnostic_file_2d="diagnostic_files/RCE_diagnostic_2d.nc"
+diagnostic_file_1d="diagnostic_files/RCE_diagnostic_1d.nc"
+diagnostic_file_0d="diagnostic_files/RCE_diagnostic_0d.nc"
+diagnostic_file_sd="diagnostic_files/RCE_diagnostic_sd.nc"
+diagnostic_file_cd="diagnostic_files/RCE_diagnostic_cd.nc"
 
 # Checkpoint configuration 
 checkpoint_frequency=0                             # Checkpoint file creation frequency [ts]

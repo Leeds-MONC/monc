@@ -33,17 +33,19 @@ module state_mod
 
 
   !> Information about the non-zero sampling intervals
+  !!   Also used to track radiation timings when time_basis=.true.
   type, public :: sampling_interval_type
     integer :: interval = 0        ! sampling interval [ts, s if time_basis]
     integer, dimension(:), allocatable :: output   ! output intervals associated with %interval [s]
                                                    ! nint(output_frequency)
     integer :: next_time = 0       ! if time_basis, the next sample time for this %interval [s]
-                                   ! if force_output_on_interval, the next output time for 
-                                   ! this %interval [s]
+                                   !   if force_output_on_interval, the next output time for 
+                                   !   this %interval [s]
     integer :: next_step = 0       ! the next sample timestep for this %interval [ts]
-    logical :: active = .false.    ! .true. when sampling for this %interval on the current timestep
+    logical :: active = .false.    ! .true.: sampling for this %interval on the current timestep
+    logical :: radiation = .false. ! .true.: this %interval is used to track radiation calculations
   end type sampling_interval_type
-  
+
   !> The ModelState which represents the current state of a run
   !!
   !! This state is provided to each callback and may be used and modified as required by
@@ -62,12 +64,15 @@ module state_mod
                                   ! computed on specified diagnostic_sample_timesteps
     logical :: diagnostic_sample_timestep=.false.    ! diagnostics should be computed on the 
                                                      ! current timestep
-    logical :: normal_step=.true.    ! not a special, shortened timestep due to proximity to a
+    logical :: normal_step=.true.    ! the current timestep is a typical timestep, not a special, 
+                                     ! shortened timestep due to proximity to a
                                      ! diagnostic_sample_timestep
     logical :: force_output_on_interval=.false.   ! allows the model to adjust the dtm to 
                                                   ! ensure that samples are sent to the IO
                                                   ! server on the output_frequency
                                                   ! time_basis=.true. does this automatically
+    logical :: radiation_timestep=.false.  ! The current timestep is used for radiation
+                                           ! calculations (determination is time_basis-sensitive)
     logical :: print_debug_data=.false.    ! Prints data for specific variables/points for
                                            ! debugging.  See registry.F90:execute_callbacks
     logical :: use_viscosity_and_diffusion=.true., &

@@ -89,8 +89,8 @@ last_group_contents=conditional_diagnostics_whole, checkpointer, model_synopsis,
 
 # Component ordering for other stages
 
-initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, simplecloud, casim, tracers, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iterativesolver, iterativesolver_single_prec, setfluxlook, lower_bc, physicsa, psrce, pw_advection, diffusion, set_consistent_lowbc, viscosity, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, socrates_couple, lwrad_exponential,th_advection, randomnoise, forcing, flux_budget, diagnostics_3d, profile_diagnostics, casim_profile_dgs, conditional_diagnostics_column, conditional_diagnostics_whole, pdf_analysis, subgrid_profile_diagnostics, scalar_diagnostics, lateral_bcs, petsc_solver, pstep, iobridge
-finalisation_stage_ordering=iobridge, checkpointer, diverr, fftsolver, grid_manager, halo_swapper, iterativesolver, iterativesolver_single_prec, physicsa, psrce, smagorinsky, tvd_advection, lwrad_exponential, model_synopsis, mean_profiles, pdf_analysis, forcing, stepfields, flux_budget, coriolis, buoyancy, diffusion, lower_bc, viscosity, profile_diagnostics, pw_advection, th_advection, damping, simplecloud, tracers, pstep, conditional_diagnostics_whole, conditional_diagnostics_column
+initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, simplecloud, casim, tracers, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iterativesolver, iterativesolver_single_prec, setfluxlook, lower_bc, physicsa, psrce, pw_advection, diffusion, set_consistent_lowbc, viscosity, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, socrates_couple, lwrad_exponential, th_advection, randomnoise, forcing, flux_budget, diagnostics_3d, profile_diagnostics, casim_profile_dgs, conditional_diagnostics_column, conditional_diagnostics_whole, pdf_analysis, subgrid_profile_diagnostics, scalar_diagnostics, lateral_bcs, petsc_solver, pstep, iobridge
+finalisation_stage_ordering=iobridge, checkpointer, diverr, fftsolver, grid_manager, halo_swapper, iterativesolver, iterativesolver_single_prec, physicsa, psrce, smagorinsky, tvd_advection, socrates_couple, lwrad_exponential, model_synopsis, mean_profiles, pdf_analysis, forcing, stepfields, flux_budget, coriolis, buoyancy, diffusion, lower_bc, viscosity, profile_diagnostics, pw_advection, th_advection, damping, simplecloud, tracers, pstep, conditional_diagnostics_whole, conditional_diagnostics_column
 
 # Control configuration
 nn_timesteps=-1
@@ -440,20 +440,24 @@ i_cloud_representation  = 5
 ## Time and location variables for socrates
 l_360 = .true.           #  360 days in year as opposed to 365 (a UM thing 
                          #  in the LEM, is this still required??)     
-l_solar_fixed    = .false. # true equals fixed insolation using value in
+l_solar_fixed  = .false. # true equals fixed insolation using value in
                          # sol_fixed
 l_no_solar     = .false. # Only use longwave rad by setting lit_fraction = 0.0
 default_solar_constant = 1361. # Default solar constant
-solar_fixed      = -999.0  # prescribed insolation value
+solar_fixed    = -999.0  # prescribed insolation value
 sec_fixed      = -999.0  # prescribed 1/cos(solar_zenith_angle)
 latitude       = -999.0  # latitude for the location of radiation calc
 longitude      = -999.0  # longitude for the location of radiation calc
 rad_start_year = -999.0  # simulation year for earth sun distance
 rad_start_day  = -999.0  # starting day of the year (0 is jan 1st, Dec 31st is 365, except leap obviously)
 rad_start_time = -999.0  # Start time for the radiation calc, hours after 0Z
-rad_int_time   = -999.0  # time between each radiation call. If = 0
-                         # radiation called every timestep, else gt than 0
-		         # will be called less frequently
+rad_interval   = -999    # Radiation calculation interval [integer]
+                         #  - If time_basis=.true., this is the time [ s ] between each radiation
+                         #    call.
+                         #  - If time_basis=.false., this is the number of timesteps [ ts ] 
+                         #    between each radiation call.
+                         #  - If .le. zero, radiation called every timestep, otherwise (gt than 0)
+		         #    radiation will be called less frequently
 
 ## Surface albedo variables for socrates
 l_variable_srf_albedo = .false. # not coded yet but will allow variable
