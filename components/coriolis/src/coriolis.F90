@@ -27,8 +27,6 @@ module coriolis_mod
        tend_pr_tot_u, tend_pr_tot_v
   logical :: l_tend_pr_tot_u, l_tend_pr_tot_v
 
-  integer :: diagnostic_generation_frequency
-
   public coriolis_get_descriptor
 
   contains
@@ -189,9 +187,6 @@ module coriolis_mod
       allocate( tend_pr_tot_v(current_state%local_grid%size(Z_INDEX)) )
     endif
 
-    ! Save the sampling_frequency to force diagnostic calculation on select time steps
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
-
   end subroutine initialisation_callback
 
 
@@ -210,8 +205,11 @@ module coriolis_mod
   !! @param current_state The current model state
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
+    integer :: local_y, local_x, k, target_x_index, target_y_index
+    logical :: calculate_diagnostics
 
-    integer :: local_y, locaL_x, k, target_x_index, target_y_index
+    calculate_diagnostics = current_state%diagnostic_sample_timestep &
+                            .and. .not. current_state%halo_column
 
     local_y=current_state%column_local_y
     local_x=current_state%column_local_x
@@ -237,9 +235,7 @@ module coriolis_mod
            .and. current_state%column_local_y .le. current_state%local_grid%local_domain_end_index(Y_INDEX)) )) return
     end if
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0 .and. .not. current_state%halo_column) then
-      call save_precomponent_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) call save_precomponent_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
     
     do k=2,current_state%local_grid%size(Z_INDEX)
 #if defined(U_ACTIVE) && defined(V_ACTIVE)
@@ -261,9 +257,7 @@ module coriolis_mod
 #endif
     end do
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0  .and. .not. current_state%halo_column) then
-      call compute_component_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) call compute_component_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
 
   end subroutine timestep_callback
 

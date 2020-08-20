@@ -14,19 +14,15 @@ module conditional_diagnostics_whole_mod
   use missing_data_mod, only: rmdi
   use optionsdatabase_mod, only : options_get_integer
 
-
   implicit none
 
 #ifndef TEST_MODE
   private
 #endif
 
-  integer :: diagnostic_generation_frequency
-
   public conditional_diagnostics_whole_get_descriptor
 
 contains
-
 
   !> Provides registry information for the component
   !! @returns The component descriptor that describes this component
@@ -38,14 +34,10 @@ contains
     conditional_diagnostics_whole_get_descriptor%finalisation=>finalisation_callback
   end function conditional_diagnostics_whole_get_descriptor
 
-
   !> Initialisation hook: currently doesn't need to do anything
   !! @param current_state The current model state
   subroutine initialisation_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
-
-    ! Save the sampling_frequency to force diagnostic calculation on select time steps
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
 
   end subroutine initialisation_callback
 
@@ -56,9 +48,12 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
     integer :: k,cnc,dnc,ierr
     real(kind=DEFAULT_PRECISION) :: temp
+    logical :: calculate_diagnostics
+
+    calculate_diagnostics = current_state%diagnostic_sample_timestep
 
     !> Decide if conditions are appropriate to proceed with calculations
-    if (.not. mod(current_state%timestep, diagnostic_generation_frequency) == 0) return
+    if (.not. calculate_diagnostics) return
 
     !> Sum conditional diagnostics total array (horizontally), placing the result on process 0
     !! Reduction call on process 0 requires special MPI_IN_PLACE handling

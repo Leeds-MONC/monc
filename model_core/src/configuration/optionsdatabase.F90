@@ -5,12 +5,12 @@
 !! Note that the options database should be entirely agnostic of where or now the database is stored (in our
 !! case in the state.)
 module optionsdatabase_mod
-  use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH, LONG_STRING_LENGTH
+  use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH, LONG_STRING_LENGTH, l_config_double
   use collections_mod, only : list_type, hashmap_type, c_size, c_get_integer, c_get_string, c_get_real, c_get_logical, c_contains, &
        c_generic_at, c_key_at, c_put_integer, c_put_real, c_put_string, c_put_logical, c_remove
   use conversions_mod, only : conv_to_logical, conv_to_integer, conv_to_real, conv_is_logical, conv_is_integer, &
-       conv_is_real, conv_to_string, conv_single_real_to_double
-  use logging_mod, only: LOG_ERROR, log_log
+       conv_is_real, conv_to_string, conv_single_real_to_double, string_to_double
+  use logging_mod, only: LOG_ERROR, log_log, log_master_log, LOG_INFO, log_master_newline
   implicit none
 
 #ifndef TEST_MODE
@@ -353,8 +353,9 @@ module optionsdatabase_mod
 
   !> Loads in the command line arguments and stores them in the options database
   !! @returns hashmap_type of option-value pairs
-  subroutine load_command_line_into_options_database(options_database)
+  subroutine load_command_line_into_options_database(options_database, report_option)
     type(hashmap_type), intent(inout) :: options_database
+    logical, intent(in), optional :: report_option
 
     integer :: i, arguments, equals_posn, type_of_config
     character(len=LONG_STRING_LENGTH) :: specific_arg
@@ -373,6 +374,12 @@ module optionsdatabase_mod
           type_of_config = LOGICAL_TYPE
         end if        
         call add_specific_option_key_value_pair(type_of_config, options_database, specific_arg)
+        if (present(report_option)) then
+          if (report_option) then
+            call log_master_log(LOG_INFO, "Command line option applied: "//trim(specific_arg))
+            call log_master_newline()
+          end if
+        end if
       end if
     end do
   end subroutine load_command_line_into_options_database
@@ -385,20 +392,19 @@ module optionsdatabase_mod
     character(len=*), intent(in) :: key
 
     integer :: array_size, i
-    
-    if (options_has_key(options_database, key)) then          
-      array_size=options_get_array_size(options_database, key)
-      if (array_size .gt. 0) then
-        do i=1,array_size
-          if (options_has_key(options_database, get_options_array_key(key, i))) then
-            call c_remove(options_database, get_options_array_key(key, i))
-          end if
-        end do
-        call c_remove(options_database, trim(key)//"a_size")
-      end if
-    else 
-      call c_remove(options_database, key)
+
+    ! When retrieved size is 0, option is already absent: do nothing
+    array_size=options_get_array_size(options_database, key)
+    if (array_size .eq. 1) call c_remove(options_database, key)
+    if (array_size .ge. 2) then
+      do i=1,array_size
+        if (options_has_key(options_database, get_options_array_key(key, i))) then
+          call c_remove(options_database, get_options_array_key(key, i))
+        end if
+      end do
+      call c_remove(options_database, trim(key)//"a_size")
     end if
+
   end subroutine options_remove_key  
 
   !--------------------------------------------------------------------------
@@ -657,8 +663,13 @@ module optionsdatabase_mod
       call set_options_integer_value(parse_options, specific_arg(3:equals_posn-1), &
         conv_to_integer(specific_arg(equals_posn+1:len(specific_arg))))
     else if (type_of_config == REAL_TYPE) then
-      call set_options_real_value(parse_options, specific_arg(3:equals_posn-1), &
-        conv_single_real_to_double(conv_to_real(specific_arg(equals_posn+1:len(specific_arg)))))
+      if (l_config_double) then
+        call set_options_real_value(parse_options, specific_arg(3:equals_posn-1), &
+          string_to_double(specific_arg(equals_posn+1:len(specific_arg))))
+      else
+        call set_options_real_value(parse_options, specific_arg(3:equals_posn-1), &
+          conv_single_real_to_double(conv_to_real(specific_arg(equals_posn+1:len(specific_arg)))))
+      end if
     else if (type_of_config == STRING_TYPE) then
       call set_options_string_value(parse_options, specific_arg(3:equals_posn-1), specific_arg(equals_posn+1:len(specific_arg)))
     end if

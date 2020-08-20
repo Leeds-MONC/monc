@@ -10,6 +10,7 @@ module pdf_analysis_mod
   use mpi, only : MPI_SUM, MPI_IN_PLACE, MPI_INT, MPI_REAL, MPI_DOUBLE, MPI_Comm
   use logging_mod, only : LOG_INFO, LOG_DEBUG, LOG_ERROR, log_master_log, log_is_master
   use conversions_mod, only : conv_to_string
+  use maths_mod, only : sort_1d
   implicit none
 
 #ifndef TEST_MODE
@@ -27,9 +28,12 @@ module pdf_analysis_mod
   integer :: tpts  ! total number of horizontal grid points on full domain
   integer :: lpts  ! local number of horizontal grid points on 
 
-  logical :: show_critical_w  ! stdout diagnostic logical
+  integer :: n_w_bins ! number of histogram bins for w
+  real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: w_histogram_profile_local
+  real(kind=DEFAULT_PRECISION) :: w_bin_size, w_bin_min
+  real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: w_histogram_bins
 
-  integer :: diagnostic_generation_frequency
+  logical :: show_critical_w  ! stdout diagnostic logical
 
   public pdf_analysis_get_descriptor
 
@@ -47,9 +51,12 @@ contains
 
     pdf_analysis_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     pdf_analysis_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
-    allocate(pdf_analysis_get_descriptor%published_fields(2))
+    allocate(pdf_analysis_get_descriptor%published_fields(2+2))
     pdf_analysis_get_descriptor%published_fields(1)="critical_updraft_local"
     pdf_analysis_get_descriptor%published_fields(2)="critical_downdraft_local"
+
+    pdf_analysis_get_descriptor%published_fields(2+1)="w_histogram_profile_local"
+    pdf_analysis_get_descriptor%published_fields(2+2)="w_histogram_bins_local"
 
   end function pdf_analysis_get_descriptor
 
@@ -60,6 +67,7 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
     integer :: ierr, inc
 
+    ! Total number of horizontal points on global grid
     tpts = current_state%global_grid%size(X_INDEX)*current_state%global_grid%size(Y_INDEX)
 
     start_x = current_state%local_grid%local_domain_start_index(X_INDEX)
@@ -77,32 +85,46 @@ contains
 
     show_critical_w = options_get_logical(current_state%options_database, "show_critical_w")
 
-    !> Allocate space for the global 2d field only on a single process
-!    if (current_state%parallel%my_rank == 0) 
+    !> Allocate space for the global 2d field
+    !  Exists on all processes, but is only used on a single process
      allocate(tmp_all(tpts))
-!    else
-!      allocate(tmp_all(1))
-!    end if
 
-    !> Allocate and collect horizontal local sizes, send to all proceses
+    !> Allocate and collect local sizes of horizontal grid points; send to all proceses
     allocate(gpts_on_proc(current_state%parallel%processes))
     call mpi_allgather(lpts, 1, MPI_INT, gpts_on_proc, 1, MPI_INT, current_state%parallel%monc_communicator, ierr)
 
     !> Allocate and initialize displacement values
+    !  displacements are the array locations specifying the starting data location for data on a given process
+    !  based on how many data points belong to lower-rank (value) proceses
     allocate(displacements(current_state%parallel%processes)) 
     displacements(1) = 0
     do inc = 2, current_state%parallel%processes
       displacements(inc) = displacements(inc-1) + gpts_on_proc(inc-1)
     end do ! loop over processes
 
-    !> Allocate critial fields in current_state if a cold start
-    if (.not. current_state%continuation_run) then
-      allocate(current_state%global_grid%configuration%vertical%w_dwn(current_state%local_grid%size(Z_INDEX)),&
-               current_state%global_grid%configuration%vertical%w_up(current_state%local_grid%size(Z_INDEX)))
+    ! Since these current_state variables are not prognostics, it is possible for the model to be run without them 
+    ! and then reconfigured with this component enabled.  In that case, they will not be found in the checkpoint,
+    ! and they will not be allocated, but they will still be needed.
+    ! So in all cases, if this component is enabled, we make certain these are allocated.
+    if (.not. allocated(current_state%global_grid%configuration%vertical%w_dwn) ) then
+      allocate(current_state%global_grid%configuration%vertical%w_dwn(current_state%local_grid%size(Z_INDEX)))
+      current_state%global_grid%configuration%vertical%w_dwn(:) = 0.0_DEFAULT_PRECISION
+    end if
+    if (.not. allocated(current_state%global_grid%configuration%vertical%w_up) ) then
+      allocate(current_state%global_grid%configuration%vertical%w_up(current_state%local_grid%size(Z_INDEX)))
+      current_state%global_grid%configuration%vertical%w_up(:) = 0.0_DEFAULT_PRECISION
     end if
 
-    ! Save the sampling_frequency to force diagnostic calculation on select time steps
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
+    ! Allocate w histogram profile data
+    n_w_bins   = options_get_integer(current_state%options_database, "n_w_bins")
+    w_bin_size = options_get_real(current_state%options_database, "w_bin_size")
+    w_bin_min  = options_get_real(current_state%options_database, "w_bin_min")
+    allocate( w_histogram_profile_local( current_state%local_grid%size(Z_INDEX), n_w_bins) )
+    allocate( w_histogram_bins(n_w_bins) )
+    w_histogram_bins(1) = w_bin_min
+    do inc = 2, n_w_bins
+      w_histogram_bins(inc) = w_histogram_bins(inc-1) + w_bin_size
+    end do ! loop over number of w bins
 
  end subroutine init_callback
 
@@ -111,13 +133,18 @@ contains
   !! @param current_state The current model state
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
+    logical :: calculate_diagnostics
+
+    calculate_diagnostics = current_state%diagnostic_sample_timestep
 
     !> Current forumulation only handles vertical velocity percentiles.
     !! Future enhancements may employ this component to perform additional 
     !! operations that require access to full horizontal fields, such as
     !! pdf calculations.
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) call calculate_w_percentiles(current_state)
+    if ( .not. calculate_diagnostics) return
+
+    call calculate_w_percentiles(current_state)
 
   end subroutine timestep_callback
 
@@ -128,6 +155,8 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
 
     if (allocated(tmp_all)) deallocate(tmp_all)    
+    if (allocated(w_histogram_profile_local)) deallocate(w_histogram_profile_local)
+
   end subroutine finalisation_callback
 
 
@@ -137,7 +166,8 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
     real(kind=DEFAULT_PRECISION), dimension(lpts) :: tmp_var
 
-    integer :: i, j, k, num_neg, num_pos, dd_thresh_pos, ud_thresh_pos
+    integer :: k, num_neg, num_pos, dd_thresh_pos, ud_thresh_pos
+    integer :: bnc, bpn, bpx
     integer :: max_up_k, min_dwn_k 
     real(kind=DEFAULT_PRECISION), dimension((lpts+1)/2) :: T
     real(kind=DEFAULT_PRECISION), dimension((tpts+1)/2) :: Tall
@@ -154,6 +184,9 @@ contains
     max_up_k   = 0
     min_dwn_k  = 0
 
+    !> initialize w histogram
+    w_histogram_profile_local(:,:) = 0.0_DEFAULT_PRECISION
+
     !> reset thresholds
     current_state%global_grid%configuration%vertical%w_dwn(:) = 0.0_DEFAULT_PRECISION 
     current_state%global_grid%configuration%vertical%w_up(:)  = 0.0_DEFAULT_PRECISION
@@ -169,9 +202,22 @@ contains
        tmp_var=pack(l2d,.true.)
 
        !> Perform sort of data on local process
-       call MergeSort(tmp_var,lpts,T)
+       !  tmp_var: enters as unsorted values on local process, returns in sorted form
+       call sort_1d(tmp_var,lpts,T)
 
-       !> Gather 2d field to single process
+       !> Calculate w histogram profile
+       !  Counts values within a range of w_bin_size from w_histogram_bins(bnc).
+       !  For efficiency, only bins encompassing the current range of data are considered.
+       bpn = count(w_histogram_bins < minval(tmp_var))
+       bpx = count(w_histogram_bins < maxval(tmp_var))
+       do bnc = bpn, bpx
+         w_histogram_profile_local(k, bnc) =                             &
+                   count( tmp_var >= w_histogram_bins(bnc)               &
+                          .and.                                          &
+                          tmp_var < w_histogram_bins(bnc) + w_bin_size )
+       end do ! loop over 
+
+       !> Gather tmp_var local fields to single process (0), global data stored in tmp_all
        call mpi_gatherv(tmp_var, lpts, PRECISION_TYPE, tmp_all, gpts_on_proc, displacements, PRECISION_TYPE, &
                         0, current_state%parallel%monc_communicator, ierr )
 
@@ -179,7 +225,7 @@ contains
        if (current_state%parallel%my_rank == 0) then
 
          !> Sort the global data on single process
-         call MergeSort(tmp_all,tpts,Tall)
+         call sort_1d(tmp_all,tpts,Tall)
 
          !> Determine threshold updraft and downdraft values
          num_neg = count(tmp_all < 0.0_DEFAULT_PRECISION)
@@ -235,78 +281,6 @@ contains
   end subroutine calculate_w_percentiles   
 
 
-  !> Combines with MergeSort sorting algorithm taken from:
-  !  https://rosettacode.org/wiki/Sorting_algorithms/Merge_sort#Fortran
-  !  and modified to match local type and renamed to avoid confusion with intrinsic merge
-  !  All parameters based on MergeSort.  No need to modify anything.
-  subroutine MergeSortMerge(A,NA,B,NB,C,NC)
- 
-    integer, intent(in) :: NA,NB,NC                              ! Normal usage: NA+NB = NC
-    real(kind=DEFAULT_PRECISION), intent(in out) :: A(NA)        ! B overlays C(NA+1:NC)
-    real(kind=DEFAULT_PRECISION), intent(in)     :: B(NB)
-    real(kind=DEFAULT_PRECISION), intent(in out) :: C(NC)
- 
-    integer :: I,J,K
- 
-    I = 1; J = 1; K = 1;
-    do while(I <= NA .and. J <= NB)
-      if (A(I) <= B(J)) then
-         C(K) = A(I)
-         I = I+1
-      else
-         C(K) = B(J)
-         J = J+1
-      endif
-      K = K + 1
-    enddo
-    do while (I <= NA)
-      C(K) = A(I)
-      I = I + 1
-      K = K + 1
-    enddo
-    return
- 
-  end subroutine mergesortmerge
- 
-  !> Combines with MergeSortMerge sorting algorithm taken from:
-  !  https://rosettacode.org/wiki/Sorting_algorithms/Merge_sort#Fortran
-  !  and modified to match local type
-  !! @A array of values to be sorted, returned sorted
-  !! @N size of A
-  !! @T I don't really understand T
-  recursive subroutine MergeSort(A,N,T)
- 
-    integer, intent(in) :: N
-    real(kind=DEFAULT_PRECISION), dimension(N), intent(in out) :: A
-    real(kind=DEFAULT_PRECISION), dimension((N+1)/2), intent (out) :: T
- 
-    integer :: NA,NB
-    real(kind=DEFAULT_PRECISION) :: V
- 
-    if (N < 2) return
-    if (N == 2) then
-      if (A(1) > A(2)) then
-        V = A(1)
-        A(1) = A(2)
-        A(2) = V
-      endif
-      return
-    endif      
-    NA=(N+1)/2
-    NB=N-NA
- 
-    call MergeSort(A,NA,T)
-    call MergeSort(A(NA+1),NB,T)
- 
-    if (A(NA) > A(NA+1)) then
-      T(1:NA)=A(1:NA)
-      call MergeSortMerge(T,NA,A(NA+1),NB,A,N)
-    endif
-    return
- 
-  end subroutine MergeSort
-
-
   !> Field information retrieval callback, this returns information for a specific components published field
   !! @param current_state Current model state
   !! @param name The name of the field to retrieve information for
@@ -315,12 +289,35 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
     character(len=*), intent(in) :: name
     type(component_field_information_type), intent(out) :: field_information
+    integer :: strcomp
 
-    field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
-    field_information%number_dimensions=1
-    field_information%dimension_sizes(1)=current_state%local_grid%size(Z_INDEX)
-    field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
-    field_information%enabled=.true.
+    ! Field information for critical values
+    strcomp = INDEX(name, "critical_")
+    if (strcomp .ne. 0) then
+      field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
+      field_information%number_dimensions=1
+      field_information%dimension_sizes(1)=current_state%local_grid%size(Z_INDEX)
+      field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
+      field_information%enabled=.true.
+    end if
+
+    ! Field information for w histogram
+    if (name .eq. "w_histogram_profile_local") then
+      field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
+      field_information%number_dimensions = 2
+      field_information%dimension_sizes(1) = current_state%local_grid%size(Z_INDEX)
+      field_information%dimension_sizes(2) = n_w_bins
+      field_information%data_type = COMPONENT_DOUBLE_DATA_TYPE
+      field_information%enabled=.true.
+    end if
+
+    if (name .eq. "w_histogram_bins_local") then
+      field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
+      field_information%number_dimensions = 1
+      field_information%dimension_sizes(1) = n_w_bins
+      field_information%data_type = COMPONENT_DOUBLE_DATA_TYPE
+      field_information%enabled=.true.
+    end if
 
   end subroutine field_information_retrieval_callback
 
@@ -341,6 +338,12 @@ contains
     else if (name .eq. "critical_downdraft_local") then
       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)), &
                source=current_state%global_grid%configuration%vertical%w_dwn(:))
+    else if (name .eq. "w_histogram_profile_local") then
+      allocate(field_value%real_2d_array(current_state%local_grid%size(Z_INDEX), n_w_bins), &
+               source=w_histogram_profile_local(:,:))
+    else if (name .eq. "w_histogram_bins_local") then
+      allocate(field_value%real_1d_array(n_w_bins), &
+               source=w_histogram_bins(:))
     end if 
   end subroutine field_value_retrieval_callback
 

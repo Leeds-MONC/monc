@@ -33,6 +33,26 @@ module monc_component_mod
        logical :: enabled
     end type component_field_information_type
 
+  type, public :: pointer_wrapper_value_type
+    procedure(component_get_field_value), nopass, pointer :: ptr
+  end type pointer_wrapper_value_type
+  
+  type, public :: pointer_wrapper_info_type
+    procedure(component_get_field_information), nopass, pointer :: ptr
+  end type pointer_wrapper_info_type
+  
+!  type, public :: pointer_wrapper_init_type
+!    procedure(component_initialisation), nopass, pointer :: ptr
+!  end type pointer_wrapper_init_type
+  
+!  type, public :: pointer_wrapper_timestep_type
+!    procedure(component_timestep), nopass, pointer :: ptr
+!  end type pointer_wrapper_timestep_type
+  
+!  type, public :: pointer_wrapper_finalisation_type
+!    procedure(component_finalisation), nopass, pointer :: ptr
+!  end type pointer_wrapper_finalisation_type
+
     !> Description of a component
     !!
     !! Provided to the registry to register a component. It is also used by the registry to store information
@@ -98,5 +118,6 @@ module monc_component_mod
     end interface
 
     public COMPONENT_SCALAR_FIELD_TYPE, COMPONENT_ARRAY_FIELD_TYPE, COMPONENT_INTEGER_DATA_TYPE, COMPONENT_DOUBLE_DATA_TYPE, &
-         component_initialisation, component_timestep, component_finalisation, component_get_description
+         component_initialisation, component_timestep, component_finalisation, component_get_description, &
+         component_get_field_information, component_get_field_value
 end module monc_component_mod
