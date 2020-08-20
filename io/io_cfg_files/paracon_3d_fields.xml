@@ -1,0 +1,28 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+   1.  th and p are perturbation fields, so you'll need to add reference profiles to get the full field. 
+
+   2.  Resulting q-fields depend on the complexity of the microphysics options.
+
+   3.  u and v are the full wind fields, including the Galilean component.
+
+-->
+
+
+<data-definition name="3d_fields_data" frequency="{3d_sampling_frequency}" namespace="3d_fieldsns"> 
+  <field name="w" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="v" type="array" data_type="double" size="zn,y,x" collective=true optional=true/>
+  <field name="u" type="array" data_type="double" size="zn,y,x" collective=true optional=true/> 
+  <field name="th" type="array" data_type="double" size="zn,y,x" collective=true optional=true/> 
+  <field name="p" type="array" data_type="double" size="zn,y,x" collective=true optional=true/>
+  <field name="q" type="array" data_type="double" size="zn,y,x,qfields" collective=true optional=true/> 
+</data-definition> 
+
+<group name="3d_fields" namespace="3d_fieldsns"> 
+  <member name="w"/> 
+  <member name="v"/>
+  <member name="u"/> 
+  <member name="th"/> 
+  <member name="p"/>
+  <member name="q"/> 
+</group> 

@@ -3,6 +3,7 @@ global_configuration=global_config
 
 # Override global component defaults
 fftsolver_enabled=.true.
+iterativesolver_enabled=.false.
 pw_advection_enabled=.true.
 simplesetup_enabled=.true.
 smagorinsky_enabled=.true.
@@ -209,8 +210,8 @@ latitude       = 33.0    # latitude for the location of radiation calc
 longitude      = -123.0  # longitude for the location of radiation calc
 rad_start_year = 1987.0  # simulation year for earth sun distance
 rad_start_day  = 180.0   # day number from January 1st
-rad_int_time   = 180.0   # Radiation integration timestep
 rad_start_time = 10.0    # Start time for the radiation
+rad_interval   = 200     # Radiation calculation interval [integer, unit depends on time_basis]
 
 ## Surface albedo variables for socrates
 l_variable_srf_albedo = .false. # not coded yet but will allow variable

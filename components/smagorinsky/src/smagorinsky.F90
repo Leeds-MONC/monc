@@ -111,7 +111,7 @@ contains
           ssq=calculate_half_squared_strain_rate(current_state, current_state%u, current_state%v, current_state%w)
           richardson_number=calculate_richardson_number(current_state, ssq, current_state%th, current_state%q)
         else
-          ssq=calculate_half_squared_strain_rate(current_state, current_state%zu, current_state%zv, current_state%zw)        
+          ssq=calculate_half_squared_strain_rate(current_state, current_state%zu, current_state%zv, current_state%zw)
           richardson_number=calculate_richardson_number(current_state, ssq, current_state%zth, current_state%zq)
         end if
         call setfri(current_state, richardson_number, ssq)
@@ -145,8 +145,9 @@ contains
 
     integer :: k
 
-    if (mod(current_state%timestep, current_state%cfl_frequency) == 1 .or. &
-         current_state%timestep-current_state%start_timestep .le. current_state%cfl_frequency) then
+      if ((mod(current_state%timestep, current_state%cfl_frequency) == 1 .or. &
+           current_state%timestep-current_state%start_timestep .le. current_state%cfl_frequency) &
+          .or. current_state%timestep .ge. (current_state%last_cfl_timestep + current_state%cfl_frequency)) then
       do k=2, current_state%local_grid%size(Z_INDEX)-1
         current_state%cvis=max(current_state%cvis, max(current_state%vis_coefficient%data(k, current_state%column_local_y, &
              current_state%column_local_x),current_state%diff_coefficient%data(k, current_state%column_local_y, &

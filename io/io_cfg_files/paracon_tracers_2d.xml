@@ -1,0 +1,13 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+
+-->
+
+<data-definition name="2d_tracers_data" frequency="{3d_sampling_frequency}">
+  <field name="trsfflux" type="array" data_type="double" size="y,x,tfields" collective=true optional=true/>
+</data-definition>
+
+<group name="2d_tracers">
+  <member name="trsfflux"/>
+</group>
+

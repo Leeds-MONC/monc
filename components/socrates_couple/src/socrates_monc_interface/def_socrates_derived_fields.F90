@@ -8,7 +8,7 @@ module def_socrates_derived_fields
 
      real(kind=DEFAULT_PRECISION) :: &
           dt_secs   ! radiation timestep in seconds. It will either be
-                    ! socrates_opt%rad_int_time, or the MONC timestep
+                    ! the time since the previous call, or the MONC timestep
                     ! This is set in the socrates_couple, timestep_callback
 
      ! declare fields to use in the solar position calculation

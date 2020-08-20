@@ -37,8 +37,6 @@ module flux_budget_mod
        some_prognostic_budget_diagnostics_enabled, some_thetal_diagnostics_enabled, some_mse_diagnostics_enabled, &
        some_qt_diagnostics_enabled, some_tke_diagnostics_enabled
        
-  integer :: diagnostic_generation_frequency
-
   public flux_budget_get_descriptor
 contains
 
@@ -134,15 +132,17 @@ contains
     call initialise_qt_diagnostics(current_state)
     call initialise_scalar_diagnostics(current_state)
     call initialise_tke_diagnostics(current_state)
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
   end subroutine initialisation_callback
 
   !> Timestep call back, this will deduce the diagnostics for the current (non halo) column
   !! @param current_state Current model state
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
-    
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
+    logical :: calculate_diagnostics
+
+    calculate_diagnostics = current_state%diagnostic_sample_timestep
+
+    if (calculate_diagnostics) then
       if (current_state%first_timestep_column) then
         if (some_theta_flux_diagnostics_enabled) call clear_theta_fluxes()
         if (some_q_flux_diagnostics_enabled) call clear_q_fluxes()
@@ -1871,7 +1871,7 @@ contains
         ! Note - calculating on z levels (i.e. w) 
         ! So need w'p' on p levels
         
-      w_pprime_at_p(k) = 0.5 * & 
+      w_pprime_at_p(k) = 0.5_DEFAULT_PRECISION * & 
          (current_state%w%data(k,  current_state%column_local_y,current_state%column_local_x) + &
           current_state%w%data(k-1,current_state%column_local_y,current_state%column_local_x)) * &
          (current_state%global_grid%configuration%vertical%rhon(k) * &
@@ -1908,6 +1908,8 @@ contains
       end do
     end if
     
+! ********************** Resolved turbulent transport ************************
+
     rke1(current_state%local_grid%size(Z_INDEX)) = 0.0_DEFAULT_PRECISION
     ! Zero gradient at surface    
     rke1(1)=rke1(2)

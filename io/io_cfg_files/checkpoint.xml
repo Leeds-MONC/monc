@@ -6,11 +6,13 @@
 	<field name="th" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
 	<field name="p" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
 	<field name="q" type="array" data_type="double" size="z,y,x,qfields" collective=true optional=true/>
+	<field name="tracer" type="array" data_type="double" size="z,y,x,tfields" collective=true optional=true/>
 	<field name="zw" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
 	<field name="zu" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
 	<field name="zv" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
 	<field name="zth" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
 	<field name="zq" type="array" data_type="double" size="z,y,x,qfields" collective=true optional=true/>
+	<field name="ztracer" type="array" data_type="double" size="z,y,x,tfields" collective=true optional=true/>
 	<field name="olubar" type="array" data_type="double" size="z" optional=true/>
 	<field name="olvbar" type="array" data_type="double" size="z" optional=true/>
 	<field name="olthbar" type="array" data_type="double" size="z" optional=true/>
@@ -26,10 +28,13 @@
 	<field name="ugal" type="scalar" data_type="double"/>
 	<field name="vgal" type="scalar" data_type="double"/>
 	<field name="nqfields" type="scalar" data_type="integer"/>
+	<field name="ntracers" type="scalar" data_type="integer"/>
+	<field name="nradtracers" type="scalar" data_type="integer"/>
 	<field name="timestep" type="scalar" data_type="integer"/>
 	<field name="dtm" type="scalar" data_type="double"/>
 	<field name="dtm_new" type="scalar" data_type="double"/>
 	<field name="absolute_new_dtm" type="scalar" data_type="double"/>
+        <field name="normal_step" type="scalar" data_type="integer"/>
 	<field name="q_indicies" type="map" data_type="string" size="active_q_indicies" optional=true/>
 	<field name="x_resolution" type="scalar" data_type="double"/>
 	<field name="x_top" type="scalar" data_type="double" />
@@ -41,6 +46,7 @@
 	<field name="sth_lw" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
 	<field name="sth_sw" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
 	<field name="rad_last_time" type="scalar" data_type="double"/>
+        <field name="last_cfl_timestep" type="scalar" data_type="integer"/>
 
 </data-definition>
 
@@ -51,11 +57,13 @@
 	<member name="th"/>
 	<member name="p"/>
 	<member name="q"/>
+	<member name="tracer"/>
 	<member name="zw"/>
 	<member name="zu"/>
 	<member name="zv"/>
 	<member name="zth"/>
 	<member name="zq"/>
+	<member name="ztracer"/>
 	<member name="olubar"/>
 	<member name="olvbar"/>
 	<member name="olthbar"/>
@@ -68,10 +76,13 @@
 	<member name="ugal"/>
 	<member name="vgal"/>
 	<member name="nqfields"/>
+	<member name="ntracers"/>
+	<member name="nradtracers"/>
 	<member name="timestep"/>
 	<member name="dtm"/>
 	<member name="dtm_new"/>
 	<member name="absolute_new_dtm"/>
+        <member name="normal_step"/>
 	<member name="q_indicies"/>
 	<member name="thref"/>
 	<member name="x_resolution"/>
@@ -83,6 +94,7 @@
 	<member name="sth_lw"/>
 	<member name="sth_sw"/>
 	<member name="rad_last_time"/>
+        <member name="last_cfl_timestep"/>
         <member name="w_up"/>
         <member name="w_dwn"/>
 </group>

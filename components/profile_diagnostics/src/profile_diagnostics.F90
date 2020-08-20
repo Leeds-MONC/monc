@@ -10,6 +10,7 @@ module profile_diagnostics_mod
   use saturation_mod, only: qsaturation
   use logging_mod, only : LOG_ERROR, log_master_log  
   use def_tvd_diagnostic_terms, only: tvd_dgs_terms, allocate_tvd_diagnostic_terms
+  use conversions_mod, only : conv_to_uppercase
 
   implicit none
 
@@ -249,10 +250,10 @@ contains
        endif
 
        ! arrange and allocate cloud fraction diagnostics...3d mask is optional
-       cloud_mask_method =                                                         &
-           options_get_string(current_state%options_database, "cloud_mask_method")
-       if (.not. (trim(cloud_mask_method) == "DEFAULT"   .or.                      &
-                  trim(cloud_mask_method) == "SOCRATES"      ) )  then
+       cloud_mask_method = conv_to_uppercase(                                      &
+           options_get_string(current_state%options_database, "cloud_mask_method"))
+       if (.not. (cloud_mask_method == "DEFAULT"   .or.                      &
+                  cloud_mask_method == "SOCRATES"      ) )  then
          call log_master_log(LOG_ERROR,                                            &
           "Requested cloud_mask_method is invalid.  Check profile_diagnostics.F90") 
        end if ! cloud_mask_method validity check
@@ -274,7 +275,7 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    integer :: k, i, iq_tmp, km1, kp1, icol, jcol
+    integer :: k, i, iq_tmp, icol, jcol
     real(kind=DEFAULT_PRECISION) :: cltop_col, clbas_col, qv, qc, TdegK, Pmb &
          , qs, exner
     real(kind=DEFAULT_PRECISION) :: uprime_w_local, vprime_w_local &
@@ -462,29 +463,34 @@ contains
     endif
        
     if (allocated(wke_tot)) then
-       do k=1, current_state%local_grid%size(Z_INDEX)
-          kp1=MIN(k+1,current_state%local_grid%size(Z_INDEX))  
-          km1=MAX(k-1,1)
-          wke_tot(k) = wke_tot(k) + 0.25_DEFAULT_PRECISION * (                   &
-               current_state%global_grid%configuration%vertical%rho(k) *       &
-               ( (current_state%v%data(k,jcol,icol)    &
-               + current_state%v%data(k,jcol,icol+1))   &
-               * uprime(k)*uprime(kp1)                  &
-               + (current_state%v%data(k,jcol,icol)     &
-               + current_state%v%data(k,jcol+1,icol))   &
-               * vprime(k) * vprime(kp1) )              &
-               + 0.5_DEFAULT_PRECISION * (              &
-               (current_state%w%data(k,jcol,icol)       &
-               + current_state%w%data(kp1,jcol,icol))   &
-               * current_state%w%data(k,jcol,icol)      &
-               * current_state%w%data(kp1,jcol,icol)    &
-               * current_state%global_grid%configuration%vertical%rhon(kp1)                &
-               +(current_state%w%data(k,jcol,icol)      &
-               + current_state%w%data(km1,jcol,icol))   &
-               * current_state%w%data(k,jcol,icol)      &
-               * current_state%w%data(km1,jcol,icol)    &
-               * current_state%global_grid%configuration%vertical%rhon(k) )                &
-               )
+       do k=1, current_state%local_grid%size(Z_INDEX)-1
+          uprime_w_local =  &
+               0.25_DEFAULT_PRECISION * ( current_state%u%data(k,jcol,icol)   + &
+               current_state%u%data(k,jcol,icol-1) + &
+               current_state%u%data(k+1,jcol,icol) + &
+               current_state%u%data(k+1,jcol,icol-1) ) + &
+               current_state%ugal
+          if (allocated(current_state%global_grid%configuration%vertical%olubar)) &
+               uprime_w_local = uprime_w_local - &
+               0.5_DEFAULT_PRECISION * ( current_state%global_grid%configuration%vertical%olubar(k) + &
+                  current_state%global_grid%configuration%vertical%olubar(k+1) )
+          vprime_w_local = &
+               0.25_DEFAULT_PRECISION * ( current_state%v%data(k,jcol,icol)   + &
+               current_state%v%data(k,jcol-1,icol) + &
+               current_state%v%data(k+1,jcol,icol) + &
+               current_state%v%data(k+1,jcol-1,icol) ) + &
+               current_state%vgal
+          if (allocated(current_state%global_grid%configuration%vertical%olvbar)) &
+               vprime_w_local = vprime_w_local - &
+               0.5_DEFAULT_PRECISION * ( current_state%global_grid%configuration%vertical%olvbar(k) + &
+               current_state%global_grid%configuration%vertical%olvbar(k+1) )
+
+          wke_tot(k) = wke_tot(k) + 0.5_DEFAULT_PRECISION *                     &
+               current_state%global_grid%configuration%vertical%rhon(k) *       &
+               current_state%w%data(k,jcol,icol) *                              &
+               ( uprime_w_local * uprime_w_local +                              &
+                 vprime_w_local * vprime_w_local +                              &
+                 current_state%w%data(k,jcol,icol) * current_state%w%data(k,jcol,icol) )
        enddo
     endif
        
@@ -1138,9 +1144,8 @@ contains
         tempi = current_state%q(iqi)%data(k, jcol, icol)
 
       !> Check cloud_mask_method and modify as needed
-
       !> The SOCRATES method considers rain, snow, and graupel.
-      if (trim(cloud_mask_method) == "SOCRATES") then
+      if (cloud_mask_method == "SOCRATES") then
         if (iqr > 0) &
           templ = templ + rainfac  * current_state%q(iqr)%data(k, jcol, icol)
         if (iqs > 0) &
@@ -1151,7 +1156,7 @@ contains
 
       !> Work out cloud fractions
       tempt = templ + tempi
-      if (trim(cloud_mask_method) == "SOCRATES") then
+      if (cloud_mask_method == "SOCRATES") then
         cloud_present = (tempt > EPSILON(tempt))
       else ! DEFAULT
         cloud_present = (templ > qlcrit .or. tempi > qicrit .or. (templ+tempi) > qlcrit)

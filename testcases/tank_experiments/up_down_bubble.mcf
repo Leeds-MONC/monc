@@ -2,27 +2,31 @@
 global_configuration=global_config
 
 # Override global component defaults
+cfltest_enabled=.true.
+checkpointer_enabled=.true.
 fftsolver_enabled=.true.
 iterativesolver_enabled=.false.
 pw_advection_enabled=.true.
 tvd_advection_enabled=.true.
 simplesetup_enabled=.true.
-smagorinsky_enabled=.false.
-lower_bc_enabled=.false.
-setfluxlook_enabled=.false. #This must be set to true if running with lower_bc
+smagorinsky_enabled=.true.
+lower_bc_enabled=.true.
+setfluxlook_enabled=.true. #This must be set to true if running with lower_bc
 viscosity_enabled=.true.
 diffusion_enabled=.true.
 simplecloud_enabled=.false.
 coriolis_enabled=.false.
 damping_enabled=.false.
 forcing_enabled=.false. 
-galilean_transformation=.false. # Needs debugging
+galilean_transformation=.true. # Needs debugging
 randomnoise_enabled=.false.
-mean_profiles_enabled=.true. #This must be set to true if running with damping or profile_diagnostics
-th_advection_enabled=.false.
+mean_profiles_enabled=.true. #This must be set to true if running with damping
+th_advection_enabled=.true.
 iobridge_enabled=.true.
 scalar_diagnostics_enabled=.true.
 profile_diagnostics_enabled=.true.
+subgrid_profile_diagnostics_enabled=.true.
+flux_budget_enabled=.true.
 
 # Test case source code
 tank_experiments_enabled=.true.
@@ -58,10 +62,10 @@ check_walltime_frequency=100
 walltime_limit=00:30:00
 
 # iterative solver
-tolerance=1.e-5
+tolerance=1.e-4
 max_iterations=500
 preconditioner_iterations=0
-include_top_level=.false.
+include_top_level=.true.
 symm_prob=.false.
 
 # CFL configuration

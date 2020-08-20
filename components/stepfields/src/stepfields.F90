@@ -44,8 +44,6 @@ module stepfields_mod
              l_tend_pr_tot_tabs
   ! q indices
   integer :: iqv=0, iql=0, iqr=0, iqi=0, iqs=0, iqg=0
-  integer :: diagnostic_generation_frequency
-
 
   public stepfields_get_descriptor
 
@@ -198,9 +196,6 @@ contains
       allocate( tend_pr_tot_tabs(current_state%local_grid%size(Z_INDEX)) )
     endif
 
-    ! Save the sampling_frequency to force diagnostic calculation on select time steps
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
-
   end subroutine initialisation_callback
 
 
@@ -238,6 +233,10 @@ contains
 
     integer :: iq
     integer :: current_x_index, current_y_index, target_x_index, target_y_index
+    logical :: calculate_diagnostics
+
+    calculate_diagnostics = current_state%diagnostic_sample_timestep &
+                            .and. .not. current_state%halo_column
 
     current_x_index=current_state%column_local_x
     current_y_index=current_state%column_local_y
@@ -246,8 +245,9 @@ contains
 
 
     if (cfl_is_enabled .and. current_state%first_timestep_column) then
-      if (mod(current_state%timestep, current_state%cfl_frequency) == 1 .or. &
-         current_state%timestep-current_state%start_timestep .le. current_state%cfl_frequency) then
+      if ((mod(current_state%timestep, current_state%cfl_frequency) == 1 .or. &
+           current_state%timestep-current_state%start_timestep .le. current_state%cfl_frequency) &
+          .or. current_state%timestep .ge. (current_state%last_cfl_timestep + current_state%cfl_frequency)) then
         determine_flow_minmax=.true.
         call reset_local_minmax_values(current_state)
       else
@@ -304,9 +304,8 @@ contains
       endif
     endif  ! zero totals
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0 .and. .not. current_state%halo_column) then
-      call compute_component_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) &
+        call compute_component_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
 
   end subroutine timestep_callback
 
@@ -354,6 +353,12 @@ contains
              current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION), c1, c2, &
              current_state%field_stepping == CENTRED_STEPPING)
       end if
+    end do
+    do i=1,current_state%n_tracers
+      call step_single_field(current_state%column_local_x,  current_state%column_local_y, x_prev, y_prev, &
+           current_state%tracer(i), current_state%ztracer(i), current_state%stracer(i), current_state%local_grid, .false., &
+           current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION), c1, c2, &
+           current_state%field_stepping == CENTRED_STEPPING)
     end do
   end subroutine step_all_fields 
 

@@ -1,0 +1,98 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+   1. Required flag: l_lem_dissipation_rate = .false. (for TKE balance)
+
+   2. Required condition: fixed timestep (for TKE balance)
+
+   3. Requires: 
+         subgrid_profile_diagnostics_enabled=.true.
+         flux_budget_enabled=.true.
+         smagorinsky_enabled=.true.
+
+   4. Resolved components: current_state%w%active and current_state%u%active and current_state%v%active
+
+   5. Subgrid components: current_state%passive_q .false, current_state%number_q_fields .gt. 0, current_state%th%active,
+
+   6. use_Ri_for_buoyant_prod can be .true. or .false. - set to .true. in code
+
+-->
+
+<data-definition name="tke_fields" frequency="{sampling_frequency}" namespace="tke_field">
+        <!-- Resolved tke diagnostics -->
+	<field name="resolved_pressure_transport_local" type="array" data_type="double" optional=true/>
+	<field name="resolved_shear_production_local" type="array" data_type="double" optional=true/>
+	<field name="resolved_turbulent_transport_local" type="array" data_type="double" optional=true/>
+	<field name="tke_tendency_local" type="array" data_type="double" optional=true/>
+	<field name="resolved_buoyant_production_local" type="array" data_type="double" optional=true/>
+        
+           <!-- Subgrid tke diagnostics -->
+        <field name="dissipation_total_local" type="array" data_type="double" optional=true/>
+        <field name="sed_total_local" type="array" data_type="double" optional=true/>
+        <field name="ssub_total_local" type="array" data_type="double" optional=true/>
+        <field name="buoysg_total_local" type="array" data_type="double" optional=true/>
+        <field name="tend_tke_damping_profile_total_local" type="array" data_type="double" optional=true/>
+        <!-- -->
+</data-definition>
+
+<data-handling namespace="tke_field">
+        <!-- Resolved tke diagnostics -->
+   <diagnostic field="pressure_transport"  type="array" data_type="double" size="z" units="m^2/s^2">
+    <operator name="arithmetic" result="pressure_transport" equation="resolved_pressure_transport_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="resolved_pressure_transport_g" field="resolved_pressure_transport_local" root="auto"/>
+   </diagnostic>
+   <diagnostic field="tke_tendency"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="tke_tendency" equation="tke_tendency_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="tke_tendency_g" field="tke_tendency_local" root="auto"/>
+   </diagnostic>
+	<diagnostic field="resolved_shear_production"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="resolved_shear_production" equation="resolved_shear_production_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="resolved_shear_production_g" field="resolved_shear_production_local" root="auto"/>
+   </diagnostic>
+   <diagnostic field="resolved_turbulent_transport"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="resolved_turbulent_transport" equation="resolved_turbulent_transport_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="resolved_turbulent_transport_g" field="resolved_turbulent_transport_local" root="auto"/>
+   </diagnostic>
+	<diagnostic field="resolved_buoyant_production"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="resolved_buoyant_production" equation="resolved_buoyant_production_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="resolved_buoyant_production_g" field="resolved_buoyant_production_local" root="auto"/>
+   </diagnostic>
+        <!-- Subgrid tke diagnostics -->
+   <diagnostic field="subgrid_turbulent_transport"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="subgrid_turbulent_transport" equation="subgrid_turbulent_transport_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="subgrid_turbulent_transport_g" field="sed_total_local" root="auto"/>
+   </diagnostic>
+   <diagnostic field="subgrid_shear_stress"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="subgrid_shear_stress" equation="subgrid_shear_stress_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="subgrid_shear_stress_g" field="ssub_total_local" root="auto"/>
+   </diagnostic>
+   <diagnostic field="subgrid_buoyant_production"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="subgrid_buoyant_production" equation="subgrid_buoyant_production_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="subgrid_buoyant_production_g" field="buoysg_total_local" root="auto"/>
+	</diagnostic>
+   <diagnostic field="dissipation"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="dissipation" equation="dissipation_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="dissipation_g" field="dissipation_total_local" root="auto"/>
+   </diagnostic>
+   <diagnostic field="tend_tke_dam_mean"  type="array" data_type="double" size="z" units="m^2/s^2">
+	<operator name="arithmetic" result="tend_tke_dam_mean" equation="tend_tke_dam_total_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="tend_tke_dam_total_g" field="tend_tke_damping_profile_total_local" root="auto"/>
+   </diagnostic>
+        <!-- -->
+	
+</data-handling>
+
+<group name="tke_fields" namespace="tke_field">
+	 <!-- Resolved tke diagnostics -->
+    <member name="pressure_transport"/>
+    <member name="resolved_shear_production"/>
+    <member name="resolved_turbulent_transport"/>
+    <member name="resolved_buoyant_production"/>
+    <member name="tke_tendency"/>
+          <!-- Subgrid tke diagnostics -->
+    <member name="subgrid_turbulent_transport"/>
+    <member name="subgrid_buoyant_production"/>
+    <member name="subgrid_shear_stress"/>
+    <member name="tend_tke_dam_mean"/>
+    <member name="dissipation"/>
+	 <!--  -->
+</group>

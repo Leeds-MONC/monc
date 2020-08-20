@@ -1,0 +1,164 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+   1. This group contains subgrid profile terms from the subgrid diagnostics component, much as they exist in
+      profile_fields.xml on the trunk.
+
+   2. At last check, uusg, vvsg, and wwsg each produce the same values.  These may be incorrectly coded.
+
+   3. Requires:
+        subgrid_profile_diagnostics_enabled=.true.
+        smagorinsky_enabled=.true.
+
+-->
+
+<data-definition name="subgrid_profile_timeseries_fields" frequency="{sampling_frequency}" namespace="subgrid_profile_fields">
+  <!-- Subgrid profile terms (from smagorinsky and subgrid_diagnostics) -->
+  <field name="uwsg_total_local" type="array" data_type="double" optional=true/>
+  <field name="vwsg_total_local" type="array" data_type="double" optional=true/>
+  <field name="uusg_total_local" type="array" data_type="double" optional=true/>
+  <field name="vvsg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wwsg_total_local" type="array" data_type="double" optional=true/>
+  <field name="tkesg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wkesg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wtsg_total_local" type="array" data_type="double" optional=true/>
+  <field name="th2sg_total_local" type="array" data_type="double" optional=true/>
+  <field name="theta_dis_total_local" type="array" data_type="double" optional=true/>
+  <field name="viscosity_coef_total_local" type="array" data_type="double" optional=true/>
+  <field name="diffusion_coef_total_local" type="array" data_type="double" optional=true/>
+  <field name="richardson_number_total_local" type="array" data_type="double" optional=true/>
+  <field name="richardson_squared_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqv_sg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wql_sg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqr_sg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqi_sg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqs_sg_total_local" type="array" data_type="double" optional=true/>
+  <field name="wqg_sg_total_local" type="array" data_type="double" optional=true/>
+   <!--  -->
+</data-definition>
+
+<data-handling namespace="subgrid_profile_fields">
+
+  <diagnostic field="uwsg_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+        <operator name="arithmetic" result="uwsg_mean" equation="uwsg_mean_g/({x_size}*{y_size})"/>
+        <communication name="reduction" operator="sum" result="uwsg_mean_g" field="uwsg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="vwsg_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+        <operator name="arithmetic" result="vwsg_mean" equation="vwsg_mean_g/({x_size}*{y_size})"/>
+        <communication name="reduction" operator="sum" result="vwsg_mean_g" field="vwsg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="uusg_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+        <operator name="arithmetic" result="uusg_mean" equation="uusg_mean_g/({x_size}*{y_size})"/>
+        <communication name="reduction" operator="sum" result="uusg_mean_g" field="uusg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="vvsg_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+        <operator name="arithmetic" result="vvsg_mean" equation="vvsg_mean_g/({x_size}*{y_size})"/>
+        <communication name="reduction" operator="sum" result="vvsg_mean_g" field="vvsg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wwsg_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+        <operator name="arithmetic" result="wwsg_mean" equation="wwsg_mean_g/({x_size}*{y_size})"/>
+        <communication name="reduction" operator="sum" result="wwsg_mean_g" field="wwsg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tkesg_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+        <operator name="arithmetic" result="tkesg_mean" equation="tkesg_mean_g/({x_size}*{y_size})"/>
+        <communication name="reduction" operator="sum" result="tkesg_mean_g" field="tkesg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wkesg_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+        <operator name="arithmetic" result="wkesg_mean" equation="wkesg_mean_g/({x_size}*{y_size})"/>
+        <communication name="reduction" operator="sum" result="wkesg_mean_g" field="wkesg_total_local" root="auto"/>
+  </diagnostic>
+
+ <diagnostic field="wtsg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+        <operator name="arithmetic" result="wtsg_mean" equation="wtsg_mean_g/({x_size}*{y_size})"/>
+        <communication name="reduction" operator="sum" result="wtsg_mean_g" field="wtsg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="th2sg_mean"  type="array" data_type="double" size="zn" units="K^2">
+        <operator name="arithmetic" result="th2sg_mean" equation="th2sg_mean_g/({x_size}*{y_size})"/>
+        <communication name="reduction" operator="sum" result="th2sg_mean_g" field="th2sg_total_local" root="auto"/>
+  </diagnostic>
+
+   <diagnostic field="theta_dis_mean"  type="array" data_type="double" size="zn" units="K^2">
+        <operator name="arithmetic" result="theta_dis_mean" equation="theta_dis_mean_g/({x_size}*{y_size})"/>
+        <communication name="reduction" operator="sum" result="theta_dis_mean_g" field="theta_dis_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="viscosity_coef_mean"  type="array" data_type="double" size="zn" units="K^2">
+    <operator name="arithmetic" result="viscosity_coef_mean" equation="viscosity_coef_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="viscosity_coef_mean_g" field="viscosity_coef_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="diffusion_coef_mean"  type="array" data_type="double" size="zn" units="K^2">
+     <operator name="arithmetic" result="diffusion_coef_mean" equation="diffusion_coef_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="diffusion_coef_mean_g" field="diffusion_coef_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="richardson_number_mean"  type="array" data_type="double" size="zn" units="K^2">
+     <operator name="arithmetic" result="richardson_number_mean" equation="richardson_number_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="richardson_number_mean_g" field="richardson_number_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="richardson_squared_mean"  type="array" data_type="double" size="zn" units="K^2">
+     <operator name="arithmetic" result="richardson_squared_mean" equation="richardson_squared_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="richardson_squared_mean_g" field="richardson_squared_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wqv_sg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqv_sg_mean" equation="wqv_sg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqv_sg_mean_g" field="wqv_sg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wql_sg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wql_sg_mean" equation="wql_sg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wql_sg_mean_g" field="wql_sg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wqr_sg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqr_sg_mean" equation="wqr_sg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqr_sg_mean_g" field="wqr_sg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wqi_sg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqi_sg_mean" equation="wqi_sg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqi_sg_mean_g" field="wqi_sg_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="wqs_sg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqs_sg_mean" equation="wqs_sg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqs_sg_mean_g" field="wqs_sg_total_local" root="auto"/>
+  </diagnostic>
+  
+  <diagnostic field="wqg_sg_mean"  type="array" data_type="double" size="zn" units="Km/s">
+	<operator name="arithmetic" result="wqg_sg_mean" equation="wqg_sg_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="wqg_sg_mean_g" field="wqg_sg_total_local" root="auto"/>
+  </diagnostic>
+  
+</data-handling>
+
+<group name="subgrid_profiles" namespace="subgrid_profile_fields">
+  <member name="wqv_sg_mean"/>
+  <member name="wql_sg_mean"/>
+  <member name="wqr_sg_mean"/>
+  <member name="wqi_sg_mean"/>
+  <member name="wqs_sg_mean"/>
+  <member name="wqg_sg_mean"/>
+  <member name="uwsg_mean"/>
+  <member name="vwsg_mean"/>
+  <member name="uusg_mean"/>
+  <member name="vvsg_mean"/>
+  <member name="wwsg_mean"/>
+  <member name="tkesg_mean"/>
+  <member name="wkesg_mean"/>
+  <member name="wtsg_mean"/>
+  <member name="th2sg_mean"/>
+  <member name="theta_dis_mean"/>
+  <member name="viscosity_coef_mean"/>
+  <member name="diffusion_coef_mean"/>
+  <member name="richardson_number_mean"/>
+  <member name="richardson_squared_mean"/>
+</group>

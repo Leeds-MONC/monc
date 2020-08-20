@@ -1,9 +1,9 @@
-<data-definition name="conditional_diagnostics_data" frequency="{3d_sampling_frequency}" namespace="condi_fields"> 
+<data-definition name="conditional_diagnostics_data" frequency="{sampling_frequency}" namespace="condi_fields"> 
   <field name="CondDiags_tot" type="array" data_type="double" optional=true/> 
 </data-definition> 
 
 <data-handling namespace="condi_fields"> 
-  <diagnostic field="CondDiags_mean"  type="array" data_type="double" size="z,nc,nd" units="diagnostics_fields_long, conditions_fields_long"> 
+  <diagnostic field="CondDiags_mean"  type="array" data_type="double" size="zn,nc,nd" units="diagnostics_fields_long, conditions_fields_long"> 
         <communication name="reduction" operator="sum" result="CondDiags_mean" field="CondDiags_tot" root="auto"/> 
   </diagnostic> 
 </data-handling> 
