@@ -1,0 +1,181 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+   1. This data is a match to the CASIM process rates found in profile_fields.xml on the trunk.
+
+   2. Enable the following:
+        casim_enabled=.true.
+        casim_profile_dgs_enabled=.true.
+
+   3. Availability may depend on CASIM-specific configuration, such as 'option' and 'number_q_fields'.
+
+-->
+
+<data-definition name="CASIM_process_rate_fields" frequency="{sampling_frequency}" namespace="CASIM_process">
+   <!-- Microphysics process rates (assumed to be from CASIM) -->
+  <field name="pcond_total" type="array" data_type="double" optional=true/>
+  <field name="phomc_total" type="array" data_type="double" optional=true/> 
+  <field name="pinuc_total" type="array" data_type="double" optional=true/>
+  <field name="pidep_total" type="array" data_type="double" optional=true/>
+  <field name="psdep_total" type="array" data_type="double" optional=true/>
+  <field name="piacw_total" type="array" data_type="double" optional=true/>
+  <field name="psacw_total" type="array" data_type="double" optional=true/>
+  <field name="psacr_total" type="array" data_type="double" optional=true/>
+  <field name="pisub_total" type="array" data_type="double" optional=true/>
+  <field name="pssub_total" type="array" data_type="double" optional=true/>
+  <field name="pimlt_total" type="array" data_type="double" optional=true/>
+  <field name="psmlt_total" type="array" data_type="double" optional=true/>
+  <field name="psaut_total" type="array" data_type="double" optional=true/>
+  <field name="psaci_total" type="array" data_type="double" optional=true/>
+  <field name="praut_total" type="array" data_type="double" optional=true/>
+  <field name="pracw_total" type="array" data_type="double" optional=true/>
+  <field name="prevp_total" type="array" data_type="double" optional=true/>
+  <field name="pgacw_total" type="array" data_type="double" optional=true/>
+  <field name="pgacs_total" type="array" data_type="double" optional=true/>
+  <field name="pgmlt_total" type="array" data_type="double" optional=true/>
+  <field name="pgsub_total" type="array" data_type="double" optional=true/>
+  <field name="psedi_total" type="array" data_type="double" optional=true/>
+  <field name="pseds_total" type="array" data_type="double" optional=true/>
+  <field name="psedr_total" type="array" data_type="double" optional=true/>
+  <field name="psedg_total" type="array" data_type="double" optional=true/>
+  <field name="psedl_total" type="array" data_type="double" optional=true/>
+   <!--  -->
+</data-definition>
+
+<data-handling namespace="CASIM_process">
+
+  <diagnostic field="pcond_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pcond_mean" equation="pcond_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pcond_total_g" field="pcond_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="phomc_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="phomc_mean" equation="phomc_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="phomc_total_g" field="phomc_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pinuc_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pinuc_mean" equation="pinuc_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pinuc_total_g" field="pinuc_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pidep_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pidep_mean" equation="pidep_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pidep_total_g" field="pidep_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psdep_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psdep_mean" equation="psdep_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psdep_total_g" field="psdep_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="piacw_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="piacw_mean" equation="piacw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="piacw_total_g" field="piacw_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psacw_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psacw_mean" equation="psacw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psacw_total_g" field="psacw_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psacr_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psacr_mean" equation="psacr_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psacr_total_g" field="psacr_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pisub_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pisub_mean" equation="pisub_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pisub_total_g" field="pisub_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pssub_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pssub_mean" equation="pssub_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pssub_total_g" field="pssub_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pimlt_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pimlt_mean" equation="pimlt_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pimlt_total_g" field="pimlt_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psmlt_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psmlt_mean" equation="psmlt_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psmlt_total_g" field="psmlt_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psaut_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psaut_mean" equation="psaut_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psaut_total_g" field="psaut_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psaci_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psaci_mean" equation="psaci_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psaci_total_g" field="psaci_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="praut_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="praut_mean" equation="praut_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="praut_total_g" field="praut_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pracw_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pracw_mean" equation="pracw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pracw_total_g" field="pracw_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="prevp_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="prevp_mean" equation="prevp_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="prevp_total_g" field="prevp_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pgacw_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pgacw_mean" equation="pgacw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pgacw_total_g" field="pgacw_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pgacs_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pgacs_mean" equation="pgacs_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pgacs_total_g" field="pgacs_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pgmlt_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pgmlt_mean" equation="pgmlt_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pgmlt_total_g" field="pgmlt_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="pgsub_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pgsub_mean" equation="pgsub_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pgsub_total_g" field="pgsub_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psedi_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psedi_mean" equation="psedi_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psedi_total_g" field="psedi_total" root="auto"/>
+  </diagnostic>
+    <diagnostic field="pseds_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="pseds_mean" equation="pseds_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="pseds_total_g" field="pseds_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psedr_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psedr_mean" equation="psedr_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psedr_total_g" field="psedr_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psedg_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psedg_mean" equation="psedg_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psedg_total_g" field="psedg_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="psedl_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="psedl_mean" equation="psedl_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="psedl_total_g" field="psedl_total" root="auto"/>
+  </diagnostic>
+
+</data-handling>
+
+
+<group name="CASIM_process_rate_profiles" namespace="CASIM_process">
+  <member name="pcond_mean"/>
+  <member name="phomc_mean"/> 
+  <member name="pinuc_mean"/>
+  <member name="pidep_mean"/>
+  <member name="psdep_mean"/>
+  <member name="piacw_mean"/>
+  <member name="psacw_mean"/>
+  <member name="psacr_mean"/>
+  <member name="pisub_mean"/>
+  <member name="pssub_mean"/>
+  <member name="pimlt_mean"/>
+  <member name="psmlt_mean"/>
+  <member name="psaut_mean"/>
+  <member name="psaci_mean"/>
+  <member name="praut_mean"/>
+  <member name="pracw_mean"/>
+  <member name="prevp_mean"/>
+  <member name="pgacw_mean"/>
+  <member name="pgacs_mean"/>
+  <member name="pgmlt_mean"/>
+  <member name="pgsub_mean"/>
+  <member name="psedi_mean"/>
+  <member name="pseds_mean"/>
+  <member name="psedr_mean"/>
+  <member name="psedg_mean"/>
+  <member name="psedl_mean"/>
+</group>

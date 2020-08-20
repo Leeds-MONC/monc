@@ -1,9 +1,11 @@
 !> Parses a configuration file and loads the contents into the options database which can 
 !! then be interogated by components in the model
 module configuration_file_parser_mod
+  use datadefn_mod, only : l_config_double
   use collections_mod, only : hashmap_type
   use conversions_mod, only : conv_to_logical, conv_to_integer, conv_to_real, &
-       conv_is_logical, conv_is_integer, conv_is_real, conv_single_real_to_double
+       conv_is_logical, conv_is_integer, conv_is_real, conv_single_real_to_double, &
+       string_to_double
   use optionsdatabase_mod, only : options_add, options_get_string, options_has_key, &
        options_get_array_size, options_remove_key
   use logging_mod, only : LOG_ERROR, log_master_log
@@ -325,10 +327,21 @@ contains
       end if
     else if (conv_is_real(parsed_value)) then
       if (present(array_index)) then
-        call options_add(options_database, trim(config_key), &
-             conv_single_real_to_double(conv_to_real(trim(parsed_value))), array_index=array_index)
+        if (.not. l_config_double) then
+          call options_add(options_database, trim(config_key), &
+                           conv_single_real_to_double(conv_to_real(trim(parsed_value))), &
+                           array_index=array_index)
+        else
+          call options_add(options_database, trim(config_key), &
+               string_to_double(trim(parsed_value)), array_index=array_index)
+        end if
       else
-        call options_add(options_database, trim(config_key), conv_single_real_to_double(conv_to_real(trim(parsed_value))))
+        if (.not. l_config_double) then
+          call options_add(options_database, trim(config_key), &
+                           conv_single_real_to_double(conv_to_real(trim(parsed_value))))
+        else    
+          call options_add(options_database, trim(config_key), string_to_double(trim(parsed_value)))
+        end if
       end if
     else
       if (present(array_index)) then

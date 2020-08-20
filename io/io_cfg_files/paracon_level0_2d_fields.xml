@@ -1,0 +1,18 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+   1.  This only contains 2d surface precipitation, but at a sampling frequncy that matches
+       other level0 datasets to ensure consistency.
+
+   2.  Requires:
+          casim_enabled=.true.
+
+-->
+
+<data-definition name="2d_fields_data" frequency="{sampling_frequency}">
+  <field name="surface_precip" type="array" data_type="double" size="y,x" collective=true optional=true/>
+</data-definition>
+
+<group name="2d_precip">
+  <member name="surface_precip"/>
+</group>
+

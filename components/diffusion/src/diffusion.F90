@@ -23,6 +23,7 @@ module diffusion_mod
 
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: th_diffusion
   real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: q_diffusion
+  real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: tracer_diffusion
 
   ! Local tendency diagnostic variables for this component
   ! 3D tendency fields and logicals for their use
@@ -37,7 +38,6 @@ module diffusion_mod
              l_tend_pr_tot_qs,l_tend_pr_tot_qg,l_tend_pr_tot_tabs
   ! q indices
   integer :: iqv=0, iql=0, iqr=0, iqi=0, iqs=0, iqg=0
-  integer :: diagnostic_generation_frequency
 
   public diffusion_get_descriptor
 
@@ -54,7 +54,7 @@ contains
 
     diffusion_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     diffusion_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
-    allocate(diffusion_get_descriptor%published_fields(2+8+8))
+    allocate(diffusion_get_descriptor%published_fields(2+8+8+1))
 
     diffusion_get_descriptor%published_fields(1)="th_diffusion"
     diffusion_get_descriptor%published_fields(2)="q_diffusion"
@@ -77,6 +77,8 @@ contains
     diffusion_get_descriptor%published_fields(2+8+7)="tend_qg_diffusion_profile_total_local"
     diffusion_get_descriptor%published_fields(2+8+8)="tend_tabs_diffusion_profile_total_local"
 
+    diffusion_get_descriptor%published_fields(2+8+8+1)="tracer_diffusion"
+
   end function diffusion_get_descriptor
 
 
@@ -95,11 +97,14 @@ contains
     field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
     if (name .eq. "q_diffusion") then
       field_information%number_dimensions=2
+    else if (name .eq. "tracer_diffusion") then
+      field_information%number_dimensions=2
     else
       field_information%number_dimensions=1
     end if
     field_information%dimension_sizes(1)=current_state%local_grid%size(Z_INDEX)
     if (name .eq. "q_diffusion") field_information%dimension_sizes(2)=current_state%number_q_fields
+    if (name .eq. "tracer_diffusion") field_information%dimension_sizes(2)=current_state%n_tracers
     field_information%enabled=.true.
 
     ! Field information for 3d
@@ -179,6 +184,8 @@ contains
       call set_published_field_value(field_value, real_1d_field=th_diffusion)
     else if (name .eq. "q_diffusion") then
       call set_published_field_value(field_value, real_2d_field=q_diffusion)
+    else if (name .eq. "tracer_diffusion") then
+      call set_published_field_value(field_value, real_2d_field=tracer_diffusion)
 
     ! 3d Tendency Fields
     else if (name .eq. "tend_th_diffusion_3d_local" .and. allocated(tend_3d_th)) then
@@ -235,6 +242,7 @@ contains
     z_size=current_state%global_grid%size(Z_INDEX)
     allocate(th_diffusion(z_size))
     allocate(q_diffusion(z_size, current_state%number_q_fields))
+    if (current_state%n_tracers > 0) allocate(tracer_diffusion(z_size, current_state%n_tracers))
 
     ! Set tendency diagnostic logicals based on availability
     ! Need to use 3d tendencies to compute the profiles, so they will be allocated
@@ -333,9 +341,6 @@ contains
       allocate( tend_pr_tot_tabs(current_state%local_grid%size(Z_INDEX)) )
     endif
 
-    ! Save the sampling_frequency to force diagnostic calculation on select time steps
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
-
   end subroutine initialisation_callback
 
 
@@ -344,6 +349,7 @@ contains
 
     if (allocated(th_diffusion)) deallocate(th_diffusion)
     if (allocated(q_diffusion)) deallocate(q_diffusion)
+    if (allocated(tracer_diffusion)) deallocate(tracer_diffusion)
 
     if (allocated(tend_3d_th)) deallocate(tend_3d_th)
     if (allocated(tend_3d_qv)) deallocate(tend_3d_qv)
@@ -371,6 +377,10 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
 
     integer :: local_y, local_x, target_x_index, target_y_index
+
+    logical :: calculate_diagnostics
+
+    calculate_diagnostics = current_state%diagnostic_sample_timestep
 
     local_y=current_state%column_local_y
     local_x=current_state%column_local_x
@@ -413,18 +423,32 @@ contains
            perform_local_data_copy_for_diff, copy_halo_buffer_to_diff, copy_halo_buffer_to_diff_corners)
     end if
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
-      call save_precomponent_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) call save_precomponent_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
 
     if (current_state%th%active) call perform_th_diffusion(current_state, local_y, local_x)
     if (current_state%number_q_fields .gt. 0) call perform_q_diffusion(current_state, local_y, local_x)
+    if (current_state%n_radioactive_tracers .gt. 0) call perform_tracer_diffusion(current_state, local_y, local_x)
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
-      call compute_component_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) call compute_component_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
 
   end subroutine timestep_callback
+
+  !> Computes the diffusion source terms for each tracer field
+  !! @param current_state The current model state
+  !! @param local_y Local Y index
+  !! @param local_x Local X index
+  subroutine perform_tracer_diffusion(current_state, local_y, local_x)
+    type(model_state_type), target, intent(inout) :: current_state
+    integer, intent(in) :: local_y, local_x
+
+    integer :: n
+
+    do n=current_state%radioactive_tracer_index, current_state%radioactive_tracer_index + current_state%n_radioactive_tracers - 1 
+      call general_diffusion(current_state, current_state%ztracer(n), current_state%stracer(n), local_y, local_x, &
+        tracer_diffusion(:,n))
+    end do
+  end subroutine perform_tracer_diffusion  
+
 
   !> Computes the diffusion source terms for each Q field
   !! @param current_state The current model state

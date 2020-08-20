@@ -53,7 +53,7 @@ contains
       end_time=mpi_wtime()
       call log_newline()
       call log_log(LOG_INFO, "Number of completed timesteps "//conv_to_string(current_state%timestep))
-      call log_log(LOG_INFO, "Completed "//trim(conv_to_string((current_state%timestep-previous_ts)+1))//&
+      call log_log(LOG_INFO, "Completed "//trim(conv_to_string((current_state%timestep-previous_ts)))//&
            " timesteps in "//trim(conv_to_string(int((end_time-start_time) * 1000)))//"ms")
       call log_log(LOG_INFO, "Model time "//trim(conv_to_string(current_state%time, 5))//" seconds; dtm="//&
            trim(conv_to_string(current_state%dtm, 5)))

@@ -1,12 +1,12 @@
 !> Loads in the configuration stored in a NetCDF checkpoint file for the model to start from
 module configuration_checkpoint_netcdf_parser_mod
-  use datadefn_mod, only : STRING_LENGTH
+  use datadefn_mod, only : STRING_LENGTH, l_config_double
   use collections_mod, only : hashmap_type
   use netcdf, only : NF90_NOWRITE, NF90_NETCDF4, NF90_MPIIO, NF90_NOERR, nf90_strerror, nf90_open, nf90_close, &
        nf90_inq_dimid, nf90_inquire_dimension, nf90_inq_varid, nf90_get_var
   use logging_mod, only : LOG_ERROR, log_master_log
   use conversions_mod, only : conv_is_integer, conv_to_integer, conv_is_real, conv_to_real, conv_is_logical, conv_to_logical, &
-       conv_single_real_to_double
+       conv_single_real_to_double, string_to_double
   use optionsdatabase_mod, only : options_add
   use mpi, only : MPI_INFO_NULL
   use netcdf_misc_mod, only : check_netcdf_status
@@ -60,7 +60,11 @@ contains
       if (conv_is_integer(trim(value))) then
         call options_add(options_database, trim(key), conv_to_integer(trim(value)))
       else if (conv_is_real(trim(value))) then
-        call options_add(options_database, trim(key), conv_single_real_to_double(conv_to_real(trim(value))))
+        if (.not. l_config_double) then
+          call options_add(options_database, trim(key), conv_single_real_to_double(conv_to_real(trim(value))))
+        else
+          call options_add(options_database, trim(key), string_to_double(trim(value)))
+        end if 
       else if (conv_is_logical(trim(value))) then
         call options_add(options_database, trim(key), conv_to_logical(trim(value)))
       else

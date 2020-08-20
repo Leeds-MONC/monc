@@ -47,8 +47,6 @@ module subgrid_profile_diagnostics_mod
   real(kind=DEFAULT_PRECISION) :: a2_n, ath2_n, pr_n, ri_crit
   real(kind=DEFAULT_PRECISION) :: qlcrit
 
-  integer :: diagnostic_generation_frequency
-
   type(vertical_grid_configuration_type) :: vertical_grid
 
   logical :: l_lem_dissipation_rate = .true.
@@ -188,7 +186,6 @@ contains
        allocate(wqg_sg_tot(current_state%local_grid%size(Z_INDEX)))
     endif
    
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
     l_lem_dissipation_rate=options_get_logical(current_state%options_database, "l_lem_dissipation_rate")
 
   end subroutine initialisation_callback  
@@ -214,13 +211,14 @@ contains
     
     logical :: use_Ri_for_buoyant_prod=.TRUE.
 
+    if (.not. current_state%diagnostic_sample_timestep) return
+
     C_virtual = (ratio_mol_wts-1.0_DEFAULT_PRECISION)
     jcol=current_state%column_local_y
     icol=current_state%column_local_x
     target_y_index=jcol-current_state%local_grid%halo_size(Y_INDEX)
     target_x_index=icol-current_state%local_grid%halo_size(X_INDEX)
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
       if (current_state%first_timestep_column) then
        sed_tot(:)      = 0.0_DEFAULT_PRECISION 
        ssub_tot(:)     = 0.0_DEFAULT_PRECISION 
@@ -513,7 +511,7 @@ contains
            S23(k)
        enddo 
          
-       do k=2,current_state%local_grid%size(Z_INDEX)-1
+       do k=2,current_state%local_grid%size(Z_INDEX)
          tau33_on_p(k) = current_state%global_grid%configuration%vertical%rhon(k) * 0.5 *&
            (current_state%vis_coefficient%data(k-1,jcol,icol) + &
             current_state%vis_coefficient%data(k,  jcol,icol)) * &
@@ -806,7 +804,7 @@ contains
        ! *********************** Subgrid shear production***************************    
        ! Note - calculating on z levels (i.e. w) 
        !
-       do k=2,current_state%local_grid%size(Z_INDEX)-1   
+       do k=2,current_state%local_grid%size(Z_INDEX)-2
           
           
           !Subgrid shear-------
@@ -848,7 +846,7 @@ contains
        ! Note - calculating on z levels (i.e. w) 
        ! so need  u_i_prime_tau_i on p levels
        
-       do k=2, current_state%local_grid%size(Z_INDEX)      
+       do k=2, current_state%local_grid%size(Z_INDEX)-1
           
           u_i_prime_tau_i(k) = ( 0.5_DEFAULT_PRECISION * &
                (current_state%u%data(k,jcol,icol-1)  + &
@@ -894,7 +892,7 @@ contains
             current_state%global_grid%configuration%vertical%zn(2)  
        
        
-       do k=2, current_state%local_grid%size(Z_INDEX)-1
+       do k=2, current_state%local_grid%size(Z_INDEX)-2
           sed_tot(k)=sed_tot(k) + (u_i_prime_tau_i(k+1)-u_i_prime_tau_i(k)) * &
                current_state%global_grid%configuration%vertical%rdzn(k+1) / &
                current_state%global_grid%configuration%vertical%rho(k)
@@ -905,7 +903,6 @@ contains
        
        !      =======================================================
     endif ! (.not. current_state%halo_column)
-    endif ! ( if diagnostic frequency step )
   end subroutine timestep_callback
 
   !> Field information retrieval callback, this returns information for a specific components published field

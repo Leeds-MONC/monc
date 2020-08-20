@@ -17,8 +17,9 @@ module writer_field_manager_mod
   use io_server_client_mod, only : DOUBLE_DATA_TYPE, INTEGER_DATA_TYPE, STRING_DATA_TYPE, SCALAR_FIELD_TYPE, MAP_FIELD_TYPE
   use logging_mod, only : LOG_WARN, LOG_ERROR, log_log
   use writer_federator_mod, only : is_field_used_by_writer_federator, provide_ordered_field_to_writer_federator, &
-       is_field_split_on_q
+       is_field_split_on_q, is_field_split_on_tracer 
   use writer_types_mod, only : prepare_to_serialise_data_values_type, serialise_data_values_type, unserialise_data_values_type
+  use optionsdatabase_mod, only : options_get_logical
   use io_server_client_mod, only : pack_scalar_field
   use io_server_state_writer_mod, only : set_serialise_write_field_manager_state
   use io_server_state_reader_mod, only : reactivate_writer_field_manager_state
@@ -37,7 +38,7 @@ module writer_field_manager_mod
 
   type field_ordering_type
      type(hashmap_type) :: timestep_to_value
-     integer :: access_mutex, last_timestep_access, frequency
+     integer :: access_mutex, last_timestep_access, frequency, last_time_access
   end type field_ordering_type
 
   interface provide_field_to_writer_federator
@@ -47,6 +48,8 @@ module writer_field_manager_mod
 
   integer, volatile :: field_lock
   type(hashmap_type), volatile :: field_orderings
+  logical :: time_basis
+  real(kind=DEFAULT_PRECISION) :: model_initial_time
 
   public initialise_writer_field_manager, finalise_writer_field_manager, provide_monc_data_to_writer_federator, &
        provide_field_to_writer_federator, is_write_field_manager_up_to_date
@@ -55,9 +58,13 @@ contains
   !> Initialises the writer field manager
   !! @param io_configuration Configuration of the IO server
   !! @param continuation_run Whether or not this is a continuation run
-  subroutine initialise_writer_field_manager(io_configuration, continuation_run)
+  subroutine initialise_writer_field_manager(io_configuration, continuation_run, reconfig_initial_time)
     type(io_configuration_type), intent(inout) :: io_configuration
     logical, intent(in) :: continuation_run
+    real(kind=DEFAULT_PRECISION), intent(in) :: reconfig_initial_time
+
+    model_initial_time = reconfig_initial_time
+    time_basis = options_get_logical(io_configuration%options_database,"time_basis")
 
     call check_thread_status(forthread_rwlock_init(field_lock, -1))
     call set_serialise_write_field_manager_state(serialise_field_manager_state, prepare_to_serialise_field_manager_state, &
@@ -135,7 +142,8 @@ contains
         field_name=io_configuration%data_definitions(data_id)%fields(i)%name
         field_namespace=io_configuration%data_definitions(data_id)%fields(i)%namespace
         if (is_field_present(io_configuration, source, data_id, field_name) .and. &
-             (is_field_used_by_writer_federator(field_name, field_namespace) .or. is_field_split_on_q(field_name))) then
+             (is_field_used_by_writer_federator(field_name, field_namespace) .or. &
+             is_field_split_on_q(field_name) .or. is_field_split_on_tracer(field_name))) then
           monc_value=get_value_from_monc_data(io_configuration, source, data_id, data_dump, field_name, field_namespace)
           call provide_field_to_writer_federator_src(io_configuration, field_name, field_namespace, monc_value, timestep, time, &
                io_configuration%data_definitions(data_id)%frequency, source, terminated_case)
@@ -167,6 +175,7 @@ contains
 
     integer :: field_data_type, field_field_type, i
     integer, dimension(:), allocatable :: int_values
+    real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: real_values
 
     call get_type_of_field(io_configuration%data_definitions(data_id)%fields, field_name, field_namespace, &
          field_field_type, field_data_type)
@@ -175,8 +184,13 @@ contains
     end if
 
     if (field_data_type == DOUBLE_DATA_TYPE) then
-      get_value_from_monc_data%values=get_array_double_from_monc(io_configuration, source, data_id, data_dump, field_name)
+      real_values=get_array_double_from_monc(io_configuration, source, data_id, data_dump, field_name)
+      allocate(get_value_from_monc_data%values(size(real_values)))
+      do i=1,size(real_values)
+        get_value_from_monc_data%values(i)=real_values(i)
+      end do
       get_value_from_monc_data%data_type=DOUBLE_DATA_TYPE
+      deallocate(real_values)
     else if (field_data_type == INTEGER_DATA_TYPE) then
       get_value_from_monc_data%data_type=DOUBLE_DATA_TYPE
       int_values=get_array_integer_from_monc(io_configuration, source, data_id, data_dump, field_name)
@@ -285,7 +299,7 @@ contains
 
     type(field_ordering_type), pointer :: field_ordering
     class(*), pointer :: generic
-    logical :: this_is_termination
+    logical :: this_is_termination, ready_to_provide
 
     if (present(terminated_case)) then
       this_is_termination=terminated_case
@@ -294,15 +308,29 @@ contains
     end if
 
     field_ordering=>get_or_add_field_ordering(field_name, field_namespace, frequency, source)
+
+    if (time_basis) then
+      ready_to_provide = (nint(time) == field_ordering%last_time_access + frequency)
+    else
+      ready_to_provide = (timestep == field_ordering%last_timestep_access + frequency)
+    end if
+
     call check_thread_status(forthread_mutex_lock(field_ordering%access_mutex))
-    if (timestep == field_ordering%last_timestep_access + frequency .or. this_is_termination) then
-      if (.not. this_is_termination) field_ordering%last_timestep_access=timestep
+    if (ready_to_provide .or. this_is_termination) then
+      if (.not. this_is_termination) then
+        field_ordering%last_timestep_access=timestep
+        field_ordering%last_time_access=nint(time)
+      end if
       call provide_ordered_field_to_writer_federator(io_configuration, field_name, field_namespace, &
            field_values, timestep, time, source)
-      if (allocated(field_values%values)) deallocate(field_values%values)      
+      if (allocated(field_values%values)) deallocate(field_values%values)
     else
       generic=>generate_value_container(field_name, field_namespace, field_values, timestep, time, frequency, source)
-      call c_put_generic(field_ordering%timestep_to_value, conv_to_string(timestep), generic, .false.)
+      if (time_basis) then
+        call c_put_generic(field_ordering%timestep_to_value, conv_to_string(nint(time)), generic, .false.)
+      else
+        call c_put_generic(field_ordering%timestep_to_value, conv_to_string(timestep), generic, .false.)
+      end if
     end if
     call process_queued_items(io_configuration, field_ordering)
     call check_thread_status(forthread_mutex_unlock(field_ordering%access_mutex))
@@ -320,11 +348,16 @@ contains
     type(field_ordering_value_type), pointer :: field_ordering_value_at_timestep
 
     do while (.not. c_is_empty(field_ordering%timestep_to_value))
-      next_timestep=field_ordering%last_timestep_access + field_ordering%frequency
+      if (time_basis) then
+        next_timestep=field_ordering%last_time_access + field_ordering%frequency
+      else
+        next_timestep=field_ordering%last_timestep_access + field_ordering%frequency
+      end if
       if (c_contains(field_ordering%timestep_to_value, conv_to_string(next_timestep))) then
         field_ordering_value_at_timestep=>get_field_ordering_value_at_timestep(field_ordering%timestep_to_value, next_timestep)
         call c_remove(field_ordering%timestep_to_value, conv_to_string(next_timestep))
-        field_ordering%last_timestep_access=next_timestep
+        field_ordering%last_timestep_access=field_ordering_value_at_timestep%timestep
+        field_ordering%last_time_access=nint(field_ordering_value_at_timestep%time)
         call provide_ordered_field_to_writer_federator(io_configuration, field_ordering_value_at_timestep%field_name, &
              field_ordering_value_at_timestep%field_namespace, field_ordering_value_at_timestep%field_values, &
              field_ordering_value_at_timestep%timestep, field_ordering_value_at_timestep%time, &
@@ -415,6 +448,10 @@ contains
       if (.not. associated(get_or_add_field_ordering)) then
         allocate(get_or_add_field_ordering)
         get_or_add_field_ordering%last_timestep_access=0
+        get_or_add_field_ordering%last_time_access = merge(                                   &
+                    nint(model_initial_time - mod(real(model_initial_time),real(frequency))), &
+                    0,                                                                        &
+                    frequency .gt. 0 )
         get_or_add_field_ordering%frequency=frequency
         call check_thread_status(forthread_mutex_init(get_or_add_field_ordering%access_mutex, -1))
         generic=>get_or_add_field_ordering
@@ -579,6 +616,7 @@ contains
     class(*), pointer :: generic
     
     current_data_point=pack_scalar_field(byte_data, current_data_point, specific_field_ordering%last_timestep_access)
+    current_data_point=pack_scalar_field(byte_data, current_data_point, specific_field_ordering%last_time_access)
     current_data_point=pack_scalar_field(byte_data, current_data_point, specific_field_ordering%frequency)
     current_data_point=pack_scalar_field(byte_data, current_data_point, c_size(specific_field_ordering%timestep_to_value))
 
@@ -620,6 +658,7 @@ contains
     
     current_data_point=1
     unserialise_specific_field_ordering%last_timestep_access=unpack_scalar_integer_from_bytedata(byte_data, current_data_point)
+    unserialise_specific_field_ordering%last_time_access=unpack_scalar_integer_from_bytedata(byte_data, current_data_point)
     unserialise_specific_field_ordering%frequency=unpack_scalar_integer_from_bytedata(byte_data, current_data_point)
     number_of_values=unpack_scalar_integer_from_bytedata(byte_data, current_data_point)
 

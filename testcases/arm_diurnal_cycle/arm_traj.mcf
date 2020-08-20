@@ -1,0 +1,189 @@
+# Global configuration
+global_configuration=global_config
+
+# Override global component defaults
+fftsolver_enabled=.true.
+pw_advection_enabled=.true.
+simplesetup_enabled=.true.
+smagorinsky_enabled=.true.
+lower_bc_enabled=.true.
+setfluxlook_enabled=.true. #This must be set to true if running with lower_bc
+viscosity_enabled=.true.
+diffusion_enabled=.true.
+simplecloud_enabled=.true.
+coriolis_enabled=.true.
+damping_enabled=.true.
+forcing_enabled=.true. 
+randomnoise_enabled=.true.
+mean_profiles_enabled=.true. #This must be set to true if running with damping
+th_advection_enabled=.true.
+iobridge_enabled=.true.
+scalar_diagnostics_enabled=.true.
+profile_diagnostics_enabled=.true.
+subgrid_profile_diagnostics_enabled=.true.
+flux_budget_enabled=.true.
+tracers_enabled=.true.
+trajectories_enabled=.true.
+radioactive_tracers_enabled=.true.
+showcallbacks=.true.
+
+
+# Control configuration
+display_synopsis_frequency=100
+termination_time=86400.
+dtm=0.4
+
+#Tracer configuration
+n_radioactive_tracers=2
+tracer_decay_rate=4.0, 1.0
+
+# IO server configuration
+ioserver_configuration_file="testcases/arm_diurnal_cycle/traj_test.xml"
+diagnostic_file="diagnostic_files/diagnostics_ts.nc"
+moncs_per_io_server=8
+sampling_frequency=10
+3d_sampling_frequency=60
+mm=60.0
+mm1=60.0
+mm2=60.0
+diag_write_freq=600.0
+
+# Checkpoint configuration
+checkpoint_frequency=0
+checkpoint_file="checkpoint_files/arm_dump.nc"
+check_walltime_frequency=60
+walltime_limit=00:05:00
+
+# Advection choices
+advection_flow_fields=pw
+advection_theta_field=tvd
+advection_q_fields=tvd
+
+# CFL configuration
+cfl_frequency=10
+cfl_cvismax=0.4
+cfl_cvelmax=0.4
+cfl_dtmmax=0.4
+cfl_dtmmin=0.1
+cfl_monitor=.true.   # enable writing of cfl and dtm change information to stdout
+
+# Diagnostic sampling basis (unit selection)
+time_basis=.true.      # logical for sampling and output intervals [ .false. (timestep, DEFAULT) | .true. (time) ]
+
+# Simple setup configuration
+# We'll want to change this reference profile later
+thref0=-9999.0
+surface_pressure=97000.
+surface_reference_pressure=100000.
+x_size=64
+y_size=64
+z_size=100
+dxx=200
+dyy=200
+zztop=4400.0
+kgd=1,100
+hgd=0.0,4400.0
+nsmth=1
+galilean_transformation=.false.
+
+enable_theta=.true.
+number_q_fields=2
+use_anelastic_equations=.true.
+origional_vertical_grid_setup=.true.
+passive_th=.false.
+passive_q=.false.
+backscatter=.false.
+use_viscosity_and_diffusion=.true.
+
+# Initialization of fields
+l_init_pl_theta=.true.
+z_init_pl_theta=0.0, 50.0, 350.0, 650., 700., 1300., 2500., 5500.
+f_init_pl_theta=299.0, 301.5, 302.5, 303.53, 303.7, 307.13, 314.0, 343.2
+l_init_pl_u=.true.
+z_init_pl_u=0.0, 50.0, 350.0, 650.0, 700.0, 1300.0, 2500.0, 5500.0
+f_init_pl_u=10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0
+l_init_pl_v=.false.
+l_init_pl_q=.true.
+names_init_pl_q=vapour
+z_init_pl_q=0.0, 50.0, 350.0, 650.0, 700.0, 1300.0, 2500.0, 5500.0
+f_init_pl_q=15.2e-3, 15.17e-3, 14.98e-3, 14.8e-3, 14.7e-3, 13.5e-3, 3.0e-3, 3.0e-3  
+l_matchthref=.false.
+l_thref=.true.
+z_thref=0.001, 5000.0
+f_thref=300.0, 330.0
+
+# Random noise
+l_rand_pl_theta=.true.
+z_rand_pl_theta=0.0, 200.0, 501.0, 4400.
+f_rand_pl_theta=0.1, 0.0001, 0.0, 0.0
+
+# Simple cloud
+max_height_cloud=5000.
+
+# physical constants
+z0=0.035
+z0th=0.002
+
+# Coriolis
+fcoriol=0.000085
+#baroclinicity_use_geostrophic_shear=.true.
+# Set to .false. in Tom's runs - needs checking.
+baroclinicity_use_geostrophic_shear=.false.
+geostrophic_wind_rate_of_change_in_x=0.0
+geostrophic_wind_rate_of_change_in_y=0.0
+surface_geostrophic_wind_x=10.
+surface_geostrophic_wind_y=0.0
+
+# Damping configuration
+dmptim=0.005
+zdmp=3500.0
+hdmp=750.0
+
+# Subsidence profile
+l_subs_pl_theta=.false.
+z_subs_pl=0.0, 1500.0, 2100.0, 3000.
+f_subs_pl=0.0, 0.0, 0.0, 0.0
+l_subs_pl_q=.false.
+
+#SUBSIDENCE=1, DIVERGENCE=0
+subsidence_input_type=0 
+subsidence_local_theta=.false.
+subsidence_local_q=.false.
+
+# Large-scale forcing
+l_constant_forcing_theta=.false.
+l_constant_forcing_q=.false.
+l_constant_forcing_u=.false.
+l_constant_forcing_v=.false.
+
+# Unit options are K/s or K/day
+units_theta_force=K/day
+z_force_pl_theta=0.0, 1500.0, 2500.0, 3000.
+f_force_pl_theta=0.0, 0.0, 0.0, 0.0
+
+names_constant_forcing_q=vapour
+z_force_pl_q=0.0, 300.0, 500.0, 3000.
+f_force_pl_q=0.0, 0.0, 0.0, 0.0
+# Unit options are kg/kg/s, kg/kg/day, g/kg/s or g/kg/day
+units_q_force=g/kg/s
+
+convert_input_theta_from_temperature=.true.
+
+convert_input_specific_to_mixingratio=.true. # Not yet implemented
+
+# TENDENCY=0, RELAXATION=1, INCREMENTS=2
+constant_forcing_type_theta=0
+constant_forcing_type_q=0
+constant_forcing_type_u=0
+constant_forcing_type_v=0
+
+# surface flux config
+# type_of_surface_boundary_conditions=PRESCRIBED_FLUX=0
+use_surface_boundary_conditions=.true.
+use_time_varying_surface_values= .true.
+type_of_surface_boundary_conditions = 0 
+surface_boundary_input_times = 0, 14400., 23400., 27000., 36000., 45000., 52200.
+surface_latent_heat_flux   = 5., 250., 450., 500., 420., 180., 0.
+surface_sensible_heat_flux = -30., 90., 140., 140., 100., -10., -10.
+
+

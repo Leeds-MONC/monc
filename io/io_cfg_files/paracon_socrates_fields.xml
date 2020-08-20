@@ -1,0 +1,52 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+   1. This data is the same as that contained in socrated_fields.xml from the MONC trunk.
+
+   2. Contains both 3D and 2D fields. 
+
+   3. Requires:
+         socrates_couple_enabled=.true.
+
+-->
+
+<data-definition name="socrates_fields_data" frequency="{3d_sampling_frequency}">
+  <!--   3D fields   -->
+  <field name="flux_up_shortwave" type="array" data_type="double" size="zn,y,x" collective=true optional=true/>
+  <field name="flux_down_shortwave" type="array" data_type="double" size="zn,y,x" collective=true optional=true/>
+  <field name="flux_up_longwave" type="array" data_type="double" size="zn,y,x" collective=true optional=true/>
+  <field name="flux_down_longwave" type="array" data_type="double" size="zn,y,x" collective=true optional=true/>
+  <field name="shortwave_heating_rate" type="array" data_type="double" size="zn,y,x" collective=true optional=true/>
+  <field name="longwave_heating_rate" type="array" data_type="double" size="zn,y,x" collective=true optional=true/>
+  <field name="total_radiative_heating_rate" type="array" data_type="double" size="zn,y,x" collective=true optional=true/>
+
+
+  <!--   2D fields   -->
+  <field name="toa_up_longwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="surface_down_longwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="surface_up_longwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="toa_down_shortwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="toa_up_shortwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="surface_down_shortwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+  <field name="surface_up_shortwave" type="array" data_type="double" size="y,x" collective=true optional=true/>
+
+ </data-definition>
+
+
+<group name="socrates_fields">
+  <member name="flux_up_shortwave"/>
+  <member name="flux_down_shortwave"/>
+  <member name="flux_up_longwave"/>
+  <member name="flux_down_longwave"/>
+  <member name="shortwave_heating_rate"/>
+  <member name="longwave_heating_rate"/>
+  <member name="total_radiative_heating_rate"/>
+
+  <member name="toa_up_longwave"/>
+  <member name="surface_down_longwave"/>
+  <member name="surface_up_longwave"/>
+  <member name="toa_down_shortwave"/>
+  <member name="toa_up_shortwave"/>
+  <member name="surface_down_shortwave"/>
+  <member name="surface_up_shortwave"/>
+ </group>
+

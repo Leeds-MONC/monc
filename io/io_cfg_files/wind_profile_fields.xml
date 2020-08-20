@@ -1,0 +1,43 @@
+<data-definition name="wind_profile_timeseries_fields" frequency="{sampling_frequency}" namespace="wind_profile_fields">
+  <field name="prefn_local" type="array" data_type="double" optional=true />
+  <field name="u_wind_total_local" type="array" data_type="double" optional=true/>
+  <field name="v_wind_total_local" type="array" data_type="double" optional=true/>
+  <field name="w_wind_total_local" type="array" data_type="double" optional=true/>
+  <field name="uu_total_local" type="array" data_type="double" optional=true/>
+  <field name="vv_total_local" type="array" data_type="double" optional=true/>
+</data-definition>
+
+<data-handling namespace="wind_profile_fields">
+   <diagnostic field="prefn"  type="array" data_type="double" size="zn" units="K">
+	<communication name="reduction" operator="mean" result="prefn" field="prefn_local" root="auto"/>
+   </diagnostic>
+  <diagnostic field="u_wind_mean"  type="array" data_type="double" size="zn" units="m/s">
+	<operator name="arithmetic" result="u_wind_mean" equation="u_wind_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="u_wind_mean_g" field="u_wind_total_local" root="auto"/>
+  </diagnostic>
+   <diagnostic field="v_wind_mean"  type="array" data_type="double" size="zn" units="m/s">
+	<operator name="arithmetic" result="v_wind_mean" equation="v_wind_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="v_wind_mean_g" field="v_wind_total_local" root="auto"/>
+   </diagnostic>
+     <diagnostic field="w_wind_mean"  type="array" data_type="double" size="z" units="K">
+	<operator name="arithmetic" result="w_wind_mean" equation="w_wind_total_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="w_wind_total_g" field="w_wind_total_local" root="auto"/>
+  </diagnostic>   
+  <diagnostic field="uu_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+	<operator name="arithmetic" result="uu_mean" equation="uu_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="uu_mean_g" field="uu_total_local" root="auto"/>
+  </diagnostic> 
+  <diagnostic field="vv_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
+	<operator name="arithmetic" result="vv_mean" equation="vv_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="vv_mean_g" field="vv_total_local" root="auto"/>
+  </diagnostic>  
+</data-handling>
+
+<group name="wind_profile_timeseries" namespace="wind_profile_fields">
+  <member name="prefn"/>
+  <member name="u_wind_mean"/>
+  <member name="v_wind_mean"/>
+  <member name="w_wind_mean"/>
+  <member name="uu_mean"/>
+  <member name="vv_mean"/>
+</group>

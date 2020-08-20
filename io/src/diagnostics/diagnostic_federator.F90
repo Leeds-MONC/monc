@@ -27,8 +27,10 @@ module diagnostic_federator_mod
   use logging_mod, only : LOG_WARN, LOG_ERROR, log_log
   use operator_mod, only : perform_activity, initialise_operators, finalise_operators, get_operator_required_fields, &
        get_operator_perform_procedure, get_operator_auto_size
+  use optionsdatabase_mod, only : options_get_logical
   use io_server_client_mod, only : DOUBLE_DATA_TYPE, INTEGER_DATA_TYPE
   use writer_field_manager_mod, only : provide_field_to_writer_federator
+  use iso_c_binding, only : c_f_procpointer
   implicit none
 
 #ifndef TEST_MODE
@@ -79,6 +81,8 @@ module diagnostic_federator_mod
   integer, volatile :: timestep_entries_rwlock, all_diagnostics_per_timestep_rwlock, clean_progress_mutex, &
        previous_clean_point, previous_viewed_timestep, current_point
 
+  logical :: time_basis
+
  public initialise_diagnostic_federator, finalise_diagnostic_federator, check_diagnostic_federator_for_completion, &
       pass_fields_to_diagnostics_federator, determine_diagnostics_fields_available
 contains  
@@ -88,6 +92,8 @@ contains
   !! @returns The map of diagnostic fields to the frequency (in timesteps) of generation
   type(hashmap_type) function initialise_diagnostic_federator(io_configuration)
     type(io_configuration_type), intent(inout) :: io_configuration
+
+    time_basis = options_get_logical(io_configuration%options_database,"time_basis")
 
     call initialise_operators()
     call check_thread_status(forthread_rwlock_init(timestep_entries_rwlock, -1))
@@ -142,7 +148,7 @@ contains
     type(hashset_type), intent(inout) :: monc_field_names
 
     integer :: i, k, num_fields, diag_root
-    type(diagnostics_activity_type) :: specific_activity
+    type(diagnostics_activity_type), pointer :: specific_activity
     type(hashset_type) :: result_names_for_activities
     type(iterator_type) :: required_fields_iterator, activities_iterator
     character(len=STRING_LENGTH) :: specific_field_name
@@ -155,13 +161,13 @@ contains
       diagnostic_provided=.true.
       activities_iterator=c_get_iterator(diagnostic_definitions(i)%activities)
       do while (c_has_next(activities_iterator))
-        specific_activity=retrieve_next_activity(activities_iterator)
+        specific_activity=>retrieve_next_activity(activities_iterator)
         call c_add_string(result_names_for_activities, specific_activity%result_name)
       end do
 
       activities_iterator=c_get_iterator(diagnostic_definitions(i)%activities)
       do while (c_has_next(activities_iterator))
-        specific_activity=retrieve_next_activity(activities_iterator)
+        specific_activity=>retrieve_next_activity(activities_iterator)
         if (specific_activity%root .ne. -1 .and. diag_root == -1) diag_root=specific_activity%root
         required_fields_iterator=c_get_iterator(specific_activity%required_fields)
         do while (c_has_next(required_fields_iterator))
@@ -237,7 +243,7 @@ contains
     type(diagnostics_activity_type), pointer :: activity
     character(len=STRING_LENGTH) :: field_name, activity_diag_key
     logical :: updated_entry, entry_in_completed_diagnostics, operator_produced_values
-    type(data_values_type) :: value_to_send
+    type(data_values_type), pointer :: value_to_send
     type(iterator_type) :: activities_iterator
 
     updated_entry=.true.
@@ -269,7 +275,7 @@ contains
                      .or. activity%activity_type == ALLREDUCTION_TYPE) then
                   field_name=c_get_string(activity%required_fields, 1)
                   call check_thread_status(forthread_rwlock_rdlock(timestep_entry%completed_fields_rwlock))
-                  value_to_send=get_data_value_by_field_name(timestep_entry%completed_fields, field_name)
+                  value_to_send=>get_data_value_by_field_name(timestep_entry%completed_fields, field_name)
                   call check_thread_status(forthread_rwlock_unlock(timestep_entry%completed_fields_rwlock))
                   call check_thread_status(forthread_mutex_unlock(timestep_entry%activity_completion_mutex))
                   call perform_inter_io_communication(io_configuration, timestep_entry, diagnostics_by_timestep, &
@@ -484,7 +490,7 @@ contains
       iterator=c_get_iterator(activity%required_fields)
       do while (c_has_next(iterator))
         field_name=c_next_string(iterator)
-        if (.not. c_contains(timestep_entry%completed_fields, field_name)) then          
+        if (.not. c_contains(timestep_entry%completed_fields, field_name)) then  
           are_fields_available_for_activity=.false.
           exit
         end if
@@ -842,6 +848,7 @@ contains
 
     type(iterator_type) :: iterator
     integer :: i, matched_datadefn_index
+    logical :: expect_data
 
     allocate(create_timestep_entry)
     create_timestep_entry%timestep=timestep
@@ -850,12 +857,21 @@ contains
     create_timestep_entry%source=source
     create_timestep_entry%source_location=get_monc_location(io_configuration, source)
     create_timestep_entry%number_datas_outstanding=0
+
+    ! Count all data_definitions that have this frequency
+    ! i.e. create_timestep_entry%number_datas_outstanding = number of expected data packages at this timestep_entry
     do i=1, size(io_configuration%registered_moncs(create_timestep_entry%source_location)%definition_names)
       matched_datadefn_index=retrieve_data_definition(io_configuration, &
            io_configuration%registered_moncs(create_timestep_entry%source_location)%definition_names(i))
       if (matched_datadefn_index .gt. 0) then
-        if (io_configuration%data_definitions(matched_datadefn_index)%frequency .gt. 0) then
-          if (mod(timestep, io_configuration%data_definitions(matched_datadefn_index)%frequency) == 0) then
+        if (io_configuration%data_definitions(matched_datadefn_index)%frequency .gt. 0 ) then
+          if (time_basis) then
+            expect_data = (mod(nint(time), io_configuration%data_definitions(matched_datadefn_index)%frequency) == 0)
+          else
+            expect_data = (mod(timestep, io_configuration%data_definitions(matched_datadefn_index)%frequency) == 0)
+          end if
+
+          if (expect_data) then
             create_timestep_entry%number_datas_outstanding=create_timestep_entry%number_datas_outstanding+1
           end if
         end if
@@ -1142,7 +1158,7 @@ contains
               item%activity_name=activity_name
               item%required_fields=get_operator_required_fields(activity_name, misc_action%embellishments)
               item%activity_attributes=misc_action%embellishments
-              item%operator_procedure=>get_operator_perform_procedure(activity_name)
+              call c_f_procpointer(get_operator_perform_procedure(activity_name), item%operator_procedure)
               item%activity_type=OPERATOR_TYPE          
             else if (misc_action%type .eq. "communication") then
               if (item%root .lt. 0) call log_log(LOG_ERROR, "Root must be supplied and 0 or greater for communication actions")

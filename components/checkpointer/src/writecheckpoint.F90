@@ -18,7 +18,9 @@ module checkpointer_write_checkpoint_mod
        ZU_KEY, ZV_KEY, ZW_KEY, X_KEY, Y_KEY, Z_KEY, ZN_KEY, NQFIELDS, UGAL, VGAL, TIME_KEY, TIMESTEP, MAX_STRING_LENGTH, &
        CREATED_ATTRIBUTE_KEY, TITLE_ATTRIBUTE_KEY, ABSOLUTE_NEW_DTM_KEY, DTM_KEY, DTM_NEW_KEY, Q_INDICES_KEY, &
        Q_INDICES_DIM_KEY, X_RESOLUTION, Y_RESOLUTION,X_TOP, Y_TOP, X_BOTTOM, Y_BOTTOM, THREF, OLUBAR, OLZUBAR, OLVBAR, &
-       OLZVBAR, OLTHBAR, OLZTHBAR, OLQBAR, OLZQBAR, check_status, WUP, WDWN
+       OLZVBAR, OLTHBAR, OLZTHBAR, OLQBAR, OLZQBAR, check_status, WUP, WDWN, &
+       NTRACERS_KEY, NRADTRACERS_KEY, TRACER_DIM_KEY, TRACER_KEY, ZTRACER_KEY, NORMAL_STEP_KEY, &
+       RAD_LAST_TIME_KEY, LAST_CFL_TIMESTEP_KEY
   use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use q_indices_mod, only : q_metadata_type, get_max_number_q_indices, get_indices_descriptor, get_number_active_q_indices
   use mpi, only : MPI_INFO_NULL
@@ -44,7 +46,8 @@ contains
     integer :: ncid, z_dim_id, y_dim_id, x_dim_id, q_dim_id, x_id, y_id, z_id, th_id, p_id, time_id,&
          u_id, v_id, w_id, q_id, zu_id, zv_id, zw_id, zth_id, zq_id, timestep_id, ugal_id, &
          vgal_id, number_q_fields_id, string_dim_id, key_value_dim_id, options_id, q_indices_id, &
-         dtm_id, dtm_new_id, absolute_new_dtm_id
+         dtm_id, dtm_new_id, absolute_new_dtm_id, tr_dim_id, tr_id, ztr_id, n_tracers_id, n_rad_tracers_id, &
+         normal_step_id, rad_last_time_id, last_cfl_timestep_id
     logical :: q_indices_declared
 
 #ifdef SINGLE_MONC_DO_SEQUENTIAL_NETCDF
@@ -61,6 +64,7 @@ contains
     call write_out_global_attributes(ncid)
     call define_grid_dimensions(current_state, ncid, z_dim_id, y_dim_id, x_dim_id)    
     if (current_state%number_q_fields .gt. 0) call define_q_field_dimension(current_state, ncid, q_dim_id)
+    if (current_state%n_tracers .gt. 0) call define_tr_field_dimension(current_state, ncid, tr_dim_id)
 
     call define_options_variable(current_state, ncid, string_dim_id, key_value_dim_id, options_id)
     q_indices_declared=define_q_indices_variable(ncid, string_dim_id, key_value_dim_id, q_indices_id)
@@ -68,21 +72,26 @@ contains
     call define_mean_fields(current_state, ncid)
     if (current_state%number_q_fields .gt. 0) call define_q_variable(ncid, current_state%parallel%processes .gt. 1, &
          q_dim_id, z_dim_id, y_dim_id, x_dim_id, q_id, zq_id)
+    if (current_state%n_tracers .gt. 0) call define_tr_variable(ncid, current_state%parallel%processes .gt. 1, &
+         tr_dim_id, z_dim_id, y_dim_id, x_dim_id, tr_id, ztr_id)
     call define_prognostic_variables(current_state, current_state%parallel%processes .gt. 1, ncid, z_dim_id, y_dim_id, &
          x_dim_id, u_id, v_id, w_id, th_id, p_id, zu_id, zv_id, zw_id, zth_id)
     call define_misc_variables(ncid, timestep_id, time_id, ugal_id, vgal_id, number_q_fields_id, &
-         dtm_id, dtm_new_id, absolute_new_dtm_id)
+         dtm_id, dtm_new_id, absolute_new_dtm_id, n_tracers_id, n_rad_tracers_id, normal_step_id, &
+         rad_last_time_id, last_cfl_timestep_id)
 
     call check_status(nf90_enddef(ncid))
 
     if (current_state%parallel%my_rank==0) call write_out_grid(ncid, current_state%global_grid)
     if (current_state%parallel%my_rank==0) call write_out_mean_fields(ncid, current_state%global_grid)
-    call write_out_all_fields(current_state, ncid, u_id, v_id, w_id, zu_id, zv_id, zw_id, th_id, zth_id, q_id, zq_id, p_id)
+    call write_out_all_fields(current_state, ncid, u_id, v_id, w_id, zu_id, zv_id, zw_id, th_id, zth_id, q_id, zq_id, &
+      p_id, tr_id, ztr_id)
     if (current_state%parallel%my_rank==0) then
       call write_out_options(current_state, ncid, options_id)
       if (q_indices_declared) call write_out_q_indices(ncid, q_indices_id)
       call write_out_misc_variables(current_state, ncid, timestep_id, time_id, &
-           ugal_id, vgal_id, number_q_fields_id, dtm_id, dtm_new_id, absolute_new_dtm_id)
+           ugal_id, vgal_id, number_q_fields_id, dtm_id, dtm_new_id, absolute_new_dtm_id, n_tracers_id, n_rad_tracers_id, &
+           normal_step_id, rad_last_time_id, last_cfl_timestep_id)
     end if
 
     !> writeout pdf fields in checkpoint file
@@ -166,9 +175,10 @@ contains
   !! @param u_id The NetCDF u field dimension id
   !! @param v_id The NetCDF v field dimension id
   !! @param w_id The NetCDF w field dimension id
-  subroutine write_out_all_fields(current_state, ncid, u_id, v_id, w_id, zu_id, zv_id, zw_id, th_id, zth_id, q_id, zq_id, p_id)
+  subroutine write_out_all_fields(current_state, ncid, u_id, v_id, w_id, zu_id, zv_id, zw_id, th_id, zth_id, q_id, zq_id, &
+               p_id, tr_id, ztr_id)
     type(model_state_type), intent(inout) :: current_state
-    integer, intent(in) :: ncid, u_id, v_id, w_id, zu_id, zv_id, zw_id, th_id, zth_id, q_id, zq_id, p_id
+    integer, intent(in) :: ncid, u_id, v_id, w_id, zu_id, zv_id, zw_id, th_id, zth_id, q_id, zq_id, p_id, tr_id, ztr_id
 
     integer :: i
     logical :: multi_process
@@ -196,6 +206,12 @@ contains
       if (current_state%q(i)%active) then
         call write_out_velocity_field(ncid, current_state%local_grid, current_state%q(i), q_id, multi_process, i)
         call write_out_velocity_field(ncid, current_state%local_grid, current_state%zq(i), zq_id, multi_process, i)
+      end if
+    end do
+    do i=1,current_state%n_tracers
+      if (current_state%tracer(i)%active) then
+        call write_out_velocity_field(ncid, current_state%local_grid, current_state%tracer(i), tr_id, multi_process, i)
+        call write_out_velocity_field(ncid, current_state%local_grid, current_state%ztracer(i), ztr_id, multi_process, i)
       end if
     end do
   end subroutine write_out_all_fields
@@ -393,6 +409,18 @@ contains
     call check_status(nf90_def_dim(ncid, Q_DIM_KEY, current_state%number_q_fields, q_dim_id))
   end subroutine define_q_field_dimension
 
+  !> Defines the tracer field dimension in the NetCDF
+  !! @param current_state The current model state_mod
+  !! @param ncid The NetCDF file id
+  !! @param tr_dim_id Corresponding NetCDF tracer dimension id
+  subroutine define_tr_field_dimension(current_state, ncid, tr_dim_id)
+    type(model_state_type), intent(inout) :: current_state
+    integer, intent(in) :: ncid
+    integer, intent(out) :: tr_dim_id
+
+    call check_status(nf90_def_dim(ncid, TRACER_DIM_KEY, current_state%n_tracers, tr_dim_id))
+  end subroutine define_tr_field_dimension
+
   !> Will define the grid dimensions and works for 1, 2 or 3D grids_mod
   !! @param current_state The current model state_mod
   !! @param ncid The NetCDF file id
@@ -540,6 +568,38 @@ contains
     end if
   end subroutine define_q_variable
 
+  !> Defines the tracer variable in the checkpoint file
+  !! @param ncid The NetCDF file id
+  !! @param multi_process Whether to support parallel IO operations or not
+  !! @param tr_dim_id The NetCDF tr dimension id
+  !! @param z_dim_id The NetCDF z dimension id
+  !! @param y_dim_id The NetCDF y dimension id
+  !! @param x_dim_id The NetCDF x dimension id
+  !! @param tr_id The NetCDF tracer variable id provided by this procedure
+  !! @param ztr_id The NetCDF ztracer variable id provided by this procedure
+  subroutine define_tr_variable(ncid, multi_process, tr_dim_id, z_dim_id, y_dim_id, x_dim_id, tr_id, ztr_id)
+    logical, intent(in) :: multi_process
+    integer, intent(in) :: ncid, z_dim_id, y_dim_id, x_dim_id, tr_dim_id
+    integer, intent(out) :: tr_id, ztr_id
+
+    integer, dimension(:), allocatable :: dimids
+
+    allocate(dimids(4))
+    dimids = (/ z_dim_id, y_dim_id, x_dim_id, tr_dim_id /)
+
+    call check_status(nf90_def_var(ncid, TRACER_KEY, merge(NF90_DOUBLE, NF90_REAL, &
+         DEFAULT_PRECISION == DOUBLE_PRECISION), dimids, tr_id))
+    call check_status(nf90_def_var(ncid, ZTRACER_KEY, merge(NF90_DOUBLE, NF90_REAL, &
+         DEFAULT_PRECISION == DOUBLE_PRECISION), dimids, ztr_id))
+    
+    if (multi_process) then
+      call check_status(nf90_def_var_fill(ncid, tr_id, 1, 1))
+      call check_status(nf90_def_var_fill(ncid, ztr_id, 1, 1))
+      call check_status(nf90_var_par_access(ncid, tr_id, NF90_COLLECTIVE))
+      call check_status(nf90_var_par_access(ncid, ztr_id, NF90_COLLECTIVE))
+    end if
+  end subroutine define_tr_variable
+
   !> Defines prognostic variables in the NetCDF. This handles 1, 2 and 3D grids_mod and 1, 2 and 3D fields, which
   !! most likely have the same dimensions but this is not mandatory here. All prognostic fields are 3D, if
   !! the grid is not 3D then the empty (size 1) dimension is used in that dimension
@@ -584,9 +644,11 @@ contains
   !! @param ncid The NetCDF file id
   !! @param timestep_id The NetCDF timestep variable
   subroutine define_misc_variables(ncid, timestep_id, time_id, ugal_id, vgal_id, number_q_fields_id, &
-       dtm_id, dtm_new_id, absolute_new_dtm_id)
+       dtm_id, dtm_new_id, absolute_new_dtm_id, n_tracers_id, n_rad_tracers_id, normal_step_id, &
+       rad_last_time_id, last_cfl_timestep_id)
     integer, intent(in) :: ncid
-    integer, intent(out) :: timestep_id, time_id, ugal_id, vgal_id, number_q_fields_id, dtm_id, dtm_new_id, absolute_new_dtm_id
+    integer, intent(out) :: timestep_id, time_id, ugal_id, vgal_id, number_q_fields_id, dtm_id, dtm_new_id, absolute_new_dtm_id, &
+      n_tracers_id, n_rad_tracers_id, normal_step_id, rad_last_time_id, last_cfl_timestep_id
 
     call check_status(nf90_def_var(ncid, TIMESTEP, NF90_INT, timestep_id))
     call check_status(nf90_def_var(ncid, TIME_KEY, NF90_DOUBLE, time_id))
@@ -596,6 +658,11 @@ contains
     call check_status(nf90_def_var(ncid, DTM_KEY, NF90_DOUBLE, dtm_id))
     call check_status(nf90_def_var(ncid, DTM_NEW_KEY, NF90_DOUBLE, dtm_new_id))
     call check_status(nf90_def_var(ncid, ABSOLUTE_NEW_DTM_KEY, NF90_DOUBLE, absolute_new_dtm_id))
+    call check_status(nf90_def_var(ncid, NTRACERS_KEY, NF90_INT, n_tracers_id))
+    call check_status(nf90_def_var(ncid, NRADTRACERS_KEY, NF90_INT, n_rad_tracers_id))
+    call check_status(nf90_def_var(ncid, NORMAL_STEP_KEY, NF90_INT, normal_step_id))
+    call check_status(nf90_def_var(ncid, RAD_LAST_TIME_KEY, NF90_DOUBLE, rad_last_time_id))
+    call check_status(nf90_def_var(ncid, LAST_CFL_TIMESTEP_KEY, NF90_INT, last_cfl_timestep_id))
   end subroutine define_misc_variables
 
   !> Will dump out (write) misc model data to the checkpoint
@@ -603,10 +670,12 @@ contains
   !! @param ncid The NetCDF file id
   !! @param timestep_id The NetCDF timestep variable id
   subroutine write_out_misc_variables(current_state, ncid, timestep_id, time_id, ugal_id, &
-       vgal_id, number_q_fields_id, dtm_id, dtm_new_id, absolute_new_dtm_id)
+       vgal_id, number_q_fields_id, dtm_id, dtm_new_id, absolute_new_dtm_id, n_tracers_id, n_rad_tracers_id, &
+       normal_step_id, rad_last_time_id, last_cfl_timestep_id)
     type(model_state_type), intent(inout) :: current_state
     integer, intent(in) :: ncid, timestep_id, time_id, ugal_id, vgal_id, number_q_fields_id, &
-         dtm_id, dtm_new_id, absolute_new_dtm_id
+         dtm_id, dtm_new_id, absolute_new_dtm_id, n_tracers_id, n_rad_tracers_id, normal_step_id, &
+         rad_last_time_id, last_cfl_timestep_id
 
     call check_status(nf90_put_var(ncid, timestep_id, current_state%timestep))
     ! The time is incremented with dtm as the model was about to increment for the next step and this is needed for diagnostics
@@ -617,6 +686,15 @@ contains
     call check_status(nf90_put_var(ncid, dtm_id, current_state%dtm))
     call check_status(nf90_put_var(ncid, dtm_new_id, current_state%dtm_new))
     call check_status(nf90_put_var(ncid, absolute_new_dtm_id, current_state%absolute_new_dtm))
+    call check_status(nf90_put_var(ncid, n_tracers_id, current_state%n_tracers))
+    call check_status(nf90_put_var(ncid, n_rad_tracers_id, current_state%n_radioactive_tracers))
+    if (current_state%normal_step) then 
+      call check_status(nf90_put_var(ncid, normal_step_id, 1))
+    else
+      call check_status(nf90_put_var(ncid, normal_step_id, 0))
+    end if
+    call check_status(nf90_put_var(ncid, rad_last_time_id, current_state%rad_last_time))
+    call check_status(nf90_put_var(ncid, last_cfl_timestep_id, current_state%last_cfl_timestep))
   end subroutine write_out_misc_variables
 
   !> Will define a single velocity variable in the NetCDF file

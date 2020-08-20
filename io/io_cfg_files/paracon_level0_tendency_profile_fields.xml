@@ -1,0 +1,626 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+   1.  This set of fields consists of the full set of fields available from tendency_profile_fields.xml 
+       (found on the trunk) and the microphysical tendency terms found in profile_fields.xml.
+
+   2.  Terms are separated by MONC source component with line breaks.
+
+   3.  DO NOT expect all of these field to be written.  They WILL NOT.  In particular, advection and 
+       microphysics routine choices will switch on/off specific componenets.  Also, it may be the case
+       that not all water species are specified in a given configuration.
+
+   4.  Obtaining 'mphys' tendencies from CASIM requires:
+         casim_profile_dgs_enabled=.true.
+-->
+
+<data-definition name="tendency_profile_timeseries_fields" frequency="{sampling_frequency}" namespace="tendency_profile_fields">
+  <field name="tend_u_pwadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_v_pwadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_w_pwadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_th_pwadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qv_pwadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_ql_pwadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qi_pwadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qr_pwadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qs_pwadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qg_pwadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_pwadvection_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_u_tvdadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_v_tvdadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_w_tvdadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_th_tvdadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qv_tvdadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_ql_tvdadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qi_tvdadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qr_tvdadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qs_tvdadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qg_tvdadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_tvdadvection_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_th_thadvection_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_thadvection_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_th_diffusion_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qv_diffusion_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_ql_diffusion_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qi_diffusion_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qr_diffusion_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qs_diffusion_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qg_diffusion_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_diffusion_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_u_viscosity_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_v_viscosity_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_w_viscosity_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_w_buoyancy_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_u_forcing_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_v_forcing_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_th_forcing_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qv_forcing_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_ql_forcing_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qi_forcing_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qr_forcing_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qs_forcing_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qg_forcing_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_forcing_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_u_damping_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_v_damping_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_w_damping_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_th_damping_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qv_damping_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_ql_damping_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qi_damping_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qr_damping_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qs_damping_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qg_damping_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_damping_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_u_coriolis_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_v_coriolis_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_th_socrates_profile_longwave_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_th_socrates_profile_shortwave_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_th_socrates_profile_total_radiative_heating_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_socrates_profile_longwave_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_socrates_profile_shortwave_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_socrates_profile_total_radiative_heating_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_th_lwrad_exponential_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_lwrad_exponential_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_th_simplecloud_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qv_simplecloud_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_ql_simplecloud_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_simplecloud_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_th_total_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qv_total_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_ql_total_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qi_total_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qr_total_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qs_total_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_qg_total_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_total_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_u_pstep_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_v_pstep_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_w_pstep_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_u_total_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_v_total_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_w_total_profile_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="dth_mphys_total" type="array" data_type="double" optional=true/>
+  <field name="dqv_mphys_total" type="array" data_type="double" optional=true/>
+  <field name="dqc_mphys_total" type="array" data_type="double" optional=true/>
+  <field name="dqr_mphys_total" type="array" data_type="double" optional=true/>
+  <field name="dqi_mphys_total" type="array" data_type="double" optional=true/>
+  <field name="dqs_mphys_total" type="array" data_type="double" optional=true/>
+  <field name="dqg_mphys_total" type="array" data_type="double" optional=true/>
+
+</data-definition>
+
+
+<data-handling namespace="tendency_profile_fields">
+
+  <diagnostic field="tend_u_pwa_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_u_pwa_mean" equation="tend_u_pwa_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_u_pwa_total_g" field="tend_u_pwadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_v_pwa_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_v_pwa_mean" equation="tend_v_pwa_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_v_pwa_total_g" field="tend_v_pwadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_w_pwa_mean"  type="array" data_type="double" size="z" units="m/s^2">
+     <operator name="arithmetic" result="tend_w_pwa_mean" equation="tend_w_pwa_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_w_pwa_total_g" field="tend_w_pwadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_th_pwa_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_pwa_mean" equation="tend_th_pwa_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_pwa_total_g" field="tend_th_pwadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qv_pwa_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qv_pwa_mean" equation="tend_qv_pwa_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qv_pwa_total_g" field="tend_qv_pwadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_ql_pwa_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_ql_pwa_mean" equation="tend_ql_pwa_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_ql_pwa_total_g" field="tend_ql_pwadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qi_pwa_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qi_pwa_mean" equation="tend_qi_pwa_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qi_pwa_total_g" field="tend_qi_pwadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qr_pwa_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qr_pwa_mean" equation="tend_qr_pwa_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qr_pwa_total_g" field="tend_qr_pwadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qs_pwa_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qs_pwa_mean" equation="tend_qs_pwa_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qs_pwa_total_g" field="tend_qs_pwadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qg_pwa_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qg_pwa_mean" equation="tend_qg_pwa_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qg_pwa_total_g" field="tend_qg_pwadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_pwa_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_pwa_mean" equation="tend_tabs_pwa_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_pwa_total_g" field="tend_tabs_pwadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_u_tvda_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_u_tvda_mean" equation="tend_u_tvda_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_u_tvda_total_g" field="tend_u_tvdadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_v_tvda_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_v_tvda_mean" equation="tend_v_tvda_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_v_tvda_total_g" field="tend_v_tvdadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_w_tvda_mean"  type="array" data_type="double" size="z" units="m/s^2">
+     <operator name="arithmetic" result="tend_w_tvda_mean" equation="tend_w_tvda_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_w_tvda_total_g" field="tend_w_tvdadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_th_tvda_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_tvda_mean" equation="tend_th_tvda_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_tvda_total_g" field="tend_th_tvdadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qv_tvda_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qv_tvda_mean" equation="tend_qv_tvda_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qv_tvda_total_g" field="tend_qv_tvdadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_ql_tvda_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_ql_tvda_mean" equation="tend_ql_tvda_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_ql_tvda_total_g" field="tend_ql_tvdadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qi_tvda_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qi_tvda_mean" equation="tend_qi_tvda_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qi_tvda_total_g" field="tend_qi_tvdadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qr_tvda_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qr_tvda_mean" equation="tend_qr_tvda_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qr_tvda_total_g" field="tend_qr_tvdadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qs_tvda_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qs_tvda_mean" equation="tend_qs_tvda_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qs_tvda_total_g" field="tend_qs_tvdadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qg_tvda_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qg_tvda_mean" equation="tend_qg_tvda_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qg_tvda_total_g" field="tend_qg_tvdadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_tvda_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_tvda_mean" equation="tend_tabs_tvda_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_tvda_total_g" field="tend_tabs_tvdadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_th_tha_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_tha_mean" equation="tend_th_tha_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_tha_total_g" field="tend_th_thadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_tha_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_tha_mean" equation="tend_tabs_tha_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_tha_total_g" field="tend_tabs_thadvection_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_th_diff_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_diff_mean" equation="tend_th_diff_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_diff_total_g" field="tend_th_diffusion_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qv_diff_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qv_diff_mean" equation="tend_qv_diff_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qv_diff_total_g" field="tend_qv_diffusion_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_ql_diff_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_ql_diff_mean" equation="tend_ql_diff_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_ql_diff_total_g" field="tend_ql_diffusion_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qi_diff_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qi_diff_mean" equation="tend_qi_diff_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qi_diff_total_g" field="tend_qi_diffusion_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qr_diff_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qr_diff_mean" equation="tend_qr_diff_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qr_diff_total_g" field="tend_qr_diffusion_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qs_diff_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qs_diff_mean" equation="tend_qs_diff_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qs_diff_total_g" field="tend_qs_diffusion_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qg_diff_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qg_diff_mean" equation="tend_qg_diff_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qg_diff_total_g" field="tend_qg_diffusion_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_diff_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_diff_mean" equation="tend_tabs_diff_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_diff_total_g" field="tend_tabs_diffusion_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_u_vis_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_u_vis_mean" equation="tend_u_vis_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_u_vis_total_g" field="tend_u_viscosity_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_v_vis_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_v_vis_mean" equation="tend_v_vis_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_v_vis_total_g" field="tend_v_viscosity_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_w_vis_mean"  type="array" data_type="double" size="z" units="m/s^2">
+     <operator name="arithmetic" result="tend_w_vis_mean" equation="tend_w_vis_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_w_vis_total_g" field="tend_w_viscosity_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_w_buo_mean"  type="array" data_type="double" size="z" units="m/s^2">
+     <operator name="arithmetic" result="tend_w_buo_mean" equation="tend_w_buo_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_w_buo_total_g" field="tend_w_buoyancy_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_u_for_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_u_for_mean" equation="tend_u_for_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_u_for_total_g" field="tend_u_forcing_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_v_for_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_v_for_mean" equation="tend_v_for_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_v_for_total_g" field="tend_v_forcing_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_th_for_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_for_mean" equation="tend_th_for_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_for_total_g" field="tend_th_forcing_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qv_for_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qv_for_mean" equation="tend_qv_for_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qv_for_total_g" field="tend_qv_forcing_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_ql_for_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_ql_for_mean" equation="tend_ql_for_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_ql_for_total_g" field="tend_ql_forcing_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qi_for_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qi_for_mean" equation="tend_qi_for_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qi_for_total_g" field="tend_qi_forcing_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qr_for_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qr_for_mean" equation="tend_qr_for_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qr_for_total_g" field="tend_qr_forcing_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qs_for_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qs_for_mean" equation="tend_qs_for_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qs_for_total_g" field="tend_qs_forcing_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qg_for_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qg_for_mean" equation="tend_qg_for_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qg_for_total_g" field="tend_qg_forcing_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_for_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_for_mean" equation="tend_tabs_for_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_for_total_g" field="tend_tabs_forcing_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_u_dam_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_u_dam_mean" equation="tend_u_dam_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_u_dam_total_g" field="tend_u_damping_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_v_dam_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_v_dam_mean" equation="tend_v_dam_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_v_dam_total_g" field="tend_v_damping_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_w_dam_mean"  type="array" data_type="double" size="z" units="m/s^2">
+     <operator name="arithmetic" result="tend_w_dam_mean" equation="tend_w_dam_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_w_dam_total_g" field="tend_w_damping_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_th_dam_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_dam_mean" equation="tend_th_dam_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_dam_total_g" field="tend_th_damping_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qv_dam_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qv_dam_mean" equation="tend_qv_dam_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qv_dam_total_g" field="tend_qv_damping_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_ql_dam_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_ql_dam_mean" equation="tend_ql_dam_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_ql_dam_total_g" field="tend_ql_damping_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qi_dam_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qi_dam_mean" equation="tend_qi_dam_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qi_dam_total_g" field="tend_qi_damping_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qr_dam_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qr_dam_mean" equation="tend_qr_dam_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qr_dam_total_g" field="tend_qr_damping_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qs_dam_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qs_dam_mean" equation="tend_qs_dam_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qs_dam_total_g" field="tend_qs_damping_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qg_dam_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qg_dam_mean" equation="tend_qg_dam_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qg_dam_total_g" field="tend_qg_damping_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_dam_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_dam_mean" equation="tend_tabs_dam_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_dam_total_g" field="tend_tabs_damping_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_u_cor_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_u_cor_mean" equation="tend_u_cor_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_u_cor_total_g" field="tend_u_coriolis_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_v_cor_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_v_cor_mean" equation="tend_v_cor_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_v_cor_total_g" field="tend_v_coriolis_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_th_socrates_longwave_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_socrates_longwave_mean" equation="tend_th_socrates_lw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_socrates_lw_total_g" field="tend_th_socrates_profile_longwave_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_th_socrates_shortwave_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_socrates_shortwave_mean" equation="tend_th_socrates_sw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_socrates_sw_total_g" field="tend_th_socrates_profile_shortwave_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_th_socrates_total_radiative_heating_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_socrates_total_radiative_heating_mean" equation="tend_th_socrates_trh_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_socrates_trh_total_g" field="tend_th_socrates_profile_total_radiative_heating_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_socrates_longwave_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_socrates_longwave_mean" equation="tend_tabs_socrates_lw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_socrates_lw_total_g" field="tend_tabs_socrates_profile_longwave_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_socrates_shortwave_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_socrates_shortwave_mean" equation="tend_tabs_socrates_sw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_socrates_sw_total_g" field="tend_tabs_socrates_profile_shortwave_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_socrates_total_radiative_heating_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_socrates_total_radiative_heating_mean" equation="tend_tabs_socrates_trh_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_socrates_trh_total_g" field="tend_tabs_socrates_profile_total_radiative_heating_total_local" root="auto"/>
+  </diagnostic>
+
+ <diagnostic field="tend_th_lwradex_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_lwradex_mean" equation="tend_th_lwradex_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_lwradex_total_g" field="tend_th_lwrad_exponential_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_lwradex_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_lwradex_mean" equation="tend_tabs_lwradex_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_lwradex_total_g" field="tend_tabs_lwrad_exponential_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_th_scl_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_scl_mean" equation="tend_th_scl_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_scl_total_g" field="tend_th_simplecloud_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qv_scl_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qv_scl_mean" equation="tend_qv_scl_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qv_scl_total_g" field="tend_qv_simplecloud_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_ql_scl_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_ql_scl_mean" equation="tend_ql_scl_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_ql_scl_total_g" field="tend_ql_simplecloud_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_scl_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_scl_mean" equation="tend_tabs_scl_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_scl_total_g" field="tend_tabs_simplecloud_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_th_total_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_total_mean" equation="tend_th_total_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_total_total_g" field="tend_th_total_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qv_total_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qv_total_mean" equation="tend_qv_total_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qv_total_total_g" field="tend_qv_total_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_ql_total_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_ql_total_mean" equation="tend_ql_total_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_ql_total_total_g" field="tend_ql_total_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qi_total_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qi_total_mean" equation="tend_qi_total_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qi_total_total_g" field="tend_qi_total_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qr_total_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qr_total_mean" equation="tend_qr_total_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qr_total_total_g" field="tend_qr_total_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qs_total_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qs_total_mean" equation="tend_qs_total_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qs_total_total_g" field="tend_qs_total_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_qg_total_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+     <operator name="arithmetic" result="tend_qg_total_mean" equation="tend_qg_total_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_qg_total_total_g" field="tend_qg_total_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_total_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_total_mean" equation="tend_tabs_total_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_total_total_g" field="tend_tabs_total_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_u_pst_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_u_pst_mean" equation="tend_u_pst_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_u_pst_total_g" field="tend_u_pstep_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_v_pst_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_v_pst_mean" equation="tend_v_pst_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_v_pst_total_g" field="tend_v_pstep_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_w_pst_mean"  type="array" data_type="double" size="z" units="m/s^2">
+     <operator name="arithmetic" result="tend_w_pst_mean" equation="tend_w_pst_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_w_pst_total_g" field="tend_w_pstep_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_u_total_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_u_total_mean" equation="tend_u_total_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_u_total_total_g" field="tend_u_total_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_v_total_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+     <operator name="arithmetic" result="tend_v_total_mean" equation="tend_v_total_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_v_total_total_g" field="tend_v_total_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_w_total_mean"  type="array" data_type="double" size="z" units="m/s^2">
+     <operator name="arithmetic" result="tend_w_total_mean" equation="tend_w_total_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_w_total_total_g" field="tend_w_total_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="dth_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dth_mphys_mean" equation="dth_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dth_mphys_total_g" field="dth_mphys_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqv_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqv_mphys_mean" equation="dqv_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqv_mphys_total_g" field="dqv_mphys_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqc_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqc_mphys_mean" equation="dqc_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqc_mphys_total_g" field="dqc_mphys_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqr_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqr_mphys_mean" equation="dqr_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqr_mphys_total_g" field="dqr_mphys_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqi_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqi_mphys_mean" equation="dqi_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqi_mphys_total_g" field="dqi_mphys_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqs_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqs_mphys_mean" equation="dqs_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqs_mphys_total_g" field="dqs_mphys_total" root="auto"/>
+  </diagnostic>
+  <diagnostic field="dqg_mphys_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="dqg_mphys_mean" equation="dqg_mphys_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="dqg_mphys_total_g" field="dqg_mphys_total" root="auto"/>
+  </diagnostic>
+
+</data-handling>
+
+
+<group name="tendency_profile_timeseries" namespace="tendency_profile_fields">
+
+  <member name="tend_u_pwa_mean"/>
+  <member name="tend_v_pwa_mean"/>
+  <member name="tend_w_pwa_mean"/>
+  <member name="tend_th_pwa_mean"/>
+  <member name="tend_qv_pwa_mean"/>
+  <member name="tend_ql_pwa_mean"/>
+  <member name="tend_qi_pwa_mean"/>
+  <member name="tend_qr_pwa_mean"/>
+  <member name="tend_qs_pwa_mean"/>
+  <member name="tend_qg_pwa_mean"/>
+  <member name="tend_tabs_pwa_mean"/>
+
+  <member name="tend_u_tvda_mean"/>
+  <member name="tend_v_tvda_mean"/>
+  <member name="tend_w_tvda_mean"/>
+  <member name="tend_th_tvda_mean"/>
+  <member name="tend_qv_tvda_mean"/>
+  <member name="tend_ql_tvda_mean"/>
+  <member name="tend_qi_tvda_mean"/>
+  <member name="tend_qr_tvda_mean"/>
+  <member name="tend_qs_tvda_mean"/>
+  <member name="tend_qg_tvda_mean"/>
+  <member name="tend_tabs_tvda_mean"/>
+
+  <member name="tend_th_tha_mean"/>
+  <member name="tend_tabs_tha_mean"/>
+
+  <member name="tend_th_diff_mean"/>
+  <member name="tend_qv_diff_mean"/>
+  <member name="tend_ql_diff_mean"/>
+  <member name="tend_qi_diff_mean"/>
+  <member name="tend_qr_diff_mean"/>
+  <member name="tend_qs_diff_mean"/>
+  <member name="tend_qg_diff_mean"/>
+  <member name="tend_tabs_diff_mean"/>
+
+  <member name="tend_u_vis_mean"/>
+  <member name="tend_v_vis_mean"/>
+  <member name="tend_w_vis_mean"/>
+
+  <member name="tend_w_buo_mean"/>
+
+  <member name="tend_u_for_mean"/>
+  <member name="tend_v_for_mean"/>
+  <member name="tend_th_for_mean"/>
+  <member name="tend_qv_for_mean"/>
+  <member name="tend_ql_for_mean"/>
+  <member name="tend_qi_for_mean"/>
+  <member name="tend_qr_for_mean"/>
+  <member name="tend_qs_for_mean"/>
+  <member name="tend_qg_for_mean"/>
+  <member name="tend_tabs_for_mean"/>
+
+  <member name="tend_u_dam_mean"/>
+  <member name="tend_v_dam_mean"/>
+  <member name="tend_w_dam_mean"/>
+  <member name="tend_th_dam_mean"/>
+  <member name="tend_qv_dam_mean"/>
+  <member name="tend_ql_dam_mean"/>
+  <member name="tend_qi_dam_mean"/>
+  <member name="tend_qr_dam_mean"/>
+  <member name="tend_qs_dam_mean"/>
+  <member name="tend_qg_dam_mean"/>
+  <member name="tend_tabs_dam_mean"/>
+
+  <member name="tend_u_cor_mean"/>
+  <member name="tend_v_cor_mean"/>
+
+  <member name="tend_th_socrates_longwave_mean"/>
+  <member name="tend_th_socrates_shortwave_mean"/>
+  <member name="tend_th_socrates_total_radiative_heating_mean"/>
+  <member name="tend_tabs_socrates_longwave_mean"/>
+  <member name="tend_tabs_socrates_shortwave_mean"/>
+  <member name="tend_tabs_socrates_total_radiative_heating_mean"/>
+
+  <member name="tend_th_lwradex_mean"/>
+  <member name="tend_tabs_lwradex_mean"/>
+
+  <member name="tend_th_scl_mean"/>
+  <member name="tend_qv_scl_mean"/>
+  <member name="tend_ql_scl_mean"/>
+  <member name="tend_tabs_scl_mean"/>
+
+  <member name="tend_th_total_mean"/>
+  <member name="tend_qv_total_mean"/>
+  <member name="tend_ql_total_mean"/>
+  <member name="tend_qi_total_mean"/>
+  <member name="tend_qr_total_mean"/>
+  <member name="tend_qs_total_mean"/>
+  <member name="tend_qg_total_mean"/>
+  <member name="tend_tabs_total_mean"/>
+
+  <member name="tend_u_pst_mean"/>
+  <member name="tend_v_pst_mean"/>
+  <member name="tend_w_pst_mean"/>
+
+  <member name="tend_u_total_mean"/>
+  <member name="tend_v_total_mean"/>
+  <member name="tend_w_total_mean"/>
+
+  <member name="dth_mphys_mean"/>
+  <member name="dqv_mphys_mean"/>
+  <member name="dqc_mphys_mean"/>
+  <member name="dqr_mphys_mean"/>
+  <member name="dqi_mphys_mean"/>
+  <member name="dqs_mphys_mean"/>
+  <member name="dqg_mphys_mean"/>
+
+</group>
