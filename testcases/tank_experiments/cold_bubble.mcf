@@ -3,6 +3,7 @@ global_configuration=global_config
 
 # Override global component defaults
 cfltest_enabled=.true.
+checkpointer_enabled=.true.
 fftsolver_enabled=.true.
 iterativesolver_enabled=.false.
 pw_advection_enabled=.true.
@@ -66,10 +67,10 @@ check_walltime_frequency=100
 walltime_limit=00:30:00
 
 # iterative solver
-tolerance=1.e-5
+tolerance=1.e-4
 max_iterations=500
 preconditioner_iterations=0
-include_top_level=.false.
+include_top_level=.true.
 symm_prob=.false.
 
 # roughness length so the same as LEM
@@ -88,7 +89,7 @@ thref0=300.0
 surface_pressure=100000.
 surface_reference_pressure=100000.
 x_size=64
-y_size=8
+y_size=64
 z_size=81
 dxx=100
 dyy=100
@@ -124,10 +125,10 @@ l_splittank=.false.
 l_sources=.false.
 
 bubble_x_cen=3200.0
-bubble_y_cen=400.0
+bubble_y_cen=3200.0
 bubble_z_cen=3000.0
 bubble_x_rad=600.0
-bubble_y_rad=50.0
+bubble_y_rad=600.0
 bubble_z_rad=600.0
 bubble_th_pert=-0.1
 bubble_edge=0.25

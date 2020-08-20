@@ -5,6 +5,7 @@ global_configuration=global_config
 
 # Override global component defaults
 cfltest_enabled=.true.
+checkpointer_enabled=.true.
 fftsolver_enabled=.true.
 iterativesolver_enabled=.false.
 pw_advection_enabled=.true.
@@ -45,7 +46,7 @@ moncs_per_io_server=8
 sampling_frequency=75
 3d_sampling_frequency=4500
 mm=1800.0
-mm1=60.0
+mm1=20.0
 diag_write_freq=7260.0
 
 # Checkpoint configuration
@@ -60,7 +61,7 @@ advection_theta_field=tvd
 advection_q_fields=tvd
 
 # CFL configuration
-cfl_frequency=100
+cfl_frequency=1000
 cfl_cvismax=0.4
 cfl_cvelmax=0.4
 cfl_dtmmax=0.4
@@ -72,7 +73,7 @@ thref0=288.0
 surface_pressure=100000.
 surface_reference_pressure=100000.
 x_size=64
-y_size=2
+y_size=64
 z_size=100
 dxx=50
 dyy=50

@@ -5,6 +5,7 @@ global_configuration=global_config
 
 # Override global component defaults
 cfltest_enabled=.true.
+checkpointer_enabled=.true.
 fftsolver_enabled=.true.
 iterativesolver_enabled=.false.
 pw_advection_enabled=.true.
@@ -36,24 +37,24 @@ socrates_couple_enabled=.true.
 
 display_synopsis_frequency=100
 nn_consolidation=1
-termination_time=600.
-dtm=0.15
+termination_time=7500.
+dtm=0.4
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 diagnostic_file="diagnostic_files/mbl_sc_casim_dg.nc"
 moncs_per_io_server=8
-sampling_frequency=10
-3d_sampling_frequency=30
-mm=30.0
-mm1=10.0
-diag_write_freq=60.0
+sampling_frequency=75
+3d_sampling_frequency=4500
+mm=1800.0
+mm1=60.0
+diag_write_freq=7260.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="checkpoint_files/mbl_sc_casim_dump.nc"
 check_walltime_frequency=100
-walltime_limit=00:05:00
+walltime_limit=00:20:00
 
 # Advection choices
 advection_flow_fields=pw
@@ -61,10 +62,10 @@ advection_theta_field=tvd
 advection_q_fields=tvd
 
 # CFL configuration
-cfl_frequency=100
+cfl_frequency=1000
 cfl_cvismax=0.4
 cfl_cvelmax=0.4
-cfl_dtmmax=0.15
+cfl_dtmmax=0.4
 cfl_dtmmin=0.001
 
 # Simple setup configuration
@@ -72,9 +73,9 @@ cfl_dtmmin=0.001
 thref0=288.0
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=16
-y_size=16
-z_size=100
+x_size=128
+y_size=128
+z_size=50
 dxx=50
 dyy=50
 zztop=1600.0
@@ -108,7 +109,7 @@ l_matchthref=.false.
 # Random noise
 l_rand_pl_theta=.true.
 z_rand_pl_theta=0.0, 600.0, 601.0, 1600.
-f_rand_pl_theta=0.1, 0.1, 0.000, 0.000
+f_rand_pl_theta=0.1, 0.1, 0.0001, 0.0001
 
 # Simple cloud
 max_height_cloud=1600.
@@ -157,9 +158,9 @@ cltop_longwave_flux = 70.0 # cloud top longwave flux (Wm-2)
 clbase_longwave_flux = 0.0 # cloud base longwave flux (Wm-2)
 
 #CASIM options
-number_q_fields=11
-option=22222
-l_warm=.false.
+number_q_fields=5
+option=22000
+l_warm=.true.
 
 aerosol_option=0
 iopt_act=0

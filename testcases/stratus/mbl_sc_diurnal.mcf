@@ -5,6 +5,7 @@ global_configuration=global_config
 
 # Override global component defaults
 cfltest_enabled=.true.
+checkpointer_enabled=.true.
 fftsolver_enabled=.true.
 iterativesolver_enabled=.false.
 pw_advection_enabled=.true.
@@ -47,7 +48,7 @@ sampling_frequency=75
 3d_sampling_frequency=4500
 mm=1800.0
 mm1=60.0
-diag_write_freq=7260.0
+diag_write_freq=7200.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
@@ -107,7 +108,7 @@ l_matchthref=.false.
 # Random noise
 l_rand_pl_theta=.true.
 z_rand_pl_theta=0.0, 600.0, 601.0, 1600.
-f_rand_pl_theta=0.1, 0.1, 0.000, 0.000
+f_rand_pl_theta=0.1, 0.1, 0.0001, 0.0001
 
 # Simple cloud
 max_height_cloud=1600.
@@ -156,9 +157,9 @@ cltop_longwave_flux = 70.0 # cloud top longwave flux (Wm-2)
 clbase_longwave_flux = 0.0 # cloud base longwave flux (Wm-2)
 
 #CASIM options
-number_q_fields=11
-option=22222
-l_warm=.false.
+number_q_fields=5
+option=22000
+l_warm=.true.
 
 aerosol_option=0
 iopt_act=0
