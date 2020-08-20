@@ -16,7 +16,7 @@ viscosity_enabled=.true.
 diffusion_enabled=.true.
 simplecloud_enabled=.false.
 casim_enabled=.true.
-casim_profile_dgs_enabled=.false.
+casim_profile_dgs_enabled=.true.
 coriolis_enabled=.true.
 damping_enabled=.true.
 forcing_enabled=.true. 
@@ -36,7 +36,7 @@ socrates_couple_enabled=.true.
 
 display_synopsis_frequency=100
 nn_consolidation=1
-termination_time=130.
+termination_time=600.
 dtm=0.15
 
 # IO server configuration
@@ -53,7 +53,7 @@ diag_write_freq=60.0
 checkpoint_frequency=0
 checkpoint_file="checkpoint_files/mbl_sc_casim_dump.nc"
 check_walltime_frequency=100
-walltime_limit=00:30:00
+walltime_limit=00:05:00
 
 # Advection choices
 advection_flow_fields=pw
@@ -72,8 +72,8 @@ cfl_dtmmin=0.001
 thref0=288.0
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=64
-y_size=2
+x_size=16
+y_size=16
 z_size=100
 dxx=50
 dyy=50
