@@ -307,6 +307,9 @@ contains
       parsed_value=config_value
     end if
 
+    ! Skip option if no values provided.
+    if (len(trim(parsed_value)) .eq. 0) return
+
     if (conv_is_logical(trim(parsed_value))) then
       if (present(array_index)) then
         call options_add(options_database, trim(config_key), &

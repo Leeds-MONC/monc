@@ -5,7 +5,8 @@ module terminationcheck_mod
   use monc_component_mod, only : component_descriptor_type
   use state_mod, only : model_state_type, TIME_TERMINATION_REASON, TIMESTEP_TERMINATION_REASON, MESSAGE_TERMINATION_REASON, &
        WALLTIME_TERMINATION_REASON
-  use conversions_mod, only : conv_single_real_to_double, conv_to_integer, conv_to_string
+  use conversions_mod, only : conv_single_real_to_double, conv_to_integer, conv_to_string,&
+                              conv_to_lowercase
   use optionsdatabase_mod, only : options_get_integer, options_has_key, options_get_real, options_add, options_get_string
   use logging_mod, only : LOG_WARN, log_master_log
   use mpi, only : MPI_INT, MPI_LOGICAL, MPI_IN_PLACE, MPI_LOR, mpi_wtime
@@ -49,7 +50,7 @@ module terminationcheck_mod
     messages_file_name=options_get_string(current_state%options_database, "msg_filename")
     check_walltime_frequency=options_get_integer(current_state%options_database, "check_walltime_frequency")
     walltime_string=options_get_string(current_state%options_database, "walltime_limit")
-    check_for_walltime=trim(walltime_string) /= "none"
+    check_for_walltime=conv_to_lowercase(trim(walltime_string)) /= "none"
     if (check_for_walltime) then
       pidx=1
       mangled=.false.
