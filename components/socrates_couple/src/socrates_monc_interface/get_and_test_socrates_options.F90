@@ -175,17 +175,6 @@ contains
                (LOG_ERROR, "Socrates - start time is outside sensible range, check config - STOP")
        endif
        !
-       socrates_opt%rad_interval = options_get_integer(current_state%options_database, "rad_interval")
-       if (socrates_opt%rad_interval <= 0) then
-          call log_master_log &
-               (LOG_WARN, "Socrates - rad_interval <= 0 ; SOCRATES will be called every timestep")
-       endif
-       if (options_has_key(current_state%options_database, "rad_int_time")) then
-          call log_master_log &
-               (LOG_ERROR, "Socrates - option key 'rad_int_time' is deprecated and no longer functions.  "//&
-                           "Please remove this from your configuration, and use 'rad_interval', which "//&
-                           "has functionality dependent upon 'time_basis'.")
-       end if
        
        ! Now get the surface albedo variables
        socrates_opt%l_variable_srf_albedo = options_get_logical(current_state%options_database, "l_variable_srf_albedo")
@@ -207,6 +196,19 @@ contains
                (LOG_ERROR, "Socrates - longitude is outside sensible range, check config - STOP")
        endif
     endif ! end l_solar_fixed
+
+    ! Read the radiation call interval
+    socrates_opt%rad_interval = options_get_integer(current_state%options_database, "rad_interval")
+    if (socrates_opt%rad_interval <= 0) then
+       call log_master_log &
+            (LOG_WARN, "Socrates - rad_interval <= 0 ; SOCRATES will be called every timestep")
+    endif
+    if (options_has_key(current_state%options_database, "rad_int_time")) then
+       call log_master_log &
+            (LOG_ERROR, "Socrates - option key 'rad_int_time' is deprecated and no longer functions.  "//&
+                        "Please remove this from your configuration, and use 'rad_interval', which "//&
+                        "has functionality dependent upon 'time_basis'.")
+    end if
 
     if (socrates_opt%surface_albedo < 0.0 .or. socrates_opt%surface_albedo > 1.0) then
        call log_master_log &
