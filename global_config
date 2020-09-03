@@ -181,22 +181,27 @@ norm_type=auto
 FFTE = .true.
 
 # Lower BC configuration
-ntmhf=0
-shflx_sen=0.0
-timhf=0.0
-shflx_lat=0.0
-surface_temperature_values=0.0
-units_surface_temp=kelvin
-surface_mixing_ratio_values=0.0
-surface_sensible_heat_flux_values=0.0
-surface_latent_heat_flux_values=0.0
+use_surface_boundary_conditions=.false.
+use_time_varying_surface_values=.false.  # When false, first surface value in input arrays is used
 max_change_buoyancy_flux=12.0
 
-use_surface_boundary_conditions=.false.
-type_of_surface_boundary_conditions=0
-use_time_varying_surface_values=.false.
-surface_conditions_file=None
-max_change_buoyancy_flux=12.0
+type_of_surface_boundary_conditions=0    # PRESCRIBED_FLUX=0; PRESCRIBED_SURFACE_VALUE=1
+units_surface_temp=kelvin
+
+  # Surface data in file:
+surface_conditions_file=None       # If '' or None, file data used, below data values ignored
+
+  # Surface data in config:
+surface_boundary_input_times=      # unset real array
+surface_temperatures=              # unset real array
+surface_humidities=                # unset real array 
+                                   #    - This is meaningful.  When no values are provided,
+                                   #        the surface_vapour_mixing_ratio is calculated as
+                                   #        its saturated value.
+                                   #    - Expected units are mixing ratio [kg/kg] 
+surface_sensible_heat_flux=        # unset real array
+surface_latent_heat_flux=          # unset real array
+
 
 # Time-varying forcing --------------------------------------------------------------------------------------------
 # enter files as the base directory-relative path to file
