@@ -14,6 +14,7 @@ module setfluxlook_mod
   use q_indices_mod, only: get_q_index, standard_q_names
   use interpolation_mod, only: interpolate_point_linear_1d
   use naming_conventions_mod
+  use conversions_mod, only: conv_to_lowercase
 
   implicit none
 
@@ -334,7 +335,7 @@ contains
 
     input_file=options_get_string(current_state%options_database, "surface_conditions_file")
     ! Read in the input_file
-    if (trim(input_file)=='' .or. trim(input_file)=='None')then
+    if (trim(input_file)=='' .or. conv_to_lowercase(trim(input_file))=='none')then
       if (current_state%use_time_varying_surface_values)then 
         allocate(surface_boundary_input_times(MAX_SURFACE_INPUTS))
         surface_boundary_input_times=0.0
