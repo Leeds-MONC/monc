@@ -10,7 +10,7 @@ module conditional_diagnostics_whole_mod
   use conditional_diagnostics_column_mod, only : CondDiags_tot, ncond, ndiag, gpts_total, requested_area
   use grids_mod, only : Z_INDEX
   use datadefn_mod, only : PRECISION_TYPE, DEFAULT_PRECISION
-  use mpi, only : MPI_SUM, MPI_IN_PLACE, MPI_INT, MPI_REAL, MPI_DOUBLE, MPI_Comm
+  use mpi, only : MPI_SUM, MPI_IN_PLACE, MPI_INT, MPI_REAL, MPI_DOUBLE
   use missing_data_mod, only: rmdi
   use optionsdatabase_mod, only : options_get_integer
 

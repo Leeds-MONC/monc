@@ -255,7 +255,7 @@ contains
       if (message_pending) then
         call mpi_get_count(status, MPI_BYTE, message_size, ierr)
         allocate(data_buffer(message_size))
-        call mpi_recv(data_buffer, message_size, MPI_BYTE, MPI_ANY_SOURCE, inter_io_communications(i)%message_tag, &
+        call mpi_recv(data_buffer, message_size, MPI_BYTE, status(MPI_SOURCE), inter_io_communications(i)%message_tag, &
              io_communicator, MPI_STATUS_IGNORE, ierr)
         call unlock_mpi()
         command=INTER_IO_COMMUNICATION
