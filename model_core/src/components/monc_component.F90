@@ -33,6 +33,15 @@ module monc_component_mod
        logical :: enabled
     end type component_field_information_type
 
+    type, public :: pointer_wrapper_value_type
+      procedure(component_get_field_value), nopass, pointer :: ptr
+    end type pointer_wrapper_value_type
+
+    type, public :: pointer_wrapper_info_type
+      procedure(component_get_field_information), nopass, pointer :: ptr
+    end type pointer_wrapper_info_type
+
+
     !> Description of a component
     !!
     !! Provided to the registry to register a component. It is also used by the registry to store information
