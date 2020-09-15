@@ -1,0 +1,30 @@
+#!/bin/bash
+#$ -pe ib 4 
+#$ -l h_rt=0:30:0
+#$ -l h_vmem=1G
+#$ -l placement=scatter
+#$ -cwd -V
+
+##############################################################
+#### THIS IS AN EXAMPLE SCRIPT TO DEMONSTRATE HOW TO      ####
+#### SUBMIT A STANDARD monc JOB WITHOUT A RESTART         ####
+#### Script assumes that there are directories called     ####
+#### monc_stdout , checkpoint_files and diagnostic_files  ####
+#### If these do not exist, MONC will fail                ####
+##############################################################
+
+echo Starting job
+
+# Allow multi-threading on cray
+export MPICH_MAX_THREAD_SAFETY=multiple
+
+# Set the number of threads to 1
+#   This prevents any system libraries from automatically  
+#   using threading.
+export OMP_NUM_THREADS=1
+
+# set env variables for submission command
+config_path='testcases/tank_experiments/straka.mcf'
+checkpoint_fn="checkpoint_files/straka_dump.nc"
+
+mpirun -np 4 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_straka_dump_1
