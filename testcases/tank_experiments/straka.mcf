@@ -40,7 +40,7 @@ sampling_frequency=4
 mm=5.0
 mm1=5.0
 diag_write_freq=900.0
-#diag_file="diagnostic_files/straka.nc"
+diag_file="diagnostic_files/straka.nc"
 
 #Advection
 advection_flow_fields=tvd
