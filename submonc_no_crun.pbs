@@ -1,10 +1,9 @@
 #!/bin/bash --login
 #PBS -N MONC
-#PBS -l select=6
-#PBS -l walltime=03:00:00
+#PBS -l select=1:mpiprocs=4
+#PBS -q R_tw
+#PBS -l walltime=00:20:00
 #PBS -j oe
-#PBS -P monc
-#PBS -q normal
 
 ##############################################################
 #### THIS IS AN EXAMPLE SCRIPT TO DEMONSTRATE HOW TO      ####
@@ -31,7 +30,13 @@ cd $PBS_O_WORKDIR
 export OMP_NUM_THREADS=1
 
 # set env variables for submission command
-config_path='testcases/radiative_convective_equilibrium/RCE_MO_cray.mcf'
-checkpoint_fn="checkpoint_files/RCE_dump.nc"
 
-aprun -n 192 -N 32 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_RCE_dump_1
+module load openmpi
+module load hdf5
+module load netcdf-fortran
+module load fftw
+
+config_path='testcases/tank_experiments/straka.mcf'
+checkpoint_fn="checkpoint_files/straka_dump.nc"
+
+mpirun -np 4 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_straka_dump_1
