@@ -15,6 +15,15 @@
 
 echo Starting job
 
+module purge
+module load user
+module switch intel gnu
+module load netcdf hdf5 fftw fcm
+
+if [ ! -d checkpoint_files ]; then mkdir checkpoint_files; fi
+if [ ! -d monc_stdout ]; then mkdir monc_stdout; fi
+if [ ! -d diagnostic_files ]; then mkdir diagnostic_files; fi
+
 # Allow multi-threading on cray
 export MPICH_MAX_THREAD_SAFETY=multiple
 
