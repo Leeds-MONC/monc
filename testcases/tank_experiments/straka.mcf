@@ -15,7 +15,7 @@ diffusion_enabled=.true.
 simplecloud_enabled=.false.
 coriolis_enabled=.false.
 damping_enabled=.false.
-forcing_enabled=.false. 
+forcing_enabled=.false.
 galilean_transformation=.false. # Needs debugging
 randomnoise_enabled=.false.
 mean_profiles_enabled=.true. #This must be set to true if running with damping
@@ -41,7 +41,6 @@ sampling_frequency=4
 mm=5.0
 mm1=5.0
 diag_write_freq=900.0
-diag_file="diagnostic_files/straka.nc"
 
 #Advection
 advection_flow_fields=tvd
@@ -106,7 +105,7 @@ f_init_pl_theta=300., 300.
 l_init_pl_u=.false.
 l_init_pl_v=.false.
 l_init_pl_q=.false.
-  
+
 l_matchthref=.false.
 
 # Set up the tank
