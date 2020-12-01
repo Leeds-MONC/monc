@@ -1,7 +1,7 @@
 #!/bin/bash --login
 #PBS -N MONC
 #PBS -l select=6
-#PBS -l walltime=00:20:00
+#PBS -l walltime=03:00:00
 #PBS -j oe
 #PBS -P monc
 #PBS -q normal
@@ -32,6 +32,6 @@ export OMP_NUM_THREADS=1
 
 # set env variables for submission command
 config_path='testcases/radiative_convective_equilibrium/RCE_MO_cray.mcf'
-￼checkpoint_fn="checkpoint_files/RCE_dump.nc"
+checkpoint_fn="checkpoint_files/RCE_dump.nc"
 
 aprun -n 192 -N 32 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_RCE_dump_1
