@@ -1,0 +1,11 @@
+<map id="threadpool_mod::threadpool_start_thread" name="threadpool_mod::threadpool_start_thread">
+<area shape="rect" id="node1" title="Starts an idle thread from the pool to execute a specific procedure with some data...." alt="" coords="5,156,185,197"/>
+<area shape="rect" id="node2" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="237,5,392,47"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="446,42,589,69"/>
+<area shape="rect" id="node5" href="$namespacethreadpool__mod.html#a79c1c7faaf752ec1681acc2bfcce7e16" title="Finds an idle thread, if one is not available then will block until one becomes free." alt="" coords="245,123,385,164"/>
+<area shape="rect" id="node7" href="$namespaceforthread__mod.html#acdd75cd6d34e33c09165306eef31f159" title=" " alt="" coords="233,188,396,229"/>
+<area shape="rect" id="node8" href="$namespaceforthread__mod.html#a9101345b87d2c0e18fb020677cf767b9" title=" " alt="" coords="233,253,396,295"/>
+<area shape="rect" id="node9" href="$namespaceforthread__mod.html#a6068972cad8d59eb6b29c8301d331090" title=" " alt="" coords="233,319,396,360"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="639,35,805,76"/>
+<area shape="rect" id="node6" href="$namespacethreadpool__mod.html#a46884c3dda1e63c2cbaffb985835e64b" title="Specifically gets the index of the next idle thread or &#45;1 if they are all busy. This starts from a ne..." alt="" coords="444,123,591,164"/>
+</map>

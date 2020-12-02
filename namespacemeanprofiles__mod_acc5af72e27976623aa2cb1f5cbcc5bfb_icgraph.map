@@ -1,0 +1,6 @@
+<map id="meanprofiles_mod::calculate_mean_profiles" name="meanprofiles_mod::calculate_mean_profiles">
+<area shape="rect" id="node1" title="Calculates the global mean profiles and stores these in the ol bar arrays." alt="" coords="491,39,676,80"/>
+<area shape="rect" id="node2" href="$namespacemeanprofiles__mod.html#ab61b667b0858d50680df3c3ab58cc2d8" title="Called on MONC initialisation, will allocate appropriate data structures." alt="" coords="276,5,427,47"/>
+<area shape="rect" id="node4" href="$namespacemeanprofiles__mod.html#aa06936e85fc8d38bdad24cc9caa54fd7" title="Will recalculate the mean profiles of each prognostic when called (for the entire local domain)" alt="" coords="260,71,443,112"/>
+<area shape="rect" id="node3" href="$namespacemeanprofiles__mod.html#a55543023376dac0d52f813bd4a71e74d" title="Returns the component descriptor of the mean profiles module." alt="" coords="5,39,212,80"/>
+</map>

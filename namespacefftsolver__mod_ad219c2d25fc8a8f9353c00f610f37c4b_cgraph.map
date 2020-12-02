@@ -1,0 +1,11 @@
+<map id="fftsolver_mod::fftsolver_get_descriptor" name="fftsolver_mod::fftsolver_get_descriptor">
+<area shape="rect" id="node1" title="Descriptor of this component for registration." alt="" coords="5,71,157,112"/>
+<area shape="rect" id="node2" href="$namespacefftsolver__mod.html#acdf834d62478f5f7799afdc2847fa587" title="Called at MONC finalisation, will call to the pencil fft module to clean itself up and free the press..." alt="" coords="209,5,376,47"/>
+<area shape="rect" id="node3" href="$namespacefftsolver__mod.html#a9a2b2b221d8792a61e274193534e03bc" title="This initialisation callback sets up the pencil fft module, allocates data for the fourier space pres..." alt="" coords="205,71,380,112"/>
+<area shape="rect" id="node4" href="$namespacefftsolver__mod.html#a82fe1bd4173b841df2bc7651cefdf4bc" title="Timestep call back, which will transform to Fourier space, do a tridiagonal solve and then back into ..." alt="" coords="215,136,371,177"/>
+<area shape="rect" id="node5" href="$namespacefftsolver__mod.html#ab9a3338a53b29902a27e102983877e94" title="Completes the psrce calculation by waiting on all outstanding psrce communications to complete and th..." alt="" coords="431,5,590,47"/>
+<area shape="rect" id="node6" href="$namespacefftsolver__mod.html#a50b8c3b67d6b172f278aa26f2d5c299c" title=" " alt="" coords="444,71,577,112"/>
+<area shape="rect" id="node7" href="$namespacefftsolver__mod.html#a9fbc281dc1b4670abbc9713417550bc3" title="Copies the p field data to halo buffers for a specific process in a dimension and halo cell." alt="" coords="444,136,577,177"/>
+<area shape="rect" id="node8" href="$namespacefftsolver__mod.html#a9ec4b150d4fefc0abd637fe94ce88673" title="Does local data copying for P variable halo swap." alt="" coords="431,201,590,243"/>
+<area shape="rect" id="node9" href="$namespacefftsolver__mod.html#a1adca201d5138e9e750fcd7865f6f3e3" title="The tridiagonal solver which runs in Fourier space on the pressure terms. Note that because we are go..." alt="" coords="428,267,593,308"/>
+</map>

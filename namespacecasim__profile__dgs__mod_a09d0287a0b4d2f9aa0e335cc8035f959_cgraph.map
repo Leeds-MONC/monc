@@ -1,0 +1,7 @@
+<map id="casim_profile_dgs_mod::casim_profile_dgs_get_descriptor" name="casim_profile_dgs_mod::casim_profile_dgs_get_descriptor">
+<area shape="rect" id="node1" title="Provides the component descriptor for the core to register." alt="" coords="5,121,164,177"/>
+<area shape="rect" id="node2" href="$namespacecasim__profile__dgs__mod.html#a2a50885f76352598d61df9a5846ec0d5" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="212,5,387,61"/>
+<area shape="rect" id="node3" href="$namespacecasim__profile__dgs__mod.html#a52be635eac611c96628589e7b15fc553" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="220,85,379,141"/>
+<area shape="rect" id="node4" href="$namespacecasim__profile__dgs__mod.html#abec5e1998e5225d7f00661811d450efc" title=" " alt="" coords="220,165,379,206"/>
+<area shape="rect" id="node5" href="$namespacecasim__profile__dgs__mod.html#a1d985f538b840a8d9aef007d80ee7231" title=" " alt="" coords="220,230,379,271"/>
+</map>

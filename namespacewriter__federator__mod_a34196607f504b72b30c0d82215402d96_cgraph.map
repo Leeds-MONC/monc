@@ -1,0 +1,4 @@
+<map id="writer_federator_mod::get_group_number_of_fields" name="writer_federator_mod::get_group_number_of_fields">
+<area shape="rect" id="node1" title="Retrieves the number of fields within a group of fields." alt="" coords="5,5,159,61"/>
+<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a96287a6f24e9217bb315d12e326cdfd9" title="Retrieves the number of fields that make up this field, if it is a Q field then it will be split into..." alt="" coords="207,5,351,61"/>
+</map>

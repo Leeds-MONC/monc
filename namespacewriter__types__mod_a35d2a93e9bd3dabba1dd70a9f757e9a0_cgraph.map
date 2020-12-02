@@ -1,0 +1,7 @@
+<map id="writer_types_mod::prepare_to_serialise_writer_type" name="writer_types_mod::prepare_to_serialise_writer_type">
+<area shape="rect" id="node1" title="Prepares to serialise the writer type by issuing locks and determining the size of serialised bytes n..." alt="" coords="5,46,179,87"/>
+<area shape="rect" id="node2" href="$namespacewriter__types__mod.html#ab32d8c52b1de472472a1a3e7f6d550c9" title="Prepares to serialise a specific writer field, both determines the data size and issues any locks." alt="" coords="227,46,421,87"/>
+<area shape="rect" id="node3" href="$namespacewriter__types__mod.html#a4c254cb13c3ced319ddba80cb6ebac88" title="Prepares to serialise a specific collective value, both determines the required byte storate size and..." alt="" coords="469,5,643,61"/>
+<area shape="rect" id="node4" href="$namespacewriter__types__mod.html#aa4c1edaaebbfa64ad4dc2a09632cefba" title="Prepares to serialise a specific data values type, both determines the byte size required and also is..." alt="" coords="691,46,893,87"/>
+<area shape="rect" id="node5" href="$namespacewriter__types__mod.html#a09de0017a289827e5b114043878ee8b2" title="Prepares a map for serialisation, both determines the size of storage required and also issues any lo..." alt="" coords="941,46,1115,87"/>
+</map>

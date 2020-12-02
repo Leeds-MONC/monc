@@ -1,0 +1,6 @@
+<map id="collections_mod::hashset_getlocation" name="collections_mod::hashset_getlocation">
+<area shape="rect" id="node1" title="Determines the location and hash of a key within a specific hashset. The hash is set regardless of wh..." alt="" coords="249,57,417,98"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a983cc1ee040668102ce0a4087cca78a6" title="Adds a string to the hashset which stores unique strings, therefore if the string already exists then..." alt="" coords="5,5,201,32"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#ab931adc7984b00d61b9fcff19af58591" title="Determines wheter the hashset contains a specific key or not." alt="" coords="19,57,187,98"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#ac63b4de429a80f6d36f6c555c89bdb51" title="Removes a string from the hashset." alt="" coords="19,122,187,163"/>
+</map>

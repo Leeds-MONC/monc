@@ -1,0 +1,15 @@
+<map id="writer_types_mod::unserialise_data_values_type" name="writer_types_mod::unserialise_data_values_type">
+<area shape="rect" id="node1" title="Unserialises some byte data into data values." alt="" coords="1447,108,1639,149"/>
+<area shape="rect" id="node2" href="$namespacewriter__types__mod.html#a9c6f0c0e7d2ea3c758c6df1041d175a8" title="Unserialsies collective values contained in some data." alt="" coords="1207,49,1399,91"/>
+<area shape="rect" id="node3" href="$namespacewriter__types__mod.html#a7b5b6fc49221508341b7c744284b2d4c" title="Unserialises byte data into a writer field type." alt="" coords="967,76,1159,117"/>
+<area shape="rect" id="node10" href="$namespacewriter__field__manager__mod.html#aaf58f8343222912d3c6872c8bca40bad" title="Unseralises some field ordering from its byte representation." alt="" coords="1227,166,1379,222"/>
+<area shape="rect" id="node4" href="$namespacewriter__types__mod.html#a433965efb35f6d750e5365c1257057bb" title="Unserialises some byte data into the writer in order to recreate the state of the writer." alt="" coords="727,76,919,117"/>
+<area shape="rect" id="node5" href="$namespaceio__server__state__reader__mod.html#a21bc5840c3287e6dcbbb29f4480bbdde" title="Reactivates the writer federator and everything beneath it (i.e. just not the writer field manager...." alt="" coords="515,18,671,74"/>
+<area shape="rect" id="node9" href="$namespaceio__server__state__reader__mod.html#a87dbe83976cbed778e4f17006ce43a7a" title="Restarts the writer state from a specific checkpoint byte data chunk of memory." alt="" coords="507,98,679,154"/>
+<area shape="rect" id="node6" href="$namespacewriter__federator__mod.html#a7b31bb8f9d0fb8c0768252e819b20985" title="Initialises the write federator and configures it based on the user configuration...." alt="" coords="265,5,437,47"/>
+<area shape="rect" id="node8" href="$interfaceio__server__state__reader__mod_1_1writer__field__manager__unserialise__state.html#af45885765439d168075186df796bdc07" title=" " alt="" coords="244,71,459,141"/>
+<area shape="rect" id="node7" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,97,196,123"/>
+<area shape="rect" id="node11" href="$namespacewriter__field__manager__mod.html#a3280f532aae1d9f5cfb11374e052ecdb" title="Unserialises some field ordering." alt="" coords="976,166,1149,222"/>
+<area shape="rect" id="node12" href="$namespacewriter__field__manager__mod.html#a5f881e178ecfba1f19867dfd796506ae" title="Unserialses from some byte data into the state." alt="" coords="747,166,899,222"/>
+<area shape="rect" id="node13" href="$namespacewriter__field__manager__mod.html#a061c34fe0697d9639defd2f0926e2e74" title="Initialises the writer field manager." alt="" coords="278,166,425,222"/>
+</map>

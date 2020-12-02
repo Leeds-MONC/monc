@@ -1,0 +1,4 @@
+<map id="data_utils_mod::get_action_attribute_integer" name="data_utils_mod::get_action_attribute_integer">
+<area shape="rect" id="node1" title="Retrieves the name of a field from the attributes specified in the configuration." alt="" coords="219,13,383,54"/>
+<area shape="rect" id="node2" href="$namespacefieldslicer__operator__mod.html#aa55d6ae4ff673ced3fd76f4ad54257fb" title="Performs the actual field slicing." alt="" coords="5,5,171,61"/>
+</map>

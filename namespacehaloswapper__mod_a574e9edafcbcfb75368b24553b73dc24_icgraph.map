@@ -1,0 +1,5 @@
+<map id="haloswapper_mod::perform_local_data_copy_for_all_prognostics" name="haloswapper_mod::perform_local_data_copy_for_all_prognostics">
+<area shape="rect" id="node1" title="Will do any local copying of data required for the boundary conditions. I.e. if all columns in a slic..." alt="" coords="491,5,668,61"/>
+<area shape="rect" id="node2" href="$namespacehaloswapper__mod.html#a7fc41ef4805ce22bc046be80aa3cf04a" title="Timestep callback hook which performs the halo swapping for each prognostic field." alt="" coords="260,13,443,54"/>
+<area shape="rect" id="node3" href="$namespacehaloswapper__mod.html#a72490f0cc37d570074c2306898e71002" title="Provides a description of this component for the core to register." alt="" coords="5,13,212,54"/>
+</map>

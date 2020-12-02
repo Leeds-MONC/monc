@@ -1,0 +1,4 @@
+<map id="checkpointer_mod::initialisation_callback" name="checkpointer_mod::initialisation_callback">
+<area shape="rect" id="node1" title="Initialisation hook, if appropriate (depends on command line arguments) then will read in an existing..." alt="" coords="261,5,464,47"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__mod.html#abd2308df65a2ae2ceb627aab5571026d" title="Provides registry information for the component." alt="" coords="5,5,213,47"/>
+</map>

@@ -1,0 +1,19 @@
+<map id="stepfields_mod::stepfields_get_descriptor" name="stepfields_mod::stepfields_get_descriptor">
+<area shape="rect" id="node1" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,150,176,191"/>
+<area shape="rect" id="node2" href="$namespacestepfields__mod.html#af4482b20f553e2f2ebe6fdff1c07102e" title="Field information retrieval callback, this returns information for a specific component&#39;s published f..." alt="" coords="242,5,389,61"/>
+<area shape="rect" id="node3" href="$namespacestepfields__mod.html#ad0457593fcf2685b8d420b2aa6055ebd" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="231,85,399,126"/>
+<area shape="rect" id="node5" href="$namespacestepfields__mod.html#a27a20b9ff947fb4edbccc61644dbd244" title="Finalisation callback." alt="" coords="227,150,403,191"/>
+<area shape="rect" id="node6" href="$namespacestepfields__mod.html#aa1e297b46f7533fd26bf4b5631303f55" title="Initialisation callback." alt="" coords="224,215,407,257"/>
+<area shape="rect" id="node8" href="$namespacestepfields__mod.html#a290e6dd0b52faa60331fca61b34dc68d" title="Called at each timestep and will perform swapping and smoothing as required." alt="" coords="233,297,398,338"/>
+<area shape="rect" id="node4" href="$namespacestepfields__mod.html#ad8f716aa7488208731d4b430b38f5659" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="466,85,618,126"/>
+<area shape="rect" id="node7" href="$namespacestepfields__mod.html#a3618875e0d08a14a367bf3e4ccf40a2c" title="Resets the local min and max values for the flow fields." alt="" coords="465,198,619,239"/>
+<area shape="rect" id="node9" href="$namespacestepfields__mod.html#a8ef8e820309055cc7da06c1a5746def9" title="Computation of component tendencies." alt="" coords="459,263,625,305"/>
+<area shape="rect" id="node10" href="$namespacestepfields__mod.html#acee8837f19c2622ee83ef86b7d0fe150" title="Determines the minimum and maximum values for the local flow field. These are before the stepping,..." alt="" coords="456,329,628,370"/>
+<area shape="rect" id="node11" href="$namespacestepfields__mod.html#acc70739977d87cae6a5f55c57ec07664" title="Removes the negative rounding errors from a specific single field. This works two columns behind and ..." alt="" coords="455,393,629,449"/>
+<area shape="rect" id="node13" href="$namespacestepfields__mod.html#a338a9b7fbf482ce4b54d3fc633bdfeb8" title="Steps all fields." alt="" coords="472,473,612,514"/>
+<area shape="rect" id="node12" href="$namespacestepfields__mod.html#a3289e62bb177f6faa70f6f254541c801" title="Removes the negative rounding errors from a slice of a single field. This works two columns behind an..." alt="" coords="677,393,852,449"/>
+<area shape="rect" id="node14" href="$namespacestepfields__mod.html#aea4b8b57e684b1bacaf0a060e1fc7827" title="Steps a single specific field. This will step on the yth column of the x&#45;2 slice and x&#45;1 and x if thi..." alt="" coords="695,473,835,514"/>
+<area shape="rect" id="node15" href="$namespacestepfields__mod.html#a158387646b90e74974f716c3d73fc5bb" title="Will step a column in a specific slice. If y_prev is large enough then will step the y&#45;1 column and i..." alt="" coords="900,473,1040,514"/>
+<area shape="rect" id="node16" href="$namespacestepfields__mod.html#a2fe11bc2a34ad4243425a33f65ef7d19" title="Performs initial timesmoothing for a theta or Q field using Robert filter. This is finished off in sw..." alt="" coords="1088,439,1247,481"/>
+<area shape="rect" id="node17" href="$namespacestepfields__mod.html#a6d6b9f00a03335becc6051395e249374" title="Will do the actual field stepping." alt="" coords="1097,505,1237,546"/>
+</map>

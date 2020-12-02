@@ -1,0 +1,19 @@
+<map id="kidreader_mod::kidreader_get_descriptor" name="kidreader_mod::kidreader_get_descriptor">
+<area shape="rect" id="node1" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,289,172,331"/>
+<area shape="rect" id="node2" href="$namespacekidreader__mod.html#af9f9656d6a5514b190a7cbe2d5b1c2b8" title="Initialisation hook which will parse the configuration NetCDF file and set up the model based upon th..." alt="" coords="220,289,380,331"/>
+<area shape="rect" id="node3" href="$namespacekidreader__mod.html#a045f4b17a96ad277741c715d5a0852d6" title="Checks that the kinematics file that has been loaded is consistent with what we expect." alt="" coords="694,5,842,47"/>
+<area shape="rect" id="node4" href="$namespacekidreader__mod.html#ae9f2bccbc716c31a3601423e6c0cf8cc" title="Will check a NetCDF status and write to log_log error any decoded statuses." alt="" coords="900,407,1048,448"/>
+<area shape="rect" id="node5" href="$namespacekidreader__mod.html#ac553bcd0f1df9d9c7241337d0ab6d2b6" title="Creates a specific grid based upon the data read from the KiD model NetCDF file." alt="" coords="443,122,621,149"/>
+<area shape="rect" id="node6" href="$namespacekidreader__mod.html#abb6988c065e5899948abbde8abc06483" title="Calls the decomposition procedure to decompose the grid and determine neighbouring processes If no de..." alt="" coords="428,173,636,199"/>
+<area shape="rect" id="node7" href="$namespacekidreader__mod.html#ad348435e55eecf344b6aa120a8cbfdb8" title="Defines the vertical levels of the grid. This is both the grid points and corresponding height for ea..." alt="" coords="459,224,605,265"/>
+<area shape="rect" id="node8" href="$namespacekidreader__mod.html#ab5071b64d431379aa743666f3ee06dc7" title="Based upon the local grid this will initialise the Source, Z and SAV fields for each prognostic." alt="" coords="453,289,611,331"/>
+<area shape="rect" id="node9" href="$namespacekidreader__mod.html#af488eb180d4f79b7968365c498d2d7aa" title="Will initialise a velocity field with the loaded data." alt="" coords="452,355,612,396"/>
+<area shape="rect" id="node10" href="$namespacekidreader__mod.html#ae657e8566bd608d51e76bbaf1e541d90" title="Reads the dimensions from the NetCDF file." alt="" coords="699,407,837,448"/>
+<area shape="rect" id="node11" href="$namespacekidreader__mod.html#a7dd96fb9d146b7cf370e4d7d736536f7" title="Will read the global attributes of the NetCDF KiD model dump and log_log them to debug." alt="" coords="463,472,601,513"/>
+<area shape="rect" id="node13" href="$namespacekidreader__mod.html#a0aacef0b2cd322378c4ba2b83ecc7b43" title="Reads the variables from the NetCDF KiD model file." alt="" coords="463,537,601,579"/>
+<area shape="rect" id="node15" href="$namespacekidreader__mod.html#ae9124154f06fb20c440ccb2818cf360b" title=" " alt="" coords="467,603,597,644"/>
+<area shape="rect" id="node12" href="$namespacekidreader__mod.html#aaf68e89b47dd29a41d3890be5b6c8dc6" title="Will read a specific global NetCDF attribute." alt="" coords="684,472,852,513"/>
+<area shape="rect" id="node14" href="$namespacekidreader__mod.html#a9a8e1c5ed9fe3eeb73f85c224aa10205" title="Reads a single variable out of a NetCDF file." alt="" coords="699,537,837,579"/>
+<area shape="rect" id="node16" href="$namespacekidreader__mod.html#acfc5e3800867c4f8c3a9bac5df585708" title=" " alt="" coords="688,603,848,644"/>
+<area shape="rect" id="node17" href="$namespacekidreader__mod.html#a51ec3363bff81914526d45d469f8f61f" title="Populates the Q tracer field based upon the configuration that has been read in from the simulation f..." alt="" coords="687,668,849,709"/>
+</map>

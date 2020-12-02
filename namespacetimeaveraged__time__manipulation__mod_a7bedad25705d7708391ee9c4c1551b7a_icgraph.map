@@ -1,0 +1,5 @@
+<map id="timeaveraged_time_manipulation_mod::finalise_time_averaged_manipulation" name="timeaveraged_time_manipulation_mod::finalise_time_averaged_manipulation">
+<area shape="rect" id="node1" title="Finalises the reduction action, waiting for all outstanding requests and then freeing data." alt="" coords="457,5,669,61"/>
+<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a350033966b51a20a8a69d092a20ba774" title="Finalises the write federator and the manipulations." alt="" coords="244,13,409,54"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+</map>

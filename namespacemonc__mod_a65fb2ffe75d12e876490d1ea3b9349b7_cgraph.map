@@ -1,0 +1,11 @@
+<map id="monc_mod::perform_options_compatibility_checks" name="monc_mod::perform_options_compatibility_checks">
+<area shape="rect" id="node1" title="Performs options_database compatibility checks." alt="" coords="5,173,191,214"/>
+<area shape="rect" id="node2" href="$namespacemonc__mod.html#a7b31796521ca457b86e819854ec60a5f" title="Determines whether an option is present in the database and true. This combines the key check and get..." alt="" coords="257,143,409,185"/>
+<area shape="rect" id="node7" href="$namespacelogging__mod.html#ad95937a250467334622daeb5cff78c20" title="Will log just from the master process." alt="" coords="239,209,428,236"/>
+<area shape="rect" id="node3" href="$namespaceoptionsdatabase__mod.html#aa3f0213d8028773523e6194a0ddf8e18" title="Retrieves a logical value from the database that matches the provided key." alt="" coords="476,85,625,126"/>
+<area shape="rect" id="node5" href="$namespaceoptionsdatabase__mod.html#a4b187d310f786ed3c207a3060e09b156" title="Determines whether a specific key is in the database." alt="" coords="888,78,1037,119"/>
+<area shape="rect" id="node4" href="$namespaceoptionsdatabase__mod.html#a13bbeb6272c82308e3d4a42f7c36c862" title="Determines whether a specific options key exists in the database or not, if it doesn&#39;t then this resu..." alt="" coords="682,5,831,61"/>
+<area shape="rect" id="node6" href="$namespaceoptionsdatabase__mod.html#ab4f16a670bed755586806647da3cfa8d" title="Gets a key corresponding to the correct options key and index combination." alt="" coords="678,85,835,126"/>
+<area shape="rect" id="node8" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="479,209,622,236"/>
+<area shape="rect" id="node9" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="673,202,840,243"/>
+</map>

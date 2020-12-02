@@ -1,0 +1,4 @@
+<map id="collections_mod::queue_get_generic" name="collections_mod::queue_get_generic">
+<area shape="rect" id="node1" title="Returns a specific queue element at an index or null if index &gt; queue size." alt="" coords="5,5,163,47"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a91a5a6f4841afe0bc22fcba100b6e46b" title="Retrieves the element at index i from the list or null if index &lt; list size." alt="" coords="211,5,349,47"/>
+</map>

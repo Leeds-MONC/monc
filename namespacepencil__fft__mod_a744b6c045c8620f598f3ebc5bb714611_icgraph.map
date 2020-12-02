@@ -1,0 +1,4 @@
+<map id="pencil_fft_mod::initialise_transpositions" name="pencil_fft_mod::initialise_transpositions">
+<area shape="rect" id="node1" title="Initialises the pencil transpositions, from a pencil in one dimension to that in another." alt="" coords="212,5,371,47"/>
+<area shape="rect" id="node2" href="$namespacepencil__fft__mod.html#a3a8be214eb145cf54faebb0882867780" title="Initialises the pencil FFT functionality, this will create the transposition structures needed." alt="" coords="5,5,164,47"/>
+</map>

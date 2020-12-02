@@ -1,0 +1,13 @@
+<map id="flux_budget_mod::initialisation_callback" name="flux_budget_mod::initialisation_callback">
+<area shape="rect" id="node1" title="Initialisation call back." alt="" coords="5,267,199,308"/>
+<area shape="rect" id="node2" href="$namespaceflux__budget__mod.html#aed28919f50cea1fdc5220f517537d6cb" title="Initialises the mse diagnostics. For now we are assuming mse is the same as theta,..." alt="" coords="265,5,437,47"/>
+<area shape="rect" id="node4" href="$namespaceflux__budget__mod.html#a291a2374ee2464b0f1cfe6e7db9cb9e0" title="Initialises the prognostic (uu, vv, ww) budget diagnostics." alt="" coords="247,71,455,112"/>
+<area shape="rect" id="node5" href="$namespaceflux__budget__mod.html#a0cb8b07c7b027bc267e709ae42f2c453" title="Initialises the Q field flux diagnostic areas and enabled flags depending upon the configuration of t..." alt="" coords="265,136,437,177"/>
+<area shape="rect" id="node6" href="$namespaceflux__budget__mod.html#ac303395be9b63fa55e651e3182b140f8" title="Initialises the qt diagnostics. For now we are assuming qt is the same as theta, which needs updating..." alt="" coords="265,201,437,243"/>
+<area shape="rect" id="node7" href="$namespaceflux__budget__mod.html#ae4db924576a76ac5dd2738187b618358" title="Initialises the scalar diagnostics." alt="" coords="265,267,437,308"/>
+<area shape="rect" id="node8" href="$namespaceflux__budget__mod.html#a5a7c13569c68d6099c9b96a3314a4a24" title="Initialises the heat flux diagnostic areas and enabled flags depending upon the configuration of the ..." alt="" coords="265,332,437,373"/>
+<area shape="rect" id="node9" href="$namespaceflux__budget__mod.html#a28e7093ca2555441800e20f0d70b3d17" title="Initialises the thetal diagnostics." alt="" coords="265,397,437,439"/>
+<area shape="rect" id="node10" href="$namespaceflux__budget__mod.html#acc58342b387d0fcf7390f7fc85e8d301" title="Initialises the TKE diagnostics." alt="" coords="265,463,437,504"/>
+<area shape="rect" id="node11" href="$namespaceflux__budget__mod.html#adfe4638d497a4bb810f624072eb84582" title="Initialises the UW and VW diagnostics." alt="" coords="265,528,437,569"/>
+<area shape="rect" id="node3" href="$namespaceflux__budget__mod.html#ae97834ea1a364c3af8adb6c9f2a514d9" title="Sets the published value enabled state in the provided collection map." alt="" coords="503,267,705,308"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="timeaveraged_time_manipulation_mod::prepare_to_serialise_time_averaged_state" name="timeaveraged_time_manipulation_mod::prepare_to_serialise_time_averaged_state">
+<area shape="rect" id="node1" title="Prepares to serialise the time averaged state values. Both determines the storage size required and a..." alt="" coords="5,5,217,61"/>
+<area shape="rect" id="node2" href="$namespacetimeaveraged__time__manipulation__mod.html#a165774be890acb676411ddb69a06a79a" title="Prepares to serialise a time averaged completed value, both determines the storage size and also issu..." alt="" coords="265,5,484,61"/>
+</map>

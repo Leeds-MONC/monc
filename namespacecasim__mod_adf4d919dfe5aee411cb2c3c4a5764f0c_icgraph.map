@@ -1,0 +1,4 @@
+<map id="casim_mod::initialisation_callback" name="casim_mod::initialisation_callback">
+<area shape="rect" id="node1" title="The initialisation callback sets up the microphysics." alt="" coords="208,5,371,47"/>
+<area shape="rect" id="node2" href="$namespacecasim__mod.html#a36e48bbe8bbb36cba17c8ca7b01dbe64" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,160,47"/>
+</map>

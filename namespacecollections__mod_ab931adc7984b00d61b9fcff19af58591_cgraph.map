@@ -1,0 +1,5 @@
+<map id="collections_mod::hashset_contains" name="collections_mod::hashset_contains">
+<area shape="rect" id="node1" title="Determines wheter the hashset contains a specific key or not." alt="" coords="5,5,173,47"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a144628b8f3301dd8a83703ec0caf3833" title="Determines the location and hash of a key within a specific hashset. The hash is set regardless of wh..." alt="" coords="221,5,389,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a745849ca729b70cc641198c3280e1640" title="Translates the string key into a hash from 1 to hash_size (inclusive.) This encoding is deterministic..." alt="" coords="437,5,577,47"/>
+</map>

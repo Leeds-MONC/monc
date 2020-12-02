@@ -1,0 +1,6 @@
+<map id="halo_communication_mod::send_all_halos" name="halo_communication_mod::send_all_halos">
+<area shape="rect" id="node1" title="Copies all applicable bits of the prognostics into a send buffer for each neighbour and then issues a..." alt="" coords="679,35,825,76"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#a8dac8c6529d0169c9e4402690f62d581" title="Initiates a non blocking halo swap, this registers the receive requests, copies data into the send bu..." alt="" coords="456,27,631,83"/>
+<area shape="rect" id="node3" href="$namespacehalo__communication__mod.html#a0a11eeeaa1e80eab180fb8652ce592a6" title="Performs the entire halo swap operation, this is simply a wrapper around the nonblocking initiate and..." alt="" coords="231,5,408,47"/>
+<area shape="rect" id="node4" href="$interfacehalo__communication__mod_1_1perform__local__data__copy__proc__interface.html#a9f668d078f8cd3153d4bbde17cdbee41" title=" " alt="" coords="5,13,183,98"/>
+</map>

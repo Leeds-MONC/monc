@@ -1,0 +1,7 @@
+<map id="checkpointer_mod::generate_unique_filename" name="checkpointer_mod::generate_unique_filename">
+<area shape="rect" id="node1" title="Generates a unique filename based upon the base one specified and the number of completed timesteps." alt="" coords="731,39,915,80"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__mod.html#ae43bde190ca30ddc637139f66a123c5b" title="Performs the checkpoint dump and timings. This can be called as part of the timestep or at the end of..." alt="" coords="504,39,683,80"/>
+<area shape="rect" id="node3" href="$namespacecheckpointer__mod.html#a8d29af81c3ef9514b6cad4a2f696ac40" title="Called on termination to write out the status of the model run to checkpoint." alt="" coords="261,5,456,47"/>
+<area shape="rect" id="node5" href="$namespacecheckpointer__mod.html#a57d98ba2f415b7148b501f2dfcec8928" title="The timestep hook will dump out model state_mod to a checkpoint file." alt="" coords="267,71,451,112"/>
+<area shape="rect" id="node4" href="$namespacecheckpointer__mod.html#abd2308df65a2ae2ceb627aab5571026d" title="Provides registry information for the component." alt="" coords="5,39,213,80"/>
+</map>

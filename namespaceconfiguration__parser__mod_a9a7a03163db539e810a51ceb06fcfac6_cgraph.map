@@ -1,0 +1,7 @@
+<map id="configuration_parser_mod::get_io_xml" name="configuration_parser_mod::get_io_xml">
+<area shape="rect" id="node1" title="Reads in textual data from a file and returns this, used to read the IO server XML configuration file..." alt="" coords="5,71,144,112"/>
+<area shape="rect" id="node2" href="$namespaceconfiguration__parser__mod.html#a5992aea607023bece81d9f8bee76c503" title="Adds a specific line into the io xml. The IO XML is always exactly the correct size,..." alt="" coords="193,5,369,47"/>
+<area shape="rect" id="node3" href="$namespaceconfiguration__parser__mod.html#ac596c096d1ebf2cdb441f6d3cb8f41f6" title="Combines two IO XML arrays together (for instance one returned from a recursive include)" alt="" coords="192,71,371,112"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="210,137,353,163"/>
+<area shape="rect" id="node5" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="419,129,585,171"/>
+</map>

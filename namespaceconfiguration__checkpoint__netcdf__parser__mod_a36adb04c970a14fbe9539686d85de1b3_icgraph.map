@@ -1,0 +1,12 @@
+<map id="configuration_checkpoint_netcdf_parser_mod::remove_null_terminator_from_string" name="configuration_checkpoint_netcdf_parser_mod::remove_null_terminator_from_string">
+<area shape="rect" id="node1" title="Removes NetCDF C style null termination of string. This is placed right at the end,..." alt="" coords="1159,71,1348,127"/>
+<area shape="rect" id="node2" href="$namespaceconfiguration__checkpoint__netcdf__parser__mod.html#a0f644955464877087b5e779b48216188" title="Will read in and initialise the options database from the contents of the checkpoint file." alt="" coords="940,71,1111,127"/>
+<area shape="rect" id="node3" href="$namespaceconfiguration__checkpoint__netcdf__parser__mod.html#a234a39ac1b4d8067a1db4a6955848b83" title="Will parse the NetCDF checkpoint file and loads the configuration into the options database." alt="" coords="677,71,892,127"/>
+<area shape="rect" id="node4" href="$namespacemonc__mod.html#aca3f98dc591c90feec3df9ddb3dd2d7f" title="Loads the configuration into the options database, either from a file or checkpoint." alt="" coords="471,78,629,119"/>
+<area shape="rect" id="node5" href="$namespacemonc__mod.html#aa2abab500db49cd9c95e41632531a40f" title="Main core entry point to bootstrap running the model." alt="" coords="245,13,401,54"/>
+<area shape="rect" id="node7" href="$namespacetest__monc__mod.html#acece1f67f38b107c9e20b7b2d5dfaae4" title=" " alt="" coords="252,78,395,119"/>
+<area shape="rect" id="node9" href="$namespacetest__science__constants__mod.html#a694616da54f6a8368798f51ee0605e22" title=" " alt="" coords="224,143,423,185"/>
+<area shape="rect" id="node6" href="$interfacemonc__mod_1_1io__server__run__procedure.html#a4a7a1c54866c50bf460f178dadc2b073" title=" " alt="" coords="5,5,176,61"/>
+<area shape="rect" id="node8" href="$test__monc_8F90.html#a4a1c75fa47435dd0a9a6afd7068428a2" title=" " alt="" coords="29,85,152,112"/>
+<area shape="rect" id="node10" href="$test__scienceconstants_8F90.html#a7bdaa3a8dce08782ec81f46f2df80b0b" title=" " alt="" coords="11,143,171,185"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="io_server_state_reader_mod::reactivate_writer_field_manager_state" name="io_server_state_reader_mod::reactivate_writer_field_manager_state">
+<area shape="rect" id="node1" title="Reactivates the writer field manager state from the checkpoint file, for memory reasons this will ope..." alt="" coords="507,49,663,105"/>
+<area shape="rect" id="node2" href="$namespacewriter__field__manager__mod.html#a061c34fe0697d9639defd2f0926e2e74" title="Initialises the writer field manager." alt="" coords="278,5,425,61"/>
+<area shape="rect" id="node4" href="$interfaceio__server__state__reader__mod_1_1writer__field__manager__unserialise__state.html#af45885765439d168075186df796bdc07" title=" " alt="" coords="244,86,459,157"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+</map>

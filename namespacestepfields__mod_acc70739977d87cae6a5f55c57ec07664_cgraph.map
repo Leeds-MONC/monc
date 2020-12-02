@@ -1,0 +1,4 @@
+<map id="stepfields_mod::remove_negative_rounding_errors_for_single_field" name="stepfields_mod::remove_negative_rounding_errors_for_single_field">
+<area shape="rect" id="node1" title="Removes the negative rounding errors from a specific single field. This works two columns behind and ..." alt="" coords="5,5,180,61"/>
+<area shape="rect" id="node2" href="$namespacestepfields__mod.html#a3289e62bb177f6faa70f6f254541c801" title="Removes the negative rounding errors from a slice of a single field. This works two columns behind an..." alt="" coords="228,5,403,61"/>
+</map>

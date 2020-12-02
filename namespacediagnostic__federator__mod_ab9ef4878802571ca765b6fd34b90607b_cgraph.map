@@ -1,0 +1,4 @@
+<map id="diagnostic_federator_mod::get_value_from_monc_data" name="diagnostic_federator_mod::get_value_from_monc_data">
+<area shape="rect" id="node1" title="Retrieves a value from the communicated MONC data. If this was an integer then converts to a real." alt="" coords="5,5,155,61"/>
+<area shape="rect" id="node2" href="$namespacediagnostic__federator__mod.html#aa264a6878f40365037fea7292ecd4f45" title="Retrieves the data type of a field or 0 if the field was not found." alt="" coords="203,13,385,54"/>
+</map>

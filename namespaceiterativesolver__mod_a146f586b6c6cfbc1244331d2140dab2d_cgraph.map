@@ -1,0 +1,4 @@
+<map id="iterativesolver_mod::inner_prod" name="iterativesolver_mod::inner_prod">
+<area shape="rect" id="node1" title="Returns the global inner product of two vectors, ignoring the halo cells." alt="" coords="5,5,140,47"/>
+<area shape="rect" id="node2" href="$namespaceiterativesolver__mod.html#a60152786b4abc4477b62166c58b437a7" title="Returns the global inner product of a pair of vectors, ignoring the halo cells for three separate pai..." alt="" coords="188,5,343,47"/>
+</map>

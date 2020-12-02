@@ -1,0 +1,9 @@
+<map id="reduction_inter_io_mod::handle_process_recv_from_other_io_server" name="reduction_inter_io_mod::handle_process_recv_from_other_io_server">
+<area shape="rect" id="node1" title="Handles the data received from another IO server, locates the correct reduction progress,..." alt="" coords="1267,89,1449,145"/>
+<area shape="rect" id="node2" href="$namespacereduction__inter__io__mod.html#a85941bfa01b3ffc89f04d2ace55a7f4d" title="Handles the receiving of data from some other IO server. This is issued call back style within a thre..." alt="" coords="1056,89,1219,145"/>
+<area shape="rect" id="node3" href="$namespacereduction__inter__io__mod.html#a7169f0a03e60e46122e71b490e1905eb" title="Initialises the reduction action." alt="" coords="871,89,1008,145"/>
+<area shape="rect" id="node4" href="$namespaceallreduction__inter__io__mod.html#afa84e1c95ac2cd88f9220f5bde57087d" title="Initialises the all reduction inter IO functionality." alt="" coords="656,56,823,112"/>
+<area shape="rect" id="node6" href="$namespacediagnostic__federator__mod.html#a808b726c916d9dc52e2020eacbe2be0f" title="Initialises the diagnostics action and sets up the diagnostics master definitions." alt="" coords="244,71,417,127"/>
+<area shape="rect" id="node5" href="$namespaceglobal__callback__inter__io__mod.html#a112cd288476ab34b687759a6124b912c" title="Initialises the global callback." alt="" coords="465,5,608,61"/>
+<area shape="rect" id="node7" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,85,196,112"/>
+</map>

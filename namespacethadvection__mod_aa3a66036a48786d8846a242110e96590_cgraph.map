@@ -1,0 +1,13 @@
+<map id="thadvection_mod::thadvection_get_descriptor" name="thadvection_mod::thadvection_get_descriptor">
+<area shape="rect" id="node1" title="Provides a description of this component for the core to register." alt="" coords="5,150,200,191"/>
+<area shape="rect" id="node2" href="$namespacethadvection__mod.html#a50aad1af96470f2debcd7a6191c6c110" title="Field information retrieval callback, this returns information for a specific component&#39;s published f..." alt="" coords="270,5,421,61"/>
+<area shape="rect" id="node3" href="$namespacethadvection__mod.html#a1a22c4e41063ea55633b24702d7fff4f" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="261,85,429,126"/>
+<area shape="rect" id="node5" href="$namespacethadvection__mod.html#a6a4a9ea2a9012878a1e12ce6188e8191" title=" " alt="" coords="251,150,439,191"/>
+<area shape="rect" id="node6" href="$namespacethadvection__mod.html#adf88aa826be438abd234748262372cee" title="Initialisation callback to set up the variables and data needed by the component." alt="" coords="248,215,443,257"/>
+<area shape="rect" id="node7" href="$namespacethadvection__mod.html#a09d1b793a23456817a68ec1c07c1257b" title="Timestep callback, will call the two separate procedures to do their advection if needed." alt="" coords="257,281,434,322"/>
+<area shape="rect" id="node4" href="$namespacethadvection__mod.html#ad95878bb451ea6f40760492bab2d3ccc" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="515,85,667,126"/>
+<area shape="rect" id="node8" href="$namespacethadvection__mod.html#a7b19a797f5a9555cf25c4f97a6f53d54" title="Performs advection of the mean baroclinicity if appropriate." alt="" coords="499,182,682,223"/>
+<area shape="rect" id="node9" href="$namespacethadvection__mod.html#acca0838c1d444d0a29a1b7ac211ae0ac" title="Computation of component tendencies." alt="" coords="502,247,679,289"/>
+<area shape="rect" id="node10" href="$namespacethadvection__mod.html#af414b9967eb65e448d9d937f84076a6a" title="Save the 3d tendencies coming into the component." alt="" coords="500,313,681,354"/>
+<area shape="rect" id="node11" href="$namespacethadvection__mod.html#aadad7cf391b176d99be59815af29feb6" title="Vertical advection of the reference state. It doesn&#39;t seem consistent to do the advection in this way..." alt="" coords="491,378,691,419"/>
+</map>

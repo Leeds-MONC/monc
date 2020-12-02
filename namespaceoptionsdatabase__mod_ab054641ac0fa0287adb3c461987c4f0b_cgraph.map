@@ -1,0 +1,6 @@
+<map id="optionsdatabase_mod::options_get_real" name="optionsdatabase_mod::options_get_real">
+<area shape="rect" id="node1" title="Retrieves a real value from the database that matches the provided key." alt="" coords="5,49,155,90"/>
+<area shape="rect" id="node2" href="$namespaceoptionsdatabase__mod.html#a13bbeb6272c82308e3d4a42f7c36c862" title="Determines whether a specific options key exists in the database or not, if it doesn&#39;t then this resu..." alt="" coords="207,5,356,61"/>
+<area shape="rect" id="node4" href="$namespaceoptionsdatabase__mod.html#ab4f16a670bed755586806647da3cfa8d" title="Gets a key corresponding to the correct options key and index combination." alt="" coords="203,85,360,126"/>
+<area shape="rect" id="node3" href="$namespaceoptionsdatabase__mod.html#a4b187d310f786ed3c207a3060e09b156" title="Determines whether a specific key is in the database." alt="" coords="408,13,557,54"/>
+</map>

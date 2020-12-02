@@ -1,0 +1,4 @@
+<map id="io_server_mod::free_individual_registered_monc_aspects" name="io_server_mod::free_individual_registered_monc_aspects">
+<area shape="rect" id="node1" title="Frees up the memory associated with individual registered MONCs. This is done at the end for all MONC..." alt="" coords="5,5,152,61"/>
+<area shape="rect" id="node2" href="$namespacempi__communication__mod.html#ae9569a173fd13c6772b5dfc8495c715b" title="Frees an MPI type, used in clean up." alt="" coords="200,13,371,54"/>
+</map>

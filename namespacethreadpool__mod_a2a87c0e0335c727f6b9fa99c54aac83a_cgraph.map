@@ -1,0 +1,8 @@
+<map id="threadpool_mod::threadpool_is_idle" name="threadpool_mod::threadpool_is_idle">
+<area shape="rect" id="node1" title="Determines whether the thread pool is idle or not (i.e. all threads are idle and waiting for work)" alt="" coords="5,71,185,112"/>
+<area shape="rect" id="node2" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="237,5,392,47"/>
+<area shape="rect" id="node5" href="$namespaceforthread__mod.html#a9101345b87d2c0e18fb020677cf767b9" title=" " alt="" coords="233,71,396,112"/>
+<area shape="rect" id="node6" href="$namespaceforthread__mod.html#a6068972cad8d59eb6b29c8301d331090" title=" " alt="" coords="233,136,396,177"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="444,13,587,39"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="635,5,801,47"/>
+</map>

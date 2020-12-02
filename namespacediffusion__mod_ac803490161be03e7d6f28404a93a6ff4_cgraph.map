@@ -1,0 +1,4 @@
+<map id="diffusion_mod::field_value_retrieval_callback" name="diffusion_mod::field_value_retrieval_callback">
+<area shape="rect" id="node1" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="5,5,173,47"/>
+<area shape="rect" id="node2" href="$namespacediffusion__mod.html#a0304b27b0f1c86e59531d33fcce9aea5" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="221,5,373,47"/>
+</map>

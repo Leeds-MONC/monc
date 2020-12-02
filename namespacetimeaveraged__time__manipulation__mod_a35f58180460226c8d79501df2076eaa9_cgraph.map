@@ -1,0 +1,4 @@
+<map id="timeaveraged_time_manipulation_mod::unserialise_time_averaged_state" name="timeaveraged_time_manipulation_mod::unserialise_time_averaged_state">
+<area shape="rect" id="node1" title="Unserialises some byte data to initialise the state from some previous version." alt="" coords="5,13,256,54"/>
+<area shape="rect" id="node2" href="$namespacetimeaveraged__time__manipulation__mod.html#a3d50d634cdf0a28d0ed7651e3a025416" title="Will create a specific time averaged completed value based upon the provided serialised data." alt="" coords="304,5,519,61"/>
+</map>

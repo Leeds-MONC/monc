@@ -1,0 +1,4 @@
+<map id="pencil_fft_mod::transpose_and_forward_fft_in_x" name="pencil_fft_mod::transpose_and_forward_fft_in_x">
+<area shape="rect" id="node1" title="Performs the transposition and forward FFT in the x dimension. After the FFT the complex space is con..." alt="" coords="209,5,379,47"/>
+<area shape="rect" id="node2" href="$namespacepencil__fft__mod.html#a2b24719dcfb0852d350e2b0ba944b4c3" title="Performs a forward 3D FFT and currently results in target data which is the X, Z, Y oriented pencil N..." alt="" coords="5,5,161,47"/>
+</map>

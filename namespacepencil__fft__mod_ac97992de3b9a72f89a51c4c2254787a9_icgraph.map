@@ -1,0 +1,8 @@
+<map id="pencil_fft_mod::is_extended_dimension" name="pencil_fft_mod::is_extended_dimension">
+<area shape="rect" id="node1" title="Determines whether or not the specific dimension is in the list of extended dimensions." alt="" coords="852,39,999,80"/>
+<area shape="rect" id="node2" href="$namespacepencil__fft__mod.html#a6f32d038392be51850e7bd91467414a3" title="Determines the number of elements to on my process per dimension which either need to be sent to (for..." alt="" coords="615,5,804,47"/>
+<area shape="rect" id="node6" href="$namespacepencil__fft__mod.html#ab686537d315d736c53e66af7ee40b89c" title="Deduces the size of my (local) pencil based upon the new decomposition. This depends heavily on the c..." alt="" coords="625,71,794,112"/>
+<area shape="rect" id="node3" href="$namespacepencil__fft__mod.html#a941fec4c35a74d0702d01b1747604c44" title="Creates a specific pencil transposition description. It is maybe more a decomposition description,..." alt="" coords="419,39,567,80"/>
+<area shape="rect" id="node4" href="$namespacepencil__fft__mod.html#a744b6c045c8620f598f3ebc5bb714611" title="Initialises the pencil transpositions, from a pencil in one dimension to that in another." alt="" coords="212,39,371,80"/>
+<area shape="rect" id="node5" href="$namespacepencil__fft__mod.html#a3a8be214eb145cf54faebb0882867780" title="Initialises the pencil FFT functionality, this will create the transposition structures needed." alt="" coords="5,39,164,80"/>
+</map>

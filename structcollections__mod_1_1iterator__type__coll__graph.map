@@ -1,0 +1,5 @@
+<map id="collections_mod::iterator_type" name="collections_mod::iterator_type">
+<area shape="rect" id="node1" title=" " alt="" coords="40,201,233,228"/>
+<area shape="rect" id="node2" href="$structcollections__mod_1_1list__type.html" title="List data structure which implements a doubly linked list. This list will preserve its order." alt="" coords="167,112,338,139"/>
+<area shape="rect" id="node3" href="$structcollections__mod_1_1listnode__type.html" title="Private list node which holds the raw generic node data and pointers to next and previous list nodes." alt="" coords="5,7,204,33"/>
+</map>

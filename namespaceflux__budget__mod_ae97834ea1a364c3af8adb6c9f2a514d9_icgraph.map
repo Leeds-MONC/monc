@@ -1,0 +1,14 @@
+<map id="flux_budget_mod::set_published_field_enabled_state" name="flux_budget_mod::set_published_field_enabled_state">
+<area shape="rect" id="node1" title="Sets the published value enabled state in the provided collection map." alt="" coords="708,267,911,308"/>
+<area shape="rect" id="node2" href="$namespaceflux__budget__mod.html#aed28919f50cea1fdc5220f517537d6cb" title="Initialises the mse diagnostics. For now we are assuming mse is the same as theta,..." alt="" coords="470,5,642,47"/>
+<area shape="rect" id="node5" href="$namespaceflux__budget__mod.html#a291a2374ee2464b0f1cfe6e7db9cb9e0" title="Initialises the prognostic (uu, vv, ww) budget diagnostics." alt="" coords="452,71,660,112"/>
+<area shape="rect" id="node6" href="$namespaceflux__budget__mod.html#a0cb8b07c7b027bc267e709ae42f2c453" title="Initialises the Q field flux diagnostic areas and enabled flags depending upon the configuration of t..." alt="" coords="470,136,642,177"/>
+<area shape="rect" id="node7" href="$namespaceflux__budget__mod.html#ac303395be9b63fa55e651e3182b140f8" title="Initialises the qt diagnostics. For now we are assuming qt is the same as theta, which needs updating..." alt="" coords="470,201,642,243"/>
+<area shape="rect" id="node8" href="$namespaceflux__budget__mod.html#a5a7c13569c68d6099c9b96a3314a4a24" title="Initialises the heat flux diagnostic areas and enabled flags depending upon the configuration of the ..." alt="" coords="470,267,642,308"/>
+<area shape="rect" id="node9" href="$namespaceflux__budget__mod.html#a28e7093ca2555441800e20f0d70b3d17" title="Initialises the thetal diagnostics." alt="" coords="470,332,642,373"/>
+<area shape="rect" id="node10" href="$namespaceflux__budget__mod.html#acc58342b387d0fcf7390f7fc85e8d301" title="Initialises the TKE diagnostics." alt="" coords="470,397,642,439"/>
+<area shape="rect" id="node11" href="$namespaceflux__budget__mod.html#adfe4638d497a4bb810f624072eb84582" title="Initialises the UW and VW diagnostics." alt="" coords="470,463,642,504"/>
+<area shape="rect" id="node12" href="$namespaceflux__budget__mod.html#a0a0ae1f9cf9bb78572241ab139cee1d3" title="Populates the published field names in the appropriate map." alt="" coords="220,427,395,468"/>
+<area shape="rect" id="node3" href="$namespaceflux__budget__mod.html#a4b4cd9b0c46e6933a6a7a0d5bcfc7bae" title="Initialisation call back." alt="" coords="211,267,404,308"/>
+<area shape="rect" id="node4" href="$namespaceflux__budget__mod.html#af8cb1efb9549f504e2458c9f7a78d574" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,395,163,436"/>
+</map>

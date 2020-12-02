@@ -1,0 +1,6 @@
+<map id="fieldslicer_operator_mod::convert_dimension_str_to_id" name="fieldslicer_operator_mod::convert_dimension_str_to_id">
+<area shape="rect" id="node1" title="Converts a dimension string to the corresponding numeric ID." alt="" coords="463,41,632,97"/>
+<area shape="rect" id="node2" href="$namespacefieldslicer__operator__mod.html#aa0b2d71fe1373d7954d8573198040fce" title="Determines the bounds for each dimension which is specified via the configuration file." alt="" coords="225,5,408,61"/>
+<area shape="rect" id="node4" href="$namespacefieldslicer__operator__mod.html#ab6797f15c09d30bac9bcca508f2d86bd" title="Retrieves the integer index of the dimension to slice." alt="" coords="219,85,415,126"/>
+<area shape="rect" id="node3" href="$namespacefieldslicer__operator__mod.html#aa55d6ae4ff673ced3fd76f4ad54257fb" title="Performs the actual field slicing." alt="" coords="5,41,171,97"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="flux_budget_mod::initialise_q_flux_diagnostics" name="flux_budget_mod::initialise_q_flux_diagnostics">
+<area shape="rect" id="node1" title="Initialises the Q field flux diagnostic areas and enabled flags depending upon the configuration of t..." alt="" coords="5,5,177,47"/>
+<area shape="rect" id="node2" href="$namespaceflux__budget__mod.html#ae97834ea1a364c3af8adb6c9f2a514d9" title="Sets the published value enabled state in the provided collection map." alt="" coords="225,5,428,47"/>
+</map>

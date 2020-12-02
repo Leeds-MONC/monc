@@ -1,0 +1,4 @@
+<map id="smagorinsky_mod::finalisation_callback" name="smagorinsky_mod::finalisation_callback">
+<area shape="rect" id="node1" title="Called when the model is finishing up, will finalise the halo communications represented by the state..." alt="" coords="260,5,455,47"/>
+<area shape="rect" id="node2" href="$namespacesmagorinsky__mod.html#a890dbb7e8c8b74dfbab466274c190df4" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,212,47"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="flux_budget_mod::initialise_mse_diagnostics" name="flux_budget_mod::initialise_mse_diagnostics">
+<area shape="rect" id="node1" title="Initialises the mse diagnostics. For now we are assuming mse is the same as theta,..." alt="" coords="452,5,624,47"/>
+<area shape="rect" id="node2" href="$namespaceflux__budget__mod.html#a4b4cd9b0c46e6933a6a7a0d5bcfc7bae" title="Initialisation call back." alt="" coords="211,5,404,47"/>
+<area shape="rect" id="node3" href="$namespaceflux__budget__mod.html#af8cb1efb9549f504e2458c9f7a78d574" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,163,47"/>
+</map>

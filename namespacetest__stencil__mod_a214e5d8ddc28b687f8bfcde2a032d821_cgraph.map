@@ -1,0 +1,5 @@
+<map id="test_stencil_mod::test_calculate_interpolated_cell_value" name="test_stencil_mod::test_calculate_interpolated_cell_value">
+<area shape="rect" id="node1" title=" " alt="" coords="5,31,160,87"/>
+<area shape="rect" id="node2" href="$namespacestencil__mod.html#a12d15f246287a91f69a4aa3f9ec9d465" title="Calculates the interpolated values for each point in a column. The exact method of interpolation depe..." alt="" coords="208,5,369,47"/>
+<area shape="rect" id="node3" href="$namespacestencil__mod.html#ae839debb65ef22fec419445d9c088df6" title="Creates a stencil configuration which will then be used for interpolation." alt="" coords="221,71,356,112"/>
+</map>

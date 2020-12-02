@@ -1,0 +1,4 @@
+<map id="meanprofiles_mod::init_callback" name="meanprofiles_mod::init_callback">
+<area shape="rect" id="node1" title="Called on MONC initialisation, will allocate appropriate data structures." alt="" coords="260,5,411,47"/>
+<area shape="rect" id="node2" href="$namespacemeanprofiles__mod.html#a55543023376dac0d52f813bd4a71e74d" title="Returns the component descriptor of the mean profiles module." alt="" coords="5,5,212,47"/>
+</map>

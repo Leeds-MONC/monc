@@ -1,0 +1,6 @@
+<map id="lwrad_exponential_mod::lwrad_exponential_get_descriptor" name="lwrad_exponential_mod::lwrad_exponential_get_descriptor">
+<area shape="rect" id="node1" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,63,163,119"/>
+<area shape="rect" id="node2" href="$namespacelwrad__exponential__mod.html#aa7efcfe08b881936d024160c9563d033" title=" " alt="" coords="211,5,368,47"/>
+<area shape="rect" id="node3" href="$namespacelwrad__exponential__mod.html#aa742f845fc99acb97bb67064ea13637b" title="The initialisation callback sets up the prescribed longwave fluxes and the exponential decay factor." alt="" coords="211,71,368,112"/>
+<area shape="rect" id="node4" href="$namespacelwrad__exponential__mod.html#a39fef58221512c88b45f778daffa34dd" title="Called for each column per timestep this will apply a forcing term to the aerosol fields." alt="" coords="211,136,368,177"/>
+</map>

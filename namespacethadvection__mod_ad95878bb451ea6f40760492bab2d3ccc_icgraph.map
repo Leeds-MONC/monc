@@ -1,0 +1,5 @@
+<map id="thadvection_mod::set_published_field_value" name="thadvection_mod::set_published_field_value">
+<area shape="rect" id="node1" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="464,5,616,47"/>
+<area shape="rect" id="node2" href="$namespacethadvection__mod.html#a1a22c4e41063ea55633b24702d7fff4f" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="248,5,416,47"/>
+<area shape="rect" id="node3" href="$namespacethadvection__mod.html#aa3a66036a48786d8846a242110e96590" title="Provides a description of this component for the core to register." alt="" coords="5,5,200,47"/>
+</map>

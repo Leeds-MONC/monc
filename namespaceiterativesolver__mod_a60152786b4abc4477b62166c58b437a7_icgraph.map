@@ -1,0 +1,8 @@
+<map id="iterativesolver_mod::inner_prod_three_way" name="iterativesolver_mod::inner_prod_three_way">
+<area shape="rect" id="node1" title="Returns the global inner product of a pair of vectors, ignoring the halo cells for three separate pai..." alt="" coords="736,35,891,76"/>
+<area shape="rect" id="node2" href="$namespaceiterativesolver__mod.html#a047746272efd1fd8e0ac7454cd0c239d" title="Performs the BiCGStab KS method." alt="" coords="371,5,505,47"/>
+<area shape="rect" id="node5" href="$namespaceiterativesolver__mod.html#a146f586b6c6cfbc1244331d2140dab2d" title="Returns the global inner product of two vectors, ignoring the halo cells." alt="" coords="553,64,688,105"/>
+<area shape="rect" id="node3" href="$namespaceiterativesolver__mod.html#af8940894125fc1c9447cad012f379df2" title="Timestep callback, this ignores all but the last column where it calls the solver." alt="" coords="188,39,323,80"/>
+<area shape="rect" id="node4" href="$namespaceiterativesolver__mod.html#a2d28cccb2e26b87273e0d919955f01c6" title="Descriptor of the iterative solver component used by the registry." alt="" coords="5,31,140,87"/>
+<area shape="rect" id="node6" href="$namespaceiterativesolver__mod.html#a991261981bd68fd62f79c51899508da5" title="Performs the preconditioned conjugate gradient method." alt="" coords="371,71,505,112"/>
+</map>

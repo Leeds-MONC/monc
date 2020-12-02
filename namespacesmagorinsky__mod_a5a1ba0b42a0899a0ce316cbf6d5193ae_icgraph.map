@@ -1,0 +1,5 @@
+<map id="smagorinsky_mod::copy_diff_to_halo_buffer" name="smagorinsky_mod::copy_diff_to_halo_buffer">
+<area shape="rect" id="node1" title="Copies the diffusion field data to halo buffers for a specific process in a dimension and halo cell." alt="" coords="491,5,651,47"/>
+<area shape="rect" id="node2" href="$namespacesmagorinsky__mod.html#aa8c4f88f55ce9b9b84e45db0027c3d20" title="For each none halo cell this will calculate the subgrid terms for viscosity and diffusion." alt="" coords="260,5,443,47"/>
+<area shape="rect" id="node3" href="$namespacesmagorinsky__mod.html#a890dbb7e8c8b74dfbab466274c190df4" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,212,47"/>
+</map>

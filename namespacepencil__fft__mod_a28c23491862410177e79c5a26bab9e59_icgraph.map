@@ -1,0 +1,6 @@
+<map id="pencil_fft_mod::determine_my_pencil_location" name="pencil_fft_mod::determine_my_pencil_location">
+<area shape="rect" id="node1" title="Determines my location for each dimension in the new pencil decomposition. I.e. which block I am oper..." alt="" coords="615,5,784,47"/>
+<area shape="rect" id="node2" href="$namespacepencil__fft__mod.html#a941fec4c35a74d0702d01b1747604c44" title="Creates a specific pencil transposition description. It is maybe more a decomposition description,..." alt="" coords="419,5,567,47"/>
+<area shape="rect" id="node3" href="$namespacepencil__fft__mod.html#a744b6c045c8620f598f3ebc5bb714611" title="Initialises the pencil transpositions, from a pencil in one dimension to that in another." alt="" coords="212,5,371,47"/>
+<area shape="rect" id="node4" href="$namespacepencil__fft__mod.html#a3a8be214eb145cf54faebb0882867780" title="Initialises the pencil FFT functionality, this will create the transposition structures needed." alt="" coords="5,5,164,47"/>
+</map>

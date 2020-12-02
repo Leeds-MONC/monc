@@ -1,0 +1,4 @@
+<map id="inter_io_specifics_mod::register_inter_io_communication" name="inter_io_specifics_mod::register_inter_io_communication">
+<area shape="rect" id="node1" title="Registers an inter IO communication operation." alt="" coords="5,5,140,61"/>
+<area shape="rect" id="node2" href="$namespaceconfiguration__parser__mod.html#a93bd1e4353c781242c2ead4919973e87" title="Extends the array of inter io communications from its current suze to current size+data_stride+curren..." alt="" coords="188,5,335,61"/>
+</map>

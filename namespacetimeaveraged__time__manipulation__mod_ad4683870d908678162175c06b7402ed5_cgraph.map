@@ -1,0 +1,4 @@
+<map id="timeaveraged_time_manipulation_mod::serialise_time_averaged_state" name="timeaveraged_time_manipulation_mod::serialise_time_averaged_state">
+<area shape="rect" id="node1" title="Serialises the state of this manipulator so that it can be restarted later on. Releases any locks iss..." alt="" coords="5,13,241,54"/>
+<area shape="rect" id="node2" href="$namespacetimeaveraged__time__manipulation__mod.html#a333024bb15a4003bee7d658b35806dd0" title="Serialises a specific time averaged completed value, releases any locks issued during preparation." alt="" coords="289,5,501,61"/>
+</map>

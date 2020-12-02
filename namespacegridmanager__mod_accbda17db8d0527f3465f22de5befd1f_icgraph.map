@@ -1,0 +1,4 @@
+<map id="gridmanager_mod::initialise_callback" name="gridmanager_mod::initialise_callback">
+<area shape="rect" id="node1" title="Called during initialisation and will initialise the horizontal and vertical grid configurations Note..." alt="" coords="256,5,435,47"/>
+<area shape="rect" id="node2" href="$namespacegridmanager__mod.html#ad1594b9175d56289645df4961045ce14" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,208,47"/>
+</map>

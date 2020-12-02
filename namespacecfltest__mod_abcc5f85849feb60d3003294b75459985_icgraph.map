@@ -1,0 +1,6 @@
+<map id="cfltest_mod::get_global_values" name="cfltest_mod::get_global_values">
+<area shape="rect" id="node1" title="Gets the global reduction values based upon the local contributions of CFL and Galilean transformatio..." alt="" coords="636,13,791,54"/>
+<area shape="rect" id="node2" href="$namespacecfltest__mod.html#a195e3069e29e4400d360377eb8d22351" title="Performs the CFL and Galilean transformation calculations. First locally and then will determine the ..." alt="" coords="377,5,588,61"/>
+<area shape="rect" id="node3" href="$namespacecfltest__mod.html#af2b945006854311a179cd5f02369baf4" title="Called at each timestep, this will only do the CFL computation every nncfl timesteps (or every timest..." alt="" coords="184,13,329,54"/>
+<area shape="rect" id="node4" href="$namespacecfltest__mod.html#ad497f1c406a9c4e356ac57eeed2c7868" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,13,136,54"/>
+</map>

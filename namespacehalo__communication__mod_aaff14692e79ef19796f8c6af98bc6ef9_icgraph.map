@@ -1,0 +1,4 @@
+<map id="halo_communication_mod::get_single_field_per_halo_cell" name="halo_communication_mod::get_single_field_per_halo_cell">
+<area shape="rect" id="node1" title="A very common function, which returns a single field per halo cell which is used to halo swap just on..." alt="" coords="231,20,380,76"/>
+<area shape="rect" id="node2" href="$interfacehalo__communication__mod_1_1perform__local__data__copy__proc__interface.html#a9f668d078f8cd3153d4bbde17cdbee41" title=" " alt="" coords="5,5,183,91"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="configuration_file_parser_mod::store_configuration" name="configuration_file_parser_mod::store_configuration">
+<area shape="rect" id="node1" title="Stores a specific configuration by determining the type of a value and calling on to the options data..." alt="" coords="5,41,217,83"/>
+<area shape="rect" id="node2" href="$namespaceconversions__mod.html#ab7f79ee421227f8486ab403e9d5620e0" title="Converts from a single to double precision real. This applies some rounding to a certain number of de..." alt="" coords="265,5,424,47"/>
+<area shape="rect" id="node3" href="$namespaceconfiguration__file__parser__mod.html#affe646317e972a687b815869a1a8f1d0" title="Removes quotations from a string if these are included, regardless of before it will return the conte..." alt="" coords="271,70,418,126"/>
+</map>

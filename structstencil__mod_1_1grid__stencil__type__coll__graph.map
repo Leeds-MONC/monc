@@ -1,0 +1,5 @@
+<map id="stencil_mod::grid_stencil_type" name="stencil_mod::grid_stencil_type">
+<area shape="rect" id="node1" title="Configuration for a specific stencil interpolation to perform." alt="" coords="47,213,241,240"/>
+<area shape="rect" id="node2" href="$structprognostics__mod_1_1prognostic__field__ptr__type.html" title="A pointer to the prognostic field. This is so we can wrap prognostics up in an array and still refer ..." alt="" coords="209,109,396,151"/>
+<area shape="rect" id="node3" href="$structprognostics__mod_1_1prognostic__field__type.html" title="A prognostic field which is assumed to be 3D." alt="" coords="5,5,192,47"/>
+</map>

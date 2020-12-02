@@ -1,0 +1,4 @@
+<map id="subgrid_profile_diagnostics_mod::field_value_retrieval_callback" name="subgrid_profile_diagnostics_mod::field_value_retrieval_callback">
+<area shape="rect" id="node1" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="269,5,448,61"/>
+<area shape="rect" id="node2" href="$namespacesubgrid__profile__diagnostics__mod.html#a7b4d99914a450b5e12bd096028db461d" title="Provides the component descriptor for the core to register." alt="" coords="5,5,221,61"/>
+</map>

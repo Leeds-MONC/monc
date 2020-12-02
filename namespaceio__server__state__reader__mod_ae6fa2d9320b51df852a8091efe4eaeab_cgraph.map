@@ -1,0 +1,6 @@
+<map id="io_server_state_reader_mod::get_io_server_serialised_bytes" name="io_server_state_reader_mod::get_io_server_serialised_bytes">
+<area shape="rect" id="node1" title="Retrieves some IO server serialised bytes which will make up the state of a specific facet...." alt="" coords="5,35,244,76"/>
+<area shape="rect" id="node2" href="$namespacenetcdf__misc__mod.html#a159f13789af0cecc704b47fde431b241" title="Will check a NetCDF status and write to log_log error any decoded statuses. Can be used to decode whe..." alt="" coords="292,5,459,47"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="507,42,649,69"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="697,35,864,76"/>
+</map>

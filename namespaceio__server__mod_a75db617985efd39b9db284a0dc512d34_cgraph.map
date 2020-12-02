@@ -1,0 +1,8 @@
+<map id="io_server_mod::register_present_field_names_to_federators" name="io_server_mod::register_present_field_names_to_federators">
+<area shape="rect" id="node1" title="Registers with the writer federator the set of fields (prognostic and diagnostic) that are available,..." alt="" coords="5,45,172,101"/>
+<area shape="rect" id="node2" href="$namespacediagnostic__federator__mod.html#a5b55ebfb6f9bf71a42f716fc9d6dad8c" title="Determines the diagnostics fields that are available based upon the input MONC fields on registration..." alt="" coords="220,5,411,61"/>
+<area shape="rect" id="node4" href="$namespacewriter__federator__mod.html#aff9121d09086fc4867afe57e0262f4a0" title="Informs the writer federator that specific fields are present and should be reflected in the diagnost..." alt="" coords="235,85,396,141"/>
+<area shape="rect" id="node3" href="$namespacediagnostic__federator__mod.html#a7951029c07b91b6398c93636f9442dfa" title="Retrieves the next activity in a collection being iterated over by an iterator." alt="" coords="459,13,641,54"/>
+<area shape="rect" id="node5" href="$namespacewriter__federator__mod.html#a0c151f31e747242202c9328f70207055" title="Enables a specific field by its name, this will locate all the fields with this name and enable them." alt="" coords="477,85,623,141"/>
+<area shape="rect" id="node6" href="$namespacewriter__federator__mod.html#a9379ee9a358faa87a63d2f2459f202b9" title="Retrieves the index of the next writer which uses a specific field. If none is found then returns fal..." alt="" coords="689,85,833,141"/>
+</map>

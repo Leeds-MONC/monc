@@ -1,0 +1,4 @@
+<map id="viscosity_mod::initialisation_callback" name="viscosity_mod::initialisation_callback">
+<area shape="rect" id="node1" title="Sets up the stencil_mod (used in interpolation) and allocates data for the flux fields." alt="" coords="216,5,395,47"/>
+<area shape="rect" id="node2" href="$namespaceviscosity__mod.html#a46044316c5dde4a422d977a7aa0c9240" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,168,47"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="flux_budget_mod::set_published_field_value" name="flux_budget_mod::set_published_field_value">
+<area shape="rect" id="node1" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="427,5,579,47"/>
+<area shape="rect" id="node2" href="$namespaceflux__budget__mod.html#a7c244c7c80fbe8dd0b2c5fa73a7768b6" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="211,5,379,47"/>
+<area shape="rect" id="node3" href="$namespaceflux__budget__mod.html#af8cb1efb9549f504e2458c9f7a78d574" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,163,47"/>
+</map>

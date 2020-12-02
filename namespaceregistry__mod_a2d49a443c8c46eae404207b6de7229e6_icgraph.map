@@ -1,0 +1,8 @@
+<map id="registry_mod::read_specific_orders" name="registry_mod::read_specific_orders">
+<area shape="rect" id="node1" title=" " alt="" coords="973,13,1100,54"/>
+<area shape="rect" id="node2" href="$namespaceregistry__mod.html#abfb0b6c1152fe6095f7b73299fc26722" title=" " alt="" coords="792,5,925,61"/>
+<area shape="rect" id="node3" href="$namespaceregistry__mod.html#adc11d2059a8bd7ac5b68e93f9039a897" title="Initialises the registry with the provided configuration file." alt="" coords="625,13,744,54"/>
+<area shape="rect" id="node4" href="$namespacemonc__mod.html#ad9e8a1e5e542e0cb9d187870fe57f0f9" title="Called by MONC processes to run the MONC model." alt="" coords="428,20,577,47"/>
+<area shape="rect" id="node5" href="$namespacemonc__mod.html#aa2abab500db49cd9c95e41632531a40f" title="Main core entry point to bootstrap running the model." alt="" coords="224,13,380,54"/>
+<area shape="rect" id="node6" href="$interfacemonc__mod_1_1io__server__run__procedure.html#a4a7a1c54866c50bf460f178dadc2b073" title=" " alt="" coords="5,5,176,61"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="fieldcoarsener_operator_mod::get_occurances_of_character" name="fieldcoarsener_operator_mod::get_occurances_of_character">
+<area shape="rect" id="node1" title="Retrieves the number of occurances of a character in a source string." alt="" coords="475,45,645,101"/>
+<area shape="rect" id="node2" href="$namespacefieldcoarsener__operator__mod.html#a7043289878af3ff1200263ea90ee8f1b" title="Retrieves the dimensions and indexes to slice from the strings provided in configuration." alt="" coords="248,45,427,101"/>
+<area shape="rect" id="node3" href="$namespacefieldcoarsener__operator__mod.html#afd09d4b0863550d66767b9865383fad7" title="Retrieves the size of an auto dimension based upon the work that will be completed here." alt="" coords="5,5,200,61"/>
+<area shape="rect" id="node4" href="$namespacefieldcoarsener__operator__mod.html#a7c32be83854f3535b1ba25c1e5df44e4" title="Performs the field coarsener operator on a specific field." alt="" coords="7,85,198,141"/>
+</map>

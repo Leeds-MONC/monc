@@ -1,0 +1,6 @@
+<map id="collections_mod::hashset_add" name="collections_mod::hashset_add">
+<area shape="rect" id="node1" title="Adds a string to the hashset which stores unique strings, therefore if the string already exists then..." alt="" coords="5,46,201,73"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a144628b8f3301dd8a83703ec0caf3833" title="Determines the location and hash of a key within a specific hashset. The hash is set regardless of wh..." alt="" coords="249,5,417,47"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#a1f286bd90166134b57391b8588918bff" title="Adds an element to the end of the list." alt="" coords="264,71,403,112"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a745849ca729b70cc641198c3280e1640" title="Translates the string key into a hash from 1 to hash_size (inclusive.) This encoding is deterministic..." alt="" coords="465,5,605,47"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="grids_mod::global_grid_type" name="grids_mod::global_grid_type">
+<area shape="rect" id="node1" title="Defines the global grid." alt="" coords="619,46,800,73"/>
+<area shape="rect" id="node2" href="$structgrids__mod_1_1grid__configuration__type.html" title="Wraps the dimensional configuration types." alt="" coords="273,46,493,73"/>
+<area shape="rect" id="node3" href="$structgrids__mod_1_1vertical__grid__configuration__type.html" title="The configuration of the grid vertically." alt="" coords="5,5,167,47"/>
+<area shape="rect" id="node4" href="$structgrids__mod_1_1horizontal__grid__configuration__type.html" title="The configuration of the grid horizontally." alt="" coords="5,71,167,112"/>
+</map>

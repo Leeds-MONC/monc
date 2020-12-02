@@ -1,0 +1,5 @@
+<map id="coriolis_mod::compute_component_tendencies" name="coriolis_mod::compute_component_tendencies">
+<area shape="rect" id="node1" title="Computation of component tendencies." alt="" coords="395,5,557,47"/>
+<area shape="rect" id="node2" href="$namespacecoriolis__mod.html#af6a7321f1e9075432377dd87af4f965c" title="For each none halo cell this will calculate the coriolis terms for su and sv fields." alt="" coords="196,5,347,47"/>
+<area shape="rect" id="node3" href="$namespacecoriolis__mod.html#add678a151479109fe4ac085460b615e6" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,148,47"/>
+</map>

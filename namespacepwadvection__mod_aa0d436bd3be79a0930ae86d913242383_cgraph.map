@@ -1,0 +1,4 @@
+<map id="pwadvection_mod::initialisation_callback" name="pwadvection_mod::initialisation_callback">
+<area shape="rect" id="node1" title="Initialisation callback, will set up the configuration of this advection scheme." alt="" coords="5,5,207,47"/>
+<area shape="rect" id="node2" href="$namespacepwadvection__mod.html#ab9ceed4ec40575cffeda8e97e53e354d" title="Parses a field string (read in from the configuration file) and determines whether this algorithm sho..." alt="" coords="255,5,445,47"/>
+</map>

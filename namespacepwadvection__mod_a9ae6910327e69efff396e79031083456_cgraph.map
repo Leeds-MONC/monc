@@ -1,0 +1,14 @@
+<map id="pwadvection_mod::pwadvection_get_descriptor" name="pwadvection_mod::pwadvection_get_descriptor">
+<area shape="rect" id="node1" title="Provides a description of this component for the core to register." alt="" coords="5,118,212,159"/>
+<area shape="rect" id="node2" href="$namespacepwadvection__mod.html#a067442dae0b1e4fbec3e851d7a509877" title="Field information retrieval callback, this returns information for a specific component&#39;s published f..." alt="" coords="283,5,439,61"/>
+<area shape="rect" id="node3" href="$namespacepwadvection__mod.html#a865afba4bde5dc5cdd68ed727a5cb526" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="277,85,445,126"/>
+<area shape="rect" id="node5" href="$namespacepwadvection__mod.html#aa0d436bd3be79a0930ae86d913242383" title="Initialisation callback, will set up the configuration of this advection scheme." alt="" coords="260,150,461,191"/>
+<area shape="rect" id="node7" href="$namespacepwadvection__mod.html#a3a3bb54b579bbc1cf213c1a3f0b48d09" title="Called per column of data, this will perform Piacsek&#45;Williams advection on the applicable fields for ..." alt="" coords="269,313,452,354"/>
+<area shape="rect" id="node4" href="$namespacepwadvection__mod.html#acf58786c78812a800b3571d96833b13a" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="529,85,681,126"/>
+<area shape="rect" id="node6" href="$namespacepwadvection__mod.html#ab9ceed4ec40575cffeda8e97e53e354d" title="Parses a field string (read in from the configuration file) and determines whether this algorithm sho..." alt="" coords="509,150,700,191"/>
+<area shape="rect" id="node8" href="$namespacepwadvection__mod.html#ad53453a53911eccbd7b63a95d341e59b" title="Advects the flow fields depending upon which fields are active in the model in a column." alt="" coords="519,215,691,257"/>
+<area shape="rect" id="node9" href="$namespacepwadvection__mod.html#ab7686318badb42b5e5e91391ed582953" title="Advects the q fields in a column." alt="" coords="519,281,691,322"/>
+<area shape="rect" id="node10" href="$namespacepwadvection__mod.html#a899c4cf3ffc299e560cd703d2c0f73c5" title="Advects the theta field in a column." alt="" coords="519,346,691,387"/>
+<area shape="rect" id="node11" href="$namespacepwadvection__mod.html#a11cdb839e674be24193e70d741d0e97a" title="Computation of component tendencies." alt="" coords="513,411,696,453"/>
+<area shape="rect" id="node12" href="$namespacepwadvection__mod.html#a2b1158ef39fd4709bbcf24bfcf14fe75" title="Save the 3d tendencies coming into the component." alt="" coords="514,477,695,518"/>
+</map>

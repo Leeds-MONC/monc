@@ -1,0 +1,11 @@
+<map id="fieldslicer_operator_mod::perform_fieldslicer_operator" name="fieldslicer_operator_mod::perform_fieldslicer_operator">
+<area shape="rect" id="node1" title="Performs the actual field slicing." alt="" coords="5,145,171,201"/>
+<area shape="rect" id="node2" href="$namespacefieldslicer__operator__mod.html#aa0b2d71fe1373d7954d8573198040fce" title="Determines the bounds for each dimension which is specified via the configuration file." alt="" coords="225,73,408,129"/>
+<area shape="rect" id="node6" href="$namespacedata__utils__mod.html#a82673dc85d6fdbb25b8e29f574443c1c" title="Retrieves the name of a field from the attributes specified in the configuration." alt="" coords="235,153,399,194"/>
+<area shape="rect" id="node7" href="$namespacedata__utils__mod.html#a32e2bb292c66ad41e019b09c8842b82b" title="Retrieves the name of a field from the attributes specified in the configuration." alt="" coords="469,182,626,223"/>
+<area shape="rect" id="node8" href="$namespacefieldslicer__operator__mod.html#ab6797f15c09d30bac9bcca508f2d86bd" title="Retrieves the integer index of the dimension to slice." alt="" coords="219,9,415,50"/>
+<area shape="rect" id="node9" href="$namespaceconfiguration__parser__mod.html#a6fccd3bb7df6e95f399ed127a3487a46" title="Retrieves the prognostic field configuration corresponding to a specific field name and returns wheth..." alt="" coords="244,269,389,325"/>
+<area shape="rect" id="node3" href="$namespacefieldslicer__operator__mod.html#a268b48bca49a594674986b01774de59b" title="Converts a dimension string to the corresponding numeric ID." alt="" coords="463,5,632,61"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="476,88,619,115"/>
+<area shape="rect" id="node5" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="680,81,847,122"/>
+</map>

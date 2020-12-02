@@ -1,0 +1,24 @@
+<map id="test_registry_mod::insert_component_callbacks" name="test_registry_mod::insert_component_callbacks">
+<area shape="rect" id="node1" title=" " alt="" coords="5,235,192,276"/>
+<area shape="rect" id="node2" href="$namespacetest__registry__mod.html#a228d9c4a2071cccca98c020c3ef26817" title=" " alt="" coords="240,201,423,243"/>
+<area shape="rect" id="node22" href="$namespacetest__registry__mod.html#aec14f0490136a0ed2cd137a6423a6ee9" title=" " alt="" coords="266,267,397,308"/>
+<area shape="rect" id="node3" href="$namespacetest__registry__mod.html#aa5966356948ac0dc2e56467005710d60" title=" " alt="" coords="471,5,647,47"/>
+<area shape="rect" id="node4" href="$namespacetest__registry__mod.html#a3bc3af579683a491218c9b7f0da38b95" title=" " alt="" coords="478,71,639,112"/>
+<area shape="rect" id="node5" href="$namespacetest__registry__mod.html#a4cc74c61ed06531dc6d0604a0a936124" title=" " alt="" coords="493,136,624,177"/>
+<area shape="rect" id="node6" href="$namespacetest__registry__mod.html#a40030c8bb590b47eed7599dc541cd100" title=" " alt="" coords="475,201,642,243"/>
+<area shape="rect" id="node7" href="$namespacetest__registry__mod.html#a53aac685fddf96ed629e6dce1e92aedc" title=" " alt="" coords="483,267,634,308"/>
+<area shape="rect" id="node8" href="$namespaceregistry__mod.html#a9560c58c94411b38b5908eb11a0ad0eb" title="Will register a component and install the nescesary callback hooks." alt="" coords="486,332,631,373"/>
+<area shape="rect" id="node21" href="$namespacetest__registry__mod.html#ad798d0b361f3162f7c994918665c9c92" title=" " alt="" coords="485,398,632,425"/>
+<area shape="rect" id="node9" href="$namespaceregistry__mod.html#a227a7bff3d8c55d6eb0ca2618a8a3de0" title="Will install the callback hooks for each state." alt="" coords="706,208,833,249"/>
+<area shape="rect" id="node13" href="$namespaceregistry__mod.html#aad841de55194d7b2dfebf58ecb4a4687" title="Loads the published fields information for an entire component into the registry&#39;s definition list." alt="" coords="706,273,833,315"/>
+<area shape="rect" id="node14" href="$namespacelogging__mod.html#ad95937a250467334622daeb5cff78c20" title="Will log just from the master process." alt="" coords="892,281,1081,307"/>
+<area shape="rect" id="node17" href="$namespaceoptionsdatabase__mod.html#aa3f0213d8028773523e6194a0ddf8e18" title="Retrieves a logical value from the database that matches the provided key." alt="" coords="695,391,844,432"/>
+<area shape="rect" id="node19" href="$namespaceoptionsdatabase__mod.html#a4b187d310f786ed3c207a3060e09b156" title="Determines whether a specific key is in the database." alt="" coords="1134,404,1283,445"/>
+<area shape="rect" id="node10" href="$namespaceregistry__mod.html#a4d7dfdc95eb21cf68caaea16201d0351" title="Will install a specific callback hook into the specified map_type of existing hooks." alt="" coords="897,167,1076,194"/>
+<area shape="rect" id="node11" href="$namespaceregistry__mod.html#ada00dbccc3aea074507e4ef22962c58a" title="Given a group name this returns the id (i.e. order) of that group." alt="" coords="899,218,1075,245"/>
+<area shape="rect" id="node12" href="$namespaceregistry__mod.html#ac310def38e06d11d4f1fb792ad8923ba" title="Given a group name this returns the group descriptor corresponding to that or an error if none is fou..." alt="" coords="1129,211,1288,252"/>
+<area shape="rect" id="node15" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="1137,281,1280,307"/>
+<area shape="rect" id="node16" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="1336,273,1503,315"/>
+<area shape="rect" id="node18" href="$namespaceoptionsdatabase__mod.html#a13bbeb6272c82308e3d4a42f7c36c862" title="Determines whether a specific options key exists in the database or not, if it doesn&#39;t then this resu..." alt="" coords="912,331,1061,387"/>
+<area shape="rect" id="node20" href="$namespaceoptionsdatabase__mod.html#ab4f16a670bed755586806647da3cfa8d" title="Gets a key corresponding to the correct options key and index combination." alt="" coords="908,411,1065,452"/>
+</map>

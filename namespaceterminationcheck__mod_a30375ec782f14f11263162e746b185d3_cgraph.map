@@ -1,0 +1,6 @@
+<map id="terminationcheck_mod::terminationcheck_get_descriptor" name="terminationcheck_mod::terminationcheck_get_descriptor">
+<area shape="rect" id="node1" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,31,159,87"/>
+<area shape="rect" id="node2" href="$namespaceterminationcheck__mod.html#afd65b1a8084d91366940c855fa8d8cfa" title="Called upon model initialisation. Will basically read from the options database and set options in th..." alt="" coords="207,5,360,47"/>
+<area shape="rect" id="node3" href="$namespaceterminationcheck__mod.html#a3d2ad40af712608addd844eefe23066f" title="Timestep hook which is called at each timestep to determine whether or not to terminate timestep iter..." alt="" coords="207,71,360,112"/>
+<area shape="rect" id="node4" href="$namespaceterminationcheck__mod.html#a18304b210f5148cff4898040483dddb7" title="Checks the messages file for commands which determine user control of the model." alt="" coords="408,71,561,112"/>
+</map>

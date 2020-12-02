@@ -1,0 +1,4 @@
+<map id="registry_mod::get_ordered_groups" name="registry_mod::get_ordered_groups">
+<area shape="rect" id="node1" title="Orders all the groups (in the order that they will be called in) and returns an array with these in o..." alt="" coords="5,5,176,47"/>
+<area shape="rect" id="node2" href="$namespaceregistry__mod.html#ae5b11998b62f4ae0aba6f758429ac3da" title="Given the id of a group this will return the corresponding descriptor." alt="" coords="224,5,383,47"/>
+</map>

@@ -1,0 +1,14 @@
+<map id="mpi_communication_mod::build_mpi_datatype" name="mpi_communication_mod::build_mpi_datatype">
+<area shape="rect" id="node1" title="Builds the MPI type that corresponds to the data which will be received from a specific MONC process...." alt="" coords="5,179,176,221"/>
+<area shape="rect" id="node2" href="$namespaceio__server__client__mod.html#a84bf9d6a41f5f7fea53b4b62c166a77f" title="Appends the MPI datatype details to the block counts, old types and offsets arrays...." alt="" coords="239,13,394,54"/>
+<area shape="rect" id="node4" href="$namespaceio__server__client__mod.html#a5c91dd79c12db74da24c9e318d750f02" title="Look up the data description that corresponds to a specific field keyed by its name." alt="" coords="243,77,391,133"/>
+<area shape="rect" id="node5" href="$namespacempi__communication__mod.html#a44ac4f74cb4daf89481da8df1dabc10d" title="If we are explicitly managing MPI thread safety (SERIALIZED mode) then locks MPI." alt="" coords="231,209,402,250"/>
+<area shape="rect" id="node7" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="668,220,811,247"/>
+<area shape="rect" id="node10" href="$namespaceio__server__client__mod.html#ae78f9ba9a1846fdf7a7b873057b06a36" title="Provides the type extents of the types that we are using in construction of the MPI data type...." alt="" coords="224,274,409,315"/>
+<area shape="rect" id="node11" href="$namespacempi__communication__mod.html#aad52010c006d90df6c097898ebdf4487" title="If we are explicitly managing MPI thread safety (SERIALIZED mode) then unlocks MPI." alt="" coords="231,339,402,381"/>
+<area shape="rect" id="node3" href="$namespaceio__server__client__mod.html#a8d816b12c995d04f289de4f8d03a4d3d" title="Gets the MPI datatype from out internal representation of the field data type (as in the configuratio..." alt="" coords="457,5,620,61"/>
+<area shape="rect" id="node6" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="461,274,616,315"/>
+<area shape="rect" id="node9" href="$namespaceforthread__mod.html#a9101345b87d2c0e18fb020677cf767b9" title=" " alt="" coords="457,209,620,250"/>
+<area shape="rect" id="node8" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="859,213,1025,254"/>
+<area shape="rect" id="node12" href="$namespaceforthread__mod.html#a6068972cad8d59eb6b29c8301d331090" title=" " alt="" coords="457,339,620,381"/>
+</map>

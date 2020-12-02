@@ -1,0 +1,6 @@
+<map id="checkpointer_mod::finalisation_callback" name="checkpointer_mod::finalisation_callback">
+<area shape="rect" id="node1" title="Called on termination to write out the status of the model run to checkpoint." alt="" coords="5,39,200,80"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__mod.html#ae43bde190ca30ddc637139f66a123c5b" title="Performs the checkpoint dump and timings. This can be called as part of the timestep or at the end of..." alt="" coords="248,39,427,80"/>
+<area shape="rect" id="node3" href="$namespacecheckpointer__mod.html#a58c14938a0ba0d7f47218eca9f319920" title="Generates a unique filename based upon the base one specified and the number of completed timesteps." alt="" coords="475,5,659,47"/>
+<area shape="rect" id="node4" href="$namespacecheckpointer__mod.html#a7b00192310e36ea98ab44bc96f83a410" title="Will dump out the model dump statistics." alt="" coords="491,71,642,112"/>
+</map>

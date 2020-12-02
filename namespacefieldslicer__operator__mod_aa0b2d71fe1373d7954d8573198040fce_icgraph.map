@@ -1,0 +1,4 @@
+<map id="fieldslicer_operator_mod::determine_dimension_bounds" name="fieldslicer_operator_mod::determine_dimension_bounds">
+<area shape="rect" id="node1" title="Determines the bounds for each dimension which is specified via the configuration file." alt="" coords="219,5,401,61"/>
+<area shape="rect" id="node2" href="$namespacefieldslicer__operator__mod.html#aa55d6ae4ff673ced3fd76f4ad54257fb" title="Performs the actual field slicing." alt="" coords="5,5,171,61"/>
+</map>

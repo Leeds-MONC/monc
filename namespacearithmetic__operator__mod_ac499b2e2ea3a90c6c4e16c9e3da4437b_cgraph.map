@@ -1,0 +1,5 @@
+<map id="arithmetic_operator_mod::get_size_of_data_being_operated_on" name="arithmetic_operator_mod::get_size_of_data_being_operated_on">
+<area shape="rect" id="node1" title="Retrieves the number of data elements that this will operate on. It will produce a log error if any v..." alt="" coords="5,5,164,61"/>
+<area shape="rect" id="node2" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="212,20,355,47"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="403,13,569,54"/>
+</map>

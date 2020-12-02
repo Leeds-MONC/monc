@@ -1,0 +1,5 @@
+<map id="inter_io_specifics_mod::package_inter_io_communication_message" name="inter_io_specifics_mod::package_inter_io_communication_message">
+<area shape="rect" id="node1" title="Packages up fields into an io binary message (allocated here) which is used for sending." alt="" coords="5,31,200,87"/>
+<area shape="rect" id="node2" href="$namespaceio__server__client__mod.html#a8ffb596e1dfa516877825fbcc1da77b2" title="Packs an array field into the sending buffer." alt="" coords="248,5,393,47"/>
+<area shape="rect" id="node3" href="$namespaceio__server__client__mod.html#aa9aee7e6e5918193184b77962ba3b12e" title="Packs the data of a scalar field into a buffer." alt="" coords="248,71,393,112"/>
+</map>

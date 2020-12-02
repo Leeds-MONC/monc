@@ -1,0 +1,6 @@
+<map id="smagorinsky_mod::moist_ri_2" name="smagorinsky_mod::moist_ri_2">
+<area shape="rect" id="node1" title="Calculates another &quot;moist version&quot; of the Richardson number based on &quot;change in subgrid buoyancy flux..." alt="" coords="724,13,917,39"/>
+<area shape="rect" id="node2" href="$namespacesmagorinsky__mod.html#a3cec3ff2925f20a15f6e682554320a0c" title="Calculates the richardson number depending upon the setup of the model and the method selected." alt="" coords="491,5,676,47"/>
+<area shape="rect" id="node3" href="$namespacesmagorinsky__mod.html#aa8c4f88f55ce9b9b84e45db0027c3d20" title="For each none halo cell this will calculate the subgrid terms for viscosity and diffusion." alt="" coords="260,5,443,47"/>
+<area shape="rect" id="node4" href="$namespacesmagorinsky__mod.html#a890dbb7e8c8b74dfbab466274c190df4" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,212,47"/>
+</map>

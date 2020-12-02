@@ -1,0 +1,11 @@
+<map id="halo_communication_mod::blocking_halo_swap" name="halo_communication_mod::blocking_halo_swap">
+<area shape="rect" id="node1" title="Performs the entire halo swap operation, this is simply a wrapper around the nonblocking initiate and..." alt="" coords="5,147,183,188"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#a02b04565afda3dc93273a16944a2976e" title="This completes a nonblocking halo swap and it is only during this call that the data fields themselve..." alt="" coords="231,139,420,195"/>
+<area shape="rect" id="node5" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="476,215,619,242"/>
+<area shape="rect" id="node7" href="$namespacehalo__communication__mod.html#a8dac8c6529d0169c9e4402690f62d581" title="Initiates a non blocking halo swap, this registers the receive requests, copies data into the send bu..." alt="" coords="238,59,413,115"/>
+<area shape="rect" id="node3" href="$namespacehalo__communication__mod.html#a3c46cf4c2f61bbbc70e2a86a2c6f741e" title="Copies the received data (held in buffers) from neighbours into the correct halo location in the prog..." alt="" coords="468,135,627,191"/>
+<area shape="rect" id="node4" href="$namespacehalo__communication__mod.html#ab0dc177b2189be5b8ed3877e6081e459" title="Given the process id of a neighbour this determines the location in the data structure of correspondi..." alt="" coords="675,97,841,153"/>
+<area shape="rect" id="node6" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="675,208,841,249"/>
+<area shape="rect" id="node8" href="$namespacehalo__communication__mod.html#a9537cebc6ed24d00aa7e34e6c66a9e29" title="Registers receive requests for all prognostic fields from the appropriate neighbouring processes (tha..." alt="" coords="476,5,619,47"/>
+<area shape="rect" id="node9" href="$namespacehalo__communication__mod.html#a0e57e9753603d764609afb1f4cb2087b" title="Copies all applicable bits of the prognostics into a send buffer for each neighbour and then issues a..." alt="" coords="474,71,621,112"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="iobridge_mod::populate_globally_visible_sendable_fields" name="iobridge_mod::populate_globally_visible_sendable_fields">
+<area shape="rect" id="node1" title="Populates the globally visible sendable fields which is a key value pair mapping between name and des..." alt="" coords="5,5,180,61"/>
+<area shape="rect" id="node2" href="$namespaceiobridge__mod.html#a809fd286beeeeca69659d6305ebe9ea2" title="Generates a sendable description based upon the dimension information supplied, missing arguments mea..." alt="" coords="228,13,383,54"/>
+</map>

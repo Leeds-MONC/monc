@@ -1,0 +1,5 @@
+<map id="damping_mod::set_published_field_value" name="damping_mod::set_published_field_value">
+<area shape="rect" id="node1" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="428,5,617,47"/>
+<area shape="rect" id="node2" href="$namespacedamping__mod.html#a9d3fc3e4969e0aa0ee245a1019f2ded6" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="212,5,380,47"/>
+<area shape="rect" id="node3" href="$namespacedamping__mod.html#a9553d74741d92f6fdbd3b868fed2b7cb" title="Descriptor of this component for registration." alt="" coords="5,5,164,47"/>
+</map>

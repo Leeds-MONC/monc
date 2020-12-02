@@ -1,0 +1,8 @@
+<map id="checkpointer_write_checkpoint_mod::write_out_global_attributes" name="checkpointer_write_checkpoint_mod::write_out_global_attributes">
+<area shape="rect" id="node1" title="Writes out global attributes into the checkpoint." alt="" coords="5,61,164,117"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__common__mod.html#a3fbe4c50092c828b5fe133d24302522f" title="Will check a NetCDF status and write to log_log error any decoded statuses. Can be used to decode whe..." alt="" coords="221,35,374,76"/>
+<area shape="rect" id="node6" href="$namespacedummy__netcdf__mod.html#ab71a7c3fe5681033eabdab1c258a321b" title=" " alt="" coords="212,100,383,141"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="445,13,587,39"/>
+<area shape="rect" id="node5" href="$namespacedummy__netcdf__mod.html#abeaf9879b125d4cbdbca2c0514a3d418" title=" " alt="" coords="431,64,601,105"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="649,5,816,47"/>
+</map>

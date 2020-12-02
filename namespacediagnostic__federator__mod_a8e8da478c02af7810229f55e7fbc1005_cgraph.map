@@ -1,0 +1,4 @@
+<map id="diagnostic_federator_mod::get_diagnostic_activity_by_result_name" name="diagnostic_federator_mod::get_diagnostic_activity_by_result_name">
+<area shape="rect" id="node1" title="Retrives a diagnostic activity based upon its result name or null if none is found." alt="" coords="5,5,173,61"/>
+<area shape="rect" id="node2" href="$namespacediagnostic__federator__mod.html#a7951029c07b91b6398c93636f9442dfa" title="Retrieves the next activity in a collection being iterated over by an iterator." alt="" coords="221,13,404,54"/>
+</map>

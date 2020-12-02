@@ -1,0 +1,11 @@
+<map id="kidreader_mod::check_status" name="kidreader_mod::check_status">
+<area shape="rect" id="node1" title="Will check a NetCDF status and write to log_log error any decoded statuses." alt="" coords="840,123,988,164"/>
+<area shape="rect" id="node2" href="$namespacekidreader__mod.html#a045f4b17a96ad277741c715d5a0852d6" title="Checks that the kinematics file that has been loaded is consistent with what we expect." alt="" coords="428,5,576,47"/>
+<area shape="rect" id="node3" href="$namespacekidreader__mod.html#af9f9656d6a5514b190a7cbe2d5b1c2b8" title="Initialisation hook which will parse the configuration NetCDF file and set up the model based upon th..." alt="" coords="220,123,380,164"/>
+<area shape="rect" id="node5" href="$namespacekidreader__mod.html#ae657e8566bd608d51e76bbaf1e541d90" title="Reads the dimensions from the NetCDF file." alt="" coords="639,123,777,164"/>
+<area shape="rect" id="node6" href="$namespacekidreader__mod.html#a9a8e1c5ed9fe3eeb73f85c224aa10205" title="Reads a single variable out of a NetCDF file." alt="" coords="639,188,777,229"/>
+<area shape="rect" id="node8" href="$namespacekidreader__mod.html#aaf68e89b47dd29a41d3890be5b6c8dc6" title="Will read a specific global NetCDF attribute." alt="" coords="624,253,792,295"/>
+<area shape="rect" id="node4" href="$namespacekidreader__mod.html#ac25b32ce129dab62a39885672825763e" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,123,172,164"/>
+<area shape="rect" id="node7" href="$namespacekidreader__mod.html#a0aacef0b2cd322378c4ba2b83ecc7b43" title="Reads the variables from the NetCDF KiD model file." alt="" coords="433,183,571,224"/>
+<area shape="rect" id="node9" href="$namespacekidreader__mod.html#a7dd96fb9d146b7cf370e4d7d736536f7" title="Will read the global attributes of the NetCDF KiD model dump and log_log them to debug." alt="" coords="433,251,571,292"/>
+</map>

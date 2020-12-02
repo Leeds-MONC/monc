@@ -1,0 +1,5 @@
+<map id="reduction_inter_io_mod::get_reduction_operator" name="reduction_inter_io_mod::get_reduction_operator">
+<area shape="rect" id="node1" title="Given the map of action attributes this procedure will identify the reduction operator that has been ..." alt="" coords="5,5,144,61"/>
+<area shape="rect" id="node2" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="192,20,335,47"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="383,13,549,54"/>
+</map>

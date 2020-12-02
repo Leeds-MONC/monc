@@ -1,0 +1,5 @@
+<map id="mpi_communication_mod::test_for_inter_io" name="mpi_communication_mod::test_for_inter_io">
+<area shape="rect" id="node1" title="Tests for inter IO server communication." alt="" coords="436,5,607,47"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ada1b8581f80d696dc8aa636405c73aea" title="Awaits a command or shutdown from MONC processes and other IO servers." alt="" coords="244,5,388,47"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,13,196,39"/>
+</map>

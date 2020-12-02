@@ -1,0 +1,5 @@
+<map id="halo_communication_mod::allocate_halo_buffers_for_each_neighbour" name="halo_communication_mod::allocate_halo_buffers_for_each_neighbour">
+<area shape="rect" id="node1" title="Allocates the locally stored halo buffers (send and receive) for each neighbouring process." alt="" coords="481,20,669,76"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#ac287e4b520fd9a75f35e58e67ec52880" title="Initialises a halo swapping state, by determining the neighbours, size of data in each swap and alloc..." alt="" coords="231,27,433,69"/>
+<area shape="rect" id="node3" href="$interfacehalo__communication__mod_1_1perform__local__data__copy__proc__interface.html#a9f668d078f8cd3153d4bbde17cdbee41" title=" " alt="" coords="5,5,183,91"/>
+</map>

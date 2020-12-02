@@ -1,0 +1,28 @@
+<map id="test_monc_mod::test_fill_registry_components" name="test_monc_mod::test_fill_registry_components">
+<area shape="rect" id="node1" title=" " alt="" coords="5,376,173,417"/>
+<area shape="rect" id="node2" href="$namespacetest__monc__mod.html#a90a4ca79028da29658056db6c181c54d" title=" " alt="" coords="232,217,375,259"/>
+<area shape="rect" id="node3" href="$namespacefftsolver__mod.html#ad219c2d25fc8a8f9353c00f610f37c4b" title="Descriptor of this component for registration." alt="" coords="227,283,379,324"/>
+<area shape="rect" id="node12" href="$namespacemonc__mod.html#a2b3f09b5a2a45e4c853636e7d0cae14e" title="Registers each supplied component description." alt="" coords="227,408,380,449"/>
+<area shape="rect" id="node26" href="$namespaceregistry__mod.html#a58788c9a6b30acd6db1253eee3319899" title="Returns a brief summary of all registered components." alt="" coords="221,473,385,515"/>
+<area shape="rect" id="node4" href="$namespacefftsolver__mod.html#acdf834d62478f5f7799afdc2847fa587" title="Called at MONC finalisation, will call to the pencil fft module to clean itself up and free the press..." alt="" coords="437,283,604,324"/>
+<area shape="rect" id="node5" href="$namespacefftsolver__mod.html#a9a2b2b221d8792a61e274193534e03bc" title="This initialisation callback sets up the pencil fft module, allocates data for the fourier space pres..." alt="" coords="433,136,608,177"/>
+<area shape="rect" id="node6" href="$namespacefftsolver__mod.html#a82fe1bd4173b841df2bc7651cefdf4bc" title="Timestep call back, which will transform to Fourier space, do a tridiagonal solve and then back into ..." alt="" coords="443,201,599,243"/>
+<area shape="rect" id="node7" href="$namespacefftsolver__mod.html#ab9a3338a53b29902a27e102983877e94" title="Completes the psrce calculation by waiting on all outstanding psrce communications to complete and th..." alt="" coords="659,71,818,112"/>
+<area shape="rect" id="node8" href="$namespacefftsolver__mod.html#a50b8c3b67d6b172f278aa26f2d5c299c" title=" " alt="" coords="672,136,805,177"/>
+<area shape="rect" id="node9" href="$namespacefftsolver__mod.html#a9fbc281dc1b4670abbc9713417550bc3" title="Copies the p field data to halo buffers for a specific process in a dimension and halo cell." alt="" coords="672,201,805,243"/>
+<area shape="rect" id="node10" href="$namespacefftsolver__mod.html#a9ec4b150d4fefc0abd637fe94ce88673" title="Does local data copying for P variable halo swap." alt="" coords="659,267,818,308"/>
+<area shape="rect" id="node11" href="$namespacefftsolver__mod.html#a1adca201d5138e9e750fcd7865f6f3e3" title="The tridiagonal solver which runs in Fourier space on the pressure terms. Note that because we are go..." alt="" coords="656,5,821,47"/>
+<area shape="rect" id="node13" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="1115,615,1257,642"/>
+<area shape="rect" id="node15" href="$namespaceregistry__mod.html#a9560c58c94411b38b5908eb11a0ad0eb" title="Will register a component and install the nescesary callback hooks." alt="" coords="448,437,593,479"/>
+<area shape="rect" id="node14" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="1313,608,1480,649"/>
+<area shape="rect" id="node16" href="$namespaceregistry__mod.html#a227a7bff3d8c55d6eb0ca2618a8a3de0" title="Will install the callback hooks for each state." alt="" coords="675,332,802,373"/>
+<area shape="rect" id="node20" href="$namespaceregistry__mod.html#aad841de55194d7b2dfebf58ecb4a4687" title="Loads the published fields information for an entire component into the registry&#39;s definition list." alt="" coords="675,519,802,560"/>
+<area shape="rect" id="node21" href="$namespacelogging__mod.html#ad95937a250467334622daeb5cff78c20" title="Will log just from the master process." alt="" coords="869,590,1059,617"/>
+<area shape="rect" id="node22" href="$namespaceoptionsdatabase__mod.html#aa3f0213d8028773523e6194a0ddf8e18" title="Retrieves a logical value from the database that matches the provided key." alt="" coords="664,452,813,493"/>
+<area shape="rect" id="node24" href="$namespaceoptionsdatabase__mod.html#a4b187d310f786ed3c207a3060e09b156" title="Determines whether a specific key is in the database." alt="" coords="1111,425,1261,467"/>
+<area shape="rect" id="node17" href="$namespaceregistry__mod.html#a4d7dfdc95eb21cf68caaea16201d0351" title="Will install a specific callback hook into the specified map_type of existing hooks." alt="" coords="875,290,1053,317"/>
+<area shape="rect" id="node18" href="$namespaceregistry__mod.html#ada00dbccc3aea074507e4ef22962c58a" title="Given a group name this returns the id (i.e. order) of that group." alt="" coords="876,341,1052,367"/>
+<area shape="rect" id="node19" href="$namespaceregistry__mod.html#ac310def38e06d11d4f1fb792ad8923ba" title="Given a group name this returns the group descriptor corresponding to that or an error if none is fou..." alt="" coords="1107,333,1265,375"/>
+<area shape="rect" id="node23" href="$namespaceoptionsdatabase__mod.html#a13bbeb6272c82308e3d4a42f7c36c862" title="Determines whether a specific options key exists in the database or not, if it doesn&#39;t then this resu..." alt="" coords="889,445,1039,501"/>
+<area shape="rect" id="node25" href="$namespaceoptionsdatabase__mod.html#ab4f16a670bed755586806647da3cfa8d" title="Gets a key corresponding to the correct options key and index combination." alt="" coords="885,524,1043,565"/>
+</map>

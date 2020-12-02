@@ -1,0 +1,4 @@
+<map id="pstep_mod::initialisation_callback" name="pstep_mod::initialisation_callback">
+<area shape="rect" id="node1" title="Initialisation callback hook which will check the diverr component is enabled (as this allocates p)" alt="" coords="203,5,363,47"/>
+<area shape="rect" id="node2" href="$namespacepstep__mod.html#afb5d550cfbaa759159cff974dbb4169f" title="Descriptor of this component for registration." alt="" coords="5,5,155,47"/>
+</map>

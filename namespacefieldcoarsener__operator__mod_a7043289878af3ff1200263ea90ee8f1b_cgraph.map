@@ -1,0 +1,7 @@
+<map id="fieldcoarsener_operator_mod::get_dimensions_and_indexes_to_slice" name="fieldcoarsener_operator_mod::get_dimensions_and_indexes_to_slice">
+<area shape="rect" id="node1" title="Retrieves the dimensions and indexes to slice from the strings provided in configuration." alt="" coords="5,85,184,141"/>
+<area shape="rect" id="node2" href="$namespacefieldcoarsener__operator__mod.html#abc93c3f9a9d721f5a77453bdf75c090c" title="Converts a dimension string to the corresponding numeric ID." alt="" coords="233,5,402,61"/>
+<area shape="rect" id="node3" href="$namespacefieldcoarsener__operator__mod.html#ac9601122f4d7effeec33c57b2b03a4cc" title="Retrieves the number of occurances of a character in a source string." alt="" coords="232,85,403,141"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="246,165,389,192"/>
+<area shape="rect" id="node5" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="451,158,617,199"/>
+</map>

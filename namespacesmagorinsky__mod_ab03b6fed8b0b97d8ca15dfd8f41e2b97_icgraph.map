@@ -1,0 +1,5 @@
+<map id="smagorinsky_mod::calculate_half_squared_strain_rate" name="smagorinsky_mod::calculate_half_squared_strain_rate">
+<area shape="rect" id="node1" title="Calculates the half squared strain rate on l_w&#45;points which is used in determining the Richardson num..." alt="" coords="491,5,676,47"/>
+<area shape="rect" id="node2" href="$namespacesmagorinsky__mod.html#aa8c4f88f55ce9b9b84e45db0027c3d20" title="For each none halo cell this will calculate the subgrid terms for viscosity and diffusion." alt="" coords="260,5,443,47"/>
+<area shape="rect" id="node3" href="$namespacesmagorinsky__mod.html#a890dbb7e8c8b74dfbab466274c190df4" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,212,47"/>
+</map>

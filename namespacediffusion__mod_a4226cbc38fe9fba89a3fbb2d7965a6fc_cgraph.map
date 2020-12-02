@@ -1,0 +1,4 @@
+<map id="diffusion_mod::perform_q_diffusion" name="diffusion_mod::perform_q_diffusion">
+<area shape="rect" id="node1" title="Computes the diffusion source terms for each Q field." alt="" coords="5,5,157,47"/>
+<area shape="rect" id="node2" href="$namespacediffusion__mod.html#af96a16c2a92752d22f68aa4daad5261a" title="General diffusion computation for any field which is provided as arguments. Works in a column." alt="" coords="205,5,356,47"/>
+</map>

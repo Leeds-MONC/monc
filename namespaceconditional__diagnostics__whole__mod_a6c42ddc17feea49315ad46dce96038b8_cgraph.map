@@ -1,0 +1,6 @@
+<map id="conditional_diagnostics_whole_mod::conditional_diagnostics_whole_get_descriptor" name="conditional_diagnostics_whole_mod::conditional_diagnostics_whole_get_descriptor">
+<area shape="rect" id="node1" title="Provides registry information for the component." alt="" coords="5,85,231,141"/>
+<area shape="rect" id="node2" href="$namespaceconditional__diagnostics__whole__mod.html#a2acd3ccd43af468f7829b28e0868f61d" title="Called on termination: currently doesn&#39;t need to do anything." alt="" coords="301,5,463,61"/>
+<area shape="rect" id="node3" href="$namespaceconditional__diagnostics__whole__mod.html#ace8577639c16623647fa43f4fa796963" title="Initialisation hook: currently doesn&#39;t need to do anything." alt="" coords="297,85,467,141"/>
+<area shape="rect" id="node4" href="$namespaceconditional__diagnostics__whole__mod.html#adf4b42ea9fb7b4a93dbbe70284251ee1" title="The timestep hook will perform averaging of the conditional diagnostics." alt="" coords="279,165,485,206"/>
+</map>

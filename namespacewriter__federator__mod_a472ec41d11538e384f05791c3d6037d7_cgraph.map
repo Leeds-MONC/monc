@@ -1,0 +1,6 @@
+<map id="writer_federator_mod::determine_collective_type_and_optimise_if_possible" name="writer_federator_mod::determine_collective_type_and_optimise_if_possible">
+<area shape="rect" id="node1" title="Determines whether it can optimise a specific collective field. If the field fits into certain limite..." alt="" coords="5,31,212,87"/>
+<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a20d56184ae0676c708c4377f01f71310" title="Translates a dimension name to its numeric corresponding identifier." alt="" coords="453,5,620,47"/>
+<area shape="rect" id="node3" href="$namespacewriter__federator__mod.html#a08e836c0ac87a9e09b4c622aaded6ad6" title="Will initialise the collective data regions that form contiguous blocks within the data...." alt="" coords="260,63,405,119"/>
+<area shape="rect" id="node4" href="$namespacewriter__federator__mod.html#a9f81ee04b25b784bf928c8bc96d32016" title="Retrieves the number of common starting points that match a specific input value." alt="" coords="465,71,609,112"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="test_halo_communication_mod::test_determine_halo_corner_elements" name="test_halo_communication_mod::test_determine_halo_corner_elements">
+<area shape="rect" id="node1" title=" " alt="" coords="5,5,183,61"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#a00aa9edcba7108ca59856b7d5cb2c273" title="For a specific process id this determines the number of halo swap corner elements to involve in a com..." alt="" coords="231,5,385,61"/>
+</map>

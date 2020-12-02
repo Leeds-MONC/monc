@@ -1,0 +1,6 @@
+<map id="registry_mod::load_callback_hooks" name="registry_mod::load_callback_hooks">
+<area shape="rect" id="node1" title="Will install the callback hooks for each state." alt="" coords="5,23,132,65"/>
+<area shape="rect" id="node2" href="$namespaceregistry__mod.html#a4d7dfdc95eb21cf68caaea16201d0351" title="Will install a specific callback hook into the specified map_type of existing hooks." alt="" coords="180,5,359,32"/>
+<area shape="rect" id="node3" href="$namespaceregistry__mod.html#ada00dbccc3aea074507e4ef22962c58a" title="Given a group name this returns the id (i.e. order) of that group." alt="" coords="181,56,357,83"/>
+<area shape="rect" id="node4" href="$namespaceregistry__mod.html#ac310def38e06d11d4f1fb792ad8923ba" title="Given a group name this returns the group descriptor corresponding to that or an error if none is fou..." alt="" coords="407,49,565,90"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="swapsmooth_mod::swap_and_smooth_robert_filter" name="swapsmooth_mod::swap_and_smooth_robert_filter">
+<area shape="rect" id="node1" title="Swap and smooth with a Robert filter." alt="" coords="493,5,664,47"/>
+<area shape="rect" id="node2" href="$namespaceswapsmooth__mod.html#aa43e49fbf4ef649bfa40910959997692" title="Called for each non halo timestep column and will perform swapping and smoothing as required on that ..." alt="" coords="261,5,445,47"/>
+<area shape="rect" id="node3" href="$namespaceswapsmooth__mod.html#a346de843c14f99accae618d9119bfcb8" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,213,47"/>
+</map>

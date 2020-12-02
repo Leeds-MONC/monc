@@ -1,0 +1,4 @@
+<map id="pencil_fft_mod::determine_pencil_size" name="pencil_fft_mod::determine_pencil_size">
+<area shape="rect" id="node1" title="Deduces the size of my (local) pencil based upon the new decomposition. This depends heavily on the c..." alt="" coords="5,5,175,47"/>
+<area shape="rect" id="node2" href="$namespacepencil__fft__mod.html#ac97992de3b9a72f89a51c4c2254787a9" title="Determines whether or not the specific dimension is in the list of extended dimensions." alt="" coords="223,5,369,47"/>
+</map>

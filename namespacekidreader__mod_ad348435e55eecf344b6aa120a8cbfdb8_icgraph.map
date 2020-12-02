@@ -1,0 +1,5 @@
+<map id="kidreader_mod::define_vertical_levels" name="kidreader_mod::define_vertical_levels">
+<area shape="rect" id="node1" title="Defines the vertical levels of the grid. This is both the grid points and corresponding height for ea..." alt="" coords="428,5,575,47"/>
+<area shape="rect" id="node2" href="$namespacekidreader__mod.html#af9f9656d6a5514b190a7cbe2d5b1c2b8" title="Initialisation hook which will parse the configuration NetCDF file and set up the model based upon th..." alt="" coords="220,5,380,47"/>
+<area shape="rect" id="node3" href="$namespacekidreader__mod.html#ac25b32ce129dab62a39885672825763e" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,172,47"/>
+</map>

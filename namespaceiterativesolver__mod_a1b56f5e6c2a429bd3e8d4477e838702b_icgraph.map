@@ -1,0 +1,9 @@
+<map id="iterativesolver_mod::copy_calc_ax_to_halo_buffer" name="iterativesolver_mod::copy_calc_ax_to_halo_buffer">
+<area shape="rect" id="node1" title="Copies the source field data to halo buffers for a specific process in a dimension and halo cell &#45; fo..." alt="" coords="919,30,1073,86"/>
+<area shape="rect" id="node2" href="$namespaceiterativesolver__mod.html#a20f5d0cf67fdd1ef2f7707d7269c988b" title="Calculates A * x." alt="" coords="736,37,871,79"/>
+<area shape="rect" id="node3" href="$namespaceiterativesolver__mod.html#a047746272efd1fd8e0ac7454cd0c239d" title="Performs the BiCGStab KS method." alt="" coords="371,5,505,47"/>
+<area shape="rect" id="node6" href="$namespaceiterativesolver__mod.html#a991261981bd68fd62f79c51899508da5" title="Performs the preconditioned conjugate gradient method." alt="" coords="371,71,505,112"/>
+<area shape="rect" id="node7" href="$namespaceiterativesolver__mod.html#a3a126d3be90e5ca81444946a7d99160c" title="Jacobi preconditioner." alt="" coords="553,37,688,79"/>
+<area shape="rect" id="node4" href="$namespaceiterativesolver__mod.html#af8940894125fc1c9447cad012f379df2" title="Timestep callback, this ignores all but the last column where it calls the solver." alt="" coords="188,39,323,80"/>
+<area shape="rect" id="node5" href="$namespaceiterativesolver__mod.html#a2d28cccb2e26b87273e0d919955f01c6" title="Descriptor of the iterative solver component used by the registry." alt="" coords="5,31,140,87"/>
+</map>

@@ -1,0 +1,14 @@
+<map id="get_and_test_socrates_options_mod::set_and_test_socrates_monc_options" name="get_and_test_socrates_options_mod::set_and_test_socrates_monc_options">
+<area shape="rect" id="node1" title=" " alt="" coords="5,132,201,188"/>
+<area shape="rect" id="node2" href="$namespaceq__indices__mod.html#a4e5463d72d74c95749a8a66ff810eb1e" title="Add in a new entry into the register if the name does not already exist or return the index of the pr..." alt="" coords="274,40,407,82"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ad95937a250467334622daeb5cff78c20" title="Will log just from the master process." alt="" coords="480,18,669,45"/>
+<area shape="rect" id="node6" href="$namespaceregistry__mod.html#aff92757e62b8b5e790515cbbcf171e34" title="Determines whether or not a specific component is registered and enabled." alt="" coords="249,106,432,147"/>
+<area shape="rect" id="node7" href="$namespaceoptionsdatabase__mod.html#ae6f0a2a95fcacd3491b7b8fdb161e022" title="Retrieves an integer value from the database that matches the provided key." alt="" coords="266,171,415,212"/>
+<area shape="rect" id="node11" href="$namespaceoptionsdatabase__mod.html#aa3f0213d8028773523e6194a0ddf8e18" title="Retrieves a logical value from the database that matches the provided key." alt="" coords="266,236,415,278"/>
+<area shape="rect" id="node12" href="$namespaceoptionsdatabase__mod.html#ab054641ac0fa0287adb3c461987c4f0b" title="Retrieves a real value from the database that matches the provided key." alt="" coords="266,302,415,343"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="721,18,863,45"/>
+<area shape="rect" id="node5" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="915,11,1081,52"/>
+<area shape="rect" id="node8" href="$namespaceoptionsdatabase__mod.html#a13bbeb6272c82308e3d4a42f7c36c862" title="Determines whether a specific options key exists in the database or not, if it doesn&#39;t then this resu..." alt="" coords="500,265,649,321"/>
+<area shape="rect" id="node10" href="$namespaceoptionsdatabase__mod.html#ab4f16a670bed755586806647da3cfa8d" title="Gets a key corresponding to the correct options key and index combination." alt="" coords="496,200,653,242"/>
+<area shape="rect" id="node9" href="$namespaceoptionsdatabase__mod.html#a4b187d310f786ed3c207a3060e09b156" title="Determines whether a specific key is in the database." alt="" coords="717,272,867,314"/>
+</map>

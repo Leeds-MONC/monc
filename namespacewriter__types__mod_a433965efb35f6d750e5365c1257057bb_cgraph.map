@@ -1,0 +1,7 @@
+<map id="writer_types_mod::unserialise_writer_type" name="writer_types_mod::unserialise_writer_type">
+<area shape="rect" id="node1" title="Unserialises some byte data into the writer in order to recreate the state of the writer." alt="" coords="5,35,197,76"/>
+<area shape="rect" id="node2" href="$namespacewriter__types__mod.html#a7b5b6fc49221508341b7c744284b2d4c" title="Unserialises byte data into a writer field type." alt="" coords="245,35,437,76"/>
+<area shape="rect" id="node3" href="$namespacewriter__types__mod.html#a9c6f0c0e7d2ea3c758c6df1041d175a8" title="Unserialsies collective values contained in some data." alt="" coords="485,5,677,47"/>
+<area shape="rect" id="node4" href="$namespacewriter__types__mod.html#a536a4c1352bbc1d7a21aedec40ba4f8e" title="Unserialises some byte data into data values." alt="" coords="725,35,917,76"/>
+<area shape="rect" id="node5" href="$namespacewriter__types__mod.html#a0c1e3ad6ff464304020f0be57e7e7df0" title="Inflates some byte data into a string map." alt="" coords="965,35,1157,76"/>
+</map>

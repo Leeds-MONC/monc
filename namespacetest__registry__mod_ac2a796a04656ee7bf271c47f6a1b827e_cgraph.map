@@ -1,0 +1,34 @@
+<map id="test_registry_mod::test_component_replacement_callbacks" name="test_registry_mod::test_component_replacement_callbacks">
+<area shape="rect" id="node1" title=" " alt="" coords="5,194,199,250"/>
+<area shape="rect" id="node2" href="$namespacetest__registry__mod.html#a2555259629a7c7c383de0f012ff8f40f" title=" " alt="" coords="275,5,405,47"/>
+<area shape="rect" id="node3" href="$namespaceregistry__mod.html#aeedbb809e039733f2d1158348aa24c9d" title="Calls all finalisation callbacks with the specified state." alt="" coords="264,71,416,112"/>
+<area shape="rect" id="node5" href="$namespaceregistry__mod.html#ada79d71ffba2ebe9f6b337c6414567e5" title="Calls all initialisation callbacks with the specified state." alt="" coords="261,136,419,177"/>
+<area shape="rect" id="node6" href="$namespaceregistry__mod.html#aa12b1cbe0ce70757003f2f125fb63115" title="Calls all timestep callbacks with the specified state." alt="" coords="267,201,413,243"/>
+<area shape="rect" id="node7" href="$namespaceregistry__mod.html#a8a7011c9cd96110d38a423c7dd092ec5" title="Will deregister all components and free up the registry data structures. This can either be called at..." alt="" coords="278,267,402,308"/>
+<area shape="rect" id="node13" href="$namespacetest__registry__mod.html#a228d9c4a2071cccca98c020c3ef26817" title=" " alt="" coords="481,355,664,396"/>
+<area shape="rect" id="node31" href="$namespacetest__registry__mod.html#ad0d87ce31aeedd1552b8db82183162e5" title=" " alt="" coords="247,384,433,425"/>
+<area shape="rect" id="node4" href="$namespaceregistry__mod.html#a5ea79574949c7be412836f68adae30b1" title="Will execute the appropriate callbacks in a specific map_type given the current state." alt="" coords="499,136,646,177"/>
+<area shape="rect" id="node8" href="$namespaceregistry__mod.html#aa4248e4ee77a3196d3c76ba29da31ddc" title="Will deregister a component, remove all callback hooks and free registry specific memory allocated to..." alt="" coords="493,231,652,272"/>
+<area shape="rect" id="node9" href="$namespaceregistry__mod.html#a99ccc2729b231c4c38e1356c0c0da8e9" title="Will remove a specific descriptor from the registry table and uninstall the corresponding callback ho..." alt="" coords="727,125,873,167"/>
+<area shape="rect" id="node10" href="$namespaceregistry__mod.html#ab7d21640a0a547adcb9e10fd16532441" title="Will unload the callback hooks that have been installed for each state." alt="" coords="941,191,1081,232"/>
+<area shape="rect" id="node11" href="$namespaceregistry__mod.html#ada00dbccc3aea074507e4ef22962c58a" title="Given a group name this returns the id (i.e. order) of that group." alt="" coords="1140,223,1316,250"/>
+<area shape="rect" id="node12" href="$namespaceregistry__mod.html#ac310def38e06d11d4f1fb792ad8923ba" title="Given a group name this returns the group descriptor corresponding to that or an error if none is fou..." alt="" coords="1371,216,1529,257"/>
+<area shape="rect" id="node14" href="$namespacetest__registry__mod.html#aa5966356948ac0dc2e56467005710d60" title=" " alt="" coords="712,191,888,232"/>
+<area shape="rect" id="node15" href="$namespacetest__registry__mod.html#a3bc3af579683a491218c9b7f0da38b95" title=" " alt="" coords="719,256,881,297"/>
+<area shape="rect" id="node16" href="$namespacetest__registry__mod.html#a4cc74c61ed06531dc6d0604a0a936124" title=" " alt="" coords="735,321,865,363"/>
+<area shape="rect" id="node17" href="$namespacetest__registry__mod.html#a40030c8bb590b47eed7599dc541cd100" title=" " alt="" coords="717,387,883,428"/>
+<area shape="rect" id="node18" href="$namespacetest__registry__mod.html#a53aac685fddf96ed629e6dce1e92aedc" title=" " alt="" coords="725,452,875,493"/>
+<area shape="rect" id="node19" href="$namespaceregistry__mod.html#a9560c58c94411b38b5908eb11a0ad0eb" title="Will register a component and install the nescesary callback hooks." alt="" coords="727,517,873,559"/>
+<area shape="rect" id="node30" href="$namespacetest__registry__mod.html#ad798d0b361f3162f7c994918665c9c92" title=" " alt="" coords="727,583,873,610"/>
+<area shape="rect" id="node20" href="$namespaceregistry__mod.html#a227a7bff3d8c55d6eb0ca2618a8a3de0" title="Will install the callback hooks for each state." alt="" coords="947,292,1074,333"/>
+<area shape="rect" id="node22" href="$namespaceregistry__mod.html#aad841de55194d7b2dfebf58ecb4a4687" title="Loads the published fields information for an entire component into the registry&#39;s definition list." alt="" coords="947,429,1074,471"/>
+<area shape="rect" id="node23" href="$namespacelogging__mod.html#ad95937a250467334622daeb5cff78c20" title="Will log just from the master process." alt="" coords="1133,437,1323,463"/>
+<area shape="rect" id="node26" href="$namespaceoptionsdatabase__mod.html#aa3f0213d8028773523e6194a0ddf8e18" title="Retrieves a logical value from the database that matches the provided key." alt="" coords="936,547,1085,588"/>
+<area shape="rect" id="node28" href="$namespaceoptionsdatabase__mod.html#a4b187d310f786ed3c207a3060e09b156" title="Determines whether a specific key is in the database." alt="" coords="1375,560,1525,601"/>
+<area shape="rect" id="node21" href="$namespaceregistry__mod.html#a4d7dfdc95eb21cf68caaea16201d0351" title="Will install a specific callback hook into the specified map_type of existing hooks." alt="" coords="1139,299,1317,326"/>
+<area shape="rect" id="node24" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="1379,437,1521,463"/>
+<area shape="rect" id="node25" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="1577,429,1744,471"/>
+<area shape="rect" id="node27" href="$namespaceoptionsdatabase__mod.html#a13bbeb6272c82308e3d4a42f7c36c862" title="Determines whether a specific options key exists in the database or not, if it doesn&#39;t then this resu..." alt="" coords="1153,487,1303,543"/>
+<area shape="rect" id="node29" href="$namespaceoptionsdatabase__mod.html#ab4f16a670bed755586806647da3cfa8d" title="Gets a key corresponding to the correct options key and index combination." alt="" coords="1149,567,1307,608"/>
+<area shape="rect" id="node32" href="$namespacetest__registry__mod.html#aec14f0490136a0ed2cd137a6423a6ee9" title=" " alt="" coords="507,420,638,461"/>
+</map>

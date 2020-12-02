@@ -1,0 +1,4 @@
+<map id="io_server_client_mod::build_mpi_type_data_sizing_description" name="io_server_client_mod::build_mpi_type_data_sizing_description">
+<area shape="rect" id="node1" title="Builds the MPI type used for sending to the IO server a description of the data, namely the size of t..." alt="" coords="244,5,391,61"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+</map>

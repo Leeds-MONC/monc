@@ -1,0 +1,4 @@
+<map id="logging_mod::log_is_master" name="logging_mod::log_is_master">
+<area shape="rect" id="node1" title="Determines whether the process is the master logging process. This might be preferable rather than ca..." alt="" coords="211,5,345,47"/>
+<area shape="rect" id="node2" href="$namespacenetcdf__filetype__writer__mod.html#a2c67fccb16973e19938a1be7119a0f64" title="Call back for the inter IO reduction which actually does the NetCDF file closing which is a collectiv..." alt="" coords="5,5,163,47"/>
+</map>

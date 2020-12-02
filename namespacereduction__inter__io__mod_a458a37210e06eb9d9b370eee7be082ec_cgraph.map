@@ -1,0 +1,12 @@
+<map id="reduction_inter_io_mod::handle_collective_completed" name="reduction_inter_io_mod::handle_collective_completed">
+<area shape="rect" id="node1" title="Handles the situation where collective communication for a specific reduction has completed across al..." alt="" coords="5,58,165,114"/>
+<area shape="rect" id="node2" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="445,5,600,47"/>
+<area shape="rect" id="node5" href="$namespaceforthread__mod.html#a34912c5c002de467e6b116d65d917881" title=" " alt="" coords="213,32,376,73"/>
+<area shape="rect" id="node6" href="$namespaceforthread__mod.html#a6068972cad8d59eb6b29c8301d331090" title=" " alt="" coords="213,97,376,139"/>
+<area shape="rect" id="node7" href="$namespacereduction__inter__io__mod.html#a4ddd54c71143c5974c8f7fdafd7dbc0a" title="Removes a specific reduction progress." alt="" coords="213,162,376,218"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="669,13,812,39"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="860,5,1027,47"/>
+<area shape="rect" id="node8" href="$namespaceforthread__mod.html#a846b04ba75a5d5f20d8d38a7cab93da1" title=" " alt="" coords="441,104,604,145"/>
+<area shape="rect" id="node9" href="$namespaceforthread__mod.html#ab60b7d18e1d948f6b63c6cb893fad182" title=" " alt="" coords="441,169,604,211"/>
+<area shape="rect" id="node10" href="$namespacereduction__inter__io__mod.html#a58c1e46c1eea51c17d72cd35b75b86b9" title="Generates the lookup key that is used for the map storage of reduction progresses." alt="" coords="424,235,621,276"/>
+</map>

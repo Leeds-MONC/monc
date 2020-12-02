@@ -1,0 +1,6 @@
+<map id="iobridge_mod::populate_sendable_fields" name="iobridge_mod::populate_sendable_fields">
+<area shape="rect" id="node1" title="Populates the sendable field definitions with the field sizing information." alt="" coords="5,41,160,83"/>
+<area shape="rect" id="node2" href="$namespaceiobridge__mod.html#a5feca2e9026e84280592878c633c310e" title="Populates the field information for a specific publically available field offered by one of the compo..." alt="" coords="213,5,377,47"/>
+<area shape="rect" id="node3" href="$namespaceiobridge__mod.html#afe4a3c9b65dc951b29f3c1eb5a39dce9" title="Populates the globally visible sendable fields which is a key value pair mapping between name and des..." alt="" coords="208,70,383,126"/>
+<area shape="rect" id="node4" href="$namespaceiobridge__mod.html#a809fd286beeeeca69659d6305ebe9ea2" title="Generates a sendable description based upon the dimension information supplied, missing arguments mea..." alt="" coords="431,77,585,119"/>
+</map>

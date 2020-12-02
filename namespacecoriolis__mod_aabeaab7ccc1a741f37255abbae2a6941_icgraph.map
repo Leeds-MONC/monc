@@ -1,0 +1,4 @@
+<map id="coriolis_mod::initialisation_callback" name="coriolis_mod::initialisation_callback">
+<area shape="rect" id="node1" title="Initialisation call back which will read in the coriolis configuration and set up the geostrophic win..." alt="" coords="196,5,365,47"/>
+<area shape="rect" id="node2" href="$namespacecoriolis__mod.html#add678a151479109fe4ac085460b615e6" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,148,47"/>
+</map>

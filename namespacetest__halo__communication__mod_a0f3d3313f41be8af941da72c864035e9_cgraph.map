@@ -1,0 +1,4 @@
+<map id="test_halo_communication_mod::test_get_number_communication_requests" name="test_halo_communication_mod::test_get_number_communication_requests">
+<area shape="rect" id="node1" title=" " alt="" coords="5,5,180,61"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#a7094ec3a38213e4ae98ec0af56f30bd2" title="Determines the overall number of communication requests, which is made up of normal halo swaps and po..." alt="" coords="228,5,451,61"/>
+</map>

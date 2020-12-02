@@ -1,0 +1,4 @@
+<map id="gridmanager_mod::finalise_callback" name="gridmanager_mod::finalise_callback">
+<area shape="rect" id="node1" title="Called as MONC exits, for good practice this will deallocate the memory used for the grids." alt="" coords="256,5,427,47"/>
+<area shape="rect" id="node2" href="$namespacegridmanager__mod.html#ad1594b9175d56289645df4961045ce14" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,208,47"/>
+</map>

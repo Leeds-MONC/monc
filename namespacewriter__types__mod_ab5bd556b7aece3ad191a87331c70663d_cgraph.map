@@ -1,0 +1,4 @@
+<map id="writer_types_mod::serialise_data_values_type" name="writer_types_mod::serialise_data_values_type">
+<area shape="rect" id="node1" title="Serialises some data values to store or transmit. This releases any locks issued during preparation." alt="" coords="5,5,184,47"/>
+<area shape="rect" id="node2" href="$namespacewriter__types__mod.html#a427401c0dfd6265375770ccf333f1675" title="Serialises a string map, where the values are assumed to be strings. This releases any locks issued d..." alt="" coords="232,5,411,47"/>
+</map>

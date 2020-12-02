@@ -1,0 +1,10 @@
+<map id="io_server_mod::send_configuration_to_registree" name="io_server_mod::send_configuration_to_registree">
+<area shape="rect" id="node1" title="Sends the data and field descriptions to the MONC process that just registered with the IO server." alt="" coords="5,72,183,113"/>
+<area shape="rect" id="node2" href="$namespacempi__communication__mod.html#a44ac4f74cb4daf89481da8df1dabc10d" title="If we are explicitly managing MPI thread safety (SERIALIZED mode) then locks MPI." alt="" coords="231,39,401,80"/>
+<area shape="rect" id="node7" href="$namespacempi__communication__mod.html#aad52010c006d90df6c097898ebdf4487" title="If we are explicitly managing MPI thread safety (SERIALIZED mode) then unlocks MPI." alt="" coords="231,104,401,145"/>
+<area shape="rect" id="node3" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="453,71,608,112"/>
+<area shape="rect" id="node6" href="$namespaceforthread__mod.html#a9101345b87d2c0e18fb020677cf767b9" title=" " alt="" coords="449,5,612,47"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="660,78,803,105"/>
+<area shape="rect" id="node5" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="851,71,1017,112"/>
+<area shape="rect" id="node8" href="$namespaceforthread__mod.html#a6068972cad8d59eb6b29c8301d331090" title=" " alt="" coords="449,136,612,177"/>
+</map>

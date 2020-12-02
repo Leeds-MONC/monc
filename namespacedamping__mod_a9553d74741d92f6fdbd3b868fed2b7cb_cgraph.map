@@ -1,0 +1,11 @@
+<map id="damping_mod::damping_get_descriptor" name="damping_mod::damping_get_descriptor">
+<area shape="rect" id="node1" title="Descriptor of this component for registration." alt="" coords="5,150,164,191"/>
+<area shape="rect" id="node2" href="$namespacedamping__mod.html#a66c137c77357abdc35713ef3eb69d43e" title="Field information retrieval callback, this returns information for a specific component&#39;s published f..." alt="" coords="229,5,376,61"/>
+<area shape="rect" id="node3" href="$namespacedamping__mod.html#a9d3fc3e4969e0aa0ee245a1019f2ded6" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="219,85,387,126"/>
+<area shape="rect" id="node5" href="$namespacedamping__mod.html#aeacfd83aa4e63baab3a738e246e8b171" title=" " alt="" coords="217,150,388,191"/>
+<area shape="rect" id="node6" href="$namespacedamping__mod.html#a65265bfbcec3a1ddd9355f218cf603f4" title="On initialisation will set up data structures and field values." alt="" coords="212,216,393,243"/>
+<area shape="rect" id="node7" href="$namespacedamping__mod.html#ab88e456900efa51b3de9401ca699924a" title="For each data column will calculate the damping term and apply this to the source term for that field..." alt="" coords="223,267,382,309"/>
+<area shape="rect" id="node4" href="$namespacedamping__mod.html#a16a2c869eeaf96178ef47fe4b8b82db6" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="460,85,649,126"/>
+<area shape="rect" id="node8" href="$namespacedamping__mod.html#ab4ce0599c5f28efacc1244a9fb951b8b" title="Computation of component tendencies." alt="" coords="473,234,636,275"/>
+<area shape="rect" id="node9" href="$namespacedamping__mod.html#a85dcb1f7ed497fccdd139d360eec3373" title="Save the 3d tendencies coming into the component." alt="" coords="441,299,668,341"/>
+</map>

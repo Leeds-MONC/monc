@@ -1,0 +1,5 @@
+<map id="configuration_parser_mod::get_prognostic_field_configuration" name="configuration_parser_mod::get_prognostic_field_configuration">
+<area shape="rect" id="node1" title="Retrieves the prognostic field configuration corresponding to a specific field name and returns wheth..." alt="" coords="244,45,389,101"/>
+<area shape="rect" id="node2" href="$namespacefieldcoarsener__operator__mod.html#a7c32be83854f3535b1ba25c1e5df44e4" title="Performs the field coarsener operator on a specific field." alt="" coords="5,5,196,61"/>
+<area shape="rect" id="node3" href="$namespacefieldslicer__operator__mod.html#aa55d6ae4ff673ced3fd76f4ad54257fb" title="Performs the actual field slicing." alt="" coords="18,85,183,141"/>
+</map>

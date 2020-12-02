@@ -1,0 +1,4 @@
+<map id="halo_communication_mod::deduce_halo_corners_per_neighbour" name="halo_communication_mod::deduce_halo_corners_per_neighbour">
+<area shape="rect" id="node1" title="Determines the number of halo corners to swap between specific neighours, this is similar to deducing..." alt="" coords="5,5,188,61"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#ab0dc177b2189be5b8ed3877e6081e459" title="Given the process id of a neighbour this determines the location in the data structure of correspondi..." alt="" coords="236,5,401,61"/>
+</map>

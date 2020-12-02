@@ -1,0 +1,4 @@
+<map id="terminationcheck_mod::timestep_callback" name="terminationcheck_mod::timestep_callback">
+<area shape="rect" id="node1" title="Timestep hook which is called at each timestep to determine whether or not to terminate timestep iter..." alt="" coords="5,5,159,47"/>
+<area shape="rect" id="node2" href="$namespaceterminationcheck__mod.html#a18304b210f5148cff4898040483dddb7" title="Checks the messages file for commands which determine user control of the model." alt="" coords="207,5,360,47"/>
+</map>

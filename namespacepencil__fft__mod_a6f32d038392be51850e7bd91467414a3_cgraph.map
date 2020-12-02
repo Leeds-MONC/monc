@@ -1,0 +1,4 @@
+<map id="pencil_fft_mod::determine_my_process_sizes_per_dim" name="pencil_fft_mod::determine_my_process_sizes_per_dim">
+<area shape="rect" id="node1" title="Determines the number of elements to on my process per dimension which either need to be sent to (for..." alt="" coords="5,5,195,47"/>
+<area shape="rect" id="node2" href="$namespacepencil__fft__mod.html#ac97992de3b9a72f89a51c4c2254787a9" title="Determines whether or not the specific dimension is in the list of extended dimensions." alt="" coords="243,5,389,47"/>
+</map>

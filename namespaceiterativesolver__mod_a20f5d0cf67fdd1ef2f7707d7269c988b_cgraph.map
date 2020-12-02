@@ -1,0 +1,6 @@
+<map id="iterativesolver_mod::calc_ax" name="iterativesolver_mod::calc_ax">
+<area shape="rect" id="node1" title="Calculates A * x." alt="" coords="5,93,140,134"/>
+<area shape="rect" id="node2" href="$namespaceiterativesolver__mod.html#a1b56f5e6c2a429bd3e8d4477e838702b" title="Copies the source field data to halo buffers for a specific process in a dimension and halo cell &#45; fo..." alt="" coords="188,5,343,61"/>
+<area shape="rect" id="node3" href="$namespaceiterativesolver__mod.html#ac4ea22571d1810eb006b25b159e2fc81" title="Copies the halo buffer to halo location for the source field as required in the calc_Ax procedure." alt="" coords="194,85,337,141"/>
+<area shape="rect" id="node4" href="$namespaceiterativesolver__mod.html#a669988a9a78d403ac7a1dfd2eb054c23" title="Does a local data copy for halo swapping cells with wrap around (to maintain periodic boundary condit..." alt="" coords="196,165,335,221"/>
+</map>

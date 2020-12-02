@@ -1,0 +1,8 @@
+<map id="writer_types_mod::writer_type" name="writer_types_mod::writer_type">
+<area shape="rect" id="node1" title=" " alt="" coords="24,407,217,433"/>
+<area shape="rect" id="node2" href="$structcollections__mod_1_1queue__type.html" title="Queue (FIFO) data structure." alt="" coords="5,252,193,279"/>
+<area shape="rect" id="node3" href="$structcollections__mod_1_1list__type.html" title="List data structure which implements a doubly linked list. This list will preserve its order." alt="" coords="129,112,299,139"/>
+<area shape="rect" id="node5" href="$structwriter__types__mod_1_1writer__field__type.html" title=" " alt="" coords="214,303,377,344"/>
+<area shape="rect" id="node6" href="$structcollections__mod_1_1map__type.html" title="Map data structure that holds string (length 20 maximum) key value pairs." alt="" coords="367,201,546,228"/>
+<area shape="rect" id="node4" href="$structcollections__mod_1_1listnode__type.html" title="Private list node which holds the raw generic node data and pointers to next and previous list nodes." alt="" coords="115,7,313,33"/>
+</map>

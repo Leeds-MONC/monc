@@ -1,0 +1,13 @@
+<map id="smagorinsky_mod::timestep_callback" name="smagorinsky_mod::timestep_callback">
+<area shape="rect" id="node1" title="For each none halo cell this will calculate the subgrid terms for viscosity and diffusion." alt="" coords="5,251,188,292"/>
+<area shape="rect" id="node2" href="$namespacesmagorinsky__mod.html#ab03b6fed8b0b97d8ca15dfd8f41e2b97" title="Calculates the half squared strain rate on l_w&#45;points which is used in determining the Richardson num..." alt="" coords="236,5,421,47"/>
+<area shape="rect" id="node3" href="$namespacesmagorinsky__mod.html#a3cec3ff2925f20a15f6e682554320a0c" title="Calculates the richardson number depending upon the setup of the model and the method selected." alt="" coords="236,71,421,112"/>
+<area shape="rect" id="node6" href="$namespacesmagorinsky__mod.html#a89fa0a959d5fa300055e53aade6e5eac" title="Copies the diffusion field corner data to halo buffers for a specific process." alt="" coords="249,135,409,191"/>
+<area shape="rect" id="node7" href="$namespacesmagorinsky__mod.html#a5a1ba0b42a0899a0ce316cbf6d5193ae" title="Copies the diffusion field data to halo buffers for a specific process in a dimension and halo cell." alt="" coords="249,215,409,256"/>
+<area shape="rect" id="node8" href="$namespacesmagorinsky__mod.html#acb5ea92cf27325780b24a328f93f10fd" title="Copies the viscosity field corner data to halo buffers for a specific process." alt="" coords="249,279,409,335"/>
+<area shape="rect" id="node9" href="$namespacesmagorinsky__mod.html#a15da838a1bac0a0e9fd5c6c37f690c01" title="Copies the viscosity field data to halo buffers for a specific process in a dimension and halo cell." alt="" coords="249,359,409,400"/>
+<area shape="rect" id="node10" href="$namespacesmagorinsky__mod.html#ab43d8cfcd19fb003f573f61dc3a1499c" title="Calculates the eddy viscosity (VIS) and diffusivity (DIFF) depending on the Richardson Number (RI) an..." alt="" coords="247,425,410,451"/>
+<area shape="rect" id="node11" href="$namespacesmagorinsky__mod.html#a6915a16d1f80113e44d1d501c71674a7" title="Update viscous number based upon the viscosity and diffusivity coefficients." alt="" coords="243,476,415,517"/>
+<area shape="rect" id="node4" href="$namespacesmagorinsky__mod.html#a6cba56ada9b1f055b60043e1d372a76c" title="Calculates numerator of Richarson number as the difference in buoyancy between a parcel at K+1 and a ..." alt="" coords="469,53,663,79"/>
+<area shape="rect" id="node5" href="$namespacesmagorinsky__mod.html#a3e5a1b93c3c38fb5f77eaa5c942da785" title="Calculates another &quot;moist version&quot; of the Richardson number based on &quot;change in subgrid buoyancy flux..." alt="" coords="469,103,663,130"/>
+</map>

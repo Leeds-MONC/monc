@@ -1,0 +1,4 @@
+<map id="haloswapper_mod::initialisation_callback" name="haloswapper_mod::initialisation_callback">
+<area shape="rect" id="node1" title="Initialisation callback hook which will set up the halo swapping state and cache some precalculated d..." alt="" coords="260,5,461,47"/>
+<area shape="rect" id="node2" href="$namespacehaloswapper__mod.html#a72490f0cc37d570074c2306898e71002" title="Provides a description of this component for the core to register." alt="" coords="5,5,212,47"/>
+</map>

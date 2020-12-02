@@ -1,0 +1,3 @@
+<map id="collections_mod::listnode_type" name="collections_mod::listnode_type">
+<area shape="rect" id="node1" title="Private list node which holds the raw generic node data and pointers to next and previous list nodes." alt="" coords="5,7,204,33"/>
+</map>

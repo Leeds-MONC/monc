@@ -1,0 +1,5 @@
+<map id="collections_mod::map_get_logical" name="collections_mod::map_get_logical">
+<area shape="rect" id="node1" title="Gets a specific element out of the map with the corresponding key." alt="" coords="5,5,152,47"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a7d9efeff736d4c64f42144ec30d14ef4" title="Gets a specific element out of the map with the corresponding key." alt="" coords="200,5,347,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#ab91c5c48fc0406145f1988635bcf5722" title="This gets the map node that the key represents (rather than the specific value)" alt="" coords="395,5,541,47"/>
+</map>

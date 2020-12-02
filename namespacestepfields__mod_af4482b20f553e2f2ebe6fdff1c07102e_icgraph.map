@@ -1,0 +1,4 @@
+<map id="stepfields_mod::field_information_retrieval_callback" name="stepfields_mod::field_information_retrieval_callback">
+<area shape="rect" id="node1" title="Field information retrieval callback, this returns information for a specific component&#39;s published f..." alt="" coords="224,5,371,61"/>
+<area shape="rect" id="node2" href="$namespacestepfields__mod.html#afd3602a870447f5d706f9a3dae84d450" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,13,176,54"/>
+</map>

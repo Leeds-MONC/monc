@@ -1,0 +1,6 @@
+<map id="writer_field_manager_mod::serialise_field_ordering_value" name="writer_field_manager_mod::serialise_field_ordering_value">
+<area shape="rect" id="node1" title="Serialises a field ordering value and releases any issued locks." alt="" coords="5,31,147,87"/>
+<area shape="rect" id="node2" href="$namespaceio__server__client__mod.html#aa9aee7e6e5918193184b77962ba3b12e" title="Packs the data of a scalar field into a buffer." alt="" coords="211,5,357,47"/>
+<area shape="rect" id="node3" href="$namespacewriter__types__mod.html#ab5bd556b7aece3ad191a87331c70663d" title="Serialises some data values to store or transmit. This releases any locks issued during preparation." alt="" coords="195,71,373,112"/>
+<area shape="rect" id="node4" href="$namespacewriter__types__mod.html#a427401c0dfd6265375770ccf333f1675" title="Serialises a string map, where the values are assumed to be strings. This releases any locks issued d..." alt="" coords="421,71,600,112"/>
+</map>

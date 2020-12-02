@@ -1,0 +1,11 @@
+<map id="coriolis_mod::coriolis_get_descriptor" name="coriolis_mod::coriolis_get_descriptor">
+<area shape="rect" id="node1" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,150,148,191"/>
+<area shape="rect" id="node2" href="$namespacecoriolis__mod.html#a77e5774f200ac77070f622b69e7d3223" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="207,5,354,61"/>
+<area shape="rect" id="node3" href="$namespacecoriolis__mod.html#ab577364a6b2c7ac2838cf5387037be03" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="197,85,365,126"/>
+<area shape="rect" id="node5" href="$namespacecoriolis__mod.html#af38d2b6a81aff0db61c0ed5105d31845" title=" " alt="" coords="199,150,362,191"/>
+<area shape="rect" id="node6" href="$namespacecoriolis__mod.html#aabeaab7ccc1a741f37255abbae2a6941" title="Initialisation call back which will read in the coriolis configuration and set up the geostrophic win..." alt="" coords="196,215,365,257"/>
+<area shape="rect" id="node7" href="$namespacecoriolis__mod.html#af6a7321f1e9075432377dd87af4f965c" title="For each none halo cell this will calculate the coriolis terms for su and sv fields." alt="" coords="205,281,356,322"/>
+<area shape="rect" id="node4" href="$namespacecoriolis__mod.html#ae0454e46b338d02ed3608b577b7f4a05" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="413,85,595,126"/>
+<area shape="rect" id="node8" href="$namespacecoriolis__mod.html#aa7f2d8f8a2d03bd1a1d6aa660dc43ef8" title="Computation of component tendencies." alt="" coords="423,247,585,289"/>
+<area shape="rect" id="node9" href="$namespacecoriolis__mod.html#a51d5e0888ad8a73ae3740005e43f2fa3" title="Save the 3d tendencies coming into the component." alt="" coords="413,313,595,354"/>
+</map>

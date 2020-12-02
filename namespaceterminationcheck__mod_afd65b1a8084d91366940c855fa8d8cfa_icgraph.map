@@ -1,0 +1,4 @@
+<map id="terminationcheck_mod::init_callback" name="terminationcheck_mod::init_callback">
+<area shape="rect" id="node1" title="Called upon model initialisation. Will basically read from the options database and set options in th..." alt="" coords="207,13,360,54"/>
+<area shape="rect" id="node2" href="$namespaceterminationcheck__mod.html#a30375ec782f14f11263162e746b185d3" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,159,61"/>
+</map>

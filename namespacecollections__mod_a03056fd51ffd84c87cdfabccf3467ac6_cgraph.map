@@ -1,0 +1,4 @@
+<map id="collections_mod::iterator_get_next_logical" name="collections_mod::iterator_get_next_logical">
+<area shape="rect" id="node1" title="Returns the next logical referenced by the iterator and advanced it, or an error if it has reached th..." alt="" coords="5,5,168,47"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a60c35965c6d4ab750c4ace9cbc8d3022" title="Returns the next generic referenced by the iterator and advanced it, or null if it has reached the en..." alt="" coords="216,5,379,47"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="pressuresource_mod::finalisation_callback" name="pressuresource_mod::finalisation_callback">
+<area shape="rect" id="node1" title="Frees up the allocated buffers (if such were allocated)" alt="" coords="196,13,340,54"/>
+<area shape="rect" id="node2" href="$namespacepressuresource__mod.html#a3b3e4279a5d4087dc0fcd218f8c3d529" title="Descriptor of this component for registration." alt="" coords="5,5,148,61"/>
+</map>

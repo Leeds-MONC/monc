@@ -1,0 +1,4 @@
+<map id="clearsourceterms_mod::timestep_callback" name="clearsourceterms_mod::timestep_callback">
+<area shape="rect" id="node1" title="Timestep callback which simply clears the source terms." alt="" coords="208,13,363,54"/>
+<area shape="rect" id="node2" href="$namespaceclearsourceterms__mod.html#a7adad44fb36f6932fa5b1d27ead4f66e" title="Provides a description of this component for the core to register." alt="" coords="5,5,160,61"/>
+</map>

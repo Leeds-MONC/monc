@@ -1,0 +1,5 @@
+<map id="mpi_communication_mod::free_mpi_type" name="mpi_communication_mod::free_mpi_type">
+<area shape="rect" id="node1" title="Frees an MPI type, used in clean up." alt="" coords="439,46,609,87"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#a1067b04bf298bdec22d1c55144f3a8d5" title="Frees up the memory associated with individual registered MONCs. This is done at the end for all MONC..." alt="" coords="244,5,391,61"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,53,196,80"/>
+</map>

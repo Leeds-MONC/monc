@@ -1,0 +1,13 @@
+<map id="decomposition_mod::init_callback" name="decomposition_mod::init_callback">
+<area shape="rect" id="node1" title="The initialisation hook. Will set up the appropriate decomposition." alt="" coords="5,165,149,207"/>
+<area shape="rect" id="node2" href="$namespacedecomposition__mod.html#a938ecd9b19f1c729692e8b15838bbdca" title="One dimension decomposition." alt="" coords="413,165,575,207"/>
+<area shape="rect" id="node7" href="$namespacedecomposition__mod.html#a85b4c58c4c9542846802d6ec0ac3283f" title="Serial decomposition." alt="" coords="422,48,566,89"/>
+<area shape="rect" id="node8" href="$namespacedecomposition__mod.html#a88c9442c20d751209aa5effbf9949afb" title="Decomposition into two dimensions." alt="" coords="197,224,360,265"/>
+<area shape="rect" id="node3" href="$namespacedecomposition__mod.html#ac4924f4aebf06ebe72b40c202e42b113" title="Calculates and applys the start and end bounds of the local data. Held locally is the halo and local ..." alt="" coords="657,9,802,65"/>
+<area shape="rect" id="node4" href="$namespacedecomposition__mod.html#a920741992b79bc02ed62cd612451b6f3" title="Will apply halo size information and allocated the neighbour array data." alt="" coords="643,169,815,225"/>
+<area shape="rect" id="node5" href="$namespacedecomposition__mod.html#a66a78fad391b823071ec9dda88b23ab5" title="Applys Z dimension information. As we always decompose into columns then Z is never split and as such..." alt="" coords="628,248,831,289"/>
+<area shape="rect" id="node6" href="$namespacedecomposition__mod.html#a25442f953a87d031a255badd5a16030c" title="Dumps out information about the decomposition at DEBUG level." alt="" coords="653,89,806,145"/>
+<area shape="rect" id="node9" href="$namespacedecomposition__mod.html#a8121daba3e69d1ef030b6d1e4198dcff" title="Applys the local bounds (start, end and size) for a specific dimension." alt="" coords="411,333,577,375"/>
+<area shape="rect" id="node10" href="$namespacedecomposition__mod.html#a8899c100721c3f61f744b7ef2fa4a301" title="Will apply the two dimensional neighbour information. This implements the wrap around aspect if there..." alt="" coords="409,398,579,454"/>
+<area shape="rect" id="node11" href="$namespacedecomposition__mod.html#abf15e5f66826309bf60a76fb41e6e6ae" title="Determines whether or not the planned two dimensional decomposition will fit into the X and Y global ..." alt="" coords="408,478,580,534"/>
+</map>

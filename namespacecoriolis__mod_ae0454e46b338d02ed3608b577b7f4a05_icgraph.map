@@ -1,0 +1,5 @@
+<map id="coriolis_mod::set_published_field_value" name="coriolis_mod::set_published_field_value">
+<area shape="rect" id="node1" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="412,5,593,47"/>
+<area shape="rect" id="node2" href="$namespacecoriolis__mod.html#ab577364a6b2c7ac2838cf5387037be03" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="196,5,364,47"/>
+<area shape="rect" id="node3" href="$namespacecoriolis__mod.html#add678a151479109fe4ac085460b615e6" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,148,47"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="checkpointer_write_checkpoint_mod::write_out_global_attributes" name="checkpointer_write_checkpoint_mod::write_out_global_attributes">
+<area shape="rect" id="node1" title="Writes out global attributes into the checkpoint." alt="" coords="424,45,583,101"/>
+<area shape="rect" id="node2" href="$namespacetest__checkpointer__mod.html#a0b40acc910608810a91708567e216f67" title=" " alt="" coords="218,5,375,61"/>
+<area shape="rect" id="node4" href="$namespacecheckpointer__write__checkpoint__mod.html#a08632fad9f022817094703d57bc025d4" title="Will write out the current model state_mod into a NetCDF checkpoint file." alt="" coords="217,85,376,141"/>
+<area shape="rect" id="node3" href="$test__checkpointer_8F90.html#ac066cbcd389adebfd7162022ed08de09" title=" " alt="" coords="5,20,169,47"/>
+</map>

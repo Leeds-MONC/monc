@@ -1,0 +1,4 @@
+<map id="writer_federator_mod::get_size_of_collective_q" name="writer_federator_mod::get_size_of_collective_q">
+<area shape="rect" id="node1" title="Retrieves the data size for each Q entry of a collective Q field for the specific source MONC that ha..." alt="" coords="5,5,176,47"/>
+<area shape="rect" id="node2" href="$namespaceconfiguration__parser__mod.html#ae5be635b15f2c5670d91275e34c74105" title="A helper function to get the location of a MONC&#39;s configuration in the IO data structure." alt="" coords="224,5,393,47"/>
+</map>

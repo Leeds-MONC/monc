@@ -1,0 +1,9 @@
+<map id="configuration_checkpoint_netcdf_parser_mod::load_options" name="configuration_checkpoint_netcdf_parser_mod::load_options">
+<area shape="rect" id="node1" title="Will read in and initialise the options database from the contents of the checkpoint file." alt="" coords="5,59,176,115"/>
+<area shape="rect" id="node2" href="$namespacenetcdf__misc__mod.html#a159f13789af0cecc704b47fde431b241" title="Will check a NetCDF status and write to log_log error any decoded statuses. Can be used to decode whe..." alt="" coords="461,37,628,79"/>
+<area shape="rect" id="node5" href="$namespaceconversions__mod.html#ab7f79ee421227f8486ab403e9d5620e0" title="Converts from a single to double precision real. This applies some rounding to a certain number of de..." alt="" coords="239,31,398,72"/>
+<area shape="rect" id="node6" href="$namespaceconfiguration__checkpoint__netcdf__parser__mod.html#ab05b5aee60f3cd114e9457a96bc4434b" title="Retrieves the number of option key&#45;value pairs that are present in the checkpoint file." alt="" coords="236,95,401,151"/>
+<area shape="rect" id="node7" href="$namespaceconfiguration__checkpoint__netcdf__parser__mod.html#a36adb04c970a14fbe9539686d85de1b3" title="Removes NetCDF C style null termination of string. This is placed right at the end,..." alt="" coords="224,175,413,231"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="676,45,819,71"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="867,37,1033,79"/>
+</map>

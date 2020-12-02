@@ -1,0 +1,5 @@
+<map id="collections_mod::stack_push_logical" name="collections_mod::stack_push_logical">
+<area shape="rect" id="node1" title="Pushes an element onto the stack (LIFO)" alt="" coords="5,5,160,47"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#adaada37ab08b0c5dd0431890314f06fe" title="Pushes an element onto the stack (LIFO)" alt="" coords="208,5,363,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a97a17944d8c950d7ef02e28b3391a7f7" title="Inserts an element into the list or places at the end if the index &gt; list size." alt="" coords="411,5,549,47"/>
+</map>

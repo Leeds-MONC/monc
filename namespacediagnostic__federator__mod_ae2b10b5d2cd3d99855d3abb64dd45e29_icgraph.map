@@ -1,0 +1,4 @@
+<map id="diagnostic_federator_mod::finalise_diagnostic_federator" name="diagnostic_federator_mod::finalise_diagnostic_federator">
+<area shape="rect" id="node1" title="Finalises the diagnostics federator, waiting for all outstanding requests and then freeing data." alt="" coords="244,5,411,61"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+</map>

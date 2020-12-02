@@ -1,0 +1,12 @@
+<map id="writer_field_manager_mod::prepare_to_serialise_field_manager_state" name="writer_field_manager_mod::prepare_to_serialise_field_manager_state">
+<area shape="rect" id="node1" title="Prepares to serialise the field manager state, both determines storage needed and also issues any loc..." alt="" coords="5,41,181,97"/>
+<area shape="rect" id="node2" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="464,5,619,47"/>
+<area shape="rect" id="node5" href="$namespaceforthread__mod.html#ace3f16636de24b1fc62de549d67476dc" title=" " alt="" coords="236,48,399,89"/>
+<area shape="rect" id="node6" href="$namespacewriter__field__manager__mod.html#a352be271cabc65e0dd69092e006b999e" title="Prepares to serialise a specific field ordering, both determines storage size and issues locks." alt="" coords="229,113,405,169"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="707,13,850,39"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="931,5,1098,47"/>
+<area shape="rect" id="node7" href="$namespaceforthread__mod.html#a9101345b87d2c0e18fb020677cf767b9" title=" " alt="" coords="460,103,623,144"/>
+<area shape="rect" id="node8" href="$namespacewriter__field__manager__mod.html#af341837f6738c9f4527d8f030e268ac0" title="Prepares to serialise a specific field ordering value, determines both the storage size and issues lo..." alt="" coords="453,167,629,223"/>
+<area shape="rect" id="node9" href="$namespacewriter__types__mod.html#aa4c1edaaebbfa64ad4dc2a09632cefba" title="Prepares to serialise a specific data values type, both determines the byte size required and also is..." alt="" coords="677,175,880,216"/>
+<area shape="rect" id="node10" href="$namespacewriter__types__mod.html#a09de0017a289827e5b114043878ee8b2" title="Prepares a map for serialisation, both determines the size of storage required and also issues any lo..." alt="" coords="928,175,1101,216"/>
+</map>

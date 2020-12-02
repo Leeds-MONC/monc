@@ -1,0 +1,6 @@
+<map id="halo_communication_mod::copy_buffer_data_for_prognostics" name="halo_communication_mod::copy_buffer_data_for_prognostics">
+<area shape="rect" id="node1" title="Copies the received data (held in buffers) from neighbours into the correct halo location in the prog..." alt="" coords="693,27,852,83"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#a02b04565afda3dc93273a16944a2976e" title="This completes a nonblocking halo swap and it is only during this call that the data fields themselve..." alt="" coords="456,27,645,83"/>
+<area shape="rect" id="node3" href="$namespacehalo__communication__mod.html#a0a11eeeaa1e80eab180fb8652ce592a6" title="Performs the entire halo swap operation, this is simply a wrapper around the nonblocking initiate and..." alt="" coords="231,5,408,47"/>
+<area shape="rect" id="node4" href="$interfacehalo__communication__mod_1_1perform__local__data__copy__proc__interface.html#a9f668d078f8cd3153d4bbde17cdbee41" title=" " alt="" coords="5,13,183,98"/>
+</map>

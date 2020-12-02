@@ -1,0 +1,6 @@
+<map id="decomposition_mod::one_dim_decomposition" name="decomposition_mod::one_dim_decomposition">
+<area shape="rect" id="node1" title="One dimension decomposition." alt="" coords="651,5,813,47"/>
+<area shape="rect" id="node2" href="$namespacedecomposition__mod.html#a17f59ea058a28a374074591e78072eb1" title="The initialisation hook. Will set up the appropriate decomposition." alt="" coords="248,5,392,47"/>
+<area shape="rect" id="node4" href="$namespacedecomposition__mod.html#a88c9442c20d751209aa5effbf9949afb" title="Decomposition into two dimensions." alt="" coords="440,35,603,76"/>
+<area shape="rect" id="node3" href="$namespacedecomposition__mod.html#a151110f5f60ba70abbdd598e2abe8574" title="Provides the component descriptor for the core to register." alt="" coords="5,5,200,47"/>
+</map>

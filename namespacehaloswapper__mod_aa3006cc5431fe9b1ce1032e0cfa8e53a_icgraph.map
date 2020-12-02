@@ -1,0 +1,5 @@
+<map id="haloswapper_mod::copy_fields_to_halo_buffer" name="haloswapper_mod::copy_fields_to_halo_buffer">
+<area shape="rect" id="node1" title="Copies the prognostic field data to halo buffers for a specific process in a dimension and halo cell." alt="" coords="491,5,651,47"/>
+<area shape="rect" id="node2" href="$namespacehaloswapper__mod.html#a7fc41ef4805ce22bc046be80aa3cf04a" title="Timestep callback hook which performs the halo swapping for each prognostic field." alt="" coords="260,5,443,47"/>
+<area shape="rect" id="node3" href="$namespacehaloswapper__mod.html#a72490f0cc37d570074c2306898e71002" title="Provides a description of this component for the core to register." alt="" coords="5,5,212,47"/>
+</map>

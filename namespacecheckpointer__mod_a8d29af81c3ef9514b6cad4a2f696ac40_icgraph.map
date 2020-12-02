@@ -1,0 +1,4 @@
+<map id="checkpointer_mod::finalisation_callback" name="checkpointer_mod::finalisation_callback">
+<area shape="rect" id="node1" title="Called on termination to write out the status of the model run to checkpoint." alt="" coords="261,5,456,47"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__mod.html#abd2308df65a2ae2ceb627aab5571026d" title="Provides registry information for the component." alt="" coords="5,5,213,47"/>
+</map>

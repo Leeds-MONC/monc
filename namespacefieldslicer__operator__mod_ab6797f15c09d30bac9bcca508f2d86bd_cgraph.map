@@ -1,0 +1,4 @@
+<map id="fieldslicer_operator_mod::get_dimension_to_slice" name="fieldslicer_operator_mod::get_dimension_to_slice">
+<area shape="rect" id="node1" title="Retrieves the integer index of the dimension to slice." alt="" coords="5,13,201,54"/>
+<area shape="rect" id="node2" href="$namespacefieldslicer__operator__mod.html#a268b48bca49a594674986b01774de59b" title="Converts a dimension string to the corresponding numeric ID." alt="" coords="249,5,419,61"/>
+</map>

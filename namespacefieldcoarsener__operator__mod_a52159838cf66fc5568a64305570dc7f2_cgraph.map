@@ -1,0 +1,4 @@
+<map id="fieldcoarsener_operator_mod::fieldcoarsener_operator_get_required_fields" name="fieldcoarsener_operator_mod::fieldcoarsener_operator_get_required_fields">
+<area shape="rect" id="node1" title="Retrieves a list of the required fields for running this operator." alt="" coords="5,5,200,61"/>
+<area shape="rect" id="node2" href="$namespacedata__utils__mod.html#a32e2bb292c66ad41e019b09c8842b82b" title="Retrieves the name of a field from the attributes specified in the configuration." alt="" coords="248,13,405,54"/>
+</map>

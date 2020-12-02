@@ -1,0 +1,4 @@
+<map id="pdf_analysis_mod::init_callback" name="pdf_analysis_mod::init_callback">
+<area shape="rect" id="node1" title="Called on MONC initialisation, will allocate appropriate data structures." alt="" coords="219,5,368,47"/>
+<area shape="rect" id="node2" href="$namespacepdf__analysis__mod.html#a1481487b83765c6a0fbe617d138e51be" title="Returns the component descriptor of pdf analysis module." alt="" coords="5,5,171,47"/>
+</map>

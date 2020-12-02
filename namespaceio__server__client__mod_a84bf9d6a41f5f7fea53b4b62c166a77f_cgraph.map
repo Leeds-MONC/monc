@@ -1,0 +1,4 @@
+<map id="io_server_client_mod::append_mpi_datatype" name="io_server_client_mod::append_mpi_datatype">
+<area shape="rect" id="node1" title="Appends the MPI datatype details to the block counts, old types and offsets arrays...." alt="" coords="5,13,160,54"/>
+<area shape="rect" id="node2" href="$namespaceio__server__client__mod.html#a8d816b12c995d04f289de4f8d03a4d3d" title="Gets the MPI datatype from out internal representation of the field data type (as in the configuratio..." alt="" coords="208,5,371,61"/>
+</map>

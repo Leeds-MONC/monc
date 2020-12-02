@@ -1,0 +1,6 @@
+<map id="configuration_parser_mod::start_element_callback" name="configuration_parser_mod::start_element_callback">
+<area shape="rect" id="node1" title="XML element start (opening) call back. This handles most of the configuration parsing." alt="" coords="464,23,659,65"/>
+<area shape="rect" id="node2" href="$namespaceconfiguration__parser__mod.html#a8c234c5373b5a6919483d973a46642e9" title="This will parse an XML string into the IO configuration." alt="" coords="244,23,416,65"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,5,196,32"/>
+<area shape="rect" id="node4" href="$iodriver_8F90.html#aa6d8de9b01bae8b1a6eaf1aaa1afd688" title="Entry point for the IO server when run as a separate executable. This is currently used as a driver f..." alt="" coords="69,56,133,83"/>
+</map>

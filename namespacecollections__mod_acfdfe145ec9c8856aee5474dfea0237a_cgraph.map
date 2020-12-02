@@ -1,0 +1,5 @@
+<map id="collections_mod::queue_push_string" name="collections_mod::queue_push_string">
+<area shape="rect" id="node1" title="Adds an element to the end of the queue (FIFO)" alt="" coords="5,5,163,47"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a3e289fade5e3d3bf358daee04e74d993" title="Adds an element to the end of the queue (FIFO)" alt="" coords="211,5,368,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a1f286bd90166134b57391b8588918bff" title="Adds an element to the end of the list." alt="" coords="416,5,555,47"/>
+</map>

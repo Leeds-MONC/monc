@@ -1,0 +1,5 @@
+<map id="iobridge_mod::build_mpi_data_types" name="iobridge_mod::build_mpi_data_types">
+<area shape="rect" id="node1" title="Builds the MPI data types that correspond to the field descriptions and sizings." alt="" coords="5,5,137,47"/>
+<area shape="rect" id="node2" href="$namespaceiobridge__mod.html#a6c8cd54f14009e4ac21dea06a3fe216e" title="Builds the MPI data type for a specific definition with sizing information." alt="" coords="185,5,379,47"/>
+<area shape="rect" id="node3" href="$namespaceiobridge__mod.html#a8ef0275c630a206b31728ec8cde19f48" title="Retrieves the sizing information associated with a specific field." alt="" coords="427,5,609,47"/>
+</map>

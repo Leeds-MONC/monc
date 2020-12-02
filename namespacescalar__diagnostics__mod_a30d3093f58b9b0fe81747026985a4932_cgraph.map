@@ -1,0 +1,7 @@
+<map id="scalar_diagnostics_mod::scalar_diagnostics_get_descriptor" name="scalar_diagnostics_mod::scalar_diagnostics_get_descriptor">
+<area shape="rect" id="node1" title="Provides the component descriptor for the core to register." alt="" coords="5,125,173,181"/>
+<area shape="rect" id="node2" href="$namespacescalar__diagnostics__mod.html#a31fe9a7b2a26c7beab5c36a2dfbe6ca2" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="231,5,386,61"/>
+<area shape="rect" id="node3" href="$namespacescalar__diagnostics__mod.html#af06503f80e9e8024bf498f6816132e8c" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="221,85,396,141"/>
+<area shape="rect" id="node4" href="$namespacescalar__diagnostics__mod.html#aabf81f55240e39ebd3e2af8cac43f779" title=" " alt="" coords="243,165,374,221"/>
+<area shape="rect" id="node5" href="$namespacescalar__diagnostics__mod.html#a0ea2386b6697f34b599248fe896afa21" title=" " alt="" coords="226,245,391,286"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="allreduction_inter_io_mod::init_allreduction_inter_io" name="allreduction_inter_io_mod::init_allreduction_inter_io">
+<area shape="rect" id="node1" title="Initialises the all reduction inter IO functionality." alt="" coords="656,39,823,95"/>
+<area shape="rect" id="node2" href="$namespaceglobal__callback__inter__io__mod.html#a112cd288476ab34b687759a6124b912c" title="Initialises the global callback." alt="" coords="465,5,608,61"/>
+<area shape="rect" id="node3" href="$namespacediagnostic__federator__mod.html#a808b726c916d9dc52e2020eacbe2be0f" title="Initialises the diagnostics action and sets up the diagnostics master definitions." alt="" coords="244,39,417,95"/>
+<area shape="rect" id="node4" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,53,196,80"/>
+</map>

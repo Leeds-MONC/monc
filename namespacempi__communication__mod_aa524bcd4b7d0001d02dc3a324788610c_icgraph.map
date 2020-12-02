@@ -1,0 +1,4 @@
+<map id="mpi_communication_mod::get_my_io_rank" name="mpi_communication_mod::get_my_io_rank">
+<area shape="rect" id="node1" title="Retrieves my IO server rank out of the number of IO servers that are running." alt="" coords="244,5,415,47"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,13,196,39"/>
+</map>

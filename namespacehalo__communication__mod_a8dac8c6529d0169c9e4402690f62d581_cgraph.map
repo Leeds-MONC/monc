@@ -1,0 +1,8 @@
+<map id="halo_communication_mod::initiate_nonblocking_halo_swap" name="halo_communication_mod::initiate_nonblocking_halo_swap">
+<area shape="rect" id="node1" title="Initiates a non blocking halo swap, this registers the receive requests, copies data into the send bu..." alt="" coords="5,57,180,113"/>
+<area shape="rect" id="node2" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="230,13,373,39"/>
+<area shape="rect" id="node4" href="$namespacehalo__communication__mod.html#a9537cebc6ed24d00aa7e34e6c66a9e29" title="Registers receive requests for all prognostic fields from the appropriate neighbouring processes (tha..." alt="" coords="230,64,373,105"/>
+<area shape="rect" id="node5" href="$namespacehalo__communication__mod.html#a0e57e9753603d764609afb1f4cb2087b" title="Copies all applicable bits of the prognostics into a send buffer for each neighbour and then issues a..." alt="" coords="228,129,375,171"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="423,5,589,47"/>
+<area shape="rect" id="node6" href="$namespacehalo__communication__mod.html#ab0dc177b2189be5b8ed3877e6081e459" title="Given the process id of a neighbour this determines the location in the data structure of correspondi..." alt="" coords="423,122,589,178"/>
+</map>

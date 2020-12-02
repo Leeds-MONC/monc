@@ -1,0 +1,16 @@
+<map id="viscosity_mod::viscosity_get_descriptor" name="viscosity_mod::viscosity_get_descriptor">
+<area shape="rect" id="node1" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,150,168,191"/>
+<area shape="rect" id="node2" href="$namespaceviscosity__mod.html#a197ef68a8d4ebb229c63fed40c1c004f" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="232,5,379,61"/>
+<area shape="rect" id="node3" href="$namespaceviscosity__mod.html#aa6df3a67e4bb61b5aab9ed4bd7946030" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="221,85,389,126"/>
+<area shape="rect" id="node5" href="$namespaceviscosity__mod.html#aa0d3db74aaa9abb76fa0655253e55e1e" title=" " alt="" coords="219,150,391,191"/>
+<area shape="rect" id="node6" href="$namespaceviscosity__mod.html#ab8d64f9b70d1130a3079e11d516a3963" title="Sets up the stencil_mod (used in interpolation) and allocates data for the flux fields." alt="" coords="216,215,395,257"/>
+<area shape="rect" id="node7" href="$namespaceviscosity__mod.html#af66c7d0547602b5a605daddb4bd8c3af" title="At each timestep will compute the viscosity U,V,W source terms." alt="" coords="225,294,386,335"/>
+<area shape="rect" id="node4" href="$namespaceviscosity__mod.html#acf069828621ccc45ee0c2dab5683d432" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="461,71,613,113"/>
+<area shape="rect" id="node8" href="$namespaceviscosity__mod.html#a611dfa7ffb39507cd50ecb4f9751dc8e" title="Calculated TAU which is used in computing the viscous source terms." alt="" coords="443,137,631,164"/>
+<area shape="rect" id="node9" href="$namespaceviscosity__mod.html#a27fcfa3d484e258557b721a8d9fb7672" title="Calculates the viscous sources based upon TAU for the U,V and W fields." alt="" coords="455,189,618,230"/>
+<area shape="rect" id="node10" href="$namespaceviscosity__mod.html#a9075b0722202f92b5c29c8253a995f99" title="Computation of component tendencies." alt="" coords="455,254,618,295"/>
+<area shape="rect" id="node11" href="$namespaceviscosity__mod.html#abaf88918f55df3e53897576f7bba53ec" title="Copies the halo buffer to halo location for the viscosity coefficient field." alt="" coords="467,319,606,361"/>
+<area shape="rect" id="node12" href="$namespaceviscosity__mod.html#a98e52bff1c0a1ea96d37e542b85cdbf3" title="Copies the corner halo buffer to the viscosity coefficient field corners." alt="" coords="467,384,606,440"/>
+<area shape="rect" id="node13" href="$namespaceviscosity__mod.html#a57d1243a8dc1e1206b4573f5d04379a2" title="Does local data copying for viscosity coefficient variable halo swap." alt="" coords="453,463,621,505"/>
+<area shape="rect" id="node14" href="$namespaceviscosity__mod.html#a1840940d6e795b7ecf211d5d5893982d" title="Save the 3d tendencies coming into the component." alt="" coords="446,529,627,570"/>
+</map>

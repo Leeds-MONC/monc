@@ -1,0 +1,4 @@
+<map id="collections_mod::stack_free" name="collections_mod::stack_free">
+<area shape="rect" id="node1" title="Frees up all the allocatable, heap, memory associated with a specific stack." alt="" coords="5,5,188,32"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#aa7692f4563827955e61a33df7780fc82" title="Frees up all the allocatable, heap, memory associated with a specific list." alt="" coords="236,5,404,32"/>
+</map>

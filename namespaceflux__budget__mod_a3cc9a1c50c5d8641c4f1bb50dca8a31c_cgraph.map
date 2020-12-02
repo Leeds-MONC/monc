@@ -1,0 +1,13 @@
+<map id="flux_budget_mod::field_information_retrieval_callback" name="flux_budget_mod::field_information_retrieval_callback">
+<area shape="rect" id="node1" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="5,293,153,349"/>
+<area shape="rect" id="node2" href="$namespaceflux__budget__mod.html#ae2d6fc61bab57410329d688caf8e1713" title="Retrieves whether a published field is enabled or not." alt="" coords="201,5,404,47"/>
+<area shape="rect" id="node3" href="$namespaceflux__budget__mod.html#a04b56be59b42ab03578b95bce4a53169" title="Determines whether a specific published field is a heat flux field." alt="" coords="235,71,370,112"/>
+<area shape="rect" id="node4" href="$namespaceflux__budget__mod.html#a46e29f853ad78ad4af89704b86a31ced" title="Determines whether a specific published field is a mse field." alt="" coords="235,136,370,177"/>
+<area shape="rect" id="node5" href="$namespaceflux__budget__mod.html#a6390c39f1f74f4fd76b31aa522ffb910" title="Determines whether a specific published field is a uu, vv or ww field." alt="" coords="220,201,385,243"/>
+<area shape="rect" id="node6" href="$namespaceflux__budget__mod.html#a4edd6e12053e2f674aa282792999622d" title="Determines whether a specific published field is a q flux field." alt="" coords="235,267,370,308"/>
+<area shape="rect" id="node7" href="$namespaceflux__budget__mod.html#ab2b62c1cc86c94fa6572f4b047e2a977" title="Determines whether a specific published field is a mse field." alt="" coords="235,332,370,373"/>
+<area shape="rect" id="node8" href="$namespaceflux__budget__mod.html#a4bad8cc0e9f3a392d2f07184271021c8" title="Determines whether a specific published field is a scalar field." alt="" coords="235,397,370,439"/>
+<area shape="rect" id="node9" href="$namespaceflux__budget__mod.html#ab5ba6fc939b80df0931b9a00c7e6d8d2" title="Determines whether a specific published field is a thetal field." alt="" coords="235,463,370,504"/>
+<area shape="rect" id="node10" href="$namespaceflux__budget__mod.html#ae8944c4d3bf8c2aac98d3177a0634917" title="Determines whether a specific published field is a TKE budget field." alt="" coords="235,528,370,569"/>
+<area shape="rect" id="node11" href="$namespaceflux__budget__mod.html#a5afc1a151ae7191cfcaeb9fc20e847d1" title="Determines whether a specific published field is a uw or uv field." alt="" coords="235,593,370,635"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="registry_mod::get_group_id" name="registry_mod::get_group_id">
+<area shape="rect" id="node1" title="Given a group name this returns the id (i.e. order) of that group." alt="" coords="5,13,181,39"/>
+<area shape="rect" id="node2" href="$namespaceregistry__mod.html#ac310def38e06d11d4f1fb792ad8923ba" title="Given a group name this returns the group descriptor corresponding to that or an error if none is fou..." alt="" coords="229,5,388,47"/>
+</map>

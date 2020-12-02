@@ -1,0 +1,6 @@
+<map id="collections_mod::hashset_remove" name="collections_mod::hashset_remove">
+<area shape="rect" id="node1" title="Removes a string from the hashset." alt="" coords="5,39,173,80"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a144628b8f3301dd8a83703ec0caf3833" title="Determines the location and hash of a key within a specific hashset. The hash is set regardless of wh..." alt="" coords="221,5,389,47"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#a660947bb6b95ba785986f1faa7870912" title="Removes an element from the list at a specific index." alt="" coords="236,71,375,112"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a745849ca729b70cc641198c3280e1640" title="Translates the string key into a hash from 1 to hash_size (inclusive.) This encoding is deterministic..." alt="" coords="437,5,577,47"/>
+</map>

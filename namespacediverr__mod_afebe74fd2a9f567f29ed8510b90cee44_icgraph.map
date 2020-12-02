@@ -1,0 +1,4 @@
+<map id="diverr_mod::finalisation_callback" name="diverr_mod::finalisation_callback">
+<area shape="rect" id="node1" title="Called at finalisation this will deallocate the P field as the model shuts down." alt="" coords="177,5,331,47"/>
+<area shape="rect" id="node2" href="$namespacediverr__mod.html#ab1379c4bfcd609e7b381ab0933cc20e3" title="Descriptor of this component for registration." alt="" coords="5,5,129,47"/>
+</map>

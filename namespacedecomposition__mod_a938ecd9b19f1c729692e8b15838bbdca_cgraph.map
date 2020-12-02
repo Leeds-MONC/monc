@@ -1,0 +1,7 @@
+<map id="decomposition_mod::one_dim_decomposition" name="decomposition_mod::one_dim_decomposition">
+<area shape="rect" id="node1" title="One dimension decomposition." alt="" coords="5,129,168,170"/>
+<area shape="rect" id="node2" href="$namespacedecomposition__mod.html#ac4924f4aebf06ebe72b40c202e42b113" title="Calculates and applys the start and end bounds of the local data. Held locally is the halo and local ..." alt="" coords="245,5,390,61"/>
+<area shape="rect" id="node3" href="$namespacedecomposition__mod.html#a920741992b79bc02ed62cd612451b6f3" title="Will apply halo size information and allocated the neighbour array data." alt="" coords="231,85,403,141"/>
+<area shape="rect" id="node4" href="$namespacedecomposition__mod.html#a66a78fad391b823071ec9dda88b23ab5" title="Applys Z dimension information. As we always decompose into columns then Z is never split and as such..." alt="" coords="216,165,419,206"/>
+<area shape="rect" id="node5" href="$namespacedecomposition__mod.html#a25442f953a87d031a255badd5a16030c" title="Dumps out information about the decomposition at DEBUG level." alt="" coords="241,229,394,285"/>
+</map>

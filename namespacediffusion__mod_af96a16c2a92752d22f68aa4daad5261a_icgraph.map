@@ -1,0 +1,7 @@
+<map id="diffusion_mod::general_diffusion" name="diffusion_mod::general_diffusion">
+<area shape="rect" id="node1" title="General diffusion computation for any field which is provided as arguments. Works in a column." alt="" coords="616,39,767,80"/>
+<area shape="rect" id="node2" href="$namespacediffusion__mod.html#a4226cbc38fe9fba89a3fbb2d7965a6fc" title="Computes the diffusion source terms for each Q field." alt="" coords="416,5,568,47"/>
+<area shape="rect" id="node5" href="$namespacediffusion__mod.html#ae5fc7f882242f802a60219b5680f758e" title="Computes the diffusion source terms for the theta field." alt="" coords="416,71,568,112"/>
+<area shape="rect" id="node3" href="$namespacediffusion__mod.html#a3db6d2912d0047987b4648259f75cb06" title="At each timestep will compute the diffusion source terms for TH and Q fields per column if these fiel..." alt="" coords="209,39,368,80"/>
+<area shape="rect" id="node4" href="$namespacediffusion__mod.html#afa904ef085482f7826a5034b340b17b4" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,39,161,80"/>
+</map>

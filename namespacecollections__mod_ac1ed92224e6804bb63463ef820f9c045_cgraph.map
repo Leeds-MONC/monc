@@ -1,0 +1,4 @@
+<map id="collections_mod::queue_free" name="collections_mod::queue_free">
+<area shape="rect" id="node1" title="Frees up all the allocatable, heap, memory associated with a specific queue." alt="" coords="5,5,192,32"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#aa7692f4563827955e61a33df7780fc82" title="Frees up all the allocatable, heap, memory associated with a specific list." alt="" coords="240,5,408,32"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="halo_communication_mod::get_number_communication_requests" name="halo_communication_mod::get_number_communication_requests">
+<area shape="rect" id="node1" title="Determines the overall number of communication requests, which is made up of normal halo swaps and po..." alt="" coords="481,64,704,120"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#ac287e4b520fd9a75f35e58e67ec52880" title="Initialises a halo swapping state, by determining the neighbours, size of data in each swap and alloc..." alt="" coords="231,31,433,73"/>
+<area shape="rect" id="node4" href="$namespacetest__halo__communication__mod.html#a0f3d3313f41be8af941da72c864035e9" title=" " alt="" coords="245,100,419,156"/>
+<area shape="rect" id="node3" href="$interfacehalo__communication__mod_1_1perform__local__data__copy__proc__interface.html#a9f668d078f8cd3153d4bbde17cdbee41" title=" " alt="" coords="5,5,183,91"/>
+<area shape="rect" id="node5" href="$test__halocommunication_8F90.html#a384429ec47961a7f013fa1773326628b" title=" " alt="" coords="9,115,179,157"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="randomnoise_mod::initialisation_callback" name="randomnoise_mod::initialisation_callback">
+<area shape="rect" id="node1" title="The initialisation callback sets up the buoyancy coefficient." alt="" coords="261,5,464,47"/>
+<area shape="rect" id="node2" href="$namespacerandomnoise__mod.html#a79c5a5b401796b7996d495e319c1b270" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,213,47"/>
+</map>

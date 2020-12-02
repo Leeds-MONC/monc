@@ -1,0 +1,4 @@
+<map id="checkpointer_read_checkpoint_mod::decompose_grid" name="checkpointer_read_checkpoint_mod::decompose_grid">
+<area shape="rect" id="node1" title="Calls out to the parallel decomposition strategy to decompose the grid based upon the configuration r..." alt="" coords="252,5,451,47"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__read__checkpoint__mod.html#a2c62e5fb27df55b95c5650b36e9a6545" title="Reads in a NetCDF checkpoint file and uses this to initialise the model." alt="" coords="5,5,204,47"/>
+</map>

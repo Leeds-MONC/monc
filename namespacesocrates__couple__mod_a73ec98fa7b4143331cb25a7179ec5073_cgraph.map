@@ -1,0 +1,9 @@
+<map id="socrates_couple_mod::socrates_couple_get_descriptor" name="socrates_couple_mod::socrates_couple_get_descriptor">
+<area shape="rect" id="node1" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,157,155,213"/>
+<area shape="rect" id="node2" href="$namespacesocrates__couple__mod.html#a3315c043ed121cedfd0e474c12dd4957" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="203,5,353,61"/>
+<area shape="rect" id="node3" href="$namespacesocrates__couple__mod.html#a8bd181d37f55d5b1a0e7013b8bb29fa3" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="203,85,353,141"/>
+<area shape="rect" id="node4" href="$namespacesocrates__couple__mod.html#ac9983886b0a842bc2675e523e64b968b" title=" " alt="" coords="203,165,353,206"/>
+<area shape="rect" id="node5" href="$namespacesocrates__couple__mod.html#adcfd85ff05e0b6f988eee8c9dce640db" title="The initialisation callback sets up the prescribed longwave fluxes and the exponential decay factor." alt="" coords="203,230,353,271"/>
+<area shape="rect" id="node7" href="$namespacesocrates__couple__mod.html#aeccfd34f79402a155fbcff5a9e572c2b" title="Called for each column per timestep this will apply a forcing term to the aerosol fields." alt="" coords="203,295,353,337"/>
+<area shape="rect" id="node6" href="$compress__spectrum_8F90.html#afa00cda43053eea520d261281a4dae3d" title=" " alt="" coords="401,237,541,264"/>
+</map>

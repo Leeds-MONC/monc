@@ -1,0 +1,8 @@
+<map id="decomposition_mod::apply_z_dimension_information" name="decomposition_mod::apply_z_dimension_information">
+<area shape="rect" id="node1" title="Applys Z dimension information. As we always decompose into columns then Z is never split and as such..." alt="" coords="861,64,1064,105"/>
+<area shape="rect" id="node2" href="$namespacedecomposition__mod.html#a938ecd9b19f1c729692e8b15838bbdca" title="One dimension decomposition." alt="" coords="651,5,813,47"/>
+<area shape="rect" id="node5" href="$namespacedecomposition__mod.html#a88c9442c20d751209aa5effbf9949afb" title="Decomposition into two dimensions." alt="" coords="440,60,603,101"/>
+<area shape="rect" id="node6" href="$namespacedecomposition__mod.html#a85b4c58c4c9542846802d6ec0ac3283f" title="Serial decomposition." alt="" coords="449,125,593,167"/>
+<area shape="rect" id="node3" href="$namespacedecomposition__mod.html#a17f59ea058a28a374074591e78072eb1" title="The initialisation hook. Will set up the appropriate decomposition." alt="" coords="248,60,392,101"/>
+<area shape="rect" id="node4" href="$namespacedecomposition__mod.html#a151110f5f60ba70abbdd598e2abe8574" title="Provides the component descriptor for the core to register." alt="" coords="5,60,200,101"/>
+</map>

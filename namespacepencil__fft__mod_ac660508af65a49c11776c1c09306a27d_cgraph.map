@@ -1,0 +1,10 @@
+<map id="pencil_fft_mod::perform_backwards_3dfft" name="pencil_fft_mod::perform_backwards_3dfft">
+<area shape="rect" id="node1" title="Performs a backwards 3D FFT and currently results in target data which is the X, Z,..." alt="" coords="5,77,161,119"/>
+<area shape="rect" id="node2" href="$namespacepencil__fft__mod.html#a7ac39a07dabfdc3f4e92d30f132d54b0" title="Performs the backwards FFT in X and then transposes to Y pencil. The FFT requires complex numbers whi..." alt="" coords="209,77,379,119"/>
+<area shape="rect" id="node5" href="$namespacepencil__fft__mod.html#adc5c609ef121c225f7c126d72e558971" title="Transposes globally to a new pencil decomposition. This goes from the source dimensions a,..." alt="" coords="427,136,596,177"/>
+<area shape="rect" id="node8" href="$namespacepencil__fft__mod.html#a6b3bf23fee2dd253f9d48ab8962740a8" title="Performs the backwards FFT in Y and then transposes to Z pencil. The FFT requires complex numbers whi..." alt="" coords="209,12,379,53"/>
+<area shape="rect" id="node3" href="$namespacepencil__fft__mod.html#a89aed2affc54e0e4dad9bb13adaad753" title="Converts reals into their complex representation, this is called for backwards FFTs as we need to fee..." alt="" coords="434,71,589,112"/>
+<area shape="rect" id="node4" href="$namespacepencil__fft__mod.html#a65c8a51d969493d729ce44cfab439524" title="Performs the complex to real (backwards) FFT." alt="" coords="433,5,589,47"/>
+<area shape="rect" id="node6" href="$namespacepencil__fft__mod.html#ac2d228c34a44953affd43f778430c494" title="Contiguises from c,b,a to b,c,a (forwards) or c,a,b (backwards) where these are defined by the source..." alt="" coords="644,114,847,141"/>
+<area shape="rect" id="node7" href="$namespacepencil__fft__mod.html#aba57cbdad3c09ffb4f614255c0b72e54" title="Rearranges data for sending, transposing a,b,c into c,b,a . This is done as alltoall splits on dimens..." alt="" coords="662,165,829,207"/>
+</map>

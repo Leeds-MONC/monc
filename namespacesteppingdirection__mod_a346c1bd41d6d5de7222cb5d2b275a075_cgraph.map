@@ -1,0 +1,5 @@
+<map id="steppingdirection_mod::steppingdirection_get_descriptor" name="steppingdirection_mod::steppingdirection_get_descriptor">
+<area shape="rect" id="node1" title="Returns the descriptor of this component." alt="" coords="5,31,157,87"/>
+<area shape="rect" id="node2" href="$namespacesteppingdirection__mod.html#a2b109be8b36ffcb3939dc2e16aa8b67d" title="Sets the scalar stepping on initialisation. This does not change throughout the model run so we can s..." alt="" coords="205,5,357,47"/>
+<area shape="rect" id="node3" href="$namespacesteppingdirection__mod.html#a48a35ed410891e2e765b6be31a4ea62f" title="Determines whether we are forward or centre stepping." alt="" coords="205,71,357,112"/>
+</map>

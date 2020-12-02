@@ -1,0 +1,7 @@
+<map id="diagnostics_3d_mod::diagnostics_3d_get_descriptor" name="diagnostics_3d_mod::diagnostics_3d_get_descriptor">
+<area shape="rect" id="node1" title="Provides the component descriptor for the core to register." alt="" coords="5,121,147,177"/>
+<area shape="rect" id="node2" href="$namespacediagnostics__3d__mod.html#a23d94372763908596bef1321acee7c24" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="199,5,341,61"/>
+<area shape="rect" id="node3" href="$namespacediagnostics__3d__mod.html#a0687f9c1e127635a4dc4bc4040b36404" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="199,85,341,141"/>
+<area shape="rect" id="node4" href="$namespacediagnostics__3d__mod.html#a2f83a2861bf5fa6d30eaa3dcef217ee2" title=" " alt="" coords="195,165,345,206"/>
+<area shape="rect" id="node5" href="$namespacediagnostics__3d__mod.html#ad99aec85bbabecb31f254a90dbd47d71" title=" " alt="" coords="199,230,341,271"/>
+</map>

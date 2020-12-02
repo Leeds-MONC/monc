@@ -1,0 +1,4 @@
+<map id="buoyancy_mod::field_value_retrieval_callback" name="buoyancy_mod::field_value_retrieval_callback">
+<area shape="rect" id="node1" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="5,5,173,47"/>
+<area shape="rect" id="node2" href="$namespacebuoyancy__mod.html#a77065a92c8bc8e890a6e8ecf5c615e04" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="221,5,416,47"/>
+</map>

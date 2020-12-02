@@ -1,0 +1,7 @@
+<map id="collections_mod::queue_pop_generic" name="collections_mod::queue_pop_generic">
+<area shape="rect" id="node1" title="Pops the queue element off the head of the queue (FIFO)" alt="" coords="211,104,368,145"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a013619ae5b73f0bb754acbb72e6d0c39" title="Pops the queue element off the head of the queue (FIFO)" alt="" coords="5,5,163,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a05a04c1a59f1e4e6d73d374db341528c" title="Pops the queue element off the head of the queue (FIFO)" alt="" coords="5,71,163,112"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#ae4328e8f8bf1bdb876cdade49d6e36d3" title="Pops the queue element off the head of the queue (FIFO). Converts between precision and from int." alt="" coords="5,136,163,177"/>
+<area shape="rect" id="node5" href="$namespacecollections__mod.html#a6d47f6d761a41c1a598b0f78072d8899" title="Pops the queue element off the head of the queue (FIFO)" alt="" coords="5,201,163,243"/>
+</map>

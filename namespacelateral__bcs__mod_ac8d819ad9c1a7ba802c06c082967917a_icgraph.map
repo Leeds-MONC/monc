@@ -1,0 +1,5 @@
+<map id="lateral_bcs_mod::apply_rigid" name="lateral_bcs_mod::apply_rigid">
+<area shape="rect" id="node1" title=" " alt="" coords="433,5,587,47"/>
+<area shape="rect" id="node2" href="$namespacelateral__bcs__mod.html#a730b24f535cddfab034a3fce8ff0d3c7" title="Timestep callback which applies lateral boundary conditions." alt="" coords="212,5,385,47"/>
+<area shape="rect" id="node3" href="$namespacelateral__bcs__mod.html#a77b96206b90dcdcd88fa9c1e569f0963" title="Provides a description of this component for the core to register." alt="" coords="5,5,164,47"/>
+</map>

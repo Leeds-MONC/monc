@@ -1,0 +1,7 @@
+<map id="swapsmooth_mod::timestep_callback" name="swapsmooth_mod::timestep_callback">
+<area shape="rect" id="node1" title="Called for each non halo timestep column and will perform swapping and smoothing as required on that ..." alt="" coords="5,104,189,145"/>
+<area shape="rect" id="node2" href="$namespaceswapsmooth__mod.html#a6a7c9d29a9bfbceaa84d6a1c52e07f2f" title="Does swapping and smoothing (using classic algorithm) for the average profiles (the bars)" alt="" coords="238,5,413,47"/>
+<area shape="rect" id="node3" href="$namespaceswapsmooth__mod.html#a86308ba939f3725c8081f82282326fbe" title="Does swapping and smoothing (using robert filter algorithm) for the average profiles (the bars)" alt="" coords="237,71,413,112"/>
+<area shape="rect" id="node4" href="$namespaceswapsmooth__mod.html#aaf23c9d4853a1be2d1900f5f81f30703" title="Classic swap and smooth based upon the old or no smoothing." alt="" coords="243,136,408,177"/>
+<area shape="rect" id="node5" href="$namespaceswapsmooth__mod.html#aecc80e466ec034d560bf446cd8253146" title="Swap and smooth with a Robert filter." alt="" coords="240,201,411,243"/>
+</map>

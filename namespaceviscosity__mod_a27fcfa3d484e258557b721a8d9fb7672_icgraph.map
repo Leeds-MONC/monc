@@ -1,0 +1,5 @@
+<map id="viscosity_mod::calculate_viscous_sources" name="viscosity_mod::calculate_viscous_sources">
+<area shape="rect" id="node1" title="Calculates the viscous sources based upon TAU for the U,V and W fields." alt="" coords="425,5,588,47"/>
+<area shape="rect" id="node2" href="$namespaceviscosity__mod.html#af66c7d0547602b5a605daddb4bd8c3af" title="At each timestep will compute the viscosity U,V,W source terms." alt="" coords="216,5,377,47"/>
+<area shape="rect" id="node3" href="$namespaceviscosity__mod.html#a46044316c5dde4a422d977a7aa0c9240" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,168,47"/>
+</map>

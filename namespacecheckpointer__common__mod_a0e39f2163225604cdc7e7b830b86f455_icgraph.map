@@ -1,0 +1,5 @@
+<map id="checkpointer_common_mod::remove_null_terminator_from_string" name="checkpointer_common_mod::remove_null_terminator_from_string">
+<area shape="rect" id="node1" title="Removes NetCDF C style null termination of string. This is placed right at the end,..." alt="" coords="499,5,693,61"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__read__checkpoint__mod.html#ac4f69f73beff8fb630b1e8c7b530ae05" title="Loads the Q indices (if they exist) into the model Q index register." alt="" coords="252,13,451,54"/>
+<area shape="rect" id="node3" href="$namespacecheckpointer__read__checkpoint__mod.html#a2c62e5fb27df55b95c5650b36e9a6545" title="Reads in a NetCDF checkpoint file and uses this to initialise the model." alt="" coords="5,13,204,54"/>
+</map>

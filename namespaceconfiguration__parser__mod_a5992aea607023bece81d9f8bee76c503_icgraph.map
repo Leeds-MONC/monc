@@ -1,0 +1,5 @@
+<map id="configuration_parser_mod::add_in_specific_line" name="configuration_parser_mod::add_in_specific_line">
+<area shape="rect" id="node1" title="Adds a specific line into the io xml. The IO XML is always exactly the correct size,..." alt="" coords="431,5,607,47"/>
+<area shape="rect" id="node2" href="$namespaceconfiguration__parser__mod.html#a9a7a03163db539e810a51ceb06fcfac6" title="Reads in textual data from a file and returns this, used to read the IO server XML configuration file..." alt="" coords="244,5,383,47"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,13,196,39"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="halo_communication_mod::perform_local_data_copy_for_field" name="halo_communication_mod::perform_local_data_copy_for_field">
+<area shape="rect" id="node1" title="Will perform a a local copy for the halo data of a field." alt="" coords="5,45,147,101"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#af6146f7138547a3210839b478418856b" title="Performs a local data copy for corners when the neighbour is local (me)" alt="" coords="203,5,363,61"/>
+<area shape="rect" id="node3" href="$namespacehalo__communication__mod.html#a82ba20e03d4564be84a6186cfcebfc68" title="Performs a local data copy for a specific dimension of a prognostic field." alt="" coords="195,85,371,141"/>
+</map>

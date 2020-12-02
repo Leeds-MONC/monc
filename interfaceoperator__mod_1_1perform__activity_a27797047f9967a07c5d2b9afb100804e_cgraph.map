@@ -1,0 +1,8 @@
+<map id="operator_mod::perform_activity::perform_activity" name="operator_mod::perform_activity::perform_activity">
+<area shape="rect" id="node1" title=" " alt="" coords="5,136,173,177"/>
+<area shape="rect" id="node2" href="$namespaceoperator__mod.html#ad76d7fa6ab86d1128b7b1fec2846ab37" title="Finalises any operators that require finalisation." alt="" coords="237,5,384,47"/>
+<area shape="rect" id="node3" href="$namespaceoperator__mod.html#a93f06b281eb96c87fb8a5d8bdb6ce8af" title=" " alt="" coords="221,71,400,112"/>
+<area shape="rect" id="node4" href="$namespaceoperator__mod.html#aacfbe93bff2fcae842ff7ada2b639df0" title="Retrieves the operator execution procedure of an operator with a specific name." alt="" coords="221,136,400,177"/>
+<area shape="rect" id="node5" href="$namespaceoperator__mod.html#aaacc6a41bb8ac61dcf720027c0498158" title="Retrieves the list of fields required by an operator before it can run." alt="" coords="221,201,400,243"/>
+<area shape="rect" id="node6" href="$namespaceoperator__mod.html#a25db5c38fb4887066ea226511e217442" title="Initialises any operators that require initialisation." alt="" coords="233,267,388,308"/>
+</map>

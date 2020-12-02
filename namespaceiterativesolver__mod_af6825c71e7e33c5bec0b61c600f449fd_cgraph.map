@@ -1,0 +1,5 @@
+<map id="iterativesolver_mod::initialisation_callback" name="iterativesolver_mod::initialisation_callback">
+<area shape="rect" id="node1" title="Initialisation callback hook which will set up the halo swapping state and allocate some data." alt="" coords="5,39,156,80"/>
+<area shape="rect" id="node2" href="$namespaceiterativesolver__mod.html#aef6fd5efeaca1b7064977922c977dcd6" title="Creates a problem matrix, allocating the required data based upon the column size." alt="" coords="206,5,365,47"/>
+<area shape="rect" id="node3" href="$namespaceiterativesolver__mod.html#a0b0f12fd71fd6a296933459daf10bb01" title="Sets the values of the provided matrix to solve the poisson equation." alt="" coords="204,71,367,112"/>
+</map>

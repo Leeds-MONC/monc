@@ -1,0 +1,4 @@
+<map id="writer_federator_mod::enable_specific_field_by_name" name="writer_federator_mod::enable_specific_field_by_name">
+<area shape="rect" id="node1" title="Enables a specific field by its name, this will locate all the fields with this name and enable them." alt="" coords="5,5,152,61"/>
+<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a9379ee9a358faa87a63d2f2459f202b9" title="Retrieves the index of the next writer which uses a specific field. If none is found then returns fal..." alt="" coords="200,5,344,61"/>
+</map>

@@ -1,0 +1,10 @@
+<map id="writer_types_mod::netcdf_diagnostics_type" name="writer_types_mod::netcdf_diagnostics_type">
+<area shape="rect" id="node1" title=" " alt="" coords="1760,70,1927,111"/>
+<area shape="rect" id="node2" href="$structcollections__mod_1_1map__type.html" title="Map data structure that holds string (length 20 maximum) key value pairs." alt="" coords="563,16,741,43"/>
+<area shape="rect" id="node8" href="$structwriter__types__mod_1_1writer__field__type.html" title=" " alt="" coords="977,53,1140,94"/>
+<area shape="rect" id="node3" href="$structcollections__mod_1_1list__type.html" title="List data structure which implements a doubly linked list. This list will preserve its order." alt="" coords="284,99,455,125"/>
+<area shape="rect" id="node5" href="$structcollections__mod_1_1hashmap__type.html" title="A hashmap structure, the same as a map but uses hashing for greatly improved performance when storing..." alt="" coords="1164,167,1371,193"/>
+<area shape="rect" id="node7" href="$structcollections__mod_1_1queue__type.html" title="Queue (FIFO) data structure." alt="" coords="765,125,953,152"/>
+<area shape="rect" id="node4" href="$structcollections__mod_1_1listnode__type.html" title="Private list node which holds the raw generic node data and pointers to next and previous list nodes." alt="" coords="5,99,204,125"/>
+<area shape="rect" id="node6" href="$structwriter__types__mod_1_1writer__type.html" title=" " alt="" coords="1395,77,1588,104"/>
+</map>

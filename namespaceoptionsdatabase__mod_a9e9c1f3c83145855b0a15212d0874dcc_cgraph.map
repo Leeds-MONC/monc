@@ -1,0 +1,7 @@
+<map id="optionsdatabase_mod::add_specific_option_key_value_pair" name="optionsdatabase_mod::add_specific_option_key_value_pair">
+<area shape="rect" id="node1" title="This will add a specific option key value pair to the options hashmap_type." alt="" coords="5,97,155,153"/>
+<area shape="rect" id="node2" href="$namespaceoptionsdatabase__mod.html#a26edb7498ed2705e4a68ee2a854cf358" title="A helper procedure to set a specific integer value." alt="" coords="203,5,381,47"/>
+<area shape="rect" id="node3" href="$namespaceoptionsdatabase__mod.html#a3d2f101e8aaff465e9de8b5193017bca" title="A helper procedure to set a specific logical value." alt="" coords="203,71,381,112"/>
+<area shape="rect" id="node4" href="$namespaceoptionsdatabase__mod.html#a4ce99dd792cac1c2f3b0f7dafc066606" title="A helper procedure to set a specific real value." alt="" coords="211,136,373,177"/>
+<area shape="rect" id="node5" href="$namespaceoptionsdatabase__mod.html#a55575038a83a349daac530eb250ed6ee" title="A helper procedure to set a specific string value." alt="" coords="206,201,378,243"/>
+</map>

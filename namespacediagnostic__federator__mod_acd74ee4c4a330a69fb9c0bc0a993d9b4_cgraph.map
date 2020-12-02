@@ -1,0 +1,4 @@
+<map id="diagnostic_federator_mod::get_diagnostic_generation_frequency" name="diagnostic_federator_mod::get_diagnostic_generation_frequency">
+<area shape="rect" id="node1" title="Retrieves the max diagnostic generation frequency for a set of fields." alt="" coords="5,5,157,61"/>
+<area shape="rect" id="node2" href="$namespacediagnostic__federator__mod.html#ad5c90a0a8585af8abd1e13f0b41beff3" title="Retrieves the generation frequency for a specific field." alt="" coords="205,13,376,54"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="collections_mod::stack_pop_generic" name="collections_mod::stack_pop_generic">
+<area shape="rect" id="node1" title="Pops an element off the stack (LIFO)" alt="" coords="208,104,363,145"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#acf8f217e43dcd72c1b15a2c8e799cdc3" title="Pops an element off the stack (LIFO)" alt="" coords="5,5,160,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a69d260e7e5b956b2028beaed3a552b14" title="Pops an element off the stack (LIFO)" alt="" coords="5,71,160,112"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#a9131b64dc54209ab2257777befd6f27d" title="Pops an element off the stack (LIFO). Converts between precision and from int." alt="" coords="5,136,160,177"/>
+<area shape="rect" id="node5" href="$namespacecollections__mod.html#a9d0de2b9210d60312f13eea638b3526f" title="Pops an element off the stack (LIFO)" alt="" coords="5,201,160,243"/>
+</map>

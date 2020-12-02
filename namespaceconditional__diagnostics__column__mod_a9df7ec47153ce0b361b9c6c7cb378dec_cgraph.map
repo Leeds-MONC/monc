@@ -1,0 +1,8 @@
+<map id="conditional_diagnostics_column_mod::conditional_diagnostics_column_get_descriptor" name="conditional_diagnostics_column_mod::conditional_diagnostics_column_get_descriptor">
+<area shape="rect" id="node1" title="Provides the component descriptor for the core to register." alt="" coords="5,158,176,229"/>
+<area shape="rect" id="node2" href="$namespaceconditional__diagnostics__column__mod.html#a6c91a57a299efb8c29f0f4f72805f73b" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="224,5,427,61"/>
+<area shape="rect" id="node3" href="$namespaceconditional__diagnostics__column__mod.html#a7fadd951c86595e346b02af0f804f569" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="240,85,411,141"/>
+<area shape="rect" id="node4" href="$namespaceconditional__diagnostics__column__mod.html#ad9aa3a908a9b25762afaf608f15e3a2b" title=" " alt="" coords="240,165,411,221"/>
+<area shape="rect" id="node5" href="$namespaceconditional__diagnostics__column__mod.html#a7c41fc06243aec7fa62089302c21449f" title=" " alt="" coords="237,245,414,301"/>
+<area shape="rect" id="node6" href="$namespaceconditional__diagnostics__column__mod.html#a36dbd28989fea579b4a08f06fefdf3cd" title=" " alt="" coords="246,325,405,381"/>
+</map>

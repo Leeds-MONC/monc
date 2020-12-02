@@ -1,0 +1,20 @@
+<map id="gridmanager_mod::initialise_verticalgrid_configuration_type" name="gridmanager_mod::initialise_verticalgrid_configuration_type">
+<area shape="rect" id="node1" title="Will initialise the vertical grid configuration." alt="" coords="5,71,208,112"/>
+<area shape="rect" id="node2" href="$namespacegridmanager__mod.html#af3206ebfbd969e132b9bb0da141e2c4a" title="Allocates the data required for the vertical grid configuration." alt="" coords="256,5,432,47"/>
+<area shape="rect" id="node3" href="$namespacegridmanager__mod.html#a528bb773c3a3d670aae00cce7a19d56a" title="Sets up and smooths the vertical grid. This is based upon the grid configuration already read in." alt="" coords="269,71,419,112"/>
+<area shape="rect" id="node7" href="$namespacegridmanager__mod.html#a4db48ff47153c3be2595066a0cfe302c" title="Sets up the vertical grid reference profile at each point." alt="" coords="257,299,431,340"/>
+<area shape="rect" id="node4" href="$namespacegridmanager__mod.html#a43acffd915e44ba2a4ee85c35201258c" title="The newer vertical grid setup routine." alt="" coords="517,71,672,112"/>
+<area shape="rect" id="node5" href="$namespacegridmanager__mod.html#a05f22855870eb71f65d8f178a6df5db7" title="The original vertical grid setup and smoothing as per the LEM." alt="" coords="509,5,681,47"/>
+<area shape="rect" id="node6" href="$namespacegridmanager__mod.html#af9cfe0c92dec4ecc2104d9dedf421d7c" title="Creates the linear vertical grid based upon the configuration properties." alt="" coords="779,5,945,47"/>
+<area shape="rect" id="node8" href="$namespacegridmanager__mod.html#a3c89fcab80ba1019407877e035e99e96" title="Calculates the initial profiles for U, V, TH &amp; Q if required." alt="" coords="503,556,686,597"/>
+<area shape="rect" id="node11" href="$namespacegridmanager__mod.html#a8be24cf4b5ebf1cbbfe56a074926b3f2" title="Calculates the mixing length for the neutral case." alt="" coords="489,201,700,243"/>
+<area shape="rect" id="node12" href="$namespacegridmanager__mod.html#a718c3a9ed0280fd54eae4e006f1f85e0" title="Set reference profile of potential temperature for the Boussinesq/Anelastic approximation Note that t..." alt="" coords="520,136,669,177"/>
+<area shape="rect" id="node15" href="$namespacegridmanager__mod.html#ab284abd10a4ca93aa7fc592fcacace02" title="Sets the buoyancy coefficient from the grid configuration and configuration." alt="" coords="520,332,669,373"/>
+<area shape="rect" id="node16" href="$namespacegridmanager__mod.html#aa00d0ec2e1c1ec0d5e065004cd1d6b9f" title=" " alt="" coords="520,267,669,308"/>
+<area shape="rect" id="node17" href="$namespacegridmanager__mod.html#a644550580a73a9f92ffcdfbb3e1e037e" title="Sets up the reference properties for the vertical grid at each point." alt="" coords="518,397,671,453"/>
+<area shape="rect" id="node18" href="$namespacegridmanager__mod.html#ae9f6591616fcf44968eb27608ab3e793" title="Setting up reference state liquid water temperature and saturation mixing ratio on main levels." alt="" coords="480,477,709,533"/>
+<area shape="rect" id="node9" href="$namespacegridmanager__mod.html#a0802299155d2b12297fc904d30d32c61" title=" " alt="" coords="779,469,945,511"/>
+<area shape="rect" id="node10" href="$namespacegridmanager__mod.html#a99b4427e1d4243af039b6ab0e40424bd" title=" " alt="" coords="767,306,957,333"/>
+<area shape="rect" id="node13" href="$namespacegridmanager__mod.html#ae6d17b932809a5c15d314e9cd266298b" title="Computes the anelastic pressure and density &#45; if we are using Anelastic approximation." alt="" coords="771,170,953,226"/>
+<area shape="rect" id="node14" href="$namespacegridmanager__mod.html#a505b54357dac9e98045ca14eb17e1c2f" title="Computes the anelastic pressure only &#45; if we are using Boussinesq approximation." alt="" coords="757,105,967,147"/>
+</map>

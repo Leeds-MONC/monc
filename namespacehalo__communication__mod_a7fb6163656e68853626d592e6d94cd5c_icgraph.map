@@ -1,0 +1,8 @@
+<map id="halo_communication_mod::retrieve_same_neighbour_information" name="halo_communication_mod::retrieve_same_neighbour_information">
+<area shape="rect" id="node1" title="Retrieves whether we have the same neighbours for L and R halo swaps in each dimension." alt="" coords="700,60,856,116"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#a65991d14beaafd48f7841ccc35be5e98" title="Precalculates the received buffer to field halo cell matches for each dimension and called from the i..." alt="" coords="493,20,641,76"/>
+<area shape="rect" id="node5" href="$namespacetest__halo__communication__mod.html#a9d4febce57e215c67cc7319f1988f203" title=" " alt="" coords="481,100,652,156"/>
+<area shape="rect" id="node3" href="$namespacehalo__communication__mod.html#ac287e4b520fd9a75f35e58e67ec52880" title="Initialises a halo swapping state, by determining the neighbours, size of data in each swap and alloc..." alt="" coords="231,27,433,69"/>
+<area shape="rect" id="node4" href="$interfacehalo__communication__mod_1_1perform__local__data__copy__proc__interface.html#a9f668d078f8cd3153d4bbde17cdbee41" title=" " alt="" coords="5,5,183,91"/>
+<area shape="rect" id="node6" href="$test__halocommunication_8F90.html#a384429ec47961a7f013fa1773326628b" title=" " alt="" coords="247,107,417,149"/>
+</map>

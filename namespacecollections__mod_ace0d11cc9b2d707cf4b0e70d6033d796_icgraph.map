@@ -1,0 +1,6 @@
+<map id="collections_mod::list_is_empty" name="collections_mod::list_is_empty">
+<area shape="rect" id="node1" title="Determines whether or not the list is empty." alt="" coords="211,71,349,112"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a543d5477354f4cb4dd913fafae613ab6" title="Returns whether a map is empty." alt="" coords="11,5,157,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#ab18805ddcc50568fdbb05406f890ae9a" title="Returns whether a queue is empty." alt="" coords="5,71,163,112"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#a023dc03d04b997a57656c130431e8e32" title="Returns whether a stack is empty." alt="" coords="7,136,161,177"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="threadpool_mod::find_idle_thread" name="threadpool_mod::find_idle_thread">
+<area shape="rect" id="node1" title="Finds an idle thread, if one is not available then will block until one becomes free." alt="" coords="5,5,145,47"/>
+<area shape="rect" id="node2" href="$namespacethreadpool__mod.html#a46884c3dda1e63c2cbaffb985835e64b" title="Specifically gets the index of the next idle thread or &#45;1 if they are all busy. This starts from a ne..." alt="" coords="193,5,340,47"/>
+</map>

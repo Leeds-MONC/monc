@@ -1,0 +1,5 @@
+<map id="netcdf_misc_mod::check_netcdf_status" name="netcdf_misc_mod::check_netcdf_status">
+<area shape="rect" id="node1" title="Will check a NetCDF status and write to log_log error any decoded statuses. Can be used to decode whe..." alt="" coords="5,5,172,47"/>
+<area shape="rect" id="node2" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="220,13,363,39"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="411,5,577,47"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="writer_types_mod::unserialise_collective_values_type" name="writer_types_mod::unserialise_collective_values_type">
+<area shape="rect" id="node1" title="Unserialsies collective values contained in some data." alt="" coords="5,5,197,47"/>
+<area shape="rect" id="node2" href="$namespacewriter__types__mod.html#a536a4c1352bbc1d7a21aedec40ba4f8e" title="Unserialises some byte data into data values." alt="" coords="245,5,437,47"/>
+<area shape="rect" id="node3" href="$namespacewriter__types__mod.html#a0c1e3ad6ff464304020f0be57e7e7df0" title="Inflates some byte data into a string map." alt="" coords="485,5,677,47"/>
+</map>

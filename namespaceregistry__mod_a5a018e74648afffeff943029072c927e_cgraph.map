@@ -1,0 +1,5 @@
+<map id="registry_mod::display_callbacks_in_order_at_each_stage" name="registry_mod::display_callbacks_in_order_at_each_stage">
+<area shape="rect" id="node1" title="Displays the registered callbacks of each stage in the order that they will be called." alt="" coords="5,31,160,87"/>
+<area shape="rect" id="node2" href="$namespaceregistry__mod.html#a04b4b14e5f4fd9bc435b4d6ca5c4b934" title="Displays the registered callbacks of a specific stage in the order that they will be called." alt="" coords="216,5,359,47"/>
+<area shape="rect" id="node3" href="$namespaceregistry__mod.html#ae5b11998b62f4ae0aba6f758429ac3da" title="Given the id of a group this will return the corresponding descriptor." alt="" coords="208,71,367,112"/>
+</map>

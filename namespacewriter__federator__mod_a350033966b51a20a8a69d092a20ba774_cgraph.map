@@ -1,0 +1,11 @@
+<map id="writer_federator_mod::finalise_writer_federator" name="writer_federator_mod::finalise_writer_federator">
+<area shape="rect" id="node1" title="Finalises the write federator and the manipulations." alt="" coords="5,159,171,200"/>
+<area shape="rect" id="node2" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="483,158,637,199"/>
+<area shape="rect" id="node5" href="$namespaceinstantaneous__time__manipulation__mod.html#a9e6df294e2e60b5d2640511b434bd8d0" title="Finalises the instantaneous time manipulation." alt="" coords="229,38,420,94"/>
+<area shape="rect" id="node6" href="$namespaceforthread__mod.html#a34912c5c002de467e6b116d65d917881" title=" " alt="" coords="479,46,641,87"/>
+<area shape="rect" id="node7" href="$namespacenetcdf__filetype__writer__mod.html#a4267425ddfb057cab9dc7c4d08087669" title="Finalises the NetCDF writing functionality." alt="" coords="253,118,397,174"/>
+<area shape="rect" id="node8" href="$namespaceforthread__mod.html#a1ba0d6ac9839191688aeea507ae27ec8" title=" " alt="" coords="479,256,641,298"/>
+<area shape="rect" id="node9" href="$namespacetimeaveraged__time__manipulation__mod.html#a7bedad25705d7708391ee9c4c1551b7a" title="Finalises the reduction action, waiting for all outstanding requests and then freeing data." alt="" coords="219,249,431,305"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="689,165,832,192"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="880,158,1047,199"/>
+</map>

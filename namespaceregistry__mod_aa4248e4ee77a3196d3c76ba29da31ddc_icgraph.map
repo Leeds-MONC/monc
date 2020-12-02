@@ -1,0 +1,10 @@
+<map id="registry_mod::deregister_component" name="registry_mod::deregister_component">
+<area shape="rect" id="node1" title="Will deregister a component, remove all callback hooks and free registry specific memory allocated to..." alt="" coords="605,223,764,264"/>
+<area shape="rect" id="node2" href="$namespaceregistry__mod.html#a8a7011c9cd96110d38a423c7dd092ec5" title="Will deregister all components and free up the registry data structures. This can either be called at..." alt="" coords="430,143,554,184"/>
+<area shape="rect" id="node6" href="$namespacetest__registry__mod.html#a0fc2fbbe87241288e0010cd250e509e4" title=" " alt="" coords="198,215,366,271"/>
+<area shape="rect" id="node8" href="$namespacetest__registry__mod.html#ab3a42291eed4d77be2e8c2c93a972587" title=" " alt="" coords="427,284,557,325"/>
+<area shape="rect" id="node3" href="$namespacetest__registry__mod.html#acfa8aa70aefd4513a76cf9ed2b9d0269" title=" " alt="" coords="193,5,371,47"/>
+<area shape="rect" id="node5" href="$namespacetest__registry__mod.html#ab3ce4742f3a4cb7dbf1c516454fc827a" title=" " alt="" coords="189,71,375,112"/>
+<area shape="rect" id="node7" href="$namespacetest__registry__mod.html#ac2a796a04656ee7bf271c47f6a1b827e" title=" " alt="" coords="185,135,379,191"/>
+<area shape="rect" id="node4" href="$test__registry_8F90.html#a3362580fd920c2d2d43a352df0750a06" title=" " alt="" coords="5,150,137,177"/>
+</map>

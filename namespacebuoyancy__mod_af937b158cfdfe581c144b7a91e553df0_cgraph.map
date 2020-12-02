@@ -1,0 +1,11 @@
+<map id="buoyancy_mod::buoyancy_get_descriptor" name="buoyancy_mod::buoyancy_get_descriptor">
+<area shape="rect" id="node1" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,150,173,191"/>
+<area shape="rect" id="node2" href="$namespacebuoyancy__mod.html#aa23e17b977d5e055e1bd14e28a18e2ed" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="239,5,386,61"/>
+<area shape="rect" id="node3" href="$namespacebuoyancy__mod.html#a86050eb07e523fa6370515952d7846c7" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="229,85,397,126"/>
+<area shape="rect" id="node5" href="$namespacebuoyancy__mod.html#ab0a26fae6e6572858759d1eb914f3e56" title=" " alt="" coords="225,150,400,191"/>
+<area shape="rect" id="node6" href="$namespacebuoyancy__mod.html#afa9b3b9be5b6eecf760a1e90f2b08a4b" title="The initialisation callback sets up the buoyancy coefficient." alt="" coords="221,215,404,257"/>
+<area shape="rect" id="node7" href="$namespacebuoyancy__mod.html#ae62a1fef8d0748d979f254e09232b7bd" title="Called for each column per timestep this will calculate the buoyancy terms for the SW field." alt="" coords="231,281,395,322"/>
+<area shape="rect" id="node4" href="$namespacebuoyancy__mod.html#a77065a92c8bc8e890a6e8ecf5c615e04" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="452,85,647,126"/>
+<area shape="rect" id="node8" href="$namespacebuoyancy__mod.html#a00f79559cd9127235da90f7acda8f97d" title="Computation of component tendencies." alt="" coords="467,247,631,289"/>
+<area shape="rect" id="node9" href="$namespacebuoyancy__mod.html#a9061dc5478d5e330bcabe675a0db6805" title="Save the 3d tendencies coming into the component." alt="" coords="459,313,640,354"/>
+</map>

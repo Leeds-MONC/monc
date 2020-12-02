@@ -1,0 +1,6 @@
+<map id="kidreader_mod::read_single_variable" name="kidreader_mod::read_single_variable">
+<area shape="rect" id="node1" title="Reads a single variable out of a NetCDF file." alt="" coords="615,5,753,47"/>
+<area shape="rect" id="node2" href="$namespacekidreader__mod.html#a0aacef0b2cd322378c4ba2b83ecc7b43" title="Reads the variables from the NetCDF KiD model file." alt="" coords="428,5,567,47"/>
+<area shape="rect" id="node3" href="$namespacekidreader__mod.html#af9f9656d6a5514b190a7cbe2d5b1c2b8" title="Initialisation hook which will parse the configuration NetCDF file and set up the model based upon th..." alt="" coords="220,5,380,47"/>
+<area shape="rect" id="node4" href="$namespacekidreader__mod.html#ac25b32ce129dab62a39885672825763e" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,172,47"/>
+</map>

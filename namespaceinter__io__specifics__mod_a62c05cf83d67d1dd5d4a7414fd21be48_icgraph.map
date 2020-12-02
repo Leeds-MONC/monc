@@ -1,0 +1,11 @@
+<map id="inter_io_specifics_mod::package_inter_io_communication_message" name="inter_io_specifics_mod::package_inter_io_communication_message">
+<area shape="rect" id="node1" title="Packages up fields into an io binary message (allocated here) which is used for sending." alt="" coords="1301,45,1496,101"/>
+<area shape="rect" id="node2" href="$namespacereduction__inter__io__mod.html#adb8512d99c36d96498328af7e47194cb" title="Handles the case where the local MONC processes have completed their collective operation for a speci..." alt="" coords="1075,5,1253,61"/>
+<area shape="rect" id="node8" href="$namespacebroadcast__inter__io__mod.html#a9c49585e6986ed7104ecc35a71347e78" title="Performs an inter IO broadcast of data from the root to all other IO servers. Note that this is on th..." alt="" coords="1096,85,1232,141"/>
+<area shape="rect" id="node3" href="$namespacereduction__inter__io__mod.html#afbd4c0a62bdef47841ccb4731a0c96e8" title="Actually handles the processing for this data wrt the vertical reduction." alt="" coords="869,5,1005,61"/>
+<area shape="rect" id="node4" href="$namespaceallreduction__inter__io__mod.html#afb8d154fff5a46e854337bb4f0c2cfd3" title="Performs the all reduction inter IO reduction." alt="" coords="647,71,800,127"/>
+<area shape="rect" id="node5" href="$namespaceglobal__callback__inter__io__mod.html#ad475780629e2db0ae4b68f3e395e418d" title="Performs a global callback." alt="" coords="436,71,599,127"/>
+<area shape="rect" id="node6" href="$namespaceio__server__mod.html#ada1b8581f80d696dc8aa636405c73aea" title="Awaits a command or shutdown from MONC processes and other IO servers." alt="" coords="244,78,388,119"/>
+<area shape="rect" id="node7" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,85,196,112"/>
+<area shape="rect" id="node9" href="$namespaceallreduction__inter__io__mod.html#a467bb14ad72911d3695efc951233470e" title="Internal completion, called after the reduce has completed (on root) and calls out to broadcast." alt="" coords="848,136,1027,192"/>
+</map>

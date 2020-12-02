@@ -1,0 +1,6 @@
+<map id="writer_types_mod::serialise_writer_field_type" name="writer_types_mod::serialise_writer_field_type">
+<area shape="rect" id="node1" title="Serialises a specific writer field type for storage or transmission. This releases any locks issued d..." alt="" coords="5,35,184,76"/>
+<area shape="rect" id="node2" href="$namespacewriter__types__mod.html#a5d29675d56233f7bf4bf2244cc0e3873" title="Serialises collective values. This releases any locks issued during preparation." alt="" coords="232,5,411,47"/>
+<area shape="rect" id="node3" href="$namespacewriter__types__mod.html#ab5bd556b7aece3ad191a87331c70663d" title="Serialises some data values to store or transmit. This releases any locks issued during preparation." alt="" coords="459,35,637,76"/>
+<area shape="rect" id="node4" href="$namespacewriter__types__mod.html#a427401c0dfd6265375770ccf333f1675" title="Serialises a string map, where the values are assumed to be strings. This releases any locks issued d..." alt="" coords="685,35,864,76"/>
+</map>

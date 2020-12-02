@@ -1,0 +1,4 @@
+<map id="lwrad_exponential_mod::initialisation_callback" name="lwrad_exponential_mod::initialisation_callback">
+<area shape="rect" id="node1" title="The initialisation callback sets up the prescribed longwave fluxes and the exponential decay factor." alt="" coords="211,13,368,54"/>
+<area shape="rect" id="node2" href="$namespacelwrad__exponential__mod.html#a51e5c46539ce1fc3344174ab3afc8e34" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,163,61"/>
+</map>

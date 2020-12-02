@@ -1,0 +1,5 @@
+<map id="meanprofiles_mod::timestep_callback" name="meanprofiles_mod::timestep_callback">
+<area shape="rect" id="node1" title="Will recalculate the mean profiles of each prognostic when called (for the entire local domain)" alt="" coords="5,5,188,47"/>
+<area shape="rect" id="node2" href="$namespacemeanprofiles__mod.html#acc5af72e27976623aa2cb1f5cbcc5bfb" title="Calculates the global mean profiles and stores these in the ol bar arrays." alt="" coords="236,5,421,47"/>
+<area shape="rect" id="node3" href="$namespacemeanprofiles__mod.html#a34962904c022ef5820da7664b55a4131" title="Calculates the sum profiles for the bars for each level globally." alt="" coords="469,5,655,47"/>
+</map>

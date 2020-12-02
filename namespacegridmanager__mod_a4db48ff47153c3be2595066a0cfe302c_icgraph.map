@@ -1,0 +1,6 @@
+<map id="gridmanager_mod::set_vertical_reference_profile" name="gridmanager_mod::set_vertical_reference_profile">
+<area shape="rect" id="node1" title="Sets up the vertical grid reference profile at each point." alt="" coords="733,5,907,47"/>
+<area shape="rect" id="node2" href="$namespacegridmanager__mod.html#adb240afc3ced768c76ca5a87db0bf765" title="Will initialise the vertical grid configuration." alt="" coords="483,5,685,47"/>
+<area shape="rect" id="node3" href="$namespacegridmanager__mod.html#accbda17db8d0527f3465f22de5befd1f" title="Called during initialisation and will initialise the horizontal and vertical grid configurations Note..." alt="" coords="256,5,435,47"/>
+<area shape="rect" id="node4" href="$namespacegridmanager__mod.html#ad1594b9175d56289645df4961045ce14" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,208,47"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="diagnostic_federator_mod::check_diagnostic_federator_for_completion" name="diagnostic_federator_mod::check_diagnostic_federator_for_completion">
+<area shape="rect" id="node1" title="Checks whether the diagnostics federator has completed or not, this is really checking all the underl..." alt="" coords="436,5,608,61"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ada1b8581f80d696dc8aa636405c73aea" title="Awaits a command or shutdown from MONC processes and other IO servers." alt="" coords="244,13,388,54"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+</map>

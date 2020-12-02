@@ -1,0 +1,6 @@
+<map id="lateral_bcs_mod::lateral_bcs_get_descriptor" name="lateral_bcs_mod::lateral_bcs_get_descriptor">
+<area shape="rect" id="node1" title="Provides a description of this component for the core to register." alt="" coords="5,39,164,80"/>
+<area shape="rect" id="node2" href="$namespacelateral__bcs__mod.html#a2f7cebb146dc08df2d7a2b310a829f47" title="Initialisation callback. Sets up boundary depth and other configurable options." alt="" coords="212,5,403,47"/>
+<area shape="rect" id="node3" href="$namespacelateral__bcs__mod.html#a730b24f535cddfab034a3fce8ff0d3c7" title="Timestep callback which applies lateral boundary conditions." alt="" coords="221,71,394,112"/>
+<area shape="rect" id="node4" href="$namespacelateral__bcs__mod.html#ac8d819ad9c1a7ba802c06c082967917a" title=" " alt="" coords="451,71,604,112"/>
+</map>

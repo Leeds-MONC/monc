@@ -1,0 +1,4 @@
+<map id="decomposition_mod::init_callback" name="decomposition_mod::init_callback">
+<area shape="rect" id="node1" title="The initialisation hook. Will set up the appropriate decomposition." alt="" coords="248,5,392,47"/>
+<area shape="rect" id="node2" href="$namespacedecomposition__mod.html#a151110f5f60ba70abbdd598e2abe8574" title="Provides the component descriptor for the core to register." alt="" coords="5,5,200,47"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="localreduce_operator_mod::perform_localreduce_operator" name="localreduce_operator_mod::perform_localreduce_operator">
+<area shape="rect" id="node1" title="Executes this local reduction operator." alt="" coords="5,31,183,87"/>
+<area shape="rect" id="node2" href="$namespacelocalreduce__operator__mod.html#aa0b4d357ff33536f2881c2be21186794" title="Does the actual local reduction, translating the array into a vector based upon the operator." alt="" coords="231,5,399,47"/>
+<area shape="rect" id="node3" href="$namespacedata__utils__mod.html#a32e2bb292c66ad41e019b09c8842b82b" title="Retrieves the name of a field from the attributes specified in the configuration." alt="" coords="236,71,393,112"/>
+</map>

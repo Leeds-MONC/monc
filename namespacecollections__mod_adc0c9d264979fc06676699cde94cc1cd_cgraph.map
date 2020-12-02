@@ -1,0 +1,5 @@
+<map id="collections_mod::map_put_generic" name="collections_mod::map_put_generic">
+<area shape="rect" id="node1" title="Puts a specific key&#45;value pair into the map." alt="" coords="5,39,152,80"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a1f286bd90166134b57391b8588918bff" title="Adds an element to the end of the list." alt="" coords="204,5,343,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#ab91c5c48fc0406145f1988635bcf5722" title="This gets the map node that the key represents (rather than the specific value)" alt="" coords="200,71,347,112"/>
+</map>

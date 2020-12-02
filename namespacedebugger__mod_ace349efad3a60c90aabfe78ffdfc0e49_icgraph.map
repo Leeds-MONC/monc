@@ -1,0 +1,4 @@
+<map id="debugger_mod::init_callback" name="debugger_mod::init_callback">
+<area shape="rect" id="node1" title="Called on MONC initialisation." alt="" coords="220,5,351,47"/>
+<area shape="rect" id="node2" href="$namespacedebugger__mod.html#aedc35535274243923eaff33cb40b429a" title="Provides the component descriptor for the core to register." alt="" coords="5,5,172,47"/>
+</map>

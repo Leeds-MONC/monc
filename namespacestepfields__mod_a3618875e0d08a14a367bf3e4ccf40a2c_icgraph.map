@@ -1,0 +1,6 @@
+<map id="stepfields_mod::reset_local_minmax_values" name="stepfields_mod::reset_local_minmax_values">
+<area shape="rect" id="node1" title="Resets the local min and max values for the flow fields." alt="" coords="455,39,608,80"/>
+<area shape="rect" id="node2" href="$namespacestepfields__mod.html#aa1e297b46f7533fd26bf4b5631303f55" title="Initialisation callback." alt="" coords="224,5,407,47"/>
+<area shape="rect" id="node4" href="$namespacestepfields__mod.html#a290e6dd0b52faa60331fca61b34dc68d" title="Called at each timestep and will perform swapping and smoothing as required." alt="" coords="233,71,398,112"/>
+<area shape="rect" id="node3" href="$namespacestepfields__mod.html#afd3602a870447f5d706f9a3dae84d450" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,39,176,80"/>
+</map>

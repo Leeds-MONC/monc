@@ -1,0 +1,6 @@
+<map id="monc_mod::get_number_io_processes" name="monc_mod::get_number_io_processes">
+<area shape="rect" id="node1" title="Based upon the total number of processes and the IO process id stride determines the number of proces..." alt="" coords="681,13,841,54"/>
+<area shape="rect" id="node2" href="$namespacemonc__mod.html#a0faaccda0cabe18aa8467680f968b7bf" title="Splits the MPI_COMM_WORLD communicator into MONC and IO separate communicators. The size of each depe..." alt="" coords="428,13,633,54"/>
+<area shape="rect" id="node3" href="$namespacemonc__mod.html#aa2abab500db49cd9c95e41632531a40f" title="Main core entry point to bootstrap running the model." alt="" coords="224,13,380,54"/>
+<area shape="rect" id="node4" href="$interfacemonc__mod_1_1io__server__run__procedure.html#a4a7a1c54866c50bf460f178dadc2b073" title=" " alt="" coords="5,5,176,61"/>
+</map>

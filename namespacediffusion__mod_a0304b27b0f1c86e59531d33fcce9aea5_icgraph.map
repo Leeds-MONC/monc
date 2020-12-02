@@ -1,0 +1,5 @@
+<map id="diffusion_mod::set_published_field_value" name="diffusion_mod::set_published_field_value">
+<area shape="rect" id="node1" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="425,5,577,47"/>
+<area shape="rect" id="node2" href="$namespacediffusion__mod.html#ac803490161be03e7d6f28404a93a6ff4" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="209,5,377,47"/>
+<area shape="rect" id="node3" href="$namespacediffusion__mod.html#afa904ef085482f7826a5034b340b17b4" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,161,47"/>
+</map>

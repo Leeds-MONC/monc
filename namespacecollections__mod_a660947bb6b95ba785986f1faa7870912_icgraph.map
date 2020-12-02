@@ -1,0 +1,16 @@
+<map id="collections_mod::list_remove" name="collections_mod::list_remove">
+<area shape="rect" id="node1" title="Removes an element from the list at a specific index." alt="" coords="433,136,572,177"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#aa037070a0a56522ac767027a53e29e35" title="Removes a specific key&#45;value pair from the hashmap." alt="" coords="211,5,385,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#ac63b4de429a80f6d36f6c555c89bdb51" title="Removes a string from the hashset." alt="" coords="214,71,382,112"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#a879537ab5edc394c66a00ce3a163493d" title="Removes a specific key&#45;value pair from the map." alt="" coords="225,136,371,177"/>
+<area shape="rect" id="node5" href="$namespacecollections__mod.html#ac3ac77f7ea5ec7c86c49f8d502dd9f09" title="Pops the queue element off the head of the queue (FIFO)" alt="" coords="219,201,377,243"/>
+<area shape="rect" id="node10" href="$namespacecollections__mod.html#a65dbf5558f245898a34a857df5c0ece9" title="Pops an element off the stack (LIFO)" alt="" coords="221,397,375,439"/>
+<area shape="rect" id="node6" href="$namespacecollections__mod.html#a013619ae5b73f0bb754acbb72e6d0c39" title="Pops the queue element off the head of the queue (FIFO)" alt="" coords="5,71,163,112"/>
+<area shape="rect" id="node7" href="$namespacecollections__mod.html#a05a04c1a59f1e4e6d73d374db341528c" title="Pops the queue element off the head of the queue (FIFO)" alt="" coords="5,136,163,177"/>
+<area shape="rect" id="node8" href="$namespacecollections__mod.html#ae4328e8f8bf1bdb876cdade49d6e36d3" title="Pops the queue element off the head of the queue (FIFO). Converts between precision and from int." alt="" coords="5,201,163,243"/>
+<area shape="rect" id="node9" href="$namespacecollections__mod.html#a6d47f6d761a41c1a598b0f78072d8899" title="Pops the queue element off the head of the queue (FIFO)" alt="" coords="5,267,163,308"/>
+<area shape="rect" id="node11" href="$namespacecollections__mod.html#acf8f217e43dcd72c1b15a2c8e799cdc3" title="Pops an element off the stack (LIFO)" alt="" coords="7,332,161,373"/>
+<area shape="rect" id="node12" href="$namespacecollections__mod.html#a69d260e7e5b956b2028beaed3a552b14" title="Pops an element off the stack (LIFO)" alt="" coords="7,397,161,439"/>
+<area shape="rect" id="node13" href="$namespacecollections__mod.html#a9131b64dc54209ab2257777befd6f27d" title="Pops an element off the stack (LIFO). Converts between precision and from int." alt="" coords="7,463,161,504"/>
+<area shape="rect" id="node14" href="$namespacecollections__mod.html#a9d0de2b9210d60312f13eea638b3526f" title="Pops an element off the stack (LIFO)" alt="" coords="7,528,161,569"/>
+</map>

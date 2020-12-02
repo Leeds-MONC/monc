@@ -1,0 +1,5 @@
+<map id="stepfields_mod::step_all_fields" name="stepfields_mod::step_all_fields">
+<area shape="rect" id="node1" title="Steps all fields." alt="" coords="437,5,577,47"/>
+<area shape="rect" id="node2" href="$namespacestepfields__mod.html#a290e6dd0b52faa60331fca61b34dc68d" title="Called at each timestep and will perform swapping and smoothing as required." alt="" coords="224,5,389,47"/>
+<area shape="rect" id="node3" href="$namespacestepfields__mod.html#afd3602a870447f5d706f9a3dae84d450" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,176,47"/>
+</map>

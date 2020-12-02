@@ -1,0 +1,13 @@
+<map id="haloswapper_mod::haloswapper_get_descriptor" name="haloswapper_mod::haloswapper_get_descriptor">
+<area shape="rect" id="node1" title="Provides a description of this component for the core to register." alt="" coords="5,71,212,112"/>
+<area shape="rect" id="node2" href="$namespacehaloswapper__mod.html#a794242b5be8c350749afa9d837191c12" title="The finalisation callback hook which will clean up and free the memory associated with the halo swapp..." alt="" coords="263,5,458,47"/>
+<area shape="rect" id="node3" href="$namespacehaloswapper__mod.html#a20dba6765095019c8a311f237d399332" title="Initialisation callback hook which will set up the halo swapping state and cache some precalculated d..." alt="" coords="260,71,461,112"/>
+<area shape="rect" id="node5" href="$namespacehaloswapper__mod.html#a7fc41ef4805ce22bc046be80aa3cf04a" title="Timestep callback hook which performs the halo swapping for each prognostic field." alt="" coords="269,201,452,243"/>
+<area shape="rect" id="node4" href="$namespacehaloswapper__mod.html#a273d7bb8195fe3a3025a27d1d5a51338" title="Deduces the number of fields per halo cell. This depends upon what fields are active in the model." alt="" coords="523,5,674,47"/>
+<area shape="rect" id="node6" href="$namespacehaloswapper__mod.html#a2ee10e5097ea1212d606e64b4de47b0c" title="Copies the prognostic corner field data to halo buffers for a specific process in a dimension and hal..." alt="" coords="519,71,679,112"/>
+<area shape="rect" id="node7" href="$namespacehaloswapper__mod.html#aa3006cc5431fe9b1ce1032e0cfa8e53a" title="Copies the prognostic field data to halo buffers for a specific process in a dimension and halo cell." alt="" coords="519,136,679,177"/>
+<area shape="rect" id="node8" href="$namespacehaloswapper__mod.html#aea46ae8a52ec0206d24cd4c5aa492a95" title="Copies the halo buffer to halo location in a corner for a halo cell/column and corner location...." alt="" coords="519,201,679,243"/>
+<area shape="rect" id="node9" href="$namespacehaloswapper__mod.html#afec0137b34ecd74e7d07be2a504aaaa5" title="Copies the halo buffer to halo location in a field for a specific dimension and halo cell/column...." alt="" coords="519,267,679,308"/>
+<area shape="rect" id="node10" href="$namespacehaloswapper__mod.html#ab85ff953dbb24e3fec451de9ec066e7d" title="Displays some debugging information about who is sending what if that logging_mod level is selected." alt="" coords="509,332,688,373"/>
+<area shape="rect" id="node11" href="$namespacehaloswapper__mod.html#a574e9edafcbcfb75368b24553b73dc24" title="Will do any local copying of data required for the boundary conditions. I.e. if all columns in a slic..." alt="" coords="510,397,687,453"/>
+</map>

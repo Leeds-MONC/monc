@@ -1,0 +1,9 @@
+<map id="swapsmooth_mod::swapsmooth_get_descriptor" name="swapsmooth_mod::swapsmooth_get_descriptor">
+<area shape="rect" id="node1" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,72,213,113"/>
+<area shape="rect" id="node2" href="$namespaceswapsmooth__mod.html#ad2261298893dfc6d8cc2e419e7c86b0c" title="Initialises the swap and smooth component." alt="" coords="261,39,464,80"/>
+<area shape="rect" id="node3" href="$namespaceswapsmooth__mod.html#aa43e49fbf4ef649bfa40910959997692" title="Called for each non halo timestep column and will perform swapping and smoothing as required on that ..." alt="" coords="271,104,455,145"/>
+<area shape="rect" id="node4" href="$namespaceswapsmooth__mod.html#a6a7c9d29a9bfbceaa84d6a1c52e07f2f" title="Does swapping and smoothing (using classic algorithm) for the average profiles (the bars)" alt="" coords="513,5,687,47"/>
+<area shape="rect" id="node5" href="$namespaceswapsmooth__mod.html#a86308ba939f3725c8081f82282326fbe" title="Does swapping and smoothing (using robert filter algorithm) for the average profiles (the bars)" alt="" coords="512,71,688,112"/>
+<area shape="rect" id="node6" href="$namespaceswapsmooth__mod.html#aaf23c9d4853a1be2d1900f5f81f30703" title="Classic swap and smooth based upon the old or no smoothing." alt="" coords="517,136,683,177"/>
+<area shape="rect" id="node7" href="$namespaceswapsmooth__mod.html#aecc80e466ec034d560bf446cd8253146" title="Swap and smooth with a Robert filter." alt="" coords="515,201,685,243"/>
+</map>

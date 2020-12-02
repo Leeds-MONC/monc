@@ -1,0 +1,4 @@
+<map id="checkpointer_write_checkpoint_mod::define_prognostic_variables" name="checkpointer_write_checkpoint_mod::define_prognostic_variables">
+<area shape="rect" id="node1" title="Defines prognostic variables in the NetCDF. This handles 1, 2 and 3D grids_mod and 1,..." alt="" coords="212,5,376,61"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__write__checkpoint__mod.html#a08632fad9f022817094703d57bc025d4" title="Will write out the current model state_mod into a NetCDF checkpoint file." alt="" coords="5,5,164,61"/>
+</map>

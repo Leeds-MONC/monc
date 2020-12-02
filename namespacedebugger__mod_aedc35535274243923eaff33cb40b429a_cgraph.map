@@ -1,0 +1,5 @@
+<map id="debugger_mod::debugger_get_descriptor" name="debugger_mod::debugger_get_descriptor">
+<area shape="rect" id="node1" title="Provides the component descriptor for the core to register." alt="" coords="5,39,172,80"/>
+<area shape="rect" id="node2" href="$namespacedebugger__mod.html#ace349efad3a60c90aabfe78ffdfc0e49" title="Called on MONC initialisation." alt="" coords="236,5,367,47"/>
+<area shape="rect" id="node3" href="$namespacedebugger__mod.html#a0d98420cdc9159f870e6fd9ac6a089f6" title="Produces debugging information on each timestep." alt="" coords="220,71,383,112"/>
+</map>

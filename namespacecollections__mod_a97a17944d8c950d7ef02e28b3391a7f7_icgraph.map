@@ -1,0 +1,12 @@
+<map id="collections_mod::list_insert_generic" name="collections_mod::list_insert_generic">
+<area shape="rect" id="node1" title="Inserts an element into the list or places at the end if the index &gt; list size." alt="" coords="411,136,549,177"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#ab6a1d1e3e329422d49a909118ea1bd50" title="Inserts an element into the list or places at the end if the index &gt; list size." alt="" coords="216,5,355,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a0167be06b70a0e57fee9e2f3a06a3d23" title="Inserts an element into the list or places at the end if the index &gt; list size." alt="" coords="216,71,355,112"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#a2b4f058ebe422949040751187e86a447" title="Inserts an element into the list or places at the end if the index &gt; list size." alt="" coords="216,136,355,177"/>
+<area shape="rect" id="node5" href="$namespacecollections__mod.html#a1a73764c2b47cff68e6a99b1c6794dd7" title="Inserts an element into the list or places at the end if the index &gt; list size." alt="" coords="216,201,355,243"/>
+<area shape="rect" id="node6" href="$namespacecollections__mod.html#adaada37ab08b0c5dd0431890314f06fe" title="Pushes an element onto the stack (LIFO)" alt="" coords="208,267,363,308"/>
+<area shape="rect" id="node7" href="$namespacecollections__mod.html#a37c77fe956b1b7e88309f625b7c34a42" title="Pushes an element onto the stack (LIFO)" alt="" coords="5,168,160,209"/>
+<area shape="rect" id="node8" href="$namespacecollections__mod.html#a58d4a571b1695a2a4e61838be19bb57b" title="Pushes an element onto the stack (LIFO)" alt="" coords="5,233,160,275"/>
+<area shape="rect" id="node9" href="$namespacecollections__mod.html#a0ac25166c076ceb988020c3d482b5891" title="Pushes an element onto the stack (LIFO)" alt="" coords="5,299,160,340"/>
+<area shape="rect" id="node10" href="$namespacecollections__mod.html#ac0bf66e82c029732c940908267da5074" title="Pushes an element onto the stack (LIFO)" alt="" coords="5,364,160,405"/>
+</map>

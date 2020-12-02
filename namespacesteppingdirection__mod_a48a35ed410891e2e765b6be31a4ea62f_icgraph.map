@@ -1,0 +1,4 @@
+<map id="steppingdirection_mod::timestep_callback" name="steppingdirection_mod::timestep_callback">
+<area shape="rect" id="node1" title="Determines whether we are forward or centre stepping." alt="" coords="205,13,357,54"/>
+<area shape="rect" id="node2" href="$namespacesteppingdirection__mod.html#a346c1bd41d6d5de7222cb5d2b275a075" title="Returns the descriptor of this component." alt="" coords="5,5,157,61"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="collections_mod::map_remove" name="collections_mod::map_remove">
+<area shape="rect" id="node1" title="Removes a specific key&#45;value pair from the map." alt="" coords="5,39,152,80"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a660947bb6b95ba785986f1faa7870912" title="Removes an element from the list at a specific index." alt="" coords="204,5,343,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#ab91c5c48fc0406145f1988635bcf5722" title="This gets the map node that the key represents (rather than the specific value)" alt="" coords="200,71,347,112"/>
+</map>

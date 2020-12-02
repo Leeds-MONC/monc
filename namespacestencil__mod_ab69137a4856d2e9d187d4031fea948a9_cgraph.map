@@ -1,0 +1,5 @@
+<map id="stencil_mod::interpolate_to_dual" name="stencil_mod::interpolate_to_dual">
+<area shape="rect" id="node1" title="Interpolates the (vector) flow fields from the primal to dual grid based upon a specific field interp..." alt="" coords="5,39,164,80"/>
+<area shape="rect" id="node2" href="$namespacestencil__mod.html#a12d15f246287a91f69a4aa3f9ec9d465" title="Calculates the interpolated values for each point in a column. The exact method of interpolation depe..." alt="" coords="231,5,392,47"/>
+<area shape="rect" id="node3" href="$namespacestencil__mod.html#a4dd12428cbdad8cb70b12fdeb72b0859" title="Copies stencil number of interpolated values from the store used by this functionality to preallocate..." alt="" coords="212,71,411,112"/>
+</map>

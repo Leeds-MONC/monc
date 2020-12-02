@@ -1,0 +1,4 @@
+<map id="halo_communication_mod::send_all_halos" name="halo_communication_mod::send_all_halos">
+<area shape="rect" id="node1" title="Copies all applicable bits of the prognostics into a send buffer for each neighbour and then issues a..." alt="" coords="5,13,152,54"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#ab0dc177b2189be5b8ed3877e6081e459" title="Given the process id of a neighbour this determines the location in the data structure of correspondi..." alt="" coords="200,5,365,61"/>
+</map>

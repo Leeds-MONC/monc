@@ -1,0 +1,4 @@
+<map id="simplecloud_mod::field_information_retrieval_callback" name="simplecloud_mod::field_information_retrieval_callback">
+<area shape="rect" id="node1" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="252,5,404,61"/>
+<area shape="rect" id="node2" href="$namespacesimplecloud__mod.html#afd2b6c3e05113f84d027f04147d313ca" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,13,204,54"/>
+</map>

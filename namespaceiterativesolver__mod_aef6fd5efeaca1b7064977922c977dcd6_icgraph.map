@@ -1,0 +1,5 @@
+<map id="iterativesolver_mod::create_problem_matrix" name="iterativesolver_mod::create_problem_matrix">
+<area shape="rect" id="node1" title="Creates a problem matrix, allocating the required data based upon the column size." alt="" coords="387,13,545,54"/>
+<area shape="rect" id="node2" href="$namespaceiterativesolver__mod.html#af6825c71e7e33c5bec0b61c600f449fd" title="Initialisation callback hook which will set up the halo swapping state and allocate some data." alt="" coords="188,13,339,54"/>
+<area shape="rect" id="node3" href="$namespaceiterativesolver__mod.html#a2d28cccb2e26b87273e0d919955f01c6" title="Descriptor of the iterative solver component used by the registry." alt="" coords="5,5,140,61"/>
+</map>

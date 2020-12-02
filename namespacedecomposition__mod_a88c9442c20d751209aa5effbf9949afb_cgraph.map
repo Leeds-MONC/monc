@@ -1,0 +1,11 @@
+<map id="decomposition_mod::two_dim_decomposition" name="decomposition_mod::two_dim_decomposition">
+<area shape="rect" id="node1" title="Decomposition into two dimensions." alt="" coords="5,210,168,251"/>
+<area shape="rect" id="node2" href="$namespacedecomposition__mod.html#ac4924f4aebf06ebe72b40c202e42b113" title="Calculates and applys the start and end bounds of the local data. Held locally is the halo and local ..." alt="" coords="465,5,610,61"/>
+<area shape="rect" id="node3" href="$namespacedecomposition__mod.html#a8121daba3e69d1ef030b6d1e4198dcff" title="Applys the local bounds (start, end and size) for a specific dimension." alt="" coords="219,294,385,335"/>
+<area shape="rect" id="node4" href="$namespacedecomposition__mod.html#a920741992b79bc02ed62cd612451b6f3" title="Will apply halo size information and allocated the neighbour array data." alt="" coords="451,85,623,141"/>
+<area shape="rect" id="node5" href="$namespacedecomposition__mod.html#a8899c100721c3f61f744b7ef2fa4a301" title="Will apply the two dimensional neighbour information. This implements the wrap around aspect if there..." alt="" coords="217,359,387,415"/>
+<area shape="rect" id="node6" href="$namespacedecomposition__mod.html#a66a78fad391b823071ec9dda88b23ab5" title="Applys Z dimension information. As we always decompose into columns then Z is never split and as such..." alt="" coords="436,165,639,206"/>
+<area shape="rect" id="node7" href="$namespacedecomposition__mod.html#a25442f953a87d031a255badd5a16030c" title="Dumps out information about the decomposition at DEBUG level." alt="" coords="461,229,614,285"/>
+<area shape="rect" id="node8" href="$namespacedecomposition__mod.html#abf15e5f66826309bf60a76fb41e6e6ae" title="Determines whether or not the planned two dimensional decomposition will fit into the X and Y global ..." alt="" coords="216,439,388,495"/>
+<area shape="rect" id="node9" href="$namespacedecomposition__mod.html#a938ecd9b19f1c729692e8b15838bbdca" title="One dimension decomposition." alt="" coords="221,126,383,167"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="logging_mod::log_master_log" name="logging_mod::log_master_log">
+<area shape="rect" id="node1" title="Will log just from the master process." alt="" coords="5,13,195,39"/>
+<area shape="rect" id="node2" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="243,13,385,39"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="433,5,600,47"/>
+</map>

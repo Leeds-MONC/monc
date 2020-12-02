@@ -1,0 +1,4 @@
+<map id="checkpointer_read_checkpoint_mod::initalise_source_and_sav_fields" name="checkpointer_read_checkpoint_mod::initalise_source_and_sav_fields">
+<area shape="rect" id="node1" title="Initialises the source and sav (for u,v,w) fields for allocated prognostics." alt="" coords="252,5,451,61"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__read__checkpoint__mod.html#a2c62e5fb27df55b95c5650b36e9a6545" title="Reads in a NetCDF checkpoint file and uses this to initialise the model." alt="" coords="5,13,204,54"/>
+</map>

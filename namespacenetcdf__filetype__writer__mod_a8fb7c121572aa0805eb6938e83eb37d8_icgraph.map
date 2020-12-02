@@ -1,0 +1,5 @@
+<map id="netcdf_filetype_writer_mod::initialise_netcdf_filetype" name="netcdf_filetype_writer_mod::initialise_netcdf_filetype">
+<area shape="rect" id="node1" title="Initialises the NetCDF writing functionality." alt="" coords="464,5,615,61"/>
+<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a7b31bb8f9d0fb8c0768252e819b20985" title="Initialises the write federator and configures it based on the user configuration...." alt="" coords="244,13,416,54"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+</map>

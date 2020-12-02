@@ -1,0 +1,9 @@
+<map id="test_checkpointer_mod::test_does_field_exist" name="test_checkpointer_mod::test_does_field_exist">
+<area shape="rect" id="node1" title=" " alt="" coords="5,68,163,109"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__read__checkpoint__mod.html#aa5891369d5acb69d237f9b5816704889" title="Determines whether a variable (field) exists within the NetCDF checkpoint file @ncid The NetCDF file ..." alt="" coords="211,68,409,109"/>
+<area shape="rect" id="node3" href="$namespacecheckpointer__common__mod.html#a3fbe4c50092c828b5fe133d24302522f" title="Will check a NetCDF status and write to log_log error any decoded statuses. Can be used to decode whe..." alt="" coords="466,35,619,76"/>
+<area shape="rect" id="node7" href="$namespacedummy__netcdf__mod.html#ab7e777719d93306e6bec5605293a1b30" title=" " alt="" coords="457,100,628,141"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="690,13,833,39"/>
+<area shape="rect" id="node6" href="$namespacedummy__netcdf__mod.html#abeaf9879b125d4cbdbca2c0514a3d418" title=" " alt="" coords="676,64,847,105"/>
+<area shape="rect" id="node5" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="895,5,1061,47"/>
+</map>

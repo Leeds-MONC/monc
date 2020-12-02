@@ -1,0 +1,5 @@
+<map id="forcing_mod::get_averaged_diagnostics" name="forcing_mod::get_averaged_diagnostics">
+<area shape="rect" id="node1" title="Averages some diagnostic values across all local horizontal points." alt="" coords="408,5,585,47"/>
+<area shape="rect" id="node2" href="$namespaceforcing__mod.html#abca541e61db0167503407eeb48058265" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="192,5,360,47"/>
+<area shape="rect" id="node3" href="$namespaceforcing__mod.html#a163404fa404cc16f050fc697bdf0f44f" title="Provides the component descriptor for the core to register." alt="" coords="5,5,144,47"/>
+</map>

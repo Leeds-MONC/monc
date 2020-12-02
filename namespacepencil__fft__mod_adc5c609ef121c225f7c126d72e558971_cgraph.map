@@ -1,0 +1,5 @@
+<map id="pencil_fft_mod::transpose_to_pencil" name="pencil_fft_mod::transpose_to_pencil">
+<area shape="rect" id="node1" title="Transposes globally to a new pencil decomposition. This goes from the source dimensions a,..." alt="" coords="5,27,175,69"/>
+<area shape="rect" id="node2" href="$namespacepencil__fft__mod.html#ac2d228c34a44953affd43f778430c494" title="Contiguises from c,b,a to b,c,a (forwards) or c,a,b (backwards) where these are defined by the source..." alt="" coords="223,5,425,32"/>
+<area shape="rect" id="node3" href="$namespacepencil__fft__mod.html#aba57cbdad3c09ffb4f614255c0b72e54" title="Rearranges data for sending, transposing a,b,c into c,b,a . This is done as alltoall splits on dimens..." alt="" coords="241,57,407,98"/>
+</map>

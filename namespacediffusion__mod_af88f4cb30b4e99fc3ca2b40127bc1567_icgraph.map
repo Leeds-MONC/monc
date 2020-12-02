@@ -1,0 +1,5 @@
+<map id="diffusion_mod::copy_halo_buffer_to_diff_corners" name="diffusion_mod::copy_halo_buffer_to_diff_corners">
+<area shape="rect" id="node1" title="Copies the corner halo buffer to the diffusion coefficient field corners." alt="" coords="416,5,551,61"/>
+<area shape="rect" id="node2" href="$namespacediffusion__mod.html#a3db6d2912d0047987b4648259f75cb06" title="At each timestep will compute the diffusion source terms for TH and Q fields per column if these fiel..." alt="" coords="209,13,368,54"/>
+<area shape="rect" id="node3" href="$namespacediffusion__mod.html#afa904ef085482f7826a5034b340b17b4" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,13,161,54"/>
+</map>

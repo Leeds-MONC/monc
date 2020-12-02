@@ -1,0 +1,4 @@
+<map id="writer_types_mod::prepare_to_serialise_data_values_type" name="writer_types_mod::prepare_to_serialise_data_values_type">
+<area shape="rect" id="node1" title="Prepares to serialise a specific data values type, both determines the byte size required and also is..." alt="" coords="5,5,208,47"/>
+<area shape="rect" id="node2" href="$namespacewriter__types__mod.html#a09de0017a289827e5b114043878ee8b2" title="Prepares a map for serialisation, both determines the size of storage required and also issues any lo..." alt="" coords="256,5,429,47"/>
+</map>

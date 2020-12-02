@@ -1,0 +1,5 @@
+<map id="smagorinsky_mod::calculate_richardson_number" name="smagorinsky_mod::calculate_richardson_number">
+<area shape="rect" id="node1" title="Calculates the richardson number depending upon the setup of the model and the method selected." alt="" coords="5,23,191,65"/>
+<area shape="rect" id="node2" href="$namespacesmagorinsky__mod.html#a6cba56ada9b1f055b60043e1d372a76c" title="Calculates numerator of Richarson number as the difference in buoyancy between a parcel at K+1 and a ..." alt="" coords="239,5,432,32"/>
+<area shape="rect" id="node3" href="$namespacesmagorinsky__mod.html#a3e5a1b93c3c38fb5f77eaa5c942da785" title="Calculates another &quot;moist version&quot; of the Richardson number based on &quot;change in subgrid buoyancy flux..." alt="" coords="239,56,432,83"/>
+</map>

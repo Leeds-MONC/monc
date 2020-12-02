@@ -1,0 +1,5 @@
+<map id="collections_mod::queue_get_real" name="collections_mod::queue_get_real">
+<area shape="rect" id="node1" title="Returns a specific queue element at an index. Converts between precision and from int." alt="" coords="5,5,163,47"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a83234efccd47e0ba5509768a2f32e9ed" title="Returns a specific queue element at an index or null if index &gt; queue size." alt="" coords="211,5,368,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a91a5a6f4841afe0bc22fcba100b6e46b" title="Retrieves the element at index i from the list or null if index &lt; list size." alt="" coords="416,5,555,47"/>
+</map>

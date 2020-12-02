@@ -1,0 +1,4 @@
+<map id="meanprofiles_mod::timestep_callback" name="meanprofiles_mod::timestep_callback">
+<area shape="rect" id="node1" title="Will recalculate the mean profiles of each prognostic when called (for the entire local domain)" alt="" coords="260,5,443,47"/>
+<area shape="rect" id="node2" href="$namespacemeanprofiles__mod.html#a55543023376dac0d52f813bd4a71e74d" title="Returns the component descriptor of the mean profiles module." alt="" coords="5,5,212,47"/>
+</map>

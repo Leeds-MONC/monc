@@ -1,0 +1,4 @@
+<map id="localreduce_operator_mod::do_local_reduction" name="localreduce_operator_mod::do_local_reduction">
+<area shape="rect" id="node1" title="Does the actual local reduction, translating the array into a vector based upon the operator." alt="" coords="231,13,399,54"/>
+<area shape="rect" id="node2" href="$namespacelocalreduce__operator__mod.html#a2ab3d8b54620dfb58370e845e011f157" title="Executes this local reduction operator." alt="" coords="5,5,183,61"/>
+</map>

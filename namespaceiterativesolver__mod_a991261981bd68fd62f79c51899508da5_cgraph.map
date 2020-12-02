@@ -1,0 +1,10 @@
+<map id="iterativesolver_mod::cg_solver" name="iterativesolver_mod::cg_solver">
+<area shape="rect" id="node1" title="Performs the preconditioned conjugate gradient method." alt="" coords="5,122,140,163"/>
+<area shape="rect" id="node2" href="$namespaceiterativesolver__mod.html#a20f5d0cf67fdd1ef2f7707d7269c988b" title="Calculates A * x." alt="" coords="381,93,515,134"/>
+<area shape="rect" id="node6" href="$namespaceiterativesolver__mod.html#a146f586b6c6cfbc1244331d2140dab2d" title="Returns the global inner product of two vectors, ignoring the halo cells." alt="" coords="188,187,323,229"/>
+<area shape="rect" id="node8" href="$namespaceiterativesolver__mod.html#a3a126d3be90e5ca81444946a7d99160c" title="Jacobi preconditioner." alt="" coords="188,122,323,163"/>
+<area shape="rect" id="node3" href="$namespaceiterativesolver__mod.html#a1b56f5e6c2a429bd3e8d4477e838702b" title="Copies the source field data to halo buffers for a specific process in a dimension and halo cell &#45; fo..." alt="" coords="573,5,728,61"/>
+<area shape="rect" id="node4" href="$namespaceiterativesolver__mod.html#ac4ea22571d1810eb006b25b159e2fc81" title="Copies the halo buffer to halo location for the source field as required in the calc_Ax procedure." alt="" coords="579,85,722,141"/>
+<area shape="rect" id="node5" href="$namespaceiterativesolver__mod.html#a669988a9a78d403ac7a1dfd2eb054c23" title="Does a local data copy for halo swapping cells with wrap around (to maintain periodic boundary condit..." alt="" coords="581,165,720,221"/>
+<area shape="rect" id="node7" href="$namespaceiterativesolver__mod.html#a60152786b4abc4477b62166c58b437a7" title="Returns the global inner product of a pair of vectors, ignoring the halo cells for three separate pai..." alt="" coords="371,187,525,229"/>
+</map>

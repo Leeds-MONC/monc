@@ -1,0 +1,10 @@
+<map id="writer_field_manager_mod::prepare_to_serialise_specific_field_ordering" name="writer_field_manager_mod::prepare_to_serialise_specific_field_ordering">
+<area shape="rect" id="node1" title="Prepares to serialise a specific field ordering, both determines storage size and issues locks." alt="" coords="5,63,181,119"/>
+<area shape="rect" id="node2" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="240,5,395,47"/>
+<area shape="rect" id="node5" href="$namespaceforthread__mod.html#a9101345b87d2c0e18fb020677cf767b9" title=" " alt="" coords="236,71,399,112"/>
+<area shape="rect" id="node6" href="$namespacewriter__field__manager__mod.html#af341837f6738c9f4527d8f030e268ac0" title="Prepares to serialise a specific field ordering value, determines both the storage size and issues lo..." alt="" coords="229,135,405,191"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="483,13,626,39"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="707,5,874,47"/>
+<area shape="rect" id="node7" href="$namespacewriter__types__mod.html#aa4c1edaaebbfa64ad4dc2a09632cefba" title="Prepares to serialise a specific data values type, both determines the byte size required and also is..." alt="" coords="453,143,656,184"/>
+<area shape="rect" id="node8" href="$namespacewriter__types__mod.html#a09de0017a289827e5b114043878ee8b2" title="Prepares a map for serialisation, both determines the size of storage required and also issues any lo..." alt="" coords="704,143,877,184"/>
+</map>

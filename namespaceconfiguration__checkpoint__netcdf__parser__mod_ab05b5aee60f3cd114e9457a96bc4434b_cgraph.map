@@ -1,0 +1,6 @@
+<map id="configuration_checkpoint_netcdf_parser_mod::get_number_of_options" name="configuration_checkpoint_netcdf_parser_mod::get_number_of_options">
+<area shape="rect" id="node1" title="Retrieves the number of option key&#45;value pairs that are present in the checkpoint file." alt="" coords="5,5,171,61"/>
+<area shape="rect" id="node2" href="$namespacenetcdf__misc__mod.html#a159f13789af0cecc704b47fde431b241" title="Will check a NetCDF status and write to log_log error any decoded statuses. Can be used to decode whe..." alt="" coords="219,13,385,54"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="433,20,576,47"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="624,13,791,54"/>
+</map>

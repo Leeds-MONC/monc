@@ -1,0 +1,15 @@
+<map id="threadpool_mod::threadpool_init" name="threadpool_mod::threadpool_init">
+<area shape="rect" id="node1" title="Initialises the thread pool and marks each thread as idle." alt="" coords="5,193,209,220"/>
+<area shape="rect" id="node2" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="496,186,651,227"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="703,102,845,129"/>
+<area shape="rect" id="node5" href="$namespaceforthread__mod.html#abe5eeb944b76d5a9578e1fbf646446ac" title=" " alt="" coords="269,127,432,168"/>
+<area shape="rect" id="node6" href="$namespaceforthread__mod.html#af30ea01687680b50ce13873f3491fc3a" title=" " alt="" coords="269,62,432,103"/>
+<area shape="rect" id="node8" href="$namespaceforthread__mod.html#a2c58c024235a718e3036bc93a8c4e4a8" title=" " alt="" coords="257,244,444,270"/>
+<area shape="rect" id="node9" href="$namespaceforthread__mod.html#ab29785b28c1d6bcf13e844b8d1230846" title=" " alt="" coords="269,295,432,336"/>
+<area shape="rect" id="node10" href="$namespacethreadpool__mod.html#a9fe6131baabe8a6b73dbb7e4d5b1aa37" title="Entry point called by each thread creation in the pool, this calls out to the actual procedure to exe..." alt="" coords="261,360,441,402"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="893,95,1060,136"/>
+<area shape="rect" id="node7" href="$namespaceforthread__data.html#a16705f449f5cc21d7f0d7b51dcd42937" title=" " alt="" coords="505,62,642,103"/>
+<area shape="rect" id="node11" href="$namespaceforthread__mod.html#a9456090af3f2762f4f542d232fb7adc0" title=" " alt="" coords="492,295,655,336"/>
+<area shape="rect" id="node12" href="$namespaceforthread__mod.html#a9101345b87d2c0e18fb020677cf767b9" title=" " alt="" coords="492,360,655,402"/>
+<area shape="rect" id="node13" href="$namespaceforthread__mod.html#a6068972cad8d59eb6b29c8301d331090" title=" " alt="" coords="492,426,655,467"/>
+</map>

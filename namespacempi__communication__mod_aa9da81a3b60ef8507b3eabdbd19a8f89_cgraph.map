@@ -1,0 +1,12 @@
+<map id="mpi_communication_mod::data_receive" name="mpi_communication_mod::data_receive">
+<area shape="rect" id="node1" title="Awaits some data on the data channel. This is of the type, size from the source provided and can eith..." alt="" coords="5,71,176,112"/>
+<area shape="rect" id="node2" href="$namespacempi__communication__mod.html#a44ac4f74cb4daf89481da8df1dabc10d" title="If we are explicitly managing MPI thread safety (SERIALIZED mode) then locks MPI." alt="" coords="451,5,621,47"/>
+<area shape="rect" id="node7" href="$namespacempi__communication__mod.html#aad52010c006d90df6c097898ebdf4487" title="If we are explicitly managing MPI thread safety (SERIALIZED mode) then unlocks MPI." alt="" coords="451,136,621,177"/>
+<area shape="rect" id="node9" href="$namespacempi__communication__mod.html#a6ed06ee79c19ff1f57a344de48e53806" title="Waits for a specific MPI request to complete, either by managing thread safety and interleaving or ju..." alt="" coords="224,71,395,112"/>
+<area shape="rect" id="node3" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="681,71,836,112"/>
+<area shape="rect" id="node6" href="$namespaceforthread__mod.html#a9101345b87d2c0e18fb020677cf767b9" title=" " alt="" coords="677,5,840,47"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="888,78,1031,105"/>
+<area shape="rect" id="node5" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="1079,71,1245,112"/>
+<area shape="rect" id="node8" href="$namespaceforthread__mod.html#a6068972cad8d59eb6b29c8301d331090" title=" " alt="" coords="677,136,840,177"/>
+<area shape="rect" id="node10" href="$namespacempi__communication__mod.html#aee6d81060fcad11a466f823627234e7c" title="Pauses for a specific number of ms to allow for MPI interleaving, this is to avoid starvation." alt="" coords="443,71,629,112"/>
+</map>

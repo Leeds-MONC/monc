@@ -1,0 +1,4 @@
+<map id="test_halo_communication_mod::test_retrieve_same_neighbour_information" name="test_halo_communication_mod::test_retrieve_same_neighbour_information">
+<area shape="rect" id="node1" title=" " alt="" coords="5,5,176,61"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#a7fb6163656e68853626d592e6d94cd5c" title="Retrieves whether we have the same neighbours for L and R halo swaps in each dimension." alt="" coords="224,5,380,61"/>
+</map>

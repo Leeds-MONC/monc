@@ -1,0 +1,4 @@
+<map id="tvdadvection_mod::initialisation_callback" name="tvdadvection_mod::initialisation_callback">
+<area shape="rect" id="node1" title="Sets up the stencil_mod (used in interpolation) and allocates data for the flux fields." alt="" coords="261,5,464,47"/>
+<area shape="rect" id="node2" href="$namespacetvdadvection__mod.html#ad3453880655181ed5fc50841e0d6d08a" title="Provides a description of this component for the core to register." alt="" coords="5,5,213,47"/>
+</map>

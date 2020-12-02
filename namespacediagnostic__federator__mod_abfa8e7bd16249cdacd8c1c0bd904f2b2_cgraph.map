@@ -1,0 +1,10 @@
+<map id="diagnostic_federator_mod::define_diagnostics" name="diagnostic_federator_mod::define_diagnostics">
+<area shape="rect" id="node1" title="Based upon the IO configuration this will define the diagnostics structure. It is done once at initia..." alt="" coords="5,133,172,174"/>
+<area shape="rect" id="node2" href="$namespacediagnostic__federator__mod.html#a2f03b205c686950116708bc8ae39db4c" title="Adds the required fields of an activity to the overall required fields which are cloned for each new ..." alt="" coords="240,5,411,61"/>
+<area shape="rect" id="node3" href="$namespacediagnostic__federator__mod.html#acd74ee4c4a330a69fb9c0bc0a993d9b4" title="Retrieves the max diagnostic generation frequency for a set of fields." alt="" coords="249,85,401,141"/>
+<area shape="rect" id="node5" href="$namespacediagnostic__federator__mod.html#a5ff4a4217f56d3a3c1c19120a8b0d3f5" title="Retrieves a misc action from the parsed user XML configuration at a specific index." alt="" coords="248,165,403,221"/>
+<area shape="rect" id="node6" href="$namespacediagnostic__federator__mod.html#a1427333f9511d5199d60ad2c4c7077a7" title="Processes all auto dimensions by looking them up and resolving them based upon the operators." alt="" coords="220,245,431,286"/>
+<area shape="rect" id="node4" href="$namespacediagnostic__federator__mod.html#ad5c90a0a8585af8abd1e13f0b41beff3" title="Retrieves the generation frequency for a specific field." alt="" coords="479,93,649,134"/>
+<area shape="rect" id="node7" href="$namespacediagnostic__federator__mod.html#a8e8da478c02af7810229f55e7fbc1005" title="Retrives a diagnostic activity based upon its result name or null if none is found." alt="" coords="480,237,648,293"/>
+<area shape="rect" id="node8" href="$namespacediagnostic__federator__mod.html#a7951029c07b91b6398c93636f9442dfa" title="Retrieves the next activity in a collection being iterated over by an iterator." alt="" coords="697,245,880,286"/>
+</map>

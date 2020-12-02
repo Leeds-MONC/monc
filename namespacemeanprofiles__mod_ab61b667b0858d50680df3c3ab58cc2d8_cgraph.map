@@ -1,0 +1,5 @@
+<map id="meanprofiles_mod::init_callback" name="meanprofiles_mod::init_callback">
+<area shape="rect" id="node1" title="Called on MONC initialisation, will allocate appropriate data structures." alt="" coords="5,5,156,47"/>
+<area shape="rect" id="node2" href="$namespacemeanprofiles__mod.html#acc5af72e27976623aa2cb1f5cbcc5bfb" title="Calculates the global mean profiles and stores these in the ol bar arrays." alt="" coords="204,5,389,47"/>
+<area shape="rect" id="node3" href="$namespacemeanprofiles__mod.html#a34962904c022ef5820da7664b55a4131" title="Calculates the sum profiles for the bars for each level globally." alt="" coords="437,5,623,47"/>
+</map>

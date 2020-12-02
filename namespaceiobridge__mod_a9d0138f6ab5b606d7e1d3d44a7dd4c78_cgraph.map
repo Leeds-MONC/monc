@@ -1,0 +1,6 @@
+<map id="iobridge_mod::register_with_io_server" name="iobridge_mod::register_with_io_server">
+<area shape="rect" id="node1" title="Registers this MONC with the corresponding IO server. This will encapsulate the entire protocol,..." alt="" coords="5,39,153,80"/>
+<area shape="rect" id="node2" href="$namespaceiobridge__mod.html#a72a9a954ffcbffaed0b5cefad8e0ed7b" title="Retrieve the total number of fields, which is all the fields in all the data definitions." alt="" coords="220,5,375,47"/>
+<area shape="rect" id="node3" href="$namespaceiobridge__mod.html#a6a67433b766989cb8736c9646c6d7dd8" title="Based upon the received data and field definitions this will configure the IO bridge internal represe..." alt="" coords="201,71,393,112"/>
+<area shape="rect" id="node4" href="$namespaceiobridge__mod.html#afe137d163c985cbadba27f2ab7830751" title="Looks up a specific definition based upon its name and returns the index." alt="" coords="441,71,623,112"/>
+</map>

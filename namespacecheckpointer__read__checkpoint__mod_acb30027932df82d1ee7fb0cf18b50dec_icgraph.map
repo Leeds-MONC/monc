@@ -1,0 +1,4 @@
+<map id="checkpointer_read_checkpoint_mod::load_global_grid" name="checkpointer_read_checkpoint_mod::load_global_grid">
+<area shape="rect" id="node1" title="Reads in and initialises the primal grid from the NetCDF checkpoint and will handle 1,..." alt="" coords="252,5,451,47"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__read__checkpoint__mod.html#a2c62e5fb27df55b95c5650b36e9a6545" title="Reads in a NetCDF checkpoint file and uses this to initialise the model." alt="" coords="5,5,204,47"/>
+</map>

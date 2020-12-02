@@ -1,0 +1,7 @@
+<map id="registry_mod::order_all_callbacks" name="registry_mod::order_all_callbacks">
+<area shape="rect" id="node1" title="Orders all callbacks in the prospective stages based upon the priorities of each descriptor." alt="" coords="5,39,136,80"/>
+<area shape="rect" id="node2" href="$namespaceregistry__mod.html#a47bca8e7f9fed9abe21ece874914498c" title=" " alt="" coords="184,5,371,47"/>
+<area shape="rect" id="node4" href="$namespaceregistry__mod.html#a75be01a2d64e8dffd05601fb17114f52" title=" " alt="" coords="198,71,357,112"/>
+<area shape="rect" id="node3" href="$namespaceregistry__mod.html#ae5b11998b62f4ae0aba6f758429ac3da" title="Given the id of a group this will return the corresponding descriptor." alt="" coords="424,5,583,47"/>
+<area shape="rect" id="node5" href="$namespaceregistry__mod.html#a0b161f63a4e05c32a32227f2f998b749" title=" " alt="" coords="419,71,588,112"/>
+</map>

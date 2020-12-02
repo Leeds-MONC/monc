@@ -1,0 +1,5 @@
+<map id="haloswapper_mod::display_debugging_info_if_needed" name="haloswapper_mod::display_debugging_info_if_needed">
+<area shape="rect" id="node1" title="Displays some debugging information about who is sending what if that logging_mod level is selected." alt="" coords="491,5,669,47"/>
+<area shape="rect" id="node2" href="$namespacehaloswapper__mod.html#a7fc41ef4805ce22bc046be80aa3cf04a" title="Timestep callback hook which performs the halo swapping for each prognostic field." alt="" coords="260,5,443,47"/>
+<area shape="rect" id="node3" href="$namespacehaloswapper__mod.html#a72490f0cc37d570074c2306898e71002" title="Provides a description of this component for the core to register." alt="" coords="5,5,212,47"/>
+</map>

@@ -1,0 +1,4 @@
+<map id="halo_communication_mod::deduce_halo_pages_per_neighbour" name="halo_communication_mod::deduce_halo_pages_per_neighbour">
+<area shape="rect" id="node1" title="Deduces the number of halo pages per neighbour halo swap and places this information in the appropria..." alt="" coords="5,5,180,61"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#ab0dc177b2189be5b8ed3877e6081e459" title="Given the process id of a neighbour this determines the location in the data structure of correspondi..." alt="" coords="228,5,393,61"/>
+</map>

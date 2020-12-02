@@ -1,0 +1,5 @@
+<map id="damping_mod::save_precomponent_tendencies" name="damping_mod::save_precomponent_tendencies">
+<area shape="rect" id="node1" title="Save the 3d tendencies coming into the component." alt="" coords="419,5,645,47"/>
+<area shape="rect" id="node2" href="$namespacedamping__mod.html#ab88e456900efa51b3de9401ca699924a" title="For each data column will calculate the damping term and apply this to the source term for that field..." alt="" coords="212,5,371,47"/>
+<area shape="rect" id="node3" href="$namespacedamping__mod.html#a9553d74741d92f6fdbd3b868fed2b7cb" title="Descriptor of this component for registration." alt="" coords="5,5,164,47"/>
+</map>

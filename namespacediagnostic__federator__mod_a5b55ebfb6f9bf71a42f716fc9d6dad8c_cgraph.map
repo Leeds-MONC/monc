@@ -1,0 +1,4 @@
+<map id="diagnostic_federator_mod::determine_diagnostics_fields_available" name="diagnostic_federator_mod::determine_diagnostics_fields_available">
+<area shape="rect" id="node1" title="Determines the diagnostics fields that are available based upon the input MONC fields on registration..." alt="" coords="5,5,196,61"/>
+<area shape="rect" id="node2" href="$namespacediagnostic__federator__mod.html#a7951029c07b91b6398c93636f9442dfa" title="Retrieves the next activity in a collection being iterated over by an iterator." alt="" coords="244,13,427,54"/>
+</map>

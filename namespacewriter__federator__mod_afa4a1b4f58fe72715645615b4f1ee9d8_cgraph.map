@@ -1,0 +1,6 @@
+<map id="writer_federator_mod::add_group_of_fields_to_writer_entry" name="writer_federator_mod::add_group_of_fields_to_writer_entry">
+<area shape="rect" id="node1" title="Adds a group of fields to a writer entry, groups are expanded out into individual fields,..." alt="" coords="5,39,149,95"/>
+<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a90abda607746ac48c9b1df555c59895c" title="Adds a field to the writer entry, this will split the Q fields. However at initialisation we don&#39;t kn..." alt="" coords="197,13,368,54"/>
+<area shape="rect" id="node4" href="$namespacewriter__federator__mod.html#a89b6a2402ed4c492470ff392caa11714" title="Searches the IO server configuration for a group with a specific name and returns the index to that g..." alt="" coords="211,78,355,119"/>
+<area shape="rect" id="node3" href="$namespacewriter__federator__mod.html#ae6664cafdcce9b4b3d0a5815c65af9ac" title="Adds a specific field and its information to a writer entry." alt="" coords="416,5,560,61"/>
+</map>

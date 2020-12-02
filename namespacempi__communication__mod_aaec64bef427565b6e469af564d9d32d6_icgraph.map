@@ -1,0 +1,6 @@
+<map id="mpi_communication_mod::register_command_receive" name="mpi_communication_mod::register_command_receive">
+<area shape="rect" id="node1" title="Registers a request for receiving a command from any MONC process on the command channel." alt="" coords="655,5,839,47"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,13,196,39"/>
+<area shape="rect" id="node3" href="$namespacempi__communication__mod.html#af9ae866733dedd5129dac4361d17e720" title="Tests for a command message based upon the request already registered." alt="" coords="436,35,607,76"/>
+<area shape="rect" id="node4" href="$namespaceio__server__mod.html#ada1b8581f80d696dc8aa636405c73aea" title="Awaits a command or shutdown from MONC processes and other IO servers." alt="" coords="244,35,388,76"/>
+</map>

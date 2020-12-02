@@ -1,0 +1,4 @@
+<map id="buoyancy_mod::field_value_retrieval_callback" name="buoyancy_mod::field_value_retrieval_callback">
+<area shape="rect" id="node1" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="221,5,389,47"/>
+<area shape="rect" id="node2" href="$namespacebuoyancy__mod.html#af937b158cfdfe581c144b7a91e553df0" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,173,47"/>
+</map>

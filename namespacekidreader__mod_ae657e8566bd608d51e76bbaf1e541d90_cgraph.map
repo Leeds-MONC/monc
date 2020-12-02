@@ -1,0 +1,4 @@
+<map id="kidreader_mod::read_dimensions" name="kidreader_mod::read_dimensions">
+<area shape="rect" id="node1" title="Reads the dimensions from the NetCDF file." alt="" coords="5,5,144,47"/>
+<area shape="rect" id="node2" href="$namespacekidreader__mod.html#ae9f2bccbc716c31a3601423e6c0cf8cc" title="Will check a NetCDF status and write to log_log error any decoded statuses." alt="" coords="192,5,340,47"/>
+</map>

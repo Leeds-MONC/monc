@@ -1,0 +1,6 @@
+<map id="fieldcoarsener_operator_mod::locate_dimension" name="fieldcoarsener_operator_mod::locate_dimension">
+<area shape="rect" id="node1" title="Locates a dimension in a list of dimensions or 0 if none can be found." alt="" coords="487,53,648,94"/>
+<area shape="rect" id="node2" href="$namespacefieldcoarsener__operator__mod.html#aa9339d17d965a22a0d9cc46d3942997d" title="Determines the dimension bounds which are used in the slicing." alt="" coords="250,5,433,61"/>
+<area shape="rect" id="node4" href="$namespacefieldcoarsener__operator__mod.html#afd09d4b0863550d66767b9865383fad7" title="Retrieves the size of an auto dimension based upon the work that will be completed here." alt="" coords="244,85,439,141"/>
+<area shape="rect" id="node3" href="$namespacefieldcoarsener__operator__mod.html#a7c32be83854f3535b1ba25c1e5df44e4" title="Performs the field coarsener operator on a specific field." alt="" coords="5,5,196,61"/>
+</map>

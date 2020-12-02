@@ -1,0 +1,7 @@
+<map id="arithmetic_operator_mod::initialise_arithmetic_operator" name="arithmetic_operator_mod::initialise_arithmetic_operator">
+<area shape="rect" id="node1" title="Initialises this operator." alt="" coords="5,31,176,87"/>
+<area shape="rect" id="node2" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="228,5,383,47"/>
+<area shape="rect" id="node5" href="$namespaceforthread__mod.html#a84f66d5153e8adc21918d4b4d627087f" title=" " alt="" coords="224,71,387,112"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="435,13,577,39"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="625,5,792,47"/>
+</map>

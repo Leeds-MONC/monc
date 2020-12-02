@@ -1,0 +1,5 @@
+<map id="writer_types_mod::prepare_to_serialise_collective_values_type" name="writer_types_mod::prepare_to_serialise_collective_values_type">
+<area shape="rect" id="node1" title="Prepares to serialise a specific collective value, both determines the required byte storate size and..." alt="" coords="5,5,179,61"/>
+<area shape="rect" id="node2" href="$namespacewriter__types__mod.html#aa4c1edaaebbfa64ad4dc2a09632cefba" title="Prepares to serialise a specific data values type, both determines the byte size required and also is..." alt="" coords="227,13,429,54"/>
+<area shape="rect" id="node3" href="$namespacewriter__types__mod.html#a09de0017a289827e5b114043878ee8b2" title="Prepares a map for serialisation, both determines the size of storage required and also issues any lo..." alt="" coords="477,13,651,54"/>
+</map>

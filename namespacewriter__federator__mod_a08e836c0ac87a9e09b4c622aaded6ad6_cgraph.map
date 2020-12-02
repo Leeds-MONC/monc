@@ -1,0 +1,5 @@
+<map id="writer_federator_mod::initialise_contiguous_data_regions" name="writer_federator_mod::initialise_contiguous_data_regions">
+<area shape="rect" id="node1" title="Will initialise the collective data regions that form contiguous blocks within the data...." alt="" coords="5,31,151,87"/>
+<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a9f81ee04b25b784bf928c8bc96d32016" title="Retrieves the number of common starting points that match a specific input value." alt="" coords="210,5,354,47"/>
+<area shape="rect" id="node3" href="$namespacewriter__federator__mod.html#a20d56184ae0676c708c4377f01f71310" title="Translates a dimension name to its numeric corresponding identifier." alt="" coords="199,71,365,112"/>
+</map>

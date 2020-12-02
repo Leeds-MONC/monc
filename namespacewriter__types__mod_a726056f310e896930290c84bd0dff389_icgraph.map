@@ -1,0 +1,6 @@
+<map id="writer_types_mod::serialise_writer_field_type" name="writer_types_mod::serialise_writer_field_type">
+<area shape="rect" id="node1" title="Serialises a specific writer field type for storage or transmission. This releases any locks issued d..." alt="" coords="697,5,876,47"/>
+<area shape="rect" id="node2" href="$namespacewriter__types__mod.html#a8eba61b899444e7ad3d52bea630caa48" title="Serialises a specific writer type into byte data (for storage or transmission.) Releases any locks is..." alt="" coords="471,5,649,47"/>
+<area shape="rect" id="node3" href="$namespaceio__server__state__writer__mod.html#a6f99dece53eb5c51cf1fcbd384ea7d08" title="Packags up and writes the actual IO server state into the NetCDF file. The act of serialisation will ..." alt="" coords="239,5,423,47"/>
+<area shape="rect" id="node4" href="$namespacenetcdf__filetype__writer__mod.html#ab90e4b2c185d22faacd6f23c39bd9449" title="Stores the IO server state in the NetCDF file." alt="" coords="5,5,191,47"/>
+</map>

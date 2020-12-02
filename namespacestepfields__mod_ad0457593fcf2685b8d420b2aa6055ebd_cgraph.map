@@ -1,0 +1,4 @@
+<map id="stepfields_mod::field_value_retrieval_callback" name="stepfields_mod::field_value_retrieval_callback">
+<area shape="rect" id="node1" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="5,5,173,47"/>
+<area shape="rect" id="node2" href="$namespacestepfields__mod.html#ad8f716aa7488208731d4b430b38f5659" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="221,5,373,47"/>
+</map>

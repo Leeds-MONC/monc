@@ -1,0 +1,4 @@
+<map id="communication_types_mod::halo_communication_type" name="communication_types_mod::halo_communication_type">
+<area shape="rect" id="node1" title="Maintains the state of a halo swap and contains buffers, neighbours etc." alt="" coords="9,109,219,151"/>
+<area shape="rect" id="node2" href="$structcommunication__types__mod_1_1neighbour__description__type.html" title="Describes the neighbours of a process in a specific dimension and contains the communication buffers ..." alt="" coords="5,5,223,47"/>
+</map>

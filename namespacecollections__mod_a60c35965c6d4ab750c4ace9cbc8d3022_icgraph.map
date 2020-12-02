@@ -1,0 +1,8 @@
+<map id="collections_mod::iterator_get_next_generic" name="collections_mod::iterator_get_next_generic">
+<area shape="rect" id="node1" title="Returns the next generic referenced by the iterator and advanced it, or null if it has reached the en..." alt="" coords="216,136,379,177"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a38becbb0e0db6779f7e1b0233935de9f" title="Returns the next integer referenced by the iterator and advanced it, or an error if it has reached th..." alt="" coords="5,5,168,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a03056fd51ffd84c87cdfabccf3467ac6" title="Returns the next logical referenced by the iterator and advanced it, or an error if it has reached th..." alt="" coords="5,71,168,112"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#add3ef2a2eef3f8dcdb855dff43ef6019" title="Returns the next mapentry referenced by the iterator and advanced it, or an error if it has reached t..." alt="" coords="5,136,168,177"/>
+<area shape="rect" id="node5" href="$namespacecollections__mod.html#a532527797dbee122ea1c8c79b379ff4b" title="Returns the next real (double precision) referenced by the iterator and advanced it,..." alt="" coords="5,201,168,243"/>
+<area shape="rect" id="node6" href="$namespacecollections__mod.html#ac299747c9a11a2dea6786efee402b283" title="Returns the next string referenced by the iterator and advanced it, or an error if it has reached the..." alt="" coords="5,267,168,308"/>
+</map>

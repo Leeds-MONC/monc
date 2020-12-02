@@ -1,0 +1,5 @@
+<map id="iobridge_mod::pack_scalar_into_send_buffer" name="iobridge_mod::pack_scalar_into_send_buffer">
+<area shape="rect" id="node1" title="Packs scalar fields into the send bufer." alt="" coords="5,13,172,54"/>
+<area shape="rect" id="node2" href="$namespaceiobridge__mod.html#ab26738bfa682205a534b51881d149d66" title="Packs a components field scalar into the send buffer, these are fields that are served up by componen..." alt="" coords="220,5,396,61"/>
+<area shape="rect" id="node3" href="$namespaceiobridge__mod.html#a49a08a884e2294560580c1011bccc035" title="Retrieves the descriptor associated with some component&#39;s field based upon the field name." alt="" coords="444,13,639,54"/>
+</map>

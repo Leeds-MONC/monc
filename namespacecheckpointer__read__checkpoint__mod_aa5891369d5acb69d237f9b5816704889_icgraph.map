@@ -1,0 +1,9 @@
+<map id="checkpointer_read_checkpoint_mod::does_field_exist" name="checkpointer_read_checkpoint_mod::does_field_exist">
+<area shape="rect" id="node1" title="Determines whether a variable (field) exists within the NetCDF checkpoint file @ncid The NetCDF file ..." alt="" coords="499,104,697,145"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__read__checkpoint__mod.html#a50ef1c48768cf2dfd7c72485a9aeb323" title="Reads in and initialises all prognostic fields. It will check the NetCDF checkpoint file and dependin..." alt="" coords="252,5,451,47"/>
+<area shape="rect" id="node4" href="$namespacecheckpointer__read__checkpoint__mod.html#a8b9b91ebcd530e0f7653c0f4bedb3827" title=" " alt="" coords="252,71,451,112"/>
+<area shape="rect" id="node5" href="$namespacecheckpointer__read__checkpoint__mod.html#af7eed392de6205bc22b3e842ded0e45a" title=" " alt="" coords="252,136,451,177"/>
+<area shape="rect" id="node6" href="$namespacetest__checkpointer__mod.html#a11ea2a800ef3840fff4c01dafe7bf631" title=" " alt="" coords="273,201,430,243"/>
+<area shape="rect" id="node3" href="$namespacecheckpointer__read__checkpoint__mod.html#a2c62e5fb27df55b95c5650b36e9a6545" title="Reads in a NetCDF checkpoint file and uses this to initialise the model." alt="" coords="5,71,204,112"/>
+<area shape="rect" id="node7" href="$test__checkpointer_8F90.html#ac066cbcd389adebfd7162022ed08de09" title=" " alt="" coords="23,209,187,235"/>
+</map>

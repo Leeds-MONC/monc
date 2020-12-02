@@ -1,0 +1,4 @@
+<map id="halo_communication_mod::get_number_of_processes_involved_in_communication" name="halo_communication_mod::get_number_of_processes_involved_in_communication">
+<area shape="rect" id="node1" title="Deduces the number of distinct neighbours that will be involved in a halo swap. This information is u..." alt="" coords="5,5,167,76"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#a4529b50fe46e332faf902bfa28144ae9" title="Returns whether or not a specific process id has already been &quot;seen&quot; by searching a list of already s..." alt="" coords="215,13,368,69"/>
+</map>

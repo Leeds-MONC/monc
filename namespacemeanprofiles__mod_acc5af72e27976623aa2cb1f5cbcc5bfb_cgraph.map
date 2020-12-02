@@ -1,0 +1,4 @@
+<map id="meanprofiles_mod::calculate_mean_profiles" name="meanprofiles_mod::calculate_mean_profiles">
+<area shape="rect" id="node1" title="Calculates the global mean profiles and stores these in the ol bar arrays." alt="" coords="5,5,191,47"/>
+<area shape="rect" id="node2" href="$namespacemeanprofiles__mod.html#a34962904c022ef5820da7664b55a4131" title="Calculates the sum profiles for the bars for each level globally." alt="" coords="239,5,424,47"/>
+</map>

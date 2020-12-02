@@ -1,0 +1,5 @@
+<map id="haloswapper_mod::get_fields_per_halo_cell" name="haloswapper_mod::get_fields_per_halo_cell">
+<area shape="rect" id="node1" title="Deduces the number of fields per halo cell. This depends upon what fields are active in the model." alt="" coords="509,5,660,47"/>
+<area shape="rect" id="node2" href="$namespacehaloswapper__mod.html#a20dba6765095019c8a311f237d399332" title="Initialisation callback hook which will set up the halo swapping state and cache some precalculated d..." alt="" coords="260,5,461,47"/>
+<area shape="rect" id="node3" href="$namespacehaloswapper__mod.html#a72490f0cc37d570074c2306898e71002" title="Provides a description of this component for the core to register." alt="" coords="5,5,212,47"/>
+</map>

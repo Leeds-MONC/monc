@@ -1,0 +1,4 @@
+<map id="flux_budget_mod::initialise_prognostic_budget_diagnostics" name="flux_budget_mod::initialise_prognostic_budget_diagnostics">
+<area shape="rect" id="node1" title="Initialises the prognostic (uu, vv, ww) budget diagnostics." alt="" coords="5,5,213,47"/>
+<area shape="rect" id="node2" href="$namespaceflux__budget__mod.html#ae97834ea1a364c3af8adb6c9f2a514d9" title="Sets the published value enabled state in the provided collection map." alt="" coords="261,5,464,47"/>
+</map>

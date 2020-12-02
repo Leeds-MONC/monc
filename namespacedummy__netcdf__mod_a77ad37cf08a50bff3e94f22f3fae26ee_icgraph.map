@@ -1,0 +1,5 @@
+<map id="dummy_netcdf_mod::nf90_inquire_attribute" name="dummy_netcdf_mod::nf90_inquire_attribute">
+<area shape="rect" id="node1" title=" " alt="" coords="499,13,669,54"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__read__checkpoint__mod.html#ad3e451c36167ef3b2b1528583f42bbff" title="Will read a global attribute from the checkpoint file &#45; note that it allocates string memory here so ..." alt="" coords="252,5,451,61"/>
+<area shape="rect" id="node3" href="$namespacecheckpointer__read__checkpoint__mod.html#a2c62e5fb27df55b95c5650b36e9a6545" title="Reads in a NetCDF checkpoint file and uses this to initialise the model." alt="" coords="5,13,204,54"/>
+</map>

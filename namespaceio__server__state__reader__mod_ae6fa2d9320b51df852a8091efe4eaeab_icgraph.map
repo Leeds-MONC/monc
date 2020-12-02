@@ -1,0 +1,9 @@
+<map id="io_server_state_reader_mod::get_io_server_serialised_bytes" name="io_server_state_reader_mod::get_io_server_serialised_bytes">
+<area shape="rect" id="node1" title="Retrieves some IO server serialised bytes which will make up the state of a specific facet...." alt="" coords="711,85,949,127"/>
+<area shape="rect" id="node2" href="$namespaceio__server__state__reader__mod.html#a21bc5840c3287e6dcbbb29f4480bbdde" title="Reactivates the writer federator and everything beneath it (i.e. just not the writer field manager...." alt="" coords="507,38,663,94"/>
+<area shape="rect" id="node6" href="$namespaceio__server__state__reader__mod.html#ac3ee89021b7ad8db947b5a370ab647cc" title="Reactivates the writer field manager state from the checkpoint file, for memory reasons this will ope..." alt="" coords="507,118,663,174"/>
+<area shape="rect" id="node3" href="$namespacewriter__federator__mod.html#a7b31bb8f9d0fb8c0768252e819b20985" title="Initialises the write federator and configures it based on the user configuration...." alt="" coords="265,5,437,47"/>
+<area shape="rect" id="node5" href="$interfaceio__server__state__reader__mod_1_1writer__field__manager__unserialise__state.html#af45885765439d168075186df796bdc07" title=" " alt="" coords="244,71,459,141"/>
+<area shape="rect" id="node4" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,97,196,123"/>
+<area shape="rect" id="node7" href="$namespacewriter__field__manager__mod.html#a061c34fe0697d9639defd2f0926e2e74" title="Initialises the writer field manager." alt="" coords="278,166,425,222"/>
+</map>

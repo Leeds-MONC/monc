@@ -1,0 +1,4 @@
+<map id="collections_mod::list_insert_logical" name="collections_mod::list_insert_logical">
+<area shape="rect" id="node1" title="Inserts an element into the list or places at the end if the index &gt; list size." alt="" coords="5,5,144,47"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a97a17944d8c950d7ef02e28b3391a7f7" title="Inserts an element into the list or places at the end if the index &gt; list size." alt="" coords="192,5,331,47"/>
+</map>

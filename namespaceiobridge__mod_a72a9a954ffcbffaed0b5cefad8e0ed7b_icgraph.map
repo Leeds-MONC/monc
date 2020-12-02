@@ -1,0 +1,6 @@
+<map id="iobridge_mod::get_total_number_of_fields" name="iobridge_mod::get_total_number_of_fields">
+<area shape="rect" id="node1" title="Retrieve the total number of fields, which is all the fields in all the data definitions." alt="" coords="571,5,725,47"/>
+<area shape="rect" id="node2" href="$namespaceiobridge__mod.html#a9d0138f6ab5b606d7e1d3d44a7dd4c78" title="Registers this MONC with the corresponding IO server. This will encapsulate the entire protocol,..." alt="" coords="375,5,523,47"/>
+<area shape="rect" id="node3" href="$namespaceiobridge__mod.html#a62439f3fcbbf2ab618d4b03bbaa3436f" title="Initialisation call back, called at the start of the model run." alt="" coords="204,5,327,47"/>
+<area shape="rect" id="node4" href="$namespaceiobridge__mod.html#a24dcc29fe104bea3b0254ae43b7007e4" title=" " alt="" coords="5,5,156,47"/>
+</map>

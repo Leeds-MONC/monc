@@ -1,0 +1,4 @@
+<map id="monc_mod::monc_core_bootstrap" name="monc_mod::monc_core_bootstrap">
+<area shape="rect" id="node1" title="Main core entry point to bootstrap running the model." alt="" coords="224,13,380,54"/>
+<area shape="rect" id="node2" href="$interfacemonc__mod_1_1io__server__run__procedure.html#a4a7a1c54866c50bf460f178dadc2b073" title=" " alt="" coords="5,5,176,61"/>
+</map>

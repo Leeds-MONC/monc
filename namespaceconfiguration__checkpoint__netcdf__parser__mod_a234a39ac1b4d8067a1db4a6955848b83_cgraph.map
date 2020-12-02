@@ -1,0 +1,10 @@
+<map id="configuration_checkpoint_netcdf_parser_mod::parse_configuration_checkpoint_netcdf" name="configuration_checkpoint_netcdf_parser_mod::parse_configuration_checkpoint_netcdf">
+<area shape="rect" id="node1" title="Will parse the NetCDF checkpoint file and loads the configuration into the options database." alt="" coords="5,5,220,61"/>
+<area shape="rect" id="node2" href="$namespacenetcdf__misc__mod.html#a159f13789af0cecc704b47fde431b241" title="Will check a NetCDF status and write to log_log error any decoded statuses. Can be used to decode whe..." alt="" coords="724,9,891,50"/>
+<area shape="rect" id="node5" href="$namespaceconfiguration__checkpoint__netcdf__parser__mod.html#a0f644955464877087b5e779b48216188" title="Will read in and initialise the options database from the contents of the checkpoint file." alt="" coords="268,60,439,116"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="939,16,1081,43"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="1129,9,1296,50"/>
+<area shape="rect" id="node6" href="$namespaceconversions__mod.html#ab7f79ee421227f8486ab403e9d5620e0" title="Converts from a single to double precision real. This applies some rounding to a certain number of de..." alt="" coords="502,67,661,109"/>
+<area shape="rect" id="node7" href="$namespaceconfiguration__checkpoint__netcdf__parser__mod.html#ab05b5aee60f3cd114e9457a96bc4434b" title="Retrieves the number of option key&#45;value pairs that are present in the checkpoint file." alt="" coords="499,132,664,188"/>
+<area shape="rect" id="node8" href="$namespaceconfiguration__checkpoint__netcdf__parser__mod.html#a36adb04c970a14fbe9539686d85de1b3" title="Removes NetCDF C style null termination of string. This is placed right at the end,..." alt="" coords="487,212,676,268"/>
+</map>

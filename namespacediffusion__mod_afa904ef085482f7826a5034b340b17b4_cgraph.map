@@ -1,0 +1,17 @@
+<map id="diffusion_mod::diffusion_get_descriptor" name="diffusion_mod::diffusion_get_descriptor">
+<area shape="rect" id="node1" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,150,161,191"/>
+<area shape="rect" id="node2" href="$namespacediffusion__mod.html#ac364c8236f709a4ef08e561df8266faf" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="224,5,371,61"/>
+<area shape="rect" id="node3" href="$namespacediffusion__mod.html#ac803490161be03e7d6f28404a93a6ff4" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="213,85,381,126"/>
+<area shape="rect" id="node5" href="$namespacediffusion__mod.html#a65dea402a19f03fa99c65e29197949c7" title=" " alt="" coords="213,150,382,191"/>
+<area shape="rect" id="node6" href="$namespacediffusion__mod.html#a2ddee336f4aa7350acf8f3cb6948c493" title="Sets up the stencil_mod (used in interpolation) and allocates data for the flux fields." alt="" coords="209,215,385,257"/>
+<area shape="rect" id="node7" href="$namespacediffusion__mod.html#a3db6d2912d0047987b4648259f75cb06" title="At each timestep will compute the diffusion source terms for TH and Q fields per column if these fiel..." alt="" coords="218,302,377,343"/>
+<area shape="rect" id="node4" href="$namespacediffusion__mod.html#a0304b27b0f1c86e59531d33fcce9aea5" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="448,63,600,105"/>
+<area shape="rect" id="node8" href="$namespacediffusion__mod.html#a32ffec49b607aae0b723c7e2b63b3fe4" title="Computation of component tendencies." alt="" coords="443,129,605,170"/>
+<area shape="rect" id="node9" href="$namespacediffusion__mod.html#a942ee0e1fd4ec5bfd99aed57b8e074b9" title="Copies the halo buffer to halo location for the diffusion coefficient field." alt="" coords="457,194,591,235"/>
+<area shape="rect" id="node10" href="$namespacediffusion__mod.html#af88f4cb30b4e99fc3ca2b40127bc1567" title="Copies the corner halo buffer to the diffusion coefficient field corners." alt="" coords="457,259,591,315"/>
+<area shape="rect" id="node11" href="$namespacediffusion__mod.html#a8e0dc520100981f2846ab46cde108a97" title="Does local data copying for diffusion coefficient variable halo swap." alt="" coords="440,338,608,379"/>
+<area shape="rect" id="node12" href="$namespacediffusion__mod.html#a4226cbc38fe9fba89a3fbb2d7965a6fc" title="Computes the diffusion source terms for each Q field." alt="" coords="448,403,600,445"/>
+<area shape="rect" id="node14" href="$namespacediffusion__mod.html#ae5fc7f882242f802a60219b5680f758e" title="Computes the diffusion source terms for the theta field." alt="" coords="448,469,600,510"/>
+<area shape="rect" id="node15" href="$namespacediffusion__mod.html#a0bf6d9dbac8fb271aa8411767a7bb047" title="Save the 3d tendencies coming into the component." alt="" coords="433,534,615,575"/>
+<area shape="rect" id="node13" href="$namespacediffusion__mod.html#af96a16c2a92752d22f68aa4daad5261a" title="General diffusion computation for any field which is provided as arguments. Works in a column." alt="" coords="663,437,813,478"/>
+</map>

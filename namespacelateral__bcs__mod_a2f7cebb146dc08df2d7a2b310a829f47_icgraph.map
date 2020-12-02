@@ -1,0 +1,4 @@
+<map id="lateral_bcs_mod::initialisation_callback" name="lateral_bcs_mod::initialisation_callback">
+<area shape="rect" id="node1" title="Initialisation callback. Sets up boundary depth and other configurable options." alt="" coords="212,5,403,47"/>
+<area shape="rect" id="node2" href="$namespacelateral__bcs__mod.html#a77b96206b90dcdcd88fa9c1e569f0963" title="Provides a description of this component for the core to register." alt="" coords="5,5,164,47"/>
+</map>

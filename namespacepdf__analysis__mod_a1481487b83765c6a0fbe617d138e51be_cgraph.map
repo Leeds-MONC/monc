@@ -1,0 +1,11 @@
+<map id="pdf_analysis_mod::pdf_analysis_get_descriptor" name="pdf_analysis_mod::pdf_analysis_get_descriptor">
+<area shape="rect" id="node1" title="Returns the component descriptor of pdf analysis module." alt="" coords="5,150,171,191"/>
+<area shape="rect" id="node2" href="$namespacepdf__analysis__mod.html#a4b9c6f9ddffbf063e42296d5901bafaf" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="238,5,393,61"/>
+<area shape="rect" id="node3" href="$namespacepdf__analysis__mod.html#a0563c4d0759a354f8763b169997992b0" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="231,85,399,126"/>
+<area shape="rect" id="node4" href="$namespacepdf__analysis__mod.html#a8d48046fd342ba2f2c28f8d3037eb3c2" title="Frees up the temporary data for the tm_allp." alt="" coords="219,150,412,191"/>
+<area shape="rect" id="node5" href="$namespacepdf__analysis__mod.html#ab0616fa90311895a74c5441fc0177ab6" title="Called on MONC initialisation, will allocate appropriate data structures." alt="" coords="241,215,390,257"/>
+<area shape="rect" id="node6" href="$namespacepdf__analysis__mod.html#aa8c3d1db7e8a663c0a3d1dff71b11839" title="Will sort the values across the whole domain and calculate the value corresponding to the percentile ..." alt="" coords="224,281,407,322"/>
+<area shape="rect" id="node7" href="$namespacepdf__analysis__mod.html#aa80f5e87d9de08b8e282fd20fa03a795" title="Calculates the w percentiles over the whole domain and stores these in the w up/dwn percentile arrays..." alt="" coords="460,281,644,322"/>
+<area shape="rect" id="node8" href="$namespacepdf__analysis__mod.html#a7e31dd1e244bb8450ec6d66def007c8f" title="Combines with MergeSortMerge sorting algorithm taken from:" alt="" coords="692,288,883,315"/>
+<area shape="rect" id="node9" href="$namespacepdf__analysis__mod.html#aee2a3d4b9d23343106daed6480ad8f72" title="Combines with MergeSort sorting algorithm taken from:" alt="" coords="931,288,1157,315"/>
+</map>

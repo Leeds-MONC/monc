@@ -1,0 +1,9 @@
+<map id="io_server_client_mod::get_mpi_datatype_from_internal_representation" name="io_server_client_mod::get_mpi_datatype_from_internal_representation">
+<area shape="rect" id="node1" title="Gets the MPI datatype from out internal representation of the field data type (as in the configuratio..." alt="" coords="1241,5,1404,61"/>
+<area shape="rect" id="node2" href="$namespaceio__server__client__mod.html#a84bf9d6a41f5f7fea53b4b62c166a77f" title="Appends the MPI datatype details to the block counts, old types and offsets arrays...." alt="" coords="1039,13,1193,54"/>
+<area shape="rect" id="node3" href="$namespacempi__communication__mod.html#a94ec3fc73dd4cba3a1aa1b09f4d8e0af" title="Builds the MPI type that corresponds to the data which will be received from a specific MONC process...." alt="" coords="820,13,991,54"/>
+<area shape="rect" id="node4" href="$namespaceio__server__mod.html#a5e5c9b6be433b4b2bebbfa01ddf0bec0" title="Initialise the sizing of data definitions from a MONC process. The IO server determines,..." alt="" coords="641,13,772,54"/>
+<area shape="rect" id="node5" href="$namespaceio__server__mod.html#a95f289d7a2a91f45be0accb5328cc178" title="Handles registration from some MONC process. The source process sends some data description to this I..." alt="" coords="443,13,593,54"/>
+<area shape="rect" id="node6" href="$namespaceio__server__mod.html#ab843eee74fe31492952c1c88304730d7" title="Called to handle a specific command that has been recieved." alt="" coords="244,13,395,54"/>
+<area shape="rect" id="node7" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+</map>

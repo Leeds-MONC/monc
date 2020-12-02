@@ -1,0 +1,6 @@
+<map id="gridmanager_mod::set_up_and_smooth_grid" name="gridmanager_mod::set_up_and_smooth_grid">
+<area shape="rect" id="node1" title="Sets up and smooths the vertical grid. This is based upon the grid configuration already read in." alt="" coords="5,39,155,80"/>
+<area shape="rect" id="node2" href="$namespacegridmanager__mod.html#a43acffd915e44ba2a4ee85c35201258c" title="The newer vertical grid setup routine." alt="" coords="211,5,366,47"/>
+<area shape="rect" id="node3" href="$namespacegridmanager__mod.html#a05f22855870eb71f65d8f178a6df5db7" title="The original vertical grid setup and smoothing as per the LEM." alt="" coords="203,71,375,112"/>
+<area shape="rect" id="node4" href="$namespacegridmanager__mod.html#af9cfe0c92dec4ecc2104d9dedf421d7c" title="Creates the linear vertical grid based upon the configuration properties." alt="" coords="423,71,589,112"/>
+</map>

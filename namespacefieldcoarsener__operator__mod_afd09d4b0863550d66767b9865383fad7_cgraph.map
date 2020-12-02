@@ -1,0 +1,11 @@
+<map id="fieldcoarsener_operator_mod::fieldcoarsener_operator_get_auto_size" name="fieldcoarsener_operator_mod::fieldcoarsener_operator_get_auto_size">
+<area shape="rect" id="node1" title="Retrieves the size of an auto dimension based upon the work that will be completed here." alt="" coords="5,123,200,179"/>
+<area shape="rect" id="node2" href="$namespacefieldcoarsener__operator__mod.html#abc93c3f9a9d721f5a77453bdf75c090c" title="Converts a dimension string to the corresponding numeric ID." alt="" coords="510,5,679,61"/>
+<area shape="rect" id="node3" href="$namespacedata__utils__mod.html#a32e2bb292c66ad41e019b09c8842b82b" title="Retrieves the name of a field from the attributes specified in the configuration." alt="" coords="276,58,433,99"/>
+<area shape="rect" id="node4" href="$namespacefieldcoarsener__operator__mod.html#a7043289878af3ff1200263ea90ee8f1b" title="Retrieves the dimensions and indexes to slice from the strings provided in configuration." alt="" coords="265,123,444,179"/>
+<area shape="rect" id="node8" href="$namespacefieldcoarsener__operator__mod.html#a37867b6aecdfc044f9bdb87122547c32" title="Looks up the global size of a dimension based upon its name." alt="" coords="248,202,461,243"/>
+<area shape="rect" id="node9" href="$namespacefieldcoarsener__operator__mod.html#ae186b7de1f7347ae5af48d6d5d16d2ea" title="Locates a dimension in a list of dimensions or 0 if none can be found." alt="" coords="274,267,435,309"/>
+<area shape="rect" id="node5" href="$namespacefieldcoarsener__operator__mod.html#ac9601122f4d7effeec33c57b2b03a4cc" title="Retrieves the number of occurances of a character in a source string." alt="" coords="509,111,680,167"/>
+<area shape="rect" id="node6" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="523,191,666,217"/>
+<area shape="rect" id="node7" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="728,183,895,225"/>
+</map>

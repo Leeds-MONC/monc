@@ -1,0 +1,5 @@
+<map id="pwadvection_mod::set_published_field_value" name="pwadvection_mod::set_published_field_value">
+<area shape="rect" id="node1" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="476,5,628,47"/>
+<area shape="rect" id="node2" href="$namespacepwadvection__mod.html#a865afba4bde5dc5cdd68ed727a5cb526" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="260,5,428,47"/>
+<area shape="rect" id="node3" href="$namespacepwadvection__mod.html#a9ae6910327e69efff396e79031083456" title="Provides a description of this component for the core to register." alt="" coords="5,5,212,47"/>
+</map>

@@ -1,0 +1,14 @@
+<map id="configuration_parser_mod::add_misc_member_to_diagnostic" name="configuration_parser_mod::add_misc_member_to_diagnostic">
+<area shape="rect" id="node1" title=" " alt="" coords="5,181,176,237"/>
+<area shape="rect" id="node2" href="$namespaceconfiguration__parser__mod.html#a4be90603e98d3bd09468dbb504b16813" title=" " alt="" coords="224,188,404,229"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="466,17,609,43"/>
+<area shape="rect" id="node5" href="$namespaceoptionsdatabase__mod.html#ae6f0a2a95fcacd3491b7b8fdb161e022" title="Retrieves an integer value from the database that matches the provided key." alt="" coords="463,319,612,360"/>
+<area shape="rect" id="node7" href="$namespaceoptionsdatabase__mod.html#a4b187d310f786ed3c207a3060e09b156" title="Determines whether a specific key is in the database." alt="" coords="885,123,1035,164"/>
+<area shape="rect" id="node9" href="$namespaceoptionsdatabase__mod.html#aa3f0213d8028773523e6194a0ddf8e18" title="Retrieves a logical value from the database that matches the provided key." alt="" coords="463,123,612,164"/>
+<area shape="rect" id="node10" href="$namespaceoptionsdatabase__mod.html#ab054641ac0fa0287adb3c461987c4f0b" title="Retrieves a real value from the database that matches the provided key." alt="" coords="463,188,612,229"/>
+<area shape="rect" id="node11" href="$namespaceoptionsdatabase__mod.html#af2aeb42c9fdb961702216042b0330088" title="Retrieves a string value from the database that matches the provided key." alt="" coords="463,253,612,295"/>
+<area shape="rect" id="node12" href="$namespaceconfiguration__parser__mod.html#a4f4464450c8cf20bf91558550955bc82" title="Replaces specific characters in a string and returns a new string with this replaced by nothing (i...." alt="" coords="452,383,623,439"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="671,5,837,47"/>
+<area shape="rect" id="node6" href="$namespaceoptionsdatabase__mod.html#a13bbeb6272c82308e3d4a42f7c36c862" title="Determines whether a specific options key exists in the database or not, if it doesn&#39;t then this resu..." alt="" coords="679,174,829,230"/>
+<area shape="rect" id="node8" href="$namespaceoptionsdatabase__mod.html#ab4f16a670bed755586806647da3cfa8d" title="Gets a key corresponding to the correct options key and index combination." alt="" coords="675,253,833,295"/>
+</map>

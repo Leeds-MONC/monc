@@ -1,0 +1,12 @@
+<map id="fieldcoarsener_operator_mod::perform_fieldcoarsener_operator" name="fieldcoarsener_operator_mod::perform_fieldcoarsener_operator">
+<area shape="rect" id="node1" title="Performs the field coarsener operator on a specific field." alt="" coords="5,195,196,251"/>
+<area shape="rect" id="node2" href="$namespacefieldcoarsener__operator__mod.html#aa9339d17d965a22a0d9cc46d3942997d" title="Determines the dimension bounds which are used in the slicing." alt="" coords="244,159,427,215"/>
+<area shape="rect" id="node7" href="$namespacedata__utils__mod.html#a32e2bb292c66ad41e019b09c8842b82b" title="Retrieves the name of a field from the attributes specified in the configuration." alt="" coords="257,238,414,279"/>
+<area shape="rect" id="node8" href="$namespacefieldcoarsener__operator__mod.html#a7043289878af3ff1200263ea90ee8f1b" title="Retrieves the dimensions and indexes to slice from the strings provided in configuration." alt="" coords="246,79,425,135"/>
+<area shape="rect" id="node10" href="$namespaceconfiguration__parser__mod.html#a6fccd3bb7df6e95f399ed127a3487a46" title="Retrieves the prognostic field configuration corresponding to a specific field name and returns wheth..." alt="" coords="263,303,408,359"/>
+<area shape="rect" id="node3" href="$namespacefieldcoarsener__operator__mod.html#abc93c3f9a9d721f5a77453bdf75c090c" title="Converts a dimension string to the corresponding numeric ID." alt="" coords="475,85,645,141"/>
+<area shape="rect" id="node4" href="$namespacefieldcoarsener__operator__mod.html#ae186b7de1f7347ae5af48d6d5d16d2ea" title="Locates a dimension in a list of dimensions or 0 if none can be found." alt="" coords="479,217,641,258"/>
+<area shape="rect" id="node5" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="489,165,631,192"/>
+<area shape="rect" id="node6" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="693,158,860,199"/>
+<area shape="rect" id="node9" href="$namespacefieldcoarsener__operator__mod.html#ac9601122f4d7effeec33c57b2b03a4cc" title="Retrieves the number of occurances of a character in a source string." alt="" coords="475,5,645,61"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="writer_federator_mod::handle_duplicate_field_names" name="writer_federator_mod::handle_duplicate_field_names">
+<area shape="rect" id="node1" title="Marks duplicate field names in a writer entry as duplicates so that the NetCDF layer can then deal wi..." alt="" coords="464,5,665,47"/>
+<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a7b31bb8f9d0fb8c0768252e819b20985" title="Initialises the write federator and configures it based on the user configuration...." alt="" coords="244,5,416,47"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,13,196,39"/>
+</map>

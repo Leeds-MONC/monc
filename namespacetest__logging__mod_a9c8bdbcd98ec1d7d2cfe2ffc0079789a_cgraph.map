@@ -1,0 +1,8 @@
+<map id="test_logging_mod::test_logging_level" name="test_logging_mod::test_logging_level">
+<area shape="rect" id="node1" title=" " alt="" coords="5,93,157,135"/>
+<area shape="rect" id="node2" href="$namespacelogging__mod.html#ae0d255e756059bc76b2f4291825e59c9" title="Retrieves the current logging level." alt="" coords="207,5,349,47"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="207,71,349,98"/>
+<area shape="rect" id="node5" href="$namespacelogging__mod.html#ab8af0887aad61dbe8e53f07e99312c5b" title="Sets the logging level, messages with less priority will be ignored." alt="" coords="207,123,349,164"/>
+<area shape="rect" id="node6" href="$namespacetest__logging__mod.html#a345ed22c66e41bd9dac2d18118c473db" title=" " alt="" coords="205,189,351,215"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="399,64,565,105"/>
+</map>

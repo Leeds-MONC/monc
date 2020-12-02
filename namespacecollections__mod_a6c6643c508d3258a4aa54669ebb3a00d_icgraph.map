@@ -1,0 +1,12 @@
+<map id="collections_mod::stack_get_generic" name="collections_mod::stack_get_generic">
+<area shape="rect" id="node1" title="Gets a specific element from the stack at index specified or null if the index &gt; stack size." alt="" coords="411,136,565,177"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a14346c11e81515e4e8f8a0dfc4836235" title="Gets a specific element from the stack at index specified." alt="" coords="208,5,363,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#ae4cb6d8665d800d1f1278ea0357985b2" title="Gets a specific element from the stack at index specified." alt="" coords="208,71,363,112"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#a861ada09d1628952198306cad45d834a" title="Gets a specific element from the stack at index specified. Converts between precision and from int." alt="" coords="208,136,363,177"/>
+<area shape="rect" id="node5" href="$namespacecollections__mod.html#a50291ee53b22dcbd4626e1f95a839bb8" title="Gets a specific element from the stack at index specified." alt="" coords="208,201,363,243"/>
+<area shape="rect" id="node6" href="$namespacecollections__mod.html#a65dbf5558f245898a34a857df5c0ece9" title="Pops an element off the stack (LIFO)" alt="" coords="208,267,363,308"/>
+<area shape="rect" id="node7" href="$namespacecollections__mod.html#acf8f217e43dcd72c1b15a2c8e799cdc3" title="Pops an element off the stack (LIFO)" alt="" coords="5,168,160,209"/>
+<area shape="rect" id="node8" href="$namespacecollections__mod.html#a69d260e7e5b956b2028beaed3a552b14" title="Pops an element off the stack (LIFO)" alt="" coords="5,233,160,275"/>
+<area shape="rect" id="node9" href="$namespacecollections__mod.html#a9131b64dc54209ab2257777befd6f27d" title="Pops an element off the stack (LIFO). Converts between precision and from int." alt="" coords="5,299,160,340"/>
+<area shape="rect" id="node10" href="$namespacecollections__mod.html#a9d0de2b9210d60312f13eea638b3526f" title="Pops an element off the stack (LIFO)" alt="" coords="5,364,160,405"/>
+</map>

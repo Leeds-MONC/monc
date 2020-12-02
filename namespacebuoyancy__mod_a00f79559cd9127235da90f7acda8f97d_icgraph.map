@@ -1,0 +1,5 @@
+<map id="buoyancy_mod::compute_component_tendencies" name="buoyancy_mod::compute_component_tendencies">
+<area shape="rect" id="node1" title="Computation of component tendencies." alt="" coords="433,5,597,47"/>
+<area shape="rect" id="node2" href="$namespacebuoyancy__mod.html#ae62a1fef8d0748d979f254e09232b7bd" title="Called for each column per timestep this will calculate the buoyancy terms for the SW field." alt="" coords="221,5,385,47"/>
+<area shape="rect" id="node3" href="$namespacebuoyancy__mod.html#af937b158cfdfe581c144b7a91e553df0" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,173,47"/>
+</map>

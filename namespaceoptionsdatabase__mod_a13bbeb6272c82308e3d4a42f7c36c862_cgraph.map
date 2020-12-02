@@ -1,0 +1,4 @@
+<map id="optionsdatabase_mod::check_options_key_exists" name="optionsdatabase_mod::check_options_key_exists">
+<area shape="rect" id="node1" title="Determines whether a specific options key exists in the database or not, if it doesn&#39;t then this resu..." alt="" coords="5,5,155,61"/>
+<area shape="rect" id="node2" href="$namespaceoptionsdatabase__mod.html#a4b187d310f786ed3c207a3060e09b156" title="Determines whether a specific key is in the database." alt="" coords="203,13,352,54"/>
+</map>

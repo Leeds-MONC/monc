@@ -1,0 +1,8 @@
+<map id="writer_federator_mod::inform_writer_federator_fields_present" name="writer_federator_mod::inform_writer_federator_fields_present">
+<area shape="rect" id="node1" title="Informs the writer federator that specific fields are present and should be reflected in the diagnost..." alt="" coords="1035,5,1196,61"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#a75db617985efd39b9db284a0dc512d34" title="Registers with the writer federator the set of fields (prognostic and diagnostic) that are available,..." alt="" coords="820,5,987,61"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#a5e5c9b6be433b4b2bebbfa01ddf0bec0" title="Initialise the sizing of data definitions from a MONC process. The IO server determines,..." alt="" coords="641,13,772,54"/>
+<area shape="rect" id="node4" href="$namespaceio__server__mod.html#a95f289d7a2a91f45be0accb5328cc178" title="Handles registration from some MONC process. The source process sends some data description to this I..." alt="" coords="443,13,593,54"/>
+<area shape="rect" id="node5" href="$namespaceio__server__mod.html#ab843eee74fe31492952c1c88304730d7" title="Called to handle a specific command that has been recieved." alt="" coords="244,13,395,54"/>
+<area shape="rect" id="node6" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+</map>

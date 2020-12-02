@@ -1,0 +1,7 @@
+<map id="lowerbc_mod::complete_async_wrapping" name="lowerbc_mod::complete_async_wrapping">
+<area shape="rect" id="node1" title="Completes the asynchronous wrapping if required for periodic boundary conditions." alt="" coords="5,104,164,145"/>
+<area shape="rect" id="node2" href="$namespacelowerbc__mod.html#aa60c943e6353850120f27cbce43b9362" title="Packages theta and Q fields (if enabled) into the send buffer for X." alt="" coords="212,5,380,47"/>
+<area shape="rect" id="node3" href="$namespacelowerbc__mod.html#a4a1838d4210babb8412f95daaf13ceb6" title="Packages theta and Q fields (if enabled) into the send buffer for Y." alt="" coords="212,71,380,112"/>
+<area shape="rect" id="node4" href="$namespacelowerbc__mod.html#a40ad183f436b44987b0d86222d23767e" title="Unpackages theta and Q fields from the receive buffer into the fields themselves (if enabled) for X." alt="" coords="212,136,380,177"/>
+<area shape="rect" id="node5" href="$namespacelowerbc__mod.html#a18bf5e755161004bd2c4822469236b8a" title="Unpackages theta and Q fields from the receive buffer into the fields themselves (if enabled) for Y." alt="" coords="212,201,380,243"/>
+</map>

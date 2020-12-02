@@ -1,0 +1,22 @@
+<map id="iterativesolver_mod::iterativesolver_get_descriptor" name="iterativesolver_mod::iterativesolver_get_descriptor">
+<area shape="rect" id="node1" title="Descriptor of the iterative solver component used by the registry." alt="" coords="5,63,140,119"/>
+<area shape="rect" id="node2" href="$namespaceiterativesolver__mod.html#af84818f78156d13f62d649debf667c20" title="Called as MONC is shutting down and frees the halo swap state and deallocates local data." alt="" coords="191,5,335,47"/>
+<area shape="rect" id="node3" href="$namespaceiterativesolver__mod.html#af6825c71e7e33c5bec0b61c600f449fd" title="Initialisation callback hook which will set up the halo swapping state and allocate some data." alt="" coords="188,71,339,112"/>
+<area shape="rect" id="node6" href="$namespaceiterativesolver__mod.html#af8940894125fc1c9447cad012f379df2" title="Timestep callback, this ignores all but the last column where it calls the solver." alt="" coords="196,299,331,340"/>
+<area shape="rect" id="node4" href="$namespaceiterativesolver__mod.html#aef6fd5efeaca1b7064977922c977dcd6" title="Creates a problem matrix, allocating the required data based upon the column size." alt="" coords="402,71,561,112"/>
+<area shape="rect" id="node5" href="$namespaceiterativesolver__mod.html#a0b0f12fd71fd6a296933459daf10bb01" title="Sets the values of the provided matrix to solve the poisson equation." alt="" coords="400,5,563,47"/>
+<area shape="rect" id="node7" href="$namespaceiterativesolver__mod.html#a047746272efd1fd8e0ac7454cd0c239d" title="Performs the BiCGStab KS method." alt="" coords="414,136,549,177"/>
+<area shape="rect" id="node15" href="$namespaceiterativesolver__mod.html#a991261981bd68fd62f79c51899508da5" title="Performs the preconditioned conjugate gradient method." alt="" coords="414,541,549,583"/>
+<area shape="rect" id="node16" href="$namespaceiterativesolver__mod.html#a71aa049fcb28b4f4b63e2a8f431b7038" title="Completes the psrce calculation by waiting on all outstanding psrce communications to complete and th..." alt="" coords="387,201,576,243"/>
+<area shape="rect" id="node17" href="$namespaceiterativesolver__mod.html#aef78e1dcd8814dd26b172338e1d10a4b" title="Copies the halo buffer to halo location for the p field." alt="" coords="403,267,560,308"/>
+<area shape="rect" id="node18" href="$namespaceiterativesolver__mod.html#a82a6f9b69875ebf10ac7f1af04402202" title="Copies the p field data to halo buffers for a specific process in a dimension and halo cell." alt="" coords="403,332,560,373"/>
+<area shape="rect" id="node19" href="$namespaceiterativesolver__mod.html#a86153614d25fed91d990f2d13fdded11" title="Determines the global divmax which is written into the current state." alt="" coords="402,397,561,439"/>
+<area shape="rect" id="node20" href="$namespaceiterativesolver__mod.html#a83914166916ae55b21fd93558ee6db5c" title="Does local data copying for P variable halo swap." alt="" coords="412,462,551,518"/>
+<area shape="rect" id="node8" href="$namespaceiterativesolver__mod.html#a20f5d0cf67fdd1ef2f7707d7269c988b" title="Calculates A * x." alt="" coords="817,353,951,395"/>
+<area shape="rect" id="node12" href="$namespaceiterativesolver__mod.html#a146f586b6c6cfbc1244331d2140dab2d" title="Returns the global inner product of two vectors, ignoring the halo cells." alt="" coords="624,245,759,287"/>
+<area shape="rect" id="node13" href="$namespaceiterativesolver__mod.html#a60152786b4abc4477b62166c58b437a7" title="Returns the global inner product of a pair of vectors, ignoring the halo cells for three separate pai..." alt="" coords="807,191,961,232"/>
+<area shape="rect" id="node14" href="$namespaceiterativesolver__mod.html#a3a126d3be90e5ca81444946a7d99160c" title="Jacobi preconditioner." alt="" coords="624,353,759,395"/>
+<area shape="rect" id="node9" href="$namespaceiterativesolver__mod.html#a1b56f5e6c2a429bd3e8d4477e838702b" title="Copies the source field data to halo buffers for a specific process in a dimension and halo cell &#45; fo..." alt="" coords="1009,266,1164,322"/>
+<area shape="rect" id="node10" href="$namespaceiterativesolver__mod.html#ac4ea22571d1810eb006b25b159e2fc81" title="Copies the halo buffer to halo location for the source field as required in the calc_Ax procedure." alt="" coords="1015,346,1158,402"/>
+<area shape="rect" id="node11" href="$namespaceiterativesolver__mod.html#a669988a9a78d403ac7a1dfd2eb054c23" title="Does a local data copy for halo swapping cells with wrap around (to maintain periodic boundary condit..." alt="" coords="1017,426,1156,482"/>
+</map>

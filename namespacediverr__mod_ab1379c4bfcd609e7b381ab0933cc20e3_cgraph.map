@@ -1,0 +1,10 @@
+<map id="diverr_mod::diverr_get_descriptor" name="diverr_mod::diverr_get_descriptor">
+<area shape="rect" id="node1" title="Descriptor of this component for registration." alt="" coords="5,64,129,105"/>
+<area shape="rect" id="node2" href="$namespacediverr__mod.html#afebe74fd2a9f567f29ed8510b90cee44" title="Called at finalisation this will deallocate the P field as the model shuts down." alt="" coords="183,5,336,47"/>
+<area shape="rect" id="node3" href="$namespacediverr__mod.html#ada1df11164499d924d983d9ebf416953" title="The initialisation callback will allocate memory for the P field and initialise it." alt="" coords="177,71,341,98"/>
+<area shape="rect" id="node4" href="$namespacediverr__mod.html#aa5b9bf3256219e8cf7e311932c5641d5" title="Called each timestep this will initialise P and update the local divergence error for the current col..." alt="" coords="188,123,331,164"/>
+<area shape="rect" id="node5" href="$namespacediverr__mod.html#a7f564857ad8500f02f5e84595c9de61c" title="Finds the maximum divergence error locally and writes this into the local variable." alt="" coords="389,57,532,99"/>
+<area shape="rect" id="node6" href="$namespacediverr__mod.html#ae7313ef18e09c628e8d914a6ece491ac" title="Handles the calculation of P when the model is centred stepping." alt="" coords="395,123,526,164"/>
+<area shape="rect" id="node8" href="$namespacediverr__mod.html#a2be3057d5e5fe48e0d2e9682cd999822" title="Handles the calculation of P when the model is forward stepping." alt="" coords="395,188,526,229"/>
+<area shape="rect" id="node7" href="$namespacediverr__mod.html#a392198e72e4db91a5b275dbfbcc5a648" title="Calculates P based upon flow fields and the stepping." alt="" coords="580,163,739,190"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="diagnostic_federator_mod::diagnostics_at_timestep_type" name="diagnostic_federator_mod::diagnostics_at_timestep_type">
+<area shape="rect" id="node1" title=" " alt="" coords="145,305,289,361"/>
+<area shape="rect" id="node2" href="$structcollections__mod_1_1hashset__type.html" title="Hashset structure which will store unique strings. The hashing aspect means that lookup is very fast ..." alt="" coords="5,201,204,228"/>
+<area shape="rect" id="node3" href="$structcollections__mod_1_1list__type.html" title="List data structure which implements a doubly linked list. This list will preserve its order." alt="" coords="131,112,302,139"/>
+<area shape="rect" id="node5" href="$structcollections__mod_1_1hashmap__type.html" title="A hashmap structure, the same as a map but uses hashing for greatly improved performance when storing..." alt="" coords="228,201,435,228"/>
+<area shape="rect" id="node4" href="$structcollections__mod_1_1listnode__type.html" title="Private list node which holds the raw generic node data and pointers to next and previous list nodes." alt="" coords="117,7,316,33"/>
+</map>

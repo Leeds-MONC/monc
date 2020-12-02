@@ -1,0 +1,5 @@
+<map id="threadpool_mod::check_thread_status" name="threadpool_mod::check_thread_status">
+<area shape="rect" id="node1" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="5,5,160,47"/>
+<area shape="rect" id="node2" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="208,13,351,39"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="399,5,565,47"/>
+</map>

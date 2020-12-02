@@ -1,0 +1,4 @@
+<map id="diffusion_mod::field_information_retrieval_callback" name="diffusion_mod::field_information_retrieval_callback">
+<area shape="rect" id="node1" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="209,5,356,61"/>
+<area shape="rect" id="node2" href="$namespacediffusion__mod.html#afa904ef085482f7826a5034b340b17b4" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,13,161,54"/>
+</map>

@@ -1,0 +1,13 @@
+<map id="writer_field_manager_mod::serialise_field_manager_state" name="writer_field_manager_mod::serialise_field_manager_state">
+<area shape="rect" id="node1" title="Serialises the current field manager, releases any locks issued during preparation." alt="" coords="5,103,147,159"/>
+<area shape="rect" id="node2" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="409,5,564,47"/>
+<area shape="rect" id="node5" href="$namespaceforthread__mod.html#a846b04ba75a5d5f20d8d38a7cab93da1" title=" " alt="" coords="195,75,357,116"/>
+<area shape="rect" id="node6" href="$namespaceio__server__client__mod.html#aa9aee7e6e5918193184b77962ba3b12e" title="Packs the data of a scalar field into a buffer." alt="" coords="633,208,778,249"/>
+<area shape="rect" id="node7" href="$namespacewriter__field__manager__mod.html#a1e92286d1da4eaa895b726ea9ad7e737" title="Serialises a specific fields ordering and releases any locks issued during preparation." alt="" coords="197,139,355,195"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="634,13,777,39"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="849,5,1015,47"/>
+<area shape="rect" id="node8" href="$namespaceforthread__mod.html#a6068972cad8d59eb6b29c8301d331090" title=" " alt="" coords="405,149,568,191"/>
+<area shape="rect" id="node9" href="$namespacewriter__field__manager__mod.html#ae17821d78ad07337100dd83424da5c46" title="Serialises a field ordering value and releases any issued locks." alt="" coords="416,70,557,126"/>
+<area shape="rect" id="node10" href="$namespacewriter__types__mod.html#ab5bd556b7aece3ad191a87331c70663d" title="Serialises some data values to store or transmit. This releases any locks issued during preparation." alt="" coords="616,77,795,119"/>
+<area shape="rect" id="node11" href="$namespacewriter__types__mod.html#a427401c0dfd6265375770ccf333f1675" title="Serialises a string map, where the values are assumed to be strings. This releases any locks issued d..." alt="" coords="843,77,1021,119"/>
+</map>

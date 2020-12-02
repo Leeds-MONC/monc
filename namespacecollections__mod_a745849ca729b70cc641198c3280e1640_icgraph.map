@@ -1,0 +1,20 @@
+<map id="collections_mod::get_hashkey" name="collections_mod::get_hashkey">
+<area shape="rect" id="node1" title="Translates the string key into a hash from 1 to hash_size (inclusive.) This encoding is deterministic..." alt="" coords="695,372,835,413"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#aca21bf1e6daf1f2b2ec073f5c17d77a5" title="This gets the hashmap node that the key represents (rather than the specific value)" alt="" coords="472,288,647,329"/>
+<area shape="rect" id="node9" href="$namespacecollections__mod.html#ac52840e0db078101e603759a789ee18f" title="Puts a specific key&#45;value pair into the hashmap." alt="" coords="239,332,413,373"/>
+<area shape="rect" id="node14" href="$namespacecollections__mod.html#aa037070a0a56522ac767027a53e29e35" title="Removes a specific key&#45;value pair from the hashmap." alt="" coords="239,397,413,439"/>
+<area shape="rect" id="node15" href="$namespacecollections__mod.html#a144628b8f3301dd8a83703ec0caf3833" title="Determines the location and hash of a key within a specific hashset. The hash is set regardless of wh..." alt="" coords="475,485,643,527"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a603ad534fea12f7a5b35938a0a2564ad" title="Determines whether or not a hashmap contains a specific key." alt="" coords="239,267,413,308"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#a5f80a292801b583049d7a0b3b0361ca3" title="Gets a specific element out of the hashmap with the corresponding key." alt="" coords="239,136,413,177"/>
+<area shape="rect" id="node5" href="$namespacecollections__mod.html#a908ae4082b9446f1cf8da53a1ffb0ae3" title="Gets a specific element out of the hashmap with the corresponding key." alt="" coords="5,5,180,47"/>
+<area shape="rect" id="node6" href="$namespacecollections__mod.html#a10a5bde29a30e09a23297bdec4b501b2" title="Gets a specific element out of the hashmap with the corresponding key." alt="" coords="5,71,180,112"/>
+<area shape="rect" id="node7" href="$namespacecollections__mod.html#a324b284beab7109459dbc3e1fe4ce340" title="Gets a specific element out of the hashmap with the corresponding key. Converts between precision and..." alt="" coords="5,136,180,177"/>
+<area shape="rect" id="node8" href="$namespacecollections__mod.html#ad927f4a497ca82c3b11b69e455bc928b" title="Gets a specific element out of the hashmap with the corresponding key." alt="" coords="5,201,180,243"/>
+<area shape="rect" id="node10" href="$namespacecollections__mod.html#a06908aa81e4bbf1b556c943ae6634139" title="Puts a specific key&#45;value pair into the hashmap." alt="" coords="5,267,180,308"/>
+<area shape="rect" id="node11" href="$namespacecollections__mod.html#abc6ccd0d0c836bee7dcc342ba1ea846d" title="Puts a specific key&#45;value pair into the hashmap." alt="" coords="5,332,180,373"/>
+<area shape="rect" id="node12" href="$namespacecollections__mod.html#a87a768a264c3f35b77658db4c488e4dc" title="Puts a specific key&#45;value pair into the hashmap." alt="" coords="5,397,180,439"/>
+<area shape="rect" id="node13" href="$namespacecollections__mod.html#a6346ed207ebbaa54916ccce70f7cebdc" title="Puts a specific key&#45;value pair into the hashmap." alt="" coords="5,463,180,504"/>
+<area shape="rect" id="node16" href="$namespacecollections__mod.html#a983cc1ee040668102ce0a4087cca78a6" title="Adds a string to the hashset which stores unique strings, therefore if the string already exists then..." alt="" coords="228,463,424,490"/>
+<area shape="rect" id="node17" href="$namespacecollections__mod.html#ab931adc7984b00d61b9fcff19af58591" title="Determines wheter the hashset contains a specific key or not." alt="" coords="242,515,410,556"/>
+<area shape="rect" id="node18" href="$namespacecollections__mod.html#ac63b4de429a80f6d36f6c555c89bdb51" title="Removes a string from the hashset." alt="" coords="242,580,410,621"/>
+</map>

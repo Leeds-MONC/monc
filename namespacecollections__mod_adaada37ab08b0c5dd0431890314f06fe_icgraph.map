@@ -1,0 +1,7 @@
+<map id="collections_mod::stack_push_generic" name="collections_mod::stack_push_generic">
+<area shape="rect" id="node1" title="Pushes an element onto the stack (LIFO)" alt="" coords="208,104,363,145"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a37c77fe956b1b7e88309f625b7c34a42" title="Pushes an element onto the stack (LIFO)" alt="" coords="5,5,160,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a58d4a571b1695a2a4e61838be19bb57b" title="Pushes an element onto the stack (LIFO)" alt="" coords="5,71,160,112"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#a0ac25166c076ceb988020c3d482b5891" title="Pushes an element onto the stack (LIFO)" alt="" coords="5,136,160,177"/>
+<area shape="rect" id="node5" href="$namespacecollections__mod.html#ac0bf66e82c029732c940908267da5074" title="Pushes an element onto the stack (LIFO)" alt="" coords="5,201,160,243"/>
+</map>

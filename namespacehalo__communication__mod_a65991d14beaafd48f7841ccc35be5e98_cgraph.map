@@ -1,0 +1,4 @@
+<map id="halo_communication_mod::generate_recv_field_buffer_matches" name="halo_communication_mod::generate_recv_field_buffer_matches">
+<area shape="rect" id="node1" title="Precalculates the received buffer to field halo cell matches for each dimension and called from the i..." alt="" coords="5,5,153,61"/>
+<area shape="rect" id="node2" href="$namespacehalo__communication__mod.html#a7fb6163656e68853626d592e6d94cd5c" title="Retrieves whether we have the same neighbours for L and R halo swaps in each dimension." alt="" coords="201,5,357,61"/>
+</map>

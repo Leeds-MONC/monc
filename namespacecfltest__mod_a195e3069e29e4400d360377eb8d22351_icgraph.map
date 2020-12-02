@@ -1,0 +1,5 @@
+<map id="cfltest_mod::perform_cfl_and_galilean_transformation_calculation" name="cfltest_mod::perform_cfl_and_galilean_transformation_calculation">
+<area shape="rect" id="node1" title="Performs the CFL and Galilean transformation calculations. First locally and then will determine the ..." alt="" coords="377,5,588,61"/>
+<area shape="rect" id="node2" href="$namespacecfltest__mod.html#af2b945006854311a179cd5f02369baf4" title="Called at each timestep, this will only do the CFL computation every nncfl timesteps (or every timest..." alt="" coords="184,13,329,54"/>
+<area shape="rect" id="node3" href="$namespacecfltest__mod.html#ad497f1c406a9c4e356ac57eeed2c7868" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,13,136,54"/>
+</map>

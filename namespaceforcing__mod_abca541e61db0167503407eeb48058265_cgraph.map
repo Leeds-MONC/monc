@@ -1,0 +1,5 @@
+<map id="forcing_mod::field_value_retrieval_callback" name="forcing_mod::field_value_retrieval_callback">
+<area shape="rect" id="node1" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="5,39,173,80"/>
+<area shape="rect" id="node2" href="$namespaceforcing__mod.html#a9fc28a863e6c613699603beee01b3236" title="Averages some diagnostic values across all local horizontal points." alt="" coords="222,5,399,47"/>
+<area shape="rect" id="node3" href="$namespaceforcing__mod.html#ad5c79369a3f1925ab25e023ab8524850" title="Sets the published field value from the temporary diagnostic values held by this component." alt="" coords="221,71,400,112"/>
+</map>

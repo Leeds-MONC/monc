@@ -1,0 +1,7 @@
+<map id="collections_mod::map_generic_entry_at" name="collections_mod::map_generic_entry_at">
+<area shape="rect" id="node1" title="Retrieves the entry at a specific map index or null if index &gt; map elements." alt="" coords="200,104,347,145"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a7e85d944266dcba2bb6d80be78bef426" title="Retrieves the entry at a specific map index or null if index &gt; map elements." alt="" coords="5,5,152,47"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#aa314bd28ed2528fb9ca06cce1700f356" title="Retrieves the entry at a specific map index or null if index &gt; map elements." alt="" coords="5,71,152,112"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#a94e6437312820540fd83f4ae41c531ce" title="Retrieves the entry at a specific map index or null if index &gt; map elements. This converts precision ..." alt="" coords="5,136,152,177"/>
+<area shape="rect" id="node5" href="$namespacecollections__mod.html#a72f470869e1602db448e6cd20aea6ad5" title="Retrieves the entry at a specific map index or null if index &gt; map elements." alt="" coords="5,201,152,243"/>
+</map>

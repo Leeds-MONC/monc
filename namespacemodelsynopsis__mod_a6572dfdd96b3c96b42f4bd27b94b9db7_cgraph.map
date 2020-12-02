@@ -1,0 +1,6 @@
+<map id="modelsynopsis_mod::modelsynopsis_get_descriptor" name="modelsynopsis_mod::modelsynopsis_get_descriptor">
+<area shape="rect" id="node1" title="Provides a description of this component for the core to register." alt="" coords="5,71,203,112"/>
+<area shape="rect" id="node2" href="$namespacemodelsynopsis__mod.html#a8aa260c7d6f4a54da019d93f258ac688" title="Called at the end of the MONC run, will log the reason why the model is terminating." alt="" coords="251,5,397,47"/>
+<area shape="rect" id="node3" href="$namespacemodelsynopsis__mod.html#afb528164ce8b322ad606eb394e58b3bb" title=" " alt="" coords="251,71,397,112"/>
+<area shape="rect" id="node4" href="$namespacemodelsynopsis__mod.html#aa54c5cc01b2ac38e4c670ddc078be87c" title="Timestep callback hook which performs the halo swapping for each prognostic field." alt="" coords="251,136,397,177"/>
+</map>

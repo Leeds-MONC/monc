@@ -1,0 +1,7 @@
+<map id="collections_mod::stack_pop_real" name="collections_mod::stack_pop_real">
+<area shape="rect" id="node1" title="Pops an element off the stack (LIFO). Converts between precision and from int." alt="" coords="5,39,160,80"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a65dbf5558f245898a34a857df5c0ece9" title="Pops an element off the stack (LIFO)" alt="" coords="208,39,363,80"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a660947bb6b95ba785986f1faa7870912" title="Removes an element from the list at a specific index." alt="" coords="419,5,557,47"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#a6c6643c508d3258a4aa54669ebb3a00d" title="Gets a specific element from the stack at index specified or null if the index &gt; stack size." alt="" coords="411,71,565,112"/>
+<area shape="rect" id="node5" href="$namespacecollections__mod.html#a91a5a6f4841afe0bc22fcba100b6e46b" title="Retrieves the element at index i from the list or null if index &lt; list size." alt="" coords="613,71,752,112"/>
+</map>

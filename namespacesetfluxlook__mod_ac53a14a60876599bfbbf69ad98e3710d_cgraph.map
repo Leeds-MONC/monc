@@ -1,0 +1,10 @@
+<map id="setfluxlook_mod::initialisation_callback" name="setfluxlook_mod::initialisation_callback">
+<area shape="rect" id="node1" title=" " alt="" coords="5,84,195,125"/>
+<area shape="rect" id="node2" href="$namespacesetfluxlook__mod.html#abcd19ae0229ac3261e996e6ba121ae83" title=" " alt="" coords="255,25,401,67"/>
+<area shape="rect" id="node7" href="$namespacesetfluxlook__mod.html#a6bb9ca85e1553b4ca39f77ccaf2df41e" title=" " alt="" coords="245,91,411,118"/>
+<area shape="rect" id="node8" href="$namespacesetfluxlook__mod.html#ada5124d4e70e0bc967dbe72420fc3ace" title=" " alt="" coords="243,142,413,169"/>
+<area shape="rect" id="node3" href="$namespacesetfluxlook__mod.html#ab599c69c5a27f79e22054d0b8a4854c7" title="Will check a NetCDF status and write to log_log error any decoded statuses." alt="" coords="851,25,1007,67"/>
+<area shape="rect" id="node4" href="$namespacesetfluxlook__mod.html#a529e97618262d3bd90aa85a0729df679" title="Reads the dimensions from the NetCDF file." alt="" coords="656,25,803,67"/>
+<area shape="rect" id="node5" href="$namespacesetfluxlook__mod.html#acd457e325d3380c758c288c8dee45b99" title="Reads the variables from the NetCDF KiD model file." alt="" coords="461,87,608,128"/>
+<area shape="rect" id="node6" href="$namespacesetfluxlook__mod.html#a64020099f843084d1104877579a0ad77" title="Reads a single variable out of a NetCDF file." alt="" coords="656,91,803,132"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="optionsdatabase_mod::options_add_string" name="optionsdatabase_mod::options_add_string">
+<area shape="rect" id="node1" title="Adds a string value to the options database with a specific key." alt="" coords="5,75,155,116"/>
+<area shape="rect" id="node2" href="$namespaceoptionsdatabase__mod.html#ab4f16a670bed755586806647da3cfa8d" title="Gets a key corresponding to the correct options key and index combination." alt="" coords="400,5,557,47"/>
+<area shape="rect" id="node3" href="$namespaceoptionsdatabase__mod.html#ae6f0a2a95fcacd3491b7b8fdb161e022" title="Retrieves an integer value from the database that matches the provided key." alt="" coords="203,75,352,116"/>
+<area shape="rect" id="node5" href="$namespaceoptionsdatabase__mod.html#a4b187d310f786ed3c207a3060e09b156" title="Determines whether a specific key is in the database." alt="" coords="605,111,755,152"/>
+<area shape="rect" id="node4" href="$namespaceoptionsdatabase__mod.html#a13bbeb6272c82308e3d4a42f7c36c862" title="Determines whether a specific options key exists in the database or not, if it doesn&#39;t then this resu..." alt="" coords="404,70,553,126"/>
+</map>

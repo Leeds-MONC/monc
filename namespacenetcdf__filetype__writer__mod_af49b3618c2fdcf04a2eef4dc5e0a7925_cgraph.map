@@ -1,0 +1,6 @@
+<map id="netcdf_filetype_writer_mod::retrieve_time_series_dimension_id_for_field" name="netcdf_filetype_writer_mod::retrieve_time_series_dimension_id_for_field">
+<area shape="rect" id="node1" title="For a specific field will retrieve the NetCDF id of the time series dimension most appropriate for th..." alt="" coords="5,39,183,95"/>
+<area shape="rect" id="node2" href="$namespacenetcdf__filetype__writer__mod.html#a6da2f8c99dc13a7d24ec60861a2a48aa" title="Given the file state and the output frequency of a field will retrive the appropriate time series dim..." alt="" coords="231,5,427,61"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="257,85,400,112"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="475,78,641,119"/>
+</map>

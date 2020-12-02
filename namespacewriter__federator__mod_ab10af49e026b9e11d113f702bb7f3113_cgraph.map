@@ -1,0 +1,4 @@
+<map id="writer_federator_mod::is_field_used_by_writer_federator" name="writer_federator_mod::is_field_used_by_writer_federator">
+<area shape="rect" id="node1" title="Determines whether a field is used by the writer federator or not." alt="" coords="5,5,168,61"/>
+<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a9379ee9a358faa87a63d2f2459f202b9" title="Retrieves the index of the next writer which uses a specific field. If none is found then returns fal..." alt="" coords="216,5,360,61"/>
+</map>

@@ -1,0 +1,7 @@
+<map id="registry_mod::deregister_component" name="registry_mod::deregister_component">
+<area shape="rect" id="node1" title="Will deregister a component, remove all callback hooks and free registry specific memory allocated to..." alt="" coords="5,5,164,47"/>
+<area shape="rect" id="node2" href="$namespaceregistry__mod.html#a99ccc2729b231c4c38e1356c0c0da8e9" title="Will remove a specific descriptor from the registry table and uninstall the corresponding callback ho..." alt="" coords="212,5,357,47"/>
+<area shape="rect" id="node3" href="$namespaceregistry__mod.html#ab7d21640a0a547adcb9e10fd16532441" title="Will unload the callback hooks that have been installed for each state." alt="" coords="405,5,545,47"/>
+<area shape="rect" id="node4" href="$namespaceregistry__mod.html#ada00dbccc3aea074507e4ef22962c58a" title="Given a group name this returns the id (i.e. order) of that group." alt="" coords="593,13,769,39"/>
+<area shape="rect" id="node5" href="$namespaceregistry__mod.html#ac310def38e06d11d4f1fb792ad8923ba" title="Given a group name this returns the group descriptor corresponding to that or an error if none is fou..." alt="" coords="817,5,976,47"/>
+</map>

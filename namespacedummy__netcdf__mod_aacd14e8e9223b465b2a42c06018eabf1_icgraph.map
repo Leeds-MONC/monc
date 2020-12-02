@@ -1,0 +1,7 @@
+<map id="dummy_netcdf_mod::nf90_inq_dimid" name="dummy_netcdf_mod::nf90_inq_dimid">
+<area shape="rect" id="node1" title=" " alt="" coords="745,39,916,80"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__read__checkpoint__mod.html#a94a01ad171aa30db396da469b63f5852" title="Retrieve sthe number of Q indice entries in the NetCDF. This is optional, so may return 0." alt="" coords="499,8,697,49"/>
+<area shape="rect" id="node5" href="$namespacecheckpointer__read__checkpoint__mod.html#aa25af7b1f1b80f4b22f2ae6ef2c2d422" title="Will read in the dimension sizes from the NetCDF file along with whether the z, y and x dimensions ha..." alt="" coords="252,71,451,112"/>
+<area shape="rect" id="node3" href="$namespacecheckpointer__read__checkpoint__mod.html#ac4f69f73beff8fb630b1e8c7b530ae05" title="Loads the Q indices (if they exist) into the model Q index register." alt="" coords="252,5,451,47"/>
+<area shape="rect" id="node4" href="$namespacecheckpointer__read__checkpoint__mod.html#a2c62e5fb27df55b95c5650b36e9a6545" title="Reads in a NetCDF checkpoint file and uses this to initialise the model." alt="" coords="5,39,204,80"/>
+</map>

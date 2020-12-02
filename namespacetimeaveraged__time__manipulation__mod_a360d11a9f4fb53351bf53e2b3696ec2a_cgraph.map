@@ -1,0 +1,4 @@
+<map id="timeaveraged_time_manipulation_mod::find_or_add_timeaveraged_value" name="timeaveraged_time_manipulation_mod::find_or_add_timeaveraged_value">
+<area shape="rect" id="node1" title="Retrieves or creates (and retrieves) a time averaged value based upon the information provided." alt="" coords="5,5,255,47"/>
+<area shape="rect" id="node2" href="$namespacetimeaveraged__time__manipulation__mod.html#ac42a578b529c94721511855bf71d6010" title="Finds a time averaged value based upon its field name." alt="" coords="303,5,515,47"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="flux_budget_mod::is_field_uw_vw" name="flux_budget_mod::is_field_uw_vw">
+<area shape="rect" id="node1" title="Determines whether a specific published field is a uw or uv field." alt="" coords="407,13,541,54"/>
+<area shape="rect" id="node2" href="$namespaceflux__budget__mod.html#a3cc9a1c50c5d8641c4f1bb50dca8a31c" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="211,5,359,61"/>
+<area shape="rect" id="node3" href="$namespaceflux__budget__mod.html#af8cb1efb9549f504e2458c9f7a78d574" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,13,163,54"/>
+</map>

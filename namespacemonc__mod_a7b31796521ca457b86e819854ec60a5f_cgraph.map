@@ -1,0 +1,7 @@
+<map id="monc_mod::is_present_and_true" name="monc_mod::is_present_and_true">
+<area shape="rect" id="node1" title="Determines whether an option is present in the database and true. This combines the key check and get..." alt="" coords="5,114,157,155"/>
+<area shape="rect" id="node2" href="$namespaceoptionsdatabase__mod.html#aa3f0213d8028773523e6194a0ddf8e18" title="Retrieves a logical value from the database that matches the provided key." alt="" coords="205,85,355,126"/>
+<area shape="rect" id="node4" href="$namespaceoptionsdatabase__mod.html#a4b187d310f786ed3c207a3060e09b156" title="Determines whether a specific key is in the database." alt="" coords="608,78,757,119"/>
+<area shape="rect" id="node3" href="$namespaceoptionsdatabase__mod.html#a13bbeb6272c82308e3d4a42f7c36c862" title="Determines whether a specific options key exists in the database or not, if it doesn&#39;t then this resu..." alt="" coords="407,5,556,61"/>
+<area shape="rect" id="node5" href="$namespaceoptionsdatabase__mod.html#ab4f16a670bed755586806647da3cfa8d" title="Gets a key corresponding to the correct options key and index combination." alt="" coords="403,85,560,126"/>
+</map>

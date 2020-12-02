@@ -1,0 +1,9 @@
+<map id="checkpointer_mod::checkpointer_get_descriptor" name="checkpointer_mod::checkpointer_get_descriptor">
+<area shape="rect" id="node1" title="Provides registry information for the component." alt="" coords="5,71,213,112"/>
+<area shape="rect" id="node2" href="$namespacecheckpointer__mod.html#a8d29af81c3ef9514b6cad4a2f696ac40" title="Called on termination to write out the status of the model run to checkpoint." alt="" coords="265,5,460,47"/>
+<area shape="rect" id="node6" href="$namespacecheckpointer__mod.html#a3bf43af08203aa1d89485cd403dcca95" title="Initialisation hook, if appropriate (depends on command line arguments) then will read in an existing..." alt="" coords="261,71,464,112"/>
+<area shape="rect" id="node7" href="$namespacecheckpointer__mod.html#a57d98ba2f415b7148b501f2dfcec8928" title="The timestep hook will dump out model state_mod to a checkpoint file." alt="" coords="271,136,455,177"/>
+<area shape="rect" id="node3" href="$namespacecheckpointer__mod.html#ae43bde190ca30ddc637139f66a123c5b" title="Performs the checkpoint dump and timings. This can be called as part of the timestep or at the end of..." alt="" coords="512,71,691,112"/>
+<area shape="rect" id="node4" href="$namespacecheckpointer__mod.html#a58c14938a0ba0d7f47218eca9f319920" title="Generates a unique filename based upon the base one specified and the number of completed timesteps." alt="" coords="739,37,923,79"/>
+<area shape="rect" id="node5" href="$namespacecheckpointer__mod.html#a7b00192310e36ea98ab44bc96f83a410" title="Will dump out the model dump statistics." alt="" coords="755,103,906,144"/>
+</map>

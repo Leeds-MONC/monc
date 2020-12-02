@@ -1,0 +1,12 @@
+<map id="diagnostic_federator_mod::perform_inter_io_communication" name="diagnostic_federator_mod::perform_inter_io_communication">
+<area shape="rect" id="node1" title="Performs the actual inter IO communication by calling out to the appropriate inter IO module." alt="" coords="1427,36,1580,92"/>
+<area shape="rect" id="node2" href="$namespacediagnostic__federator__mod.html#adcd05cf714b11815d87be556954d5d35" title="Checks all pending activities against the completed fields and runs them if the required fields are n..." alt="" coords="1181,36,1356,92"/>
+<area shape="rect" id="node10" href="$namespacediagnostic__federator__mod.html#ac72eade80d986df91f8008af3873a22e" title="Issues any inter io communucation calls that are appropriate based upon the data recieved from MONC." alt="" coords="1159,119,1379,160"/>
+<area shape="rect" id="node3" href="$namespacediagnostic__federator__mod.html#a01a2bc5cfd142c6bf40157c9a482aad8" title="This handles inter IO completion for a specific timestep entry. This is required as at a timestep the..." alt="" coords="884,34,1111,90"/>
+<area shape="rect" id="node5" href="$namespacediagnostic__federator__mod.html#a471607fc4ee8c3a1ce66d31dc68e5522" title="Entry point into the diagnostics federator this runs the diagnostics, executing the defined rules bas..." alt="" coords="921,114,1074,170"/>
+<area shape="rect" id="node4" href="$namespacediagnostic__federator__mod.html#a6be721f59f382ad66707a4021d3be1b5" title="Handles inter io reduction completion, it adds the resulting value to the appropriate completion list..." alt="" coords="668,10,836,51"/>
+<area shape="rect" id="node6" href="$namespaceio__server__mod.html#a96c2285d5c9b5badb426a0e065abdf4a" title="Handles the command for data download from a specific process. This will allocate the receive buffer ..." alt="" coords="677,122,827,163"/>
+<area shape="rect" id="node7" href="$namespaceio__server__mod.html#a153d99e94dcccfaea63104af86095dce" title="Retrieves the message from MONC off the data channel and throws this to a thread in the thread pool t..." alt="" coords="443,114,620,170"/>
+<area shape="rect" id="node8" href="$namespaceio__server__mod.html#ab843eee74fe31492952c1c88304730d7" title="Called to handle a specific command that has been recieved." alt="" coords="244,122,395,163"/>
+<area shape="rect" id="node9" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,129,196,156"/>
+</map>

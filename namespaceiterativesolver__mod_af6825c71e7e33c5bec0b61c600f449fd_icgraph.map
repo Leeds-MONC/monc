@@ -1,0 +1,4 @@
+<map id="iterativesolver_mod::initialisation_callback" name="iterativesolver_mod::initialisation_callback">
+<area shape="rect" id="node1" title="Initialisation callback hook which will set up the halo swapping state and allocate some data." alt="" coords="188,13,339,54"/>
+<area shape="rect" id="node2" href="$namespaceiterativesolver__mod.html#a2d28cccb2e26b87273e0d919955f01c6" title="Descriptor of the iterative solver component used by the registry." alt="" coords="5,5,140,61"/>
+</map>

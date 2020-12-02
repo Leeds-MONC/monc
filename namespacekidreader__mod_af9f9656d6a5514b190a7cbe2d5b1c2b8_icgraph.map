@@ -1,0 +1,4 @@
+<map id="kidreader_mod::initialise_callback" name="kidreader_mod::initialise_callback">
+<area shape="rect" id="node1" title="Initialisation hook which will parse the configuration NetCDF file and set up the model based upon th..." alt="" coords="220,5,380,47"/>
+<area shape="rect" id="node2" href="$namespacekidreader__mod.html#ac25b32ce129dab62a39885672825763e" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,172,47"/>
+</map>

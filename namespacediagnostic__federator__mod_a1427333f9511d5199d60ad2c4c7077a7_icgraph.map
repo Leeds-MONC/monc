@@ -1,0 +1,6 @@
+<map id="diagnostic_federator_mod::process_auto_dimensions" name="diagnostic_federator_mod::process_auto_dimensions">
+<area shape="rect" id="node1" title="Processes all auto dimensions by looking them up and resolving them based upon the operators." alt="" coords="680,13,891,54"/>
+<area shape="rect" id="node2" href="$namespacediagnostic__federator__mod.html#abfa8e7bd16249cdacd8c1c0bd904f2b2" title="Based upon the IO configuration this will define the diagnostics structure. It is done once at initia..." alt="" coords="465,13,632,54"/>
+<area shape="rect" id="node3" href="$namespacediagnostic__federator__mod.html#a808b726c916d9dc52e2020eacbe2be0f" title="Initialises the diagnostics action and sets up the diagnostics master definitions." alt="" coords="244,5,417,61"/>
+<area shape="rect" id="node4" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+</map>

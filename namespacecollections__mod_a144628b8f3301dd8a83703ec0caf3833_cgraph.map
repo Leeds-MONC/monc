@@ -1,0 +1,4 @@
+<map id="collections_mod::hashset_getlocation" name="collections_mod::hashset_getlocation">
+<area shape="rect" id="node1" title="Determines the location and hash of a key within a specific hashset. The hash is set regardless of wh..." alt="" coords="5,5,173,47"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a745849ca729b70cc641198c3280e1640" title="Translates the string key into a hash from 1 to hash_size (inclusive.) This encoding is deterministic..." alt="" coords="221,5,361,47"/>
+</map>

@@ -1,0 +1,11 @@
+<map id="pencil_fft_mod::create_transposition" name="pencil_fft_mod::create_transposition">
+<area shape="rect" id="node1" title="Creates a specific pencil transposition description. It is maybe more a decomposition description,..." alt="" coords="5,201,153,243"/>
+<area shape="rect" id="node2" href="$namespacepencil__fft__mod.html#acf6641c54dffe24a15fe356303321bca" title="Concatenates sizes in multiple dimensions for each target process (in a row or column) into a product..." alt="" coords="214,5,397,47"/>
+<area shape="rect" id="node3" href="$namespacepencil__fft__mod.html#abc2b44a4f769a5cf4a6fda6ca7750cf7" title="Determines the sizes per dimension on the matching process either to receive from (forward transposit..." alt="" coords="201,71,409,112"/>
+<area shape="rect" id="node4" href="$namespacepencil__fft__mod.html#a28c23491862410177e79c5a26bab9e59" title="Determines my location for each dimension in the new pencil decomposition. I.e. which block I am oper..." alt="" coords="221,136,390,177"/>
+<area shape="rect" id="node5" href="$namespacepencil__fft__mod.html#a6f32d038392be51850e7bd91467414a3" title="Determines the number of elements to on my process per dimension which either need to be sent to (for..." alt="" coords="211,201,400,243"/>
+<area shape="rect" id="node7" href="$namespacepencil__fft__mod.html#a629892d39047dafdea8d392c86564ba2" title="Simple helper function to deduce send or receive offsets from the sizes." alt="" coords="221,267,390,308"/>
+<area shape="rect" id="node8" href="$namespacepencil__fft__mod.html#a6b8596b2ed39fd742a496947d707edc1" title="Determines the number of processes in each dimension for the target decomposition...." alt="" coords="211,332,400,373"/>
+<area shape="rect" id="node9" href="$namespacepencil__fft__mod.html#ab686537d315d736c53e66af7ee40b89c" title="Deduces the size of my (local) pencil based upon the new decomposition. This depends heavily on the c..." alt="" coords="221,397,390,439"/>
+<area shape="rect" id="node6" href="$namespacepencil__fft__mod.html#ac97992de3b9a72f89a51c4c2254787a9" title="Determines whether or not the specific dimension is in the list of extended dimensions." alt="" coords="457,300,604,341"/>
+</map>

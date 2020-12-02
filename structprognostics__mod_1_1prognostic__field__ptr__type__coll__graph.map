@@ -1,0 +1,4 @@
+<map id="prognostics_mod::prognostic_field_ptr_type" name="prognostics_mod::prognostic_field_ptr_type">
+<area shape="rect" id="node1" title="A pointer to the prognostic field. This is so we can wrap prognostics up in an array and still refer ..." alt="" coords="5,109,192,151"/>
+<area shape="rect" id="node2" href="$structprognostics__mod_1_1prognostic__field__type.html" title="A prognostic field which is assumed to be 3D." alt="" coords="5,5,192,47"/>
+</map>

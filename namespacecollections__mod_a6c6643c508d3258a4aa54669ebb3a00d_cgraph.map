@@ -1,0 +1,4 @@
+<map id="collections_mod::stack_get_generic" name="collections_mod::stack_get_generic">
+<area shape="rect" id="node1" title="Gets a specific element from the stack at index specified or null if the index &gt; stack size." alt="" coords="5,5,160,47"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#a91a5a6f4841afe0bc22fcba100b6e46b" title="Retrieves the element at index i from the list or null if index &lt; list size." alt="" coords="208,5,347,47"/>
+</map>

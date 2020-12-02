@@ -1,0 +1,7 @@
+<map id="monc_mod::split_communicator_into_monc_and_io" name="monc_mod::split_communicator_into_monc_and_io">
+<area shape="rect" id="node1" title="Splits the MPI_COMM_WORLD communicator into MONC and IO separate communicators. The size of each depe..." alt="" coords="5,71,211,112"/>
+<area shape="rect" id="node2" href="$namespacemonc__mod.html#a07fc1b99da0c625847abacf25834e8c3" title="Based upon the total number of processes and the IO process id stride determines the number of proces..." alt="" coords="259,5,419,47"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ae0d255e756059bc76b2f4291825e59c9" title="Retrieves the current logging level." alt="" coords="267,71,410,112"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="267,137,410,163"/>
+<area shape="rect" id="node5" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="467,129,633,171"/>
+</map>

@@ -1,0 +1,5 @@
+<map id="flux_budget_mod::compute_mse_for_column" name="flux_budget_mod::compute_mse_for_column">
+<area shape="rect" id="node1" title="Computes the mse diagnostics for a specific column. For now we are assuming mse is the same as theta,..." alt="" coords="433,5,608,47"/>
+<area shape="rect" id="node2" href="$namespaceflux__budget__mod.html#a6d74ae8f277e36745b6cddd31098a577" title="Timestep call back, this will deduce the diagnostics for the current (non halo) column." alt="" coords="211,5,385,47"/>
+<area shape="rect" id="node3" href="$namespaceflux__budget__mod.html#af8cb1efb9549f504e2458c9f7a78d574" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,163,47"/>
+</map>

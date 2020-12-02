@@ -1,0 +1,4 @@
+<map id="flux_budget_mod::initialisation_callback" name="flux_budget_mod::initialisation_callback">
+<area shape="rect" id="node1" title="Initialisation call back." alt="" coords="211,5,404,47"/>
+<area shape="rect" id="node2" href="$namespaceflux__budget__mod.html#af8cb1efb9549f504e2458c9f7a78d574" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,163,47"/>
+</map>

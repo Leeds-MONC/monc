@@ -1,0 +1,8 @@
+<map id="casim_mod::casim_get_descriptor" name="casim_mod::casim_get_descriptor">
+<area shape="rect" id="node1" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,104,160,145"/>
+<area shape="rect" id="node2" href="$namespacecasim__mod.html#a1314c30d50af43695a42286aa34f375e" title=" " alt="" coords="208,5,397,47"/>
+<area shape="rect" id="node3" href="$namespacecasim__mod.html#ae2bb24ec0a72f00ebb4bf48727763413" title="Field value retrieval callback, this returns the value of a specific published field." alt="" coords="225,71,381,112"/>
+<area shape="rect" id="node4" href="$namespacecasim__mod.html#adf4d919dfe5aee411cb2c3c4a5764f0c" title="The initialisation callback sets up the microphysics." alt="" coords="221,136,384,177"/>
+<area shape="rect" id="node6" href="$namespacecasim__mod.html#a987da052666d7d305689137161890a18" title="Called for each column per timestep this will calculate the microphysical tendencies." alt="" coords="230,201,375,243"/>
+<area shape="rect" id="node5" href="$namespacecasim__mod.html#ad6e7be600a9456809dd4207755e454c0" title=" " alt="" coords="445,143,645,170"/>
+</map>

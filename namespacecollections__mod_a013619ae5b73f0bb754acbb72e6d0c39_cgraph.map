@@ -1,0 +1,7 @@
+<map id="collections_mod::queue_pop_int" name="collections_mod::queue_pop_int">
+<area shape="rect" id="node1" title="Pops the queue element off the head of the queue (FIFO)" alt="" coords="5,39,163,80"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#ac3ac77f7ea5ec7c86c49f8d502dd9f09" title="Pops the queue element off the head of the queue (FIFO)" alt="" coords="211,39,368,80"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a660947bb6b95ba785986f1faa7870912" title="Removes an element from the list at a specific index." alt="" coords="425,5,564,47"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#a83234efccd47e0ba5509768a2f32e9ed" title="Returns a specific queue element at an index or null if index &gt; queue size." alt="" coords="416,71,573,112"/>
+<area shape="rect" id="node5" href="$namespacecollections__mod.html#a91a5a6f4841afe0bc22fcba100b6e46b" title="Retrieves the element at index i from the list or null if index &lt; list size." alt="" coords="621,71,760,112"/>
+</map>

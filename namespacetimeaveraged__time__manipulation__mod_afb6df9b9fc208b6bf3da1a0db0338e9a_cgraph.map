@@ -1,0 +1,11 @@
+<map id="timeaveraged_time_manipulation_mod::perform_timeaveraged_time_manipulation" name="timeaveraged_time_manipulation_mod::perform_timeaveraged_time_manipulation">
+<area shape="rect" id="node1" title="Performs the time averaged manipulation and only returns values if these are to be stored (i...." alt="" coords="5,129,217,185"/>
+<area shape="rect" id="node2" href="$namespacethreadpool__mod.html#a64977cc4d8fab28cdbfabd03b5f28d3a" title="Checks the error status of any thread operation and reports an error if it failed." alt="" coords="313,5,467,47"/>
+<area shape="rect" id="node5" href="$namespacetimeaveraged__time__manipulation__mod.html#a360d11a9f4fb53351bf53e2b3696ec2a" title="Retrieves or creates (and retrieves) a time averaged value based upon the information provided." alt="" coords="265,71,515,112"/>
+<area shape="rect" id="node7" href="$namespaceforthread__mod.html#a9101345b87d2c0e18fb020677cf767b9" title=" " alt="" coords="309,136,471,177"/>
+<area shape="rect" id="node8" href="$namespaceforthread__mod.html#a6068972cad8d59eb6b29c8301d331090" title=" " alt="" coords="309,201,471,243"/>
+<area shape="rect" id="node9" href="$namespacetimeaveraged__time__manipulation__mod.html#af388ed5263f2352387758668929f6c70" title="Does the time averaging itself." alt="" coords="284,267,496,308"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="597,13,740,39"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="823,5,989,47"/>
+<area shape="rect" id="node6" href="$namespacetimeaveraged__time__manipulation__mod.html#ac42a578b529c94721511855bf71d6010" title="Finds a time averaged value based upon its field name." alt="" coords="563,71,775,112"/>
+</map>

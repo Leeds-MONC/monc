@@ -1,0 +1,5 @@
+<map id="halo_communication_mod::determine_recv_and_send_sizes" name="halo_communication_mod::determine_recv_and_send_sizes">
+<area shape="rect" id="node1" title="Determines the amount (in elements) of data that each neighbour will be sent and I will receive from ..." alt="" coords="5,5,155,61"/>
+<area shape="rect" id="node2" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="203,20,345,47"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="393,13,560,54"/>
+</map>

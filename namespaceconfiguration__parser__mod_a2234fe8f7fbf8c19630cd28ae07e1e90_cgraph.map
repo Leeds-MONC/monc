@@ -1,0 +1,19 @@
+<map id="configuration_parser_mod::define_diagnostic" name="configuration_parser_mod::define_diagnostic">
+<area shape="rect" id="node1" title="Defines a new data handling rule." alt="" coords="5,237,165,279"/>
+<area shape="rect" id="node2" href="$namespaceconfiguration__parser__mod.html#a6074479d53efc1f0bcd8e4e62d9d44fb" title="Extends the rules array of a specific rule from the current size to the current size + data size stri..." alt="" coords="213,5,420,47"/>
+<area shape="rect" id="node3" href="$namespaceconfiguration__parser__mod.html#a5003ad7d4daa92bec66f96a60066a898" title=" " alt="" coords="235,70,399,126"/>
+<area shape="rect" id="node4" href="$namespaceconfiguration__parser__mod.html#aa55cef0bd3cdc488ec1c0504c44ed9a0" title="Given the name of an attribute will return the index of this in the names collection or 0 if it is no..." alt="" coords="244,150,389,206"/>
+<area shape="rect" id="node5" href="$namespaceconfiguration__parser__mod.html#a39e2821765e735d8b4bf016264145209" title=" " alt="" coords="247,230,386,286"/>
+<area shape="rect" id="node6" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="482,325,625,351"/>
+<area shape="rect" id="node8" href="$namespaceconfiguration__parser__mod.html#a11289c3bc73e651c500dbcef022158c0" title=" " alt="" coords="243,310,390,366"/>
+<area shape="rect" id="node9" href="$namespaceconfiguration__parser__mod.html#a4be90603e98d3bd09468dbb504b16813" title=" " alt="" coords="227,469,407,511"/>
+<area shape="rect" id="node7" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="687,309,853,351"/>
+<area shape="rect" id="node10" href="$namespaceoptionsdatabase__mod.html#ae6f0a2a95fcacd3491b7b8fdb161e022" title="Retrieves an integer value from the database that matches the provided key." alt="" coords="479,636,628,677"/>
+<area shape="rect" id="node12" href="$namespaceoptionsdatabase__mod.html#a4b187d310f786ed3c207a3060e09b156" title="Determines whether a specific key is in the database." alt="" coords="901,467,1051,508"/>
+<area shape="rect" id="node14" href="$namespaceoptionsdatabase__mod.html#aa3f0213d8028773523e6194a0ddf8e18" title="Retrieves a logical value from the database that matches the provided key." alt="" coords="479,701,628,743"/>
+<area shape="rect" id="node15" href="$namespaceoptionsdatabase__mod.html#ab054641ac0fa0287adb3c461987c4f0b" title="Retrieves a real value from the database that matches the provided key." alt="" coords="479,427,628,468"/>
+<area shape="rect" id="node16" href="$namespaceoptionsdatabase__mod.html#af2aeb42c9fdb961702216042b0330088" title="Retrieves a string value from the database that matches the provided key." alt="" coords="479,571,628,612"/>
+<area shape="rect" id="node17" href="$namespaceconfiguration__parser__mod.html#a4f4464450c8cf20bf91558550955bc82" title="Replaces specific characters in a string and returns a new string with this replaced by nothing (i...." alt="" coords="468,491,639,547"/>
+<area shape="rect" id="node11" href="$namespaceoptionsdatabase__mod.html#a13bbeb6272c82308e3d4a42f7c36c862" title="Determines whether a specific options key exists in the database or not, if it doesn&#39;t then this resu..." alt="" coords="695,557,845,613"/>
+<area shape="rect" id="node13" href="$namespaceoptionsdatabase__mod.html#ab4f16a670bed755586806647da3cfa8d" title="Gets a key corresponding to the correct options key and index combination." alt="" coords="691,636,849,677"/>
+</map>

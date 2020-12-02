@@ -1,0 +1,12 @@
+<map id="io_server_state_reader_mod::restart_writer_state_from_checkpoint" name="io_server_state_reader_mod::restart_writer_state_from_checkpoint">
+<area shape="rect" id="node1" title="Restarts the writer state from a specific checkpoint byte data chunk of memory." alt="" coords="5,53,177,109"/>
+<area shape="rect" id="node2" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="497,13,639,39"/>
+<area shape="rect" id="node4" href="$namespacelogging__mod.html#ad95937a250467334622daeb5cff78c20" title="Will log just from the master process." alt="" coords="230,38,419,65"/>
+<area shape="rect" id="node5" href="$namespacedata__utils__mod.html#ab3602147fea5dd8f50911c7f4c93ff76" title="Unpacks a scalar integer from some byte data, this is a very simple unpack routine wrapping the trans..." alt="" coords="225,89,424,131"/>
+<area shape="rect" id="node6" href="$namespacewriter__types__mod.html#a433965efb35f6d750e5365c1257057bb" title="Unserialises some byte data into the writer in order to recreate the state of the writer." alt="" coords="229,155,421,196"/>
+<area shape="rect" id="node3" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="725,5,891,47"/>
+<area shape="rect" id="node7" href="$namespacewriter__types__mod.html#a7b5b6fc49221508341b7c744284b2d4c" title="Unserialises byte data into a writer field type." alt="" coords="472,155,664,196"/>
+<area shape="rect" id="node8" href="$namespacewriter__types__mod.html#a9c6f0c0e7d2ea3c758c6df1041d175a8" title="Unserialsies collective values contained in some data." alt="" coords="712,125,904,167"/>
+<area shape="rect" id="node9" href="$namespacewriter__types__mod.html#a536a4c1352bbc1d7a21aedec40ba4f8e" title="Unserialises some byte data into data values." alt="" coords="952,155,1144,196"/>
+<area shape="rect" id="node10" href="$namespacewriter__types__mod.html#a0c1e3ad6ff464304020f0be57e7e7df0" title="Inflates some byte data into a string map." alt="" coords="1192,155,1384,196"/>
+</map>

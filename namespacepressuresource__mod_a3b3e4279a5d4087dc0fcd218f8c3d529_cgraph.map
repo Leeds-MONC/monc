@@ -1,0 +1,9 @@
+<map id="pressuresource_mod::pressuresource_get_descriptor" name="pressuresource_mod::pressuresource_get_descriptor">
+<area shape="rect" id="node1" title="Descriptor of this component for registration." alt="" coords="5,63,148,119"/>
+<area shape="rect" id="node2" href="$namespacepressuresource__mod.html#aef2f4c3605ba799ec170cbad4cb76b63" title="Frees up the allocated buffers (if such were allocated)" alt="" coords="199,5,343,47"/>
+<area shape="rect" id="node3" href="$namespacepressuresource__mod.html#a93f779676e4cb5a319fae4bf2179cdc3" title="On initialisation this will allocate the buffer areas required and set communication handles to null." alt="" coords="196,71,347,112"/>
+<area shape="rect" id="node4" href="$namespacepressuresource__mod.html#a53b7881f57e038c43ce30698688ce9d5" title="The timestep callback will update the values of P for each column." alt="" coords="200,136,343,177"/>
+<area shape="rect" id="node5" href="$namespacepressuresource__mod.html#a1bc3b496bf22d4f5157ddccda9c4aea6" title="Combines the source fields with the pressure values. For U and V, if this is on the low boundary then..." alt="" coords="399,64,541,105"/>
+<area shape="rect" id="node6" href="$namespacepressuresource__mod.html#a4c422d1d802c672e51531b2547b702d0" title="Registers the receive requests for each neighbouring process if that is not local,..." alt="" coords="395,129,545,185"/>
+<area shape="rect" id="node7" href="$namespacepressuresource__mod.html#a86d7a66f4471a3f08c7ed51ca88988d9" title="Sends the computed source pressure data terms to the p+1 process." alt="" coords="399,209,541,265"/>
+</map>

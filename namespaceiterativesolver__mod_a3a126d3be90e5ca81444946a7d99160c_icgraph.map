@@ -1,0 +1,7 @@
+<map id="iterativesolver_mod::precond" name="iterativesolver_mod::precond">
+<area shape="rect" id="node1" title="Jacobi preconditioner." alt="" coords="553,39,688,80"/>
+<area shape="rect" id="node2" href="$namespaceiterativesolver__mod.html#a047746272efd1fd8e0ac7454cd0c239d" title="Performs the BiCGStab KS method." alt="" coords="371,5,505,47"/>
+<area shape="rect" id="node5" href="$namespaceiterativesolver__mod.html#a991261981bd68fd62f79c51899508da5" title="Performs the preconditioned conjugate gradient method." alt="" coords="371,71,505,112"/>
+<area shape="rect" id="node3" href="$namespaceiterativesolver__mod.html#af8940894125fc1c9447cad012f379df2" title="Timestep callback, this ignores all but the last column where it calls the solver." alt="" coords="188,39,323,80"/>
+<area shape="rect" id="node4" href="$namespaceiterativesolver__mod.html#a2d28cccb2e26b87273e0d919955f01c6" title="Descriptor of the iterative solver component used by the registry." alt="" coords="5,31,140,87"/>
+</map>

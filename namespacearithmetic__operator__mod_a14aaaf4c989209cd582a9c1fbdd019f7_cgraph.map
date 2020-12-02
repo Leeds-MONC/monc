@@ -1,0 +1,4 @@
+<map id="arithmetic_operator_mod::find_or_add_equation" name="arithmetic_operator_mod::find_or_add_equation">
+<area shape="rect" id="node1" title="Locates an existing equation in the cache based upon the textual equation representation or creates a..." alt="" coords="5,5,188,47"/>
+<area shape="rect" id="node2" href="$namespacearithmetic__operator__mod.html#a24302e64f98c16bbe3a26dda9da399f1" title="Finds an equation in the cache based upon its textual equation representation or returns null if none..." alt="" coords="236,5,372,47"/>
+</map>

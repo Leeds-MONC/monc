@@ -1,0 +1,4 @@
+<map id="instantaneous_time_manipulation_mod::deduce_whether_to_issue_values" name="instantaneous_time_manipulation_mod::deduce_whether_to_issue_values">
+<area shape="rect" id="node1" title="Determines whether to issue values for write or not. This depends on the time and output frequency." alt="" coords="276,5,459,61"/>
+<area shape="rect" id="node2" href="$namespaceinstantaneous__time__manipulation__mod.html#a5c696988c5ee6e6ee4bc599a0031f91a" title="Performs the instantaneous time manipulation and returns data only if this is to be written to the st..." alt="" coords="5,5,228,61"/>
+</map>

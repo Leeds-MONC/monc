@@ -1,0 +1,18 @@
+<map id="test_registry_mod::test_register" name="test_registry_mod::test_register">
+<area shape="rect" id="node1" title=" " alt="" coords="5,170,136,211"/>
+<area shape="rect" id="node2" href="$namespaceregistry__mod.html#a58788c9a6b30acd6db1253eee3319899" title="Returns a brief summary of all registered components." alt="" coords="184,105,348,146"/>
+<area shape="rect" id="node3" href="$namespaceregistry__mod.html#a9560c58c94411b38b5908eb11a0ad0eb" title="Will register a component and install the nescesary callback hooks." alt="" coords="193,170,339,211"/>
+<area shape="rect" id="node16" href="$namespacetest__registry__mod.html#ad798d0b361f3162f7c994918665c9c92" title=" " alt="" coords="193,236,339,263"/>
+<area shape="rect" id="node4" href="$namespaceregistry__mod.html#a227a7bff3d8c55d6eb0ca2618a8a3de0" title="Will install the callback hooks for each state." alt="" coords="407,46,534,87"/>
+<area shape="rect" id="node8" href="$namespaceregistry__mod.html#aad841de55194d7b2dfebf58ecb4a4687" title="Loads the published fields information for an entire component into the registry&#39;s definition list." alt="" coords="407,111,534,153"/>
+<area shape="rect" id="node9" href="$namespacelogging__mod.html#ad95937a250467334622daeb5cff78c20" title="Will log just from the master process." alt="" coords="593,119,783,145"/>
+<area shape="rect" id="node12" href="$namespaceoptionsdatabase__mod.html#aa3f0213d8028773523e6194a0ddf8e18" title="Retrieves a logical value from the database that matches the provided key." alt="" coords="396,229,545,270"/>
+<area shape="rect" id="node14" href="$namespaceoptionsdatabase__mod.html#a4b187d310f786ed3c207a3060e09b156" title="Determines whether a specific key is in the database." alt="" coords="835,242,985,283"/>
+<area shape="rect" id="node5" href="$namespaceregistry__mod.html#a4d7dfdc95eb21cf68caaea16201d0351" title="Will install a specific callback hook into the specified map_type of existing hooks." alt="" coords="599,5,777,32"/>
+<area shape="rect" id="node6" href="$namespaceregistry__mod.html#ada00dbccc3aea074507e4ef22962c58a" title="Given a group name this returns the id (i.e. order) of that group." alt="" coords="600,56,776,83"/>
+<area shape="rect" id="node7" href="$namespaceregistry__mod.html#ac310def38e06d11d4f1fb792ad8923ba" title="Given a group name this returns the group descriptor corresponding to that or an error if none is fou..." alt="" coords="831,49,989,90"/>
+<area shape="rect" id="node10" href="$namespacelogging__mod.html#ac4f13ac385499c85190cb184030e4f45" title="Logs a message at the specified level. If the level is above the current level then the message is ig..." alt="" coords="839,119,981,145"/>
+<area shape="rect" id="node11" href="$namespacelogging__mod.html#ac5c3277c18a4c378f0024c555cb5680a" title="Returns the string preamble that applies to the specific logging level." alt="" coords="1037,111,1204,153"/>
+<area shape="rect" id="node13" href="$namespaceoptionsdatabase__mod.html#a13bbeb6272c82308e3d4a42f7c36c862" title="Determines whether a specific options key exists in the database or not, if it doesn&#39;t then this resu..." alt="" coords="613,169,763,225"/>
+<area shape="rect" id="node15" href="$namespaceoptionsdatabase__mod.html#ab4f16a670bed755586806647da3cfa8d" title="Gets a key corresponding to the correct options key and index combination." alt="" coords="609,249,767,290"/>
+</map>

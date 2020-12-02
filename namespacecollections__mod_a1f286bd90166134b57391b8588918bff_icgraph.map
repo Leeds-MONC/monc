@@ -1,0 +1,23 @@
+<map id="collections_mod::list_add_generic" name="collections_mod::list_add_generic">
+<area shape="rect" id="node1" title="Adds an element to the end of the list." alt="" coords="472,320,611,361"/>
+<area shape="rect" id="node2" href="$namespacecollections__mod.html#ac52840e0db078101e603759a789ee18f" title="Puts a specific key&#45;value pair into the hashmap." alt="" coords="239,104,413,145"/>
+<area shape="rect" id="node7" href="$namespacecollections__mod.html#a983cc1ee040668102ce0a4087cca78a6" title="Adds a string to the hashset which stores unique strings, therefore if the string already exists then..." alt="" coords="228,170,424,197"/>
+<area shape="rect" id="node8" href="$namespacecollections__mod.html#a5d841303651fa82b234844d2811d475a" title="Adds an element to the end of the list." alt="" coords="257,221,395,263"/>
+<area shape="rect" id="node9" href="$namespacecollections__mod.html#a75c1bc3fb3458666455b4c69e314599e" title="Adds an element to the end of the list." alt="" coords="257,287,395,328"/>
+<area shape="rect" id="node10" href="$namespacecollections__mod.html#ae65bb1b39b57a3c134660427d310efdf" title="Adds an element to the end of the list." alt="" coords="257,352,395,393"/>
+<area shape="rect" id="node11" href="$namespacecollections__mod.html#aa83d594d9d1f1ae6cfc5aab40d20ef7a" title="Adds an element to the end of the list." alt="" coords="257,417,395,459"/>
+<area shape="rect" id="node12" href="$namespacecollections__mod.html#adc0c9d264979fc06676699cde94cc1cd" title="Puts a specific key&#45;value pair into the map." alt="" coords="253,483,399,524"/>
+<area shape="rect" id="node17" href="$namespacecollections__mod.html#a3e289fade5e3d3bf358daee04e74d993" title="Adds an element to the end of the queue (FIFO)" alt="" coords="247,679,405,720"/>
+<area shape="rect" id="node3" href="$namespacecollections__mod.html#a06908aa81e4bbf1b556c943ae6634139" title="Puts a specific key&#45;value pair into the hashmap." alt="" coords="5,5,180,47"/>
+<area shape="rect" id="node4" href="$namespacecollections__mod.html#abc6ccd0d0c836bee7dcc342ba1ea846d" title="Puts a specific key&#45;value pair into the hashmap." alt="" coords="5,71,180,112"/>
+<area shape="rect" id="node5" href="$namespacecollections__mod.html#a87a768a264c3f35b77658db4c488e4dc" title="Puts a specific key&#45;value pair into the hashmap." alt="" coords="5,136,180,177"/>
+<area shape="rect" id="node6" href="$namespacecollections__mod.html#a6346ed207ebbaa54916ccce70f7cebdc" title="Puts a specific key&#45;value pair into the hashmap." alt="" coords="5,201,180,243"/>
+<area shape="rect" id="node13" href="$namespacecollections__mod.html#a009d76041ab6c9cd7273a0bfb16f57f0" title="Puts a specific key&#45;value pair into the map." alt="" coords="19,352,166,393"/>
+<area shape="rect" id="node14" href="$namespacecollections__mod.html#aabc994c489b48db162916ac209813e2a" title="Puts a specific key&#45;value pair into the map." alt="" coords="19,417,166,459"/>
+<area shape="rect" id="node15" href="$namespacecollections__mod.html#a8c7c6ff308cbe2a66cee2ed5769d4c91" title="Puts a specific key&#45;value pair into the map." alt="" coords="19,483,166,524"/>
+<area shape="rect" id="node16" href="$namespacecollections__mod.html#a202a263182ba534ebf80a0ea761b9a26" title="Puts a specific key&#45;value pair into the map." alt="" coords="19,548,166,589"/>
+<area shape="rect" id="node18" href="$namespacecollections__mod.html#af274e5554b46c741ed300e1c07be4c44" title="Adds an element to the end of the queue (FIFO)" alt="" coords="14,613,171,655"/>
+<area shape="rect" id="node19" href="$namespacecollections__mod.html#a1a840d3b769cbb38d6ca4c28e87de964" title="Adds an element to the end of the queue (FIFO)" alt="" coords="14,679,171,720"/>
+<area shape="rect" id="node20" href="$namespacecollections__mod.html#a1a11e405e94ce90ba6187a696d2dcb07" title="Adds an element to the end of the queue (FIFO)" alt="" coords="14,744,171,785"/>
+<area shape="rect" id="node21" href="$namespacecollections__mod.html#acfdfe145ec9c8856aee5474dfea0237a" title="Adds an element to the end of the queue (FIFO)" alt="" coords="14,809,171,851"/>
+</map>

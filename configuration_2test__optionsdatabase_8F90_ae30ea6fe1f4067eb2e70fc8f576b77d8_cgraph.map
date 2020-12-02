@@ -1,0 +1,14 @@
+<map id="test_optionsdatabase_driver" name="test_optionsdatabase_driver">
+<area shape="rect" id="node1" title=" " alt="" coords="5,173,152,214"/>
+<area shape="rect" id="node2" href="$namespacetest__optionsdatabase__mod.html#a10d35bc476dcf85dd1e47f939ae47ec1" title=" " alt="" coords="206,5,362,61"/>
+<area shape="rect" id="node8" href="$namespacetest__optionsdatabase__mod.html#a58cb364e63a8924e94a674791aa1965c" title=" " alt="" coords="207,85,361,141"/>
+<area shape="rect" id="node9" href="$namespacetest__optionsdatabase__mod.html#a07823baffcda1d9ff1c8c717f192eda7" title=" " alt="" coords="201,165,367,221"/>
+<area shape="rect" id="node10" href="$namespacetest__optionsdatabase__mod.html#afcdceb345d53ec7e35d1bcb6c8640acb" title=" " alt="" coords="209,245,359,301"/>
+<area shape="rect" id="node11" href="$namespacetest__optionsdatabase__mod.html#a75f65a644f9023e96829944f916ad04b" title=" " alt="" coords="200,325,368,381"/>
+<area shape="rect" id="node3" href="$namespaceoptionsdatabase__mod.html#a9e9c1f3c83145855b0a15212d0874dcc" title="This will add a specific option key value pair to the options hashmap_type." alt="" coords="429,125,579,181"/>
+<area shape="rect" id="node4" href="$namespaceoptionsdatabase__mod.html#a26edb7498ed2705e4a68ee2a854cf358" title="A helper procedure to set a specific integer value." alt="" coords="640,34,819,75"/>
+<area shape="rect" id="node5" href="$namespaceoptionsdatabase__mod.html#a3d2f101e8aaff465e9de8b5193017bca" title="A helper procedure to set a specific logical value." alt="" coords="641,99,818,141"/>
+<area shape="rect" id="node6" href="$namespaceoptionsdatabase__mod.html#a4ce99dd792cac1c2f3b0f7dafc066606" title="A helper procedure to set a specific real value." alt="" coords="649,165,810,206"/>
+<area shape="rect" id="node7" href="$namespaceoptionsdatabase__mod.html#a55575038a83a349daac530eb250ed6ee" title="A helper procedure to set a specific string value." alt="" coords="643,230,815,271"/>
+<area shape="rect" id="node12" href="$namespaceoptionsdatabase__mod.html#ada8d5c09f5aa39ab21f96c64f5eae4e7" title="Given a specific value this will determine the type of data." alt="" coords="416,333,592,374"/>
+</map>

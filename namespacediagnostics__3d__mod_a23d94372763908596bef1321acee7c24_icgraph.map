@@ -1,0 +1,4 @@
+<map id="diagnostics_3d_mod::field_information_retrieval_callback" name="diagnostics_3d_mod::field_information_retrieval_callback">
+<area shape="rect" id="node1" title="Field information retrieval callback, this returns information for a specific components published fi..." alt="" coords="195,5,336,61"/>
+<area shape="rect" id="node2" href="$namespacediagnostics__3d__mod.html#a4d349d24788e4356452ab981fce11478" title="Provides the component descriptor for the core to register." alt="" coords="5,5,147,61"/>
+</map>

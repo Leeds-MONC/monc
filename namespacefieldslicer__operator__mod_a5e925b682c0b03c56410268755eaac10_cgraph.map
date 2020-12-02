@@ -1,0 +1,4 @@
+<map id="fieldslicer_operator_mod::fieldslicer_operator_get_required_fields" name="fieldslicer_operator_mod::fieldslicer_operator_get_required_fields">
+<area shape="rect" id="node1" title="Retrieves a list of the required fields for running this operator." alt="" coords="5,5,173,61"/>
+<area shape="rect" id="node2" href="$namespacedata__utils__mod.html#a32e2bb292c66ad41e019b09c8842b82b" title="Retrieves the name of a field from the attributes specified in the configuration." alt="" coords="221,13,379,54"/>
+</map>

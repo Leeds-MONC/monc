@@ -1,0 +1,8 @@
+<map id="gridmanager_mod::create_linear_grid" name="gridmanager_mod::create_linear_grid">
+<area shape="rect" id="node1" title="Creates the linear vertical grid based upon the configuration properties." alt="" coords="1151,5,1317,47"/>
+<area shape="rect" id="node2" href="$namespacegridmanager__mod.html#a05f22855870eb71f65d8f178a6df5db7" title="The original vertical grid setup and smoothing as per the LEM." alt="" coords="931,5,1103,47"/>
+<area shape="rect" id="node3" href="$namespacegridmanager__mod.html#a528bb773c3a3d670aae00cce7a19d56a" title="Sets up and smooths the vertical grid. This is based upon the grid configuration already read in." alt="" coords="733,5,883,47"/>
+<area shape="rect" id="node4" href="$namespacegridmanager__mod.html#adb240afc3ced768c76ca5a87db0bf765" title="Will initialise the vertical grid configuration." alt="" coords="483,5,685,47"/>
+<area shape="rect" id="node5" href="$namespacegridmanager__mod.html#accbda17db8d0527f3465f22de5befd1f" title="Called during initialisation and will initialise the horizontal and vertical grid configurations Note..." alt="" coords="256,5,435,47"/>
+<area shape="rect" id="node6" href="$namespacegridmanager__mod.html#ad1594b9175d56289645df4961045ce14" title="Provides the descriptor back to the caller and is used in component registration." alt="" coords="5,5,208,47"/>
+</map>
