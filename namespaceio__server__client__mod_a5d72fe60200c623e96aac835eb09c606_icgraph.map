@@ -1,4 +1,5 @@
 <map id="io_server_client_mod::build_mpi_type_field_description" name="io_server_client_mod::build_mpi_type_field_description">
-<area shape="rect" id="node1" title="Builds the MPI data type for sending field descriptions to registree MONCs." alt="" coords="244,5,389,61"/>
-<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+<area shape="rect" id="node1" title="Builds the MPI data type for sending field descriptions to registree MONCs." alt="" coords="385,5,531,61"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,20,337,47"/>
+<area shape="rect" id="node3" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,20,99,47"/>
 </map>

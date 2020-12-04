@@ -1,6 +1,7 @@
 <map id="operator_mod::initialise_operators" name="operator_mod::initialise_operators">
-<area shape="rect" id="node1" title="Initialises any operators that require initialisation." alt="" coords="465,49,620,90"/>
-<area shape="rect" id="node2" href="$namespacediagnostic__federator__mod.html#a808b726c916d9dc52e2020eacbe2be0f" title="Initialises the diagnostics action and sets up the diagnostics master definitions." alt="" coords="244,5,417,61"/>
-<area shape="rect" id="node4" href="$interfaceoperator__mod_1_1perform__activity.html#a27797047f9967a07c5d2b9afb100804e" title=" " alt="" coords="247,85,415,126"/>
-<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+<area shape="rect" id="node1" title="Initialises any operators that require initialisation." alt="" coords="607,49,761,90"/>
+<area shape="rect" id="node2" href="$namespacediagnostic__federator__mod.html#a808b726c916d9dc52e2020eacbe2be0f" title="Initialises the diagnostics action and sets up the diagnostics master definitions." alt="" coords="385,5,559,61"/>
+<area shape="rect" id="node5" href="$interfaceoperator__mod_1_1perform__activity.html#a27797047f9967a07c5d2b9afb100804e" title=" " alt="" coords="388,85,556,126"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,20,337,47"/>
+<area shape="rect" id="node4" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,20,99,47"/>
 </map>

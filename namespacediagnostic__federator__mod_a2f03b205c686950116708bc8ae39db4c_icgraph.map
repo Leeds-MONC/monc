@@ -1,6 +1,7 @@
 <map id="diagnostic_federator_mod::add_required_fields_if_needed" name="diagnostic_federator_mod::add_required_fields_if_needed">
-<area shape="rect" id="node1" title="Adds the required fields of an activity to the overall required fields which are cloned for each new ..." alt="" coords="680,5,851,61"/>
-<area shape="rect" id="node2" href="$namespacediagnostic__federator__mod.html#abfa8e7bd16249cdacd8c1c0bd904f2b2" title="Based upon the IO configuration this will define the diagnostics structure. It is done once at initia..." alt="" coords="465,13,632,54"/>
-<area shape="rect" id="node3" href="$namespacediagnostic__federator__mod.html#a808b726c916d9dc52e2020eacbe2be0f" title="Initialises the diagnostics action and sets up the diagnostics master definitions." alt="" coords="244,5,417,61"/>
-<area shape="rect" id="node4" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+<area shape="rect" id="node1" title="Adds the required fields of an activity to the overall required fields which are cloned for each new ..." alt="" coords="821,5,992,61"/>
+<area shape="rect" id="node2" href="$namespacediagnostic__federator__mod.html#abfa8e7bd16249cdacd8c1c0bd904f2b2" title="Based upon the IO configuration this will define the diagnostics structure. It is done once at initia..." alt="" coords="607,13,773,54"/>
+<area shape="rect" id="node3" href="$namespacediagnostic__federator__mod.html#a808b726c916d9dc52e2020eacbe2be0f" title="Initialises the diagnostics action and sets up the diagnostics master definitions." alt="" coords="385,5,559,61"/>
+<area shape="rect" id="node4" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,20,337,47"/>
+<area shape="rect" id="node5" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,20,99,47"/>
 </map>

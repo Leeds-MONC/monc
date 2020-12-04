@@ -111,17 +111,7 @@ Functions/Subroutines</h2></td></tr>
 <div class="line"><a name="l00022"></a><span class="lineno">   22</span>&#160;    <span class="keywordtype">class</span>(*), <span class="keywordtype">pointer</span> :: raw_data</div>
 <div class="line"><a name="l00023"></a><span class="lineno">   23</span>&#160;    <span class="keyword">allocate</span>(raw_data, source=single_description)</div>
 <div class="line"><a name="l00024"></a><span class="lineno">   24</span>&#160;    <span class="keyword">call </span>c_add(component_descriptions, raw_data)</div>
-</div><!-- fragment --><div class="dynheader">
-Here is the caller graph for this function:</div>
-<div class="dyncontent">
-<div class="center"><img src="namespacetest__monc__mod_a90a4ca79028da29658056db6c181c54d_icgraph.png" border="0" usemap="#anamespacetest__monc__mod_a90a4ca79028da29658056db6c181c54d_icgraph" alt=""/></div>
-<map name="namespacetest__monc__mod_a90a4ca79028da29658056db6c181c54d_icgraph" id="anamespacetest__monc__mod_a90a4ca79028da29658056db6c181c54d_icgraph">
-<area shape="rect" title=" " alt="" coords="392,5,535,47"/>
-<area shape="rect" href="namespacetest__monc__mod.html#aff7fde9554a678aa36495a32e189f4c9" title=" " alt="" coords="176,5,344,47"/>
-<area shape="rect" href="test__monc_8F90.html#a4a1c75fa47435dd0a9a6afd7068428a2" title=" " alt="" coords="5,13,128,39"/>
-</map>
-</div>
-
+</div><!-- fragment -->
 </div>
 </div>
 <a id="aff7fde9554a678aa36495a32e189f4c9"></a>
@@ -144,7 +134,7 @@ Here is the caller graph for this function:</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;    registered_components = get_all_registered_components()</div>
 <div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;    <span class="keyword">call </span>assert_equals(0,c_size(registered_components),<span class="stringliteral">&quot;Test there are not components in the registry&quot;</span>)</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160;    <span class="comment">! add the component to the database</span></div>
-<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keyword">call </span>add_component(component_descriptions, fftsolver_get_descriptor())</div>
+<div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160;    <span class="keyword">call </span><a class="code" href="monc__driver_8F90.html#a63b6f8624ab029ef1edb7fcbc36b9a24">add_component</a>(component_descriptions, fftsolver_get_descriptor())</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;    <span class="keyword">call </span>fill_registry_with_components(current_state%options_database, component_descriptions)</div>
 <div class="line"><a name="l00049"></a><span class="lineno">   49</span>&#160;    </div>
 <div class="line"><a name="l00050"></a><span class="lineno">   50</span>&#160;    registered_components = get_all_registered_components()</div>
@@ -155,7 +145,7 @@ Here is the call graph for this function:</div>
 <div class="center"><img src="namespacetest__monc__mod_aff7fde9554a678aa36495a32e189f4c9_cgraph.png" border="0" usemap="#anamespacetest__monc__mod_aff7fde9554a678aa36495a32e189f4c9_cgraph" alt=""/></div>
 <map name="namespacetest__monc__mod_aff7fde9554a678aa36495a32e189f4c9_cgraph" id="anamespacetest__monc__mod_aff7fde9554a678aa36495a32e189f4c9_cgraph">
 <area shape="rect" title=" " alt="" coords="5,376,173,417"/>
-<area shape="rect" href="namespacetest__monc__mod.html#a90a4ca79028da29658056db6c181c54d" title=" " alt="" coords="232,217,375,259"/>
+<area shape="rect" href="monc__driver_8F90.html#a63b6f8624ab029ef1edb7fcbc36b9a24" title="Called by each component to add itself to the registration list_type." alt="" coords="246,231,361,258"/>
 <area shape="rect" href="namespacefftsolver__mod.html#ad219c2d25fc8a8f9353c00f610f37c4b" title="Descriptor of this component for registration." alt="" coords="227,283,379,324"/>
 <area shape="rect" href="namespacemonc__mod.html#a2b3f09b5a2a45e4c853636e7d0cae14e" title="Registers each supplied component description." alt="" coords="227,408,380,449"/>
 <area shape="rect" href="namespaceregistry__mod.html#a58788c9a6b30acd6db1253eee3319899" title="Returns a brief summary of all registered components." alt="" coords="221,473,385,515"/>
@@ -271,6 +261,7 @@ Here is the caller graph for this function:</div>
 </div>
 </div>
 </div><!-- contents -->
+<div class="ttc" id="amonc__driver_8F90_html_a63b6f8624ab029ef1edb7fcbc36b9a24"><div class="ttname"><a href="monc__driver_8F90.html#a63b6f8624ab029ef1edb7fcbc36b9a24">add_component</a></div><div class="ttdeci">subroutine add_component(component_descriptions, single_description)</div><div class="ttdoc">Called by each component to add itself to the registration list_type.</div><div class="ttdef"><b>Definition:</b> <a href="monc__driver_8F90_source.html#l00038">monc_driver.F90:39</a></div></div>
 <div class="ttc" id="anamespaceoptionsdatabase__mod_html_ab054641ac0fa0287adb3c461987c4f0b"><div class="ttname"><a href="namespaceoptionsdatabase__mod.html#ab054641ac0fa0287adb3c461987c4f0b">optionsdatabase_mod::options_get_real</a></div><div class="ttdeci">real(kind=default_precision) function, public options_get_real(options_database, key, index)</div><div class="ttdoc">Retrieves a real value from the database that matches the provided key.</div><div class="ttdef"><b>Definition:</b> <a href="optionsdatabase_8F90_source.html#l00090">optionsdatabase.F90:91</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>

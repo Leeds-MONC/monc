@@ -1,9 +1,10 @@
 <map id="inter_io_specifics_mod::register_inter_io_communication" name="inter_io_specifics_mod::register_inter_io_communication">
-<area shape="rect" id="node1" title="Registers an inter IO communication operation." alt="" coords="1060,45,1195,101"/>
-<area shape="rect" id="node2" href="$namespacebroadcast__inter__io__mod.html#a75700a7e7429e95b4233d0e068c8aafb" title="Initialises the broadcast inter IO functionality." alt="" coords="871,5,1012,61"/>
-<area shape="rect" id="node7" href="$namespacereduction__inter__io__mod.html#a7169f0a03e60e46122e71b490e1905eb" title="Initialises the reduction action." alt="" coords="873,85,1010,141"/>
-<area shape="rect" id="node3" href="$namespaceallreduction__inter__io__mod.html#afa84e1c95ac2cd88f9220f5bde57087d" title="Initialises the all reduction inter IO functionality." alt="" coords="656,37,823,93"/>
-<area shape="rect" id="node5" href="$namespacediagnostic__federator__mod.html#a808b726c916d9dc52e2020eacbe2be0f" title="Initialises the diagnostics action and sets up the diagnostics master definitions." alt="" coords="244,31,417,87"/>
-<area shape="rect" id="node4" href="$namespaceglobal__callback__inter__io__mod.html#a112cd288476ab34b687759a6124b912c" title="Initialises the global callback." alt="" coords="465,63,608,119"/>
-<area shape="rect" id="node6" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,45,196,72"/>
+<area shape="rect" id="node1" title="Registers an inter IO communication operation." alt="" coords="1201,45,1336,101"/>
+<area shape="rect" id="node2" href="$namespacebroadcast__inter__io__mod.html#a75700a7e7429e95b4233d0e068c8aafb" title="Initialises the broadcast inter IO functionality." alt="" coords="1012,5,1153,61"/>
+<area shape="rect" id="node8" href="$namespacereduction__inter__io__mod.html#a7169f0a03e60e46122e71b490e1905eb" title="Initialises the reduction action." alt="" coords="1014,85,1151,141"/>
+<area shape="rect" id="node3" href="$namespaceallreduction__inter__io__mod.html#afa84e1c95ac2cd88f9220f5bde57087d" title="Initialises the all reduction inter IO functionality." alt="" coords="797,37,964,93"/>
+<area shape="rect" id="node5" href="$namespacediagnostic__federator__mod.html#a808b726c916d9dc52e2020eacbe2be0f" title="Initialises the diagnostics action and sets up the diagnostics master definitions." alt="" coords="385,31,559,87"/>
+<area shape="rect" id="node4" href="$namespaceglobal__callback__inter__io__mod.html#a112cd288476ab34b687759a6124b912c" title="Initialises the global callback." alt="" coords="607,63,749,119"/>
+<area shape="rect" id="node6" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,45,337,72"/>
+<area shape="rect" id="node7" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,45,99,72"/>
 </map>

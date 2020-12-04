@@ -1,7 +1,8 @@
 <map id="logging_mod::log_set_logging_level" name="logging_mod::log_set_logging_level">
-<area shape="rect" id="node1" title="Sets the logging level, messages with less priority will be ignored." alt="" coords="428,46,571,87"/>
-<area shape="rect" id="node2" href="$namespacemonc__mod.html#aa2abab500db49cd9c95e41632531a40f" title="Main core entry point to bootstrap running the model." alt="" coords="224,13,380,54"/>
-<area shape="rect" id="node4" href="$namespacetest__logging__mod.html#a9c8bdbcd98ec1d7d2cfe2ffc0079789a" title=" " alt="" coords="226,78,378,119"/>
+<area shape="rect" id="node1" title="Sets the logging level, messages with less priority will be ignored." alt="" coords="428,103,571,145"/>
+<area shape="rect" id="node2" href="$namespacemonc__mod.html#aa2abab500db49cd9c95e41632531a40f" title="Main core entry point to bootstrap running the model." alt="" coords="224,70,380,111"/>
+<area shape="rect" id="node5" href="$namespacetest__logging__mod.html#a9c8bdbcd98ec1d7d2cfe2ffc0079789a" title=" " alt="" coords="226,135,378,177"/>
 <area shape="rect" id="node3" href="$interfacemonc__mod_1_1io__server__run__procedure.html#a4a7a1c54866c50bf460f178dadc2b073" title=" " alt="" coords="5,5,176,61"/>
-<area shape="rect" id="node5" href="$test__logging_8F90.html#adcfa5ff05026e115173f7966fc9559a7" title=" " alt="" coords="9,85,172,112"/>
+<area shape="rect" id="node4" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="44,85,137,112"/>
+<area shape="rect" id="node6" href="$test__logging_8F90.html#adcfa5ff05026e115173f7966fc9559a7" title=" " alt="" coords="9,143,172,169"/>
 </map>

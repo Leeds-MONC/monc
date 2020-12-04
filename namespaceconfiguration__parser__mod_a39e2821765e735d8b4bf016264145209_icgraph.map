@@ -1,9 +1,10 @@
 <map id="configuration_parser_mod::get_field_type_from_attribute" name="configuration_parser_mod::get_field_type_from_attribute">
-<area shape="rect" id="node1" title=" " alt="" coords="916,34,1055,90"/>
-<area shape="rect" id="node2" href="$namespaceconfiguration__parser__mod.html#a2234fe8f7fbf8c19630cd28ae07e1e90" title="Defines a new data handling rule." alt="" coords="707,5,867,47"/>
-<area shape="rect" id="node7" href="$namespaceconfiguration__parser__mod.html#a9cefc43ea8b95e104aed2bd2f91181b9" title="Process XML into a field description by identifying the attributes of the field and storing these in ..." alt="" coords="707,70,868,126"/>
-<area shape="rect" id="node3" href="$namespaceconfiguration__parser__mod.html#a859d85a92494d30909ef8e4f248fac26" title="XML element start (opening) call back. This handles most of the configuration parsing." alt="" coords="464,41,659,83"/>
-<area shape="rect" id="node4" href="$namespaceconfiguration__parser__mod.html#a8c234c5373b5a6919483d973a46642e9" title="This will parse an XML string into the IO configuration." alt="" coords="244,41,416,83"/>
-<area shape="rect" id="node5" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,23,196,50"/>
-<area shape="rect" id="node6" href="$iodriver_8F90.html#aa6d8de9b01bae8b1a6eaf1aaa1afd688" title="Entry point for the IO server when run as a separate executable. This is currently used as a driver f..." alt="" coords="69,74,133,101"/>
+<area shape="rect" id="node1" title=" " alt="" coords="1057,34,1196,90"/>
+<area shape="rect" id="node2" href="$namespaceconfiguration__parser__mod.html#a2234fe8f7fbf8c19630cd28ae07e1e90" title="Defines a new data handling rule." alt="" coords="849,5,1009,47"/>
+<area shape="rect" id="node8" href="$namespaceconfiguration__parser__mod.html#a9cefc43ea8b95e104aed2bd2f91181b9" title="Process XML into a field description by identifying the attributes of the field and storing these in ..." alt="" coords="848,70,1009,126"/>
+<area shape="rect" id="node3" href="$namespaceconfiguration__parser__mod.html#a859d85a92494d30909ef8e4f248fac26" title="XML element start (opening) call back. This handles most of the configuration parsing." alt="" coords="605,41,800,83"/>
+<area shape="rect" id="node4" href="$namespaceconfiguration__parser__mod.html#a8c234c5373b5a6919483d973a46642e9" title="This will parse an XML string into the IO configuration." alt="" coords="385,41,557,83"/>
+<area shape="rect" id="node5" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,23,337,50"/>
+<area shape="rect" id="node7" href="$iodriver_8F90.html#aa6d8de9b01bae8b1a6eaf1aaa1afd688" title="Entry point for the IO server when run as a separate executable. This is currently used as a driver f..." alt="" coords="210,74,274,101"/>
+<area shape="rect" id="node6" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,23,99,50"/>
 </map>

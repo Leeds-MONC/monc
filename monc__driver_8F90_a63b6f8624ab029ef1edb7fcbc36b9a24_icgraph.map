@@ -1,5 +1,5 @@
-<map id="test_monc_mod::add_component" name="test_monc_mod::add_component">
-<area shape="rect" id="node1" title=" " alt="" coords="392,5,535,47"/>
+<map id="add_component" name="add_component">
+<area shape="rect" id="node1" title="Called by each component to add itself to the registration list_type." alt="" coords="392,13,507,39"/>
 <area shape="rect" id="node2" href="$namespacetest__monc__mod.html#aff7fde9554a678aa36495a32e189f4c9" title=" " alt="" coords="176,5,344,47"/>
 <area shape="rect" id="node3" href="$test__monc_8F90.html#a4a1c75fa47435dd0a9a6afd7068428a2" title=" " alt="" coords="5,13,128,39"/>
 </map>

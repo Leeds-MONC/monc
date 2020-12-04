@@ -1,4 +1,5 @@
 <map id="writer_federator_mod::initialise_writer_federator" name="writer_federator_mod::initialise_writer_federator">
-<area shape="rect" id="node1" title="Initialises the write federator and configures it based on the user configuration...." alt="" coords="244,5,416,47"/>
-<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,13,196,39"/>
+<area shape="rect" id="node1" title="Initialises the write federator and configures it based on the user configuration...." alt="" coords="385,5,557,47"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,13,337,39"/>
+<area shape="rect" id="node3" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,13,99,39"/>
 </map>

@@ -1,14 +1,15 @@
 <map id="reduction_inter_io_mod::find_or_add_reduction_progress" name="reduction_inter_io_mod::find_or_add_reduction_progress">
-<area shape="rect" id="node1" title="Finds or adds a specific reduction progress based upon the timestep and reduction operator...." alt="" coords="1524,140,1711,196"/>
-<area shape="rect" id="node2" href="$namespacereduction__inter__io__mod.html#a6b0356e066bb9478654f150c322e9f01" title="Handles the data received from another IO server, locates the correct reduction progress,..." alt="" coords="1293,100,1476,156"/>
-<area shape="rect" id="node9" href="$namespacereduction__inter__io__mod.html#afbd4c0a62bdef47841ccb4731a0c96e8" title="Actually handles the processing for this data wrt the vertical reduction." alt="" coords="1317,180,1453,236"/>
-<area shape="rect" id="node3" href="$namespacereduction__inter__io__mod.html#a85941bfa01b3ffc89f04d2ace55a7f4d" title="Handles the receiving of data from some other IO server. This is issued call back style within a thre..." alt="" coords="1083,100,1245,156"/>
-<area shape="rect" id="node4" href="$namespacereduction__inter__io__mod.html#a7169f0a03e60e46122e71b490e1905eb" title="Initialises the reduction action." alt="" coords="885,100,1022,156"/>
-<area shape="rect" id="node5" href="$namespaceallreduction__inter__io__mod.html#afa84e1c95ac2cd88f9220f5bde57087d" title="Initialises the all reduction inter IO functionality." alt="" coords="657,56,824,112"/>
-<area shape="rect" id="node7" href="$namespacediagnostic__federator__mod.html#a808b726c916d9dc52e2020eacbe2be0f" title="Initialises the diagnostics action and sets up the diagnostics master definitions." alt="" coords="244,83,417,139"/>
-<area shape="rect" id="node6" href="$namespaceglobal__callback__inter__io__mod.html#a112cd288476ab34b687759a6124b912c" title="Initialises the global callback." alt="" coords="466,5,609,61"/>
-<area shape="rect" id="node8" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,141,196,168"/>
-<area shape="rect" id="node10" href="$namespaceallreduction__inter__io__mod.html#afb8d154fff5a46e854337bb4f0c2cfd3" title="Performs the all reduction inter IO reduction." alt="" coords="1087,180,1241,236"/>
-<area shape="rect" id="node11" href="$namespaceglobal__callback__inter__io__mod.html#ad475780629e2db0ae4b68f3e395e418d" title="Performs a global callback." alt="" coords="872,180,1035,236"/>
-<area shape="rect" id="node12" href="$namespaceio__server__mod.html#ada1b8581f80d696dc8aa636405c73aea" title="Awaits a command or shutdown from MONC processes and other IO servers." alt="" coords="465,187,609,229"/>
+<area shape="rect" id="node1" title="Finds or adds a specific reduction progress based upon the timestep and reduction operator...." alt="" coords="1665,140,1852,196"/>
+<area shape="rect" id="node2" href="$namespacereduction__inter__io__mod.html#a6b0356e066bb9478654f150c322e9f01" title="Handles the data received from another IO server, locates the correct reduction progress,..." alt="" coords="1435,100,1617,156"/>
+<area shape="rect" id="node10" href="$namespacereduction__inter__io__mod.html#afbd4c0a62bdef47841ccb4731a0c96e8" title="Actually handles the processing for this data wrt the vertical reduction." alt="" coords="1458,180,1594,236"/>
+<area shape="rect" id="node3" href="$namespacereduction__inter__io__mod.html#a85941bfa01b3ffc89f04d2ace55a7f4d" title="Handles the receiving of data from some other IO server. This is issued call back style within a thre..." alt="" coords="1224,100,1387,156"/>
+<area shape="rect" id="node4" href="$namespacereduction__inter__io__mod.html#a7169f0a03e60e46122e71b490e1905eb" title="Initialises the reduction action." alt="" coords="1026,100,1163,156"/>
+<area shape="rect" id="node5" href="$namespaceallreduction__inter__io__mod.html#afa84e1c95ac2cd88f9220f5bde57087d" title="Initialises the all reduction inter IO functionality." alt="" coords="799,56,965,112"/>
+<area shape="rect" id="node7" href="$namespacediagnostic__federator__mod.html#a808b726c916d9dc52e2020eacbe2be0f" title="Initialises the diagnostics action and sets up the diagnostics master definitions." alt="" coords="385,83,559,139"/>
+<area shape="rect" id="node6" href="$namespaceglobal__callback__inter__io__mod.html#a112cd288476ab34b687759a6124b912c" title="Initialises the global callback." alt="" coords="607,5,750,61"/>
+<area shape="rect" id="node8" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,141,337,168"/>
+<area shape="rect" id="node9" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,141,99,168"/>
+<area shape="rect" id="node11" href="$namespaceallreduction__inter__io__mod.html#afb8d154fff5a46e854337bb4f0c2cfd3" title="Performs the all reduction inter IO reduction." alt="" coords="1229,180,1382,236"/>
+<area shape="rect" id="node12" href="$namespaceglobal__callback__inter__io__mod.html#ad475780629e2db0ae4b68f3e395e418d" title="Performs a global callback." alt="" coords="1013,180,1176,236"/>
+<area shape="rect" id="node13" href="$namespaceio__server__mod.html#ada1b8581f80d696dc8aa636405c73aea" title="Awaits a command or shutdown from MONC processes and other IO servers." alt="" coords="607,187,751,229"/>
 </map>

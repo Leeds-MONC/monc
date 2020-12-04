@@ -1,5 +1,6 @@
 <map id="datadefn_mod::init_data_defn" name="datadefn_mod::init_data_defn">
-<area shape="rect" id="node1" title="Will initialise the data definitions. This should be called as soon as MONC starts up." alt="" coords="428,13,555,54"/>
-<area shape="rect" id="node2" href="$namespacemonc__mod.html#aa2abab500db49cd9c95e41632531a40f" title="Main core entry point to bootstrap running the model." alt="" coords="224,13,380,54"/>
+<area shape="rect" id="node1" title="Will initialise the data definitions. This should be called as soon as MONC starts up." alt="" coords="428,46,555,87"/>
+<area shape="rect" id="node2" href="$namespacemonc__mod.html#aa2abab500db49cd9c95e41632531a40f" title="Main core entry point to bootstrap running the model." alt="" coords="224,46,380,87"/>
 <area shape="rect" id="node3" href="$interfacemonc__mod_1_1io__server__run__procedure.html#a4a7a1c54866c50bf460f178dadc2b073" title=" " alt="" coords="5,5,176,61"/>
+<area shape="rect" id="node4" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="44,85,137,112"/>
 </map>

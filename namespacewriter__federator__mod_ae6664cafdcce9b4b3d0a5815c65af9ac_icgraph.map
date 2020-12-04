@@ -1,7 +1,8 @@
 <map id="writer_federator_mod::add_specific_field_to_writer_entry" name="writer_federator_mod::add_specific_field_to_writer_entry">
-<area shape="rect" id="node1" title="Adds a specific field and its information to a writer entry." alt="" coords="875,39,1019,95"/>
-<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a90abda607746ac48c9b1df555c59895c" title="Adds a field to the writer entry, this will split the Q fields. However at initialisation we don&#39;t kn..." alt="" coords="656,46,827,87"/>
-<area shape="rect" id="node3" href="$namespacewriter__federator__mod.html#afa4a1b4f58fe72715645615b4f1ee9d8" title="Adds a group of fields to a writer entry, groups are expanded out into individual fields,..." alt="" coords="464,5,608,61"/>
-<area shape="rect" id="node4" href="$namespacewriter__federator__mod.html#a7b31bb8f9d0fb8c0768252e819b20985" title="Initialises the write federator and configures it based on the user configuration...." alt="" coords="244,46,416,87"/>
-<area shape="rect" id="node5" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,53,196,80"/>
+<area shape="rect" id="node1" title="Adds a specific field and its information to a writer entry." alt="" coords="1016,39,1160,95"/>
+<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a90abda607746ac48c9b1df555c59895c" title="Adds a field to the writer entry, this will split the Q fields. However at initialisation we don&#39;t kn..." alt="" coords="797,46,968,87"/>
+<area shape="rect" id="node3" href="$namespacewriter__federator__mod.html#afa4a1b4f58fe72715645615b4f1ee9d8" title="Adds a group of fields to a writer entry, groups are expanded out into individual fields,..." alt="" coords="605,5,749,61"/>
+<area shape="rect" id="node4" href="$namespacewriter__federator__mod.html#a7b31bb8f9d0fb8c0768252e819b20985" title="Initialises the write federator and configures it based on the user configuration...." alt="" coords="385,46,557,87"/>
+<area shape="rect" id="node5" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,53,337,80"/>
+<area shape="rect" id="node6" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,53,99,80"/>
 </map>

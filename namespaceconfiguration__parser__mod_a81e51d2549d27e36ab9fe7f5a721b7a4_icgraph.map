@@ -1,4 +1,5 @@
 <map id="configuration_parser_mod::build_field_description_type_from_configuration" name="configuration_parser_mod::build_field_description_type_from_configuration">
-<area shape="rect" id="node1" title="Builds up the field definition description type from the structured definitions in the IO configurati..." alt="" coords="244,5,431,61"/>
-<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+<area shape="rect" id="node1" title="Builds up the field definition description type from the structured definitions in the IO configurati..." alt="" coords="385,5,572,61"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,20,337,47"/>
+<area shape="rect" id="node3" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,20,99,47"/>
 </map>

@@ -1,7 +1,8 @@
 <map id="writer_federator_mod::get_field_number_of_fields" name="writer_federator_mod::get_field_number_of_fields">
-<area shape="rect" id="node1" title="Retrieves the number of fields that make up this field, if it is a Q field then it will be split into..." alt="" coords="880,39,1024,95"/>
-<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a34196607f504b72b30c0d82215402d96" title="Retrieves the number of fields within a group of fields." alt="" coords="679,5,832,61"/>
-<area shape="rect" id="node3" href="$namespacewriter__federator__mod.html#a863bc95a6373f8197cc183d39f1d6d12" title="Determines the total number of fields that make up a writer entry, this is all the fields of the grou..." alt="" coords="464,39,631,95"/>
-<area shape="rect" id="node4" href="$namespacewriter__federator__mod.html#a7b31bb8f9d0fb8c0768252e819b20985" title="Initialises the write federator and configures it based on the user configuration...." alt="" coords="244,46,416,87"/>
-<area shape="rect" id="node5" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,53,196,80"/>
+<area shape="rect" id="node1" title="Retrieves the number of fields that make up this field, if it is a Q field then it will be split into..." alt="" coords="1021,39,1165,95"/>
+<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a34196607f504b72b30c0d82215402d96" title="Retrieves the number of fields within a group of fields." alt="" coords="820,5,973,61"/>
+<area shape="rect" id="node3" href="$namespacewriter__federator__mod.html#a863bc95a6373f8197cc183d39f1d6d12" title="Determines the total number of fields that make up a writer entry, this is all the fields of the grou..." alt="" coords="605,39,772,95"/>
+<area shape="rect" id="node4" href="$namespacewriter__federator__mod.html#a7b31bb8f9d0fb8c0768252e819b20985" title="Initialises the write federator and configures it based on the user configuration...." alt="" coords="385,46,557,87"/>
+<area shape="rect" id="node5" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,53,337,80"/>
+<area shape="rect" id="node6" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,53,99,80"/>
 </map>

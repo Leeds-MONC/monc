@@ -1,5 +1,6 @@
 <map id="io_server_mod::handle_deregistration_command" name="io_server_mod::handle_deregistration_command">
-<area shape="rect" id="node1" title="Deregisteres a specific MONC source process." alt="" coords="443,5,613,47"/>
-<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ab843eee74fe31492952c1c88304730d7" title="Called to handle a specific command that has been recieved." alt="" coords="244,5,395,47"/>
-<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,13,196,39"/>
+<area shape="rect" id="node1" title="Deregisteres a specific MONC source process." alt="" coords="584,5,755,47"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ab843eee74fe31492952c1c88304730d7" title="Called to handle a specific command that has been recieved." alt="" coords="385,5,536,47"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,13,337,39"/>
+<area shape="rect" id="node4" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,13,99,39"/>
 </map>

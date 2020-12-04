@@ -1,5 +1,6 @@
 <map id="io_server_mod::termination_callback" name="io_server_mod::termination_callback">
-<area shape="rect" id="node1" title="This is the termination callback which is called once all MONCs have deregistered,..." alt="" coords="436,5,613,47"/>
-<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ada1b8581f80d696dc8aa636405c73aea" title="Awaits a command or shutdown from MONC processes and other IO servers." alt="" coords="244,5,388,47"/>
-<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,13,196,39"/>
+<area shape="rect" id="node1" title="This is the termination callback which is called once all MONCs have deregistered,..." alt="" coords="577,5,755,47"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ada1b8581f80d696dc8aa636405c73aea" title="Awaits a command or shutdown from MONC processes and other IO servers." alt="" coords="385,5,529,47"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,13,337,39"/>
+<area shape="rect" id="node4" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,13,99,39"/>
 </map>

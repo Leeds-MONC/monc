@@ -1,0 +1,4 @@
+<map id="io_server_mod::io_server_run" name="io_server_mod::io_server_run">
+<area shape="rect" id="node1" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,5,337,32"/>
+<area shape="rect" id="node2" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,5,99,32"/>
+</map>

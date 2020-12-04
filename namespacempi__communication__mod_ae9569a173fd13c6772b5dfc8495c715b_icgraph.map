@@ -1,5 +1,6 @@
 <map id="mpi_communication_mod::free_mpi_type" name="mpi_communication_mod::free_mpi_type">
-<area shape="rect" id="node1" title="Frees an MPI type, used in clean up." alt="" coords="439,46,609,87"/>
-<area shape="rect" id="node2" href="$namespaceio__server__mod.html#a1067b04bf298bdec22d1c55144f3a8d5" title="Frees up the memory associated with individual registered MONCs. This is done at the end for all MONC..." alt="" coords="244,5,391,61"/>
-<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,53,196,80"/>
+<area shape="rect" id="node1" title="Frees an MPI type, used in clean up." alt="" coords="580,46,751,87"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#a1067b04bf298bdec22d1c55144f3a8d5" title="Frees up the memory associated with individual registered MONCs. This is done at the end for all MONC..." alt="" coords="385,5,532,61"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,53,337,80"/>
+<area shape="rect" id="node4" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,53,99,80"/>
 </map>

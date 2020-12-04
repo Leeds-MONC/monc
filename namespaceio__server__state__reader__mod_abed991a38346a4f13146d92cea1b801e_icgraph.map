@@ -1,5 +1,6 @@
 <map id="io_server_state_reader_mod::read_io_server_configuration" name="io_server_state_reader_mod::read_io_server_configuration">
-<area shape="rect" id="node1" title="Reads the IO server configuration, which is the XML configuration initially run with and stored in th..." alt="" coords="268,35,493,77"/>
-<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="17,5,208,32"/>
-<area shape="rect" id="node3" href="$interfaceio__server__state__reader__mod_1_1writer__field__manager__unserialise__state.html#af45885765439d168075186df796bdc07" title=" " alt="" coords="5,57,220,127"/>
+<area shape="rect" id="node1" title="Reads the IO server configuration, which is the XML configuration initially run with and stored in th..." alt="" coords="409,35,635,77"/>
+<area shape="rect" id="node2" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="159,5,349,32"/>
+<area shape="rect" id="node4" href="$interfaceio__server__state__reader__mod_1_1writer__field__manager__unserialise__state.html#af45885765439d168075186df796bdc07" title=" " alt="" coords="147,57,361,127"/>
+<area shape="rect" id="node3" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,5,99,32"/>
 </map>

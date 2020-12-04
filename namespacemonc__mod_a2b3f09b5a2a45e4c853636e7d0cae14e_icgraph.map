@@ -1,8 +1,9 @@
 <map id="monc_mod::fill_registry_with_components" name="monc_mod::fill_registry_with_components">
-<area shape="rect" id="node1" title="Registers each supplied component description." alt="" coords="644,42,797,83"/>
-<area shape="rect" id="node2" href="$namespacemonc__mod.html#ad9e8a1e5e542e0cb9d187870fe57f0f9" title="Called by MONC processes to run the MONC model." alt="" coords="437,20,587,47"/>
-<area shape="rect" id="node5" href="$namespacetest__monc__mod.html#aff7fde9554a678aa36495a32e189f4c9" title=" " alt="" coords="428,71,596,113"/>
-<area shape="rect" id="node3" href="$namespacemonc__mod.html#aa2abab500db49cd9c95e41632531a40f" title="Main core entry point to bootstrap running the model." alt="" coords="224,13,380,54"/>
+<area shape="rect" id="node1" title="Registers each supplied component description." alt="" coords="644,74,797,115"/>
+<area shape="rect" id="node2" href="$namespacemonc__mod.html#ad9e8a1e5e542e0cb9d187870fe57f0f9" title="Called by MONC processes to run the MONC model." alt="" coords="437,52,587,79"/>
+<area shape="rect" id="node6" href="$namespacetest__monc__mod.html#aff7fde9554a678aa36495a32e189f4c9" title=" " alt="" coords="428,103,596,145"/>
+<area shape="rect" id="node3" href="$namespacemonc__mod.html#aa2abab500db49cd9c95e41632531a40f" title="Main core entry point to bootstrap running the model." alt="" coords="224,45,380,86"/>
 <area shape="rect" id="node4" href="$interfacemonc__mod_1_1io__server__run__procedure.html#a4a7a1c54866c50bf460f178dadc2b073" title=" " alt="" coords="5,5,176,61"/>
-<area shape="rect" id="node6" href="$test__monc_8F90.html#a4a1c75fa47435dd0a9a6afd7068428a2" title=" " alt="" coords="241,79,363,105"/>
+<area shape="rect" id="node5" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="44,85,137,112"/>
+<area shape="rect" id="node7" href="$test__monc_8F90.html#a4a1c75fa47435dd0a9a6afd7068428a2" title=" " alt="" coords="241,111,363,137"/>
 </map>

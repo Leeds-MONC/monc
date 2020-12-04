@@ -1,5 +1,6 @@
 <map id="instantaneous_time_manipulation_mod::finalise_instantaneous_manipulation" name="instantaneous_time_manipulation_mod::finalise_instantaneous_manipulation">
-<area shape="rect" id="node1" title="Finalises the instantaneous time manipulation." alt="" coords="457,5,648,61"/>
-<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a350033966b51a20a8a69d092a20ba774" title="Finalises the write federator and the manipulations." alt="" coords="244,13,409,54"/>
-<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="5,20,196,47"/>
+<area shape="rect" id="node1" title="Finalises the instantaneous time manipulation." alt="" coords="599,5,789,61"/>
+<area shape="rect" id="node2" href="$namespacewriter__federator__mod.html#a350033966b51a20a8a69d092a20ba774" title="Finalises the write federator and the manipulations." alt="" coords="385,13,551,54"/>
+<area shape="rect" id="node3" href="$namespaceio__server__mod.html#ac818aa1985977c9887acda6315139114" title="Called to start the IO server and once this subroutine returns then it indicates that the IO server h..." alt="" coords="147,20,337,47"/>
+<area shape="rect" id="node4" href="$monc__driver_8F90.html#a38fac04eb034f0802b465898f3976e17" title="MONC program entry point which simply calls the main procedure in the MONC module." alt="" coords="5,20,99,47"/>
 </map>
