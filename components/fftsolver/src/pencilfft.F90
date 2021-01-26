@@ -370,6 +370,9 @@ contains
 
     call rearrange_data_for_sending(real_source=source_data, real_target=real_temp)    
 
+    print *, "debug send_sizes", transposition_description%send_sizes
+    print *, "debug recv_sizes", transposition_description%recv_sizes
+
     call mpi_alltoallv(real_temp, transposition_description%send_sizes, transposition_description%send_offsets, &
          PRECISION_TYPE, real_temp2, transposition_description%recv_sizes, transposition_description%recv_offsets, &
          PRECISION_TYPE, communicator, ierr)
