@@ -8,30 +8,54 @@ kid_testcase_enabled=.true.
 buoyancy_enabled=.false.
 cfltest_enabled=.false.
 coriolis_enabled=.false.
+diffusion_enabled=.false.
+diverr_enabled=.false.
 fftsolver_enabled=.false.
 iterativesolver_enabled=.false.
+mean_profiles_enabled=.true.
+psrce_enabled=.false.
+pstep_enabled=.false.
 pw_advection_enabled=.false.
-tvd_advection_enabled=.true.
-simplesetup_enabled=.true.
-smagorinsky_enabled=.false.
 lower_bc_enabled=.false.
 setfluxlook_enabled=.false.
-viscosity_enabled=.false.
-diffusion_enabled=.false.
 simplecloud_enabled=.true.
+simplesetup_enabled=.true.
+smagorinsky_enabled=.false.
+tvd_advection_enabled=.true.
+viscosity_enabled=.false.
+casim_enabled=.false.
+lateral_bcs_enabled=.true.
+iobridge_enabled=.true.
+scalar_diagnostics_enabled=.true.
+profile_diagnostics_enabled=.true.
+checkpointer_enabled=.true.
 
 # Add to initialisation
-initialisation_stage_ordering+=kid_testcase
-start_group_contents+=kid_testcase
+initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, simplecloud, casim, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iterativesolver, setfluxlook, lower_bc, physicsa, psrce, pw_advection, diffusion, set_consistent_lowbc, viscosity, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, socrates_couple, lwrad_exponential,th_advection, randomnoise, forcing, flux_budget, diagnostics_3d, profile_diagnostics, casim_profile_dgs, conditional_diagnostics_column, conditional_diagnostics_whole, pdf_analysis, subgrid_profile_diagnostics, scalar_diagnostics, lateral_bcs, petsc_solver, pstep, kid_testcase, iobridge
+start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral_bcs, setfluxlook, kid_testcase
 #finalisation_stage_ordering+=kid_testcase
 
 # Control configuration
-nn_timesteps=3000
-display_synopsis_frequency=100
+display_synopsis_frequency=10
 cfl_frequency=2
-nn_consolidation=1
-termination_time=3600.
-dtm=1.
+termination_time=3700.
+dtm=2.
+
+# IO server configuration
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
+diagnostic_file="diagnostic_files/kid_Sc.nc"
+moncs_per_io_server=11
+sampling_frequency=10
+3d_sampling_frequency=10
+mm=60.0
+mm1=60.0
+diag_write_freq=3600.0
+
+# Checkpoint configuration
+checkpoint_frequency=0
+checkpoint_file="checkpoint_files/kid_Sc.nc"
+check_walltime_frequency=1000
+walltime_limit=00:30:00
 
 # Simple setup configuration
 rhobous=1.0
@@ -40,12 +64,12 @@ surface_pressure=100000.
 surface_reference_pressure=100000.
 x_size=40
 y_size=1
-z_size=21
+z_size=53
 dxx=100
 dyy=100
-zztop=2000.0
-kgd=1,21
-hgd=0.0, 2000.0
+zztop=1300.0
+kgd=1,53
+hgd=0.0, 1300.0
 rmlmax=15.0
 enable_theta=.true.
 number_q_fields=5
@@ -63,12 +87,9 @@ type_of_surface_boundary_conditions=0
 l_init_pl_theta=.false.
 l_init_pl_rh=.false.
 
-# Checkpoint configuration
-checkpoint_frequency=100
-checkpoint_file="kid_testcase.nc"
-checkpoint_unique_per_dump=.true.
-
 advection_flow_fields=pw
+advection_theta_field=tvd
+advection_q_fields=tvd
 
 # Kinematic options
 case_number=3

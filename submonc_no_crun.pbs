@@ -26,7 +26,7 @@ export PBS_O_WORKDIR=$(readlink -f $PBS_O_WORKDIR)
 cd $PBS_O_WORKDIR
 
 # Set the number of threads to 1
-#   This prevents any system libraries from automatically
+#   This prevents any system libraries from automatically  
 #   using threading.
 export OMP_NUM_THREADS=1
 

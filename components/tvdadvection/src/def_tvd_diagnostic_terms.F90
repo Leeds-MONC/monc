@@ -17,6 +17,7 @@ module def_tvd_diagnostic_terms
      real(kind=DEFAULT_PRECISION), dimension(:,:,:), allocatable :: adv_th_dgs
      
      real(kind=DEFAULT_PRECISION), dimension(:,:,:,:), allocatable :: adv_q_dgs
+     real(kind=DEFAULT_PRECISION), dimension(:,:,:,:), allocatable :: adv_tracer_dgs
 
   end type str_tvd_diagnostic_terms
 
@@ -52,6 +53,11 @@ contains
        tvd_dgs_terms%adv_q_dgs(:,:,:,:)= 0.0
     endif
 
+    if (current_state%n_tracers > 0) then  
+       allocate(tvd_dgs_terms%adv_tracer_dgs(k_top, y_local, x_local, current_state%n_tracers))
+       tvd_dgs_terms%adv_tracer_dgs(:,:,:,:)= 0.0
+    endif
+
   end subroutine allocate_tvd_diagnostic_terms
 
   subroutine deallocate_tvd_diagnostic_terms(current_state, tvd_dgs_terms)
@@ -65,6 +71,10 @@ contains
     
     if (current_state%number_q_fields > 0) then  
        deallocate(tvd_dgs_terms%adv_q_dgs) 
+    endif
+
+    if (current_state%n_tracers > 0) then  
+       deallocate(tvd_dgs_terms%adv_tracer_dgs) 
     endif
 
   end subroutine deallocate_tvd_diagnostic_terms

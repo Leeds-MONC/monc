@@ -13,6 +13,7 @@ module writer_federator_mod
        perform_timeaveraged_time_manipulation, is_time_averaged_time_manipulation_ready_to_write
   use collections_mod, only : queue_type, list_type, map_type, hashmap_type, hashset_type, iterator_type, mapentry_type, &
        c_contains, c_size, c_get_string, c_get_generic, c_get_integer, c_add_string, c_free, c_put_real, c_put_generic, &
+       c_get_logical, c_put_logical, &
        c_key_at, c_is_empty, c_remove, c_push_generic, c_pop_generic, c_real_at, c_get_real, c_get_iterator, &
        c_has_next, c_next_mapentry, c_next_string, c_get_real, c_put_integer, c_add_generic, c_add_string
   use conversions_mod, only : conv_to_string, conv_single_real_to_double, conv_to_integer, conv_to_real
@@ -22,9 +23,12 @@ module writer_federator_mod
   use threadpool_mod, only : check_thread_status
   use logging_mod, only : LOG_DEBUG, LOG_ERROR, LOG_WARN, log_log, log_master_log, log_get_logging_level, log_is_master
   use writer_types_mod, only : writer_type, writer_field_type, write_field_collective_values_type, pending_write_type, &
-       collective_q_field_representation_type, write_field_collective_descriptor_type, write_field_collective_monc_info_type
+       collective_q_field_representation_type, collective_tracer_representation_type, &
+       write_field_collective_descriptor_type, write_field_collective_monc_info_type, &
+       netcdf_diagnostics_timeseries_type, netcdf_diagnostics_type
   use netcdf_filetype_writer_mod, only : initialise_netcdf_filetype, finalise_netcdf_filetype, define_netcdf_file, &
-       write_variable, close_netcdf_file, store_io_server_state, get_writer_entry_from_netcdf
+       write_variable, close_netcdf_file, store_io_server_state, get_writer_entry_from_netcdf, &
+       get_file_state, get_specific_timeseries_dimension
   use global_callback_inter_io_mod, only : perform_global_callback
   use data_utils_mod, only : get_scalar_integer_from_monc, get_scalar_real_from_monc, get_scalar_logical_from_monc, &
        is_field_present
@@ -32,6 +36,7 @@ module writer_federator_mod
   use io_server_state_writer_mod, only : is_io_server_state_writer_ready
   use io_server_state_reader_mod, only : reactivate_writer_federator_state
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
+  use optionsdatabase_mod, only : options_get_logical, options_get_integer
   use mpi, only : MPI_INT, MPI_MAX
   use mpi_communication_mod, only : lock_mpi, unlock_mpi
   implicit none
@@ -41,37 +46,48 @@ module writer_federator_mod
 #endif
 
   type(writer_type), volatile, dimension(:), allocatable :: writer_entries
-  type(hashset_type), volatile :: used_field_names, q_field_names
-  type(hashmap_type), volatile :: time_points, q_field_splits, collective_q_field_dims
+  type(hashset_type), volatile :: used_field_names, q_field_names, tracer_names
+  type(hashmap_type), volatile :: time_points, q_field_splits, collective_q_field_dims, tracer_splits, collective_tracer_dims
 
   integer, volatile :: time_points_rwlock, collective_contiguous_initialisation_mutex, currently_writing_mutex
   logical, volatile :: currently_writing
 
+  logical :: time_basis, force_output_on_interval
+
   public initialise_writer_federator, finalise_writer_federator, provide_ordered_field_to_writer_federator, &
-       check_writer_for_trigger, issue_actual_write, is_field_used_by_writer_federator, inform_writer_federator_fields_present, &
-       inform_writer_federator_time_point, provide_q_field_names_to_writer_federator, is_field_split_on_q
+       check_writer_for_trigger, is_field_used_by_writer_federator, inform_writer_federator_fields_present, &
+       inform_writer_federator_time_point, provide_q_field_names_to_writer_federator, is_field_split_on_q, &
+       provide_tracer_names_to_writer_federator, is_field_split_on_tracer, any_pending
 contains
 
   !> Initialises the write federator and configures it based on the user configuration. Also initialises the time manipulations
   !! @param io_configuration The IO server configuration
-  subroutine initialise_writer_federator(io_configuration, diagnostic_generation_frequency, continuation_run)
+  subroutine initialise_writer_federator(io_configuration, diagnostic_generation_frequency, continuation_run, &
+                                         reconfig_initial_time, sample_output_pairs)
     type(io_configuration_type), intent(inout) :: io_configuration
     type(hashmap_type), intent(inout) :: diagnostic_generation_frequency
     logical, intent(in) :: continuation_run
+    real(kind=DEFAULT_PRECISION), intent(in) :: reconfig_initial_time
+    integer, dimension(:,:), allocatable, intent(out) :: sample_output_pairs
 
-    integer :: i, j, number_contents, current_field_index
+    integer :: i, j, number_contents, current_field_index, total_number, sj, nfound
+    integer, dimension(:,:), allocatable :: value_pairs, out_value_pairs
+    logical :: match
     type(hashset_type) :: writer_field_names, duplicate_field_names
     
+    time_basis = options_get_logical(io_configuration%options_database,"time_basis")
+    force_output_on_interval = options_get_logical(io_configuration%options_database,"force_output_on_interval")
     call check_thread_status(forthread_rwlock_init(time_points_rwlock, -1))
     call check_thread_status(forthread_mutex_init(collective_contiguous_initialisation_mutex, -1))
     call check_thread_status(forthread_mutex_init(currently_writing_mutex, -1))    
 
     currently_writing=.false.
 
-    call init_time_averaged_manipulation()
-    call init_instantaneous_manipulation()
+    call init_time_averaged_manipulation(reconfig_initial_time)
+    call init_instantaneous_manipulation(reconfig_initial_time)
     call initialise_netcdf_filetype()
-    
+ 
+    total_number = 0 
     allocate(writer_entries(io_configuration%number_of_writers))    
     do i=1, io_configuration%number_of_writers
       current_field_index=0
@@ -80,6 +96,7 @@ contains
       writer_entries(i)%filename=io_configuration%file_writers(i)%file_name
       writer_entries(i)%title=io_configuration%file_writers(i)%title
       writer_entries(i)%write_on_terminate=io_configuration%file_writers(i)%write_on_terminate
+      writer_entries(i)%write_precision=io_configuration%file_writers(i)%write_precision
       writer_entries(i)%include_in_io_state_write=io_configuration%file_writers(i)%include_in_io_state_write
       call check_thread_status(forthread_mutex_init(writer_entries(i)%trigger_and_write_mutex, -1))
       call check_thread_status(forthread_mutex_init(writer_entries(i)%num_fields_to_write_mutex, -1))
@@ -89,12 +106,17 @@ contains
         writer_entries(i)%write_timestep_frequency=0
         writer_entries(i)%write_time_frequency=io_configuration%file_writers(i)%write_time_frequency
       else
-        writer_entries(i)%write_time_frequency=0
+        writer_entries(i)%write_time_frequency=0.0
         writer_entries(i)%write_timestep_frequency=io_configuration%file_writers(i)%write_timestep_frequency
       end if
-      writer_entries(i)%previous_write_time=0
-      writer_entries(i)%defined_write_time=io_configuration%file_writers(i)%write_time_frequency
-      writer_entries(i)%latest_pending_write_time=0
+      if (writer_entries(i)%write_time_frequency .gt. 0 ) then
+        writer_entries(i)%previous_write_time = real(reconfig_initial_time) &
+                                          - mod(real(reconfig_initial_time),writer_entries(i)%write_time_frequency)
+      else 
+        writer_entries(i)%previous_write_time = 0.0
+      end if
+      writer_entries(i)%defined_write_time = writer_entries(i)%previous_write_time + writer_entries(i)%write_time_frequency
+      writer_entries(i)%latest_pending_write_time = writer_entries(i)%previous_write_time
       writer_entries(i)%latest_pending_write_timestep=0      
       writer_entries(i)%contains_io_status_dump=.false.
       do j=1, number_contents
@@ -112,11 +134,49 @@ contains
       if (.not. c_is_empty(duplicate_field_names)) call handle_duplicate_field_names(writer_entries(i), duplicate_field_names)
       call c_free(writer_field_names)
       call c_free(duplicate_field_names)
+      total_number = total_number + current_field_index
     end do
     if (continuation_run) then
       call reactivate_writer_federator_state(io_configuration, writer_entries, time_points)
     end if    
+
+    ! Collect sampling intervals and output intervals from all fields
+    allocate(value_pairs(total_number,2))
+    sj=1
+    do i=1, io_configuration%number_of_writers
+      number_contents=size(writer_entries(i)%contents(:)%timestep_frequency)
+      value_pairs(sj:sj+number_contents-1,1) = writer_entries(i)%contents(:)%timestep_frequency
+      value_pairs(sj:sj+number_contents-1,2) = nint(writer_entries(i)%contents(:)%output_frequency)
+      sj=sj+number_contents
+    end do
+
+    ! Save the unique sample_output_pairs
+    allocate(out_value_pairs(total_number,2))
+    out_value_pairs(:,:) = 0
+    do i=1,total_number
+     nfound = count(out_value_pairs(:,1) .gt. 0)
+      if (any(value_pairs(i,:) .eq. 0)) cycle
+      if (nfound .eq. 0) then
+        out_value_pairs(1,:) = value_pairs(i,:)
+      else
+        match=.false.
+        do sj=1,nfound
+          if (all(out_value_pairs(sj,:) .eq. value_pairs(i,:))) then
+            match = .true.
+            exit ! break test if already found
+          end if
+        end do
+        if (.not. match) then
+          out_value_pairs(nfound+1,:) = value_pairs(i,:)
+        end if
+      end if
+    end do
+    allocate(sample_output_pairs(count(out_value_pairs(:,1) .gt. 0),2))
+    sample_output_pairs(:,:) = out_value_pairs(1:count(out_value_pairs(:,1) .gt. 0),:)
+    deallocate(value_pairs,out_value_pairs)
+
   end subroutine initialise_writer_federator
+
 
   !> Finalises the write federator and the manipulations
   subroutine finalise_writer_federator()
@@ -128,6 +188,7 @@ contains
     call finalise_netcdf_filetype()
   end subroutine finalise_writer_federator
 
+  !> Registers receipt of data for a new time_point
   subroutine inform_writer_federator_time_point(io_configuration, source, data_id, data_dump)
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: source, data_id
@@ -136,11 +197,18 @@ contains
     real(kind=DEFAULT_PRECISION) :: time
     integer :: timestep
     character(len=STRING_LENGTH) :: timestep_key
+    logical :: terminated
 
     if (is_field_present(io_configuration, source, data_id, "time") .and. &
          is_field_present(io_configuration, source, data_id, "timestep")) then      
       time=get_scalar_real_from_monc(io_configuration, source, data_id, data_dump, "time")
       timestep=get_scalar_integer_from_monc(io_configuration, source, data_id, data_dump, "timestep")
+
+      if (is_field_present(io_configuration, source, data_id, "terminated")) then
+        terminated=get_scalar_logical_from_monc(io_configuration, source, data_id, data_dump, "terminated")
+      else
+        terminated=.false.
+      end if
 
       timestep_key=conv_to_string(timestep)
 
@@ -150,11 +218,99 @@ contains
         call check_thread_status(forthread_rwlock_wrlock(time_points_rwlock))
         if (.not. c_contains(time_points, timestep_key)) then
           call c_put_real(time_points, timestep_key, time)
-        end if        
+        end if 
       end if
       call check_thread_status(forthread_rwlock_unlock(time_points_rwlock))      
     end if
+
+    call check_write_criteria(io_configuration, real(time, kind=4), timestep, terminated)
+
   end subroutine inform_writer_federator_time_point
+
+
+  subroutine check_write_criteria(io_configuration, time, timestep, terminated)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    real, intent(in) :: time
+    integer, intent(in) :: timestep
+    logical, intent(in) :: terminated
+    real :: time_difference
+    integer :: i
+    logical :: issue_write, issue_terminated_write
+
+    do i=1,size(writer_entries)
+
+      call check_thread_status(forthread_mutex_lock(writer_entries(i)%trigger_and_write_mutex))
+      issue_terminated_write=writer_entries(i)%write_on_terminate .and. terminated
+
+      if (writer_entries(i)%write_on_model_time) then !
+        time_difference=time-writer_entries(i)%latest_pending_write_time
+        issue_write=time_difference .ge. writer_entries(i)%write_time_frequency
+      else
+        if (writer_entries(i)%write_timestep_frequency .gt. 0) then 
+          issue_write=writer_entries(i)%latest_pending_write_timestep .ne. timestep .and. &
+               mod(timestep, writer_entries(i)%write_timestep_frequency) == 0
+        else
+          issue_write=.false.
+        end if
+        issue_terminated_write=issue_terminated_write .and. &
+           writer_entries(i)%latest_pending_write_timestep .ne. timestep ! .and. &
+      end if
+
+      if (issue_write .or. issue_terminated_write) then
+        writer_entries(i)%latest_pending_write_time=time
+        writer_entries(i)%latest_pending_write_timestep=timestep
+        call check_thread_status(forthread_mutex_unlock(writer_entries(i)%trigger_and_write_mutex))
+        call log_log(LOG_DEBUG, "INITIAL PENDING! core: "//trim(conv_to_string(io_configuration%my_io_rank))//&
+                                " (IO): Register pending write for "//&
+                                trim(writer_entries(i)%filename)//&
+                                " at time="//trim(conv_to_string(time))//"/"//&
+                                trim(conv_to_string(timestep)))
+        call register_pending_file_write(i, timestep, time, &
+             writer_entries(i)%write_on_terminate .and. terminated)
+      else
+        call check_thread_status(forthread_mutex_unlock(writer_entries(i)%trigger_and_write_mutex))
+      end if
+
+    end do ! loop over writer_entries
+
+  end subroutine check_write_criteria
+
+
+  !> Simple check on pending status.
+  !  Used to signal completion of the IOserver
+  logical function any_pending()
+    integer :: i
+  
+    ! Initialise
+    any_pending = .false.
+  
+    ! Lock activity on critical items
+    call check_thread_status(forthread_mutex_lock(currently_writing_mutex))
+    do i=1,size(writer_entries)
+      call check_thread_status(forthread_mutex_lock(writer_entries(i)%pending_writes_mutex))
+    end do
+  
+    ! Only look for files to write if no files are being written.
+    if (.not. currently_writing) then
+  
+      ! Find next pending write timestep
+      do i=1,size(writer_entries)
+        if (.not. c_is_empty(writer_entries(i)%pending_writes)) then
+          any_pending = .true.
+        end if
+      end do
+    else ! Something is still going on if it's writing.
+      any_pending = .true.
+    end if ! currently_writing
+  
+    ! Unlock critical items
+    do i=size(writer_entries),1,-1
+      call check_thread_status(forthread_mutex_unlock(writer_entries(i)%pending_writes_mutex))
+    end do
+    call check_thread_status(forthread_mutex_unlock(currently_writing_mutex))
+  
+  end function any_pending
+  
 
   !> Informs the writer federator that specific fields are present and should be reflected in the diagnostics output
   !! @param field_names The set of field names that are present
@@ -165,7 +321,7 @@ contains
 
     type(iterator_type) :: iterator
     character(len=STRING_LENGTH) :: specific_name
-    integer :: i, number_q_fields, expected_io
+    integer :: i, number_q_fields, number_tracers, expected_io
     logical :: field_found, expected_here, diagnostics_mode
 
     iterator=c_get_iterator(used_field_names)
@@ -214,6 +370,33 @@ contains
         end do
       end if
     end do    
+    iterator=c_get_iterator(tracer_names)
+    do while (c_has_next(iterator))
+      specific_name=c_next_string(iterator)
+      if (present(field_names)) then
+        field_found=c_contains(field_names, specific_name)
+        diagnostics_mode=.false.
+      else if (present(diag_field_names_and_roots)) then
+        field_found=c_contains(diag_field_names_and_roots, specific_name)
+        if (field_found) expected_io=c_get_integer(diag_field_names_and_roots, specific_name)
+        diagnostics_mode=.true.
+      else
+        field_found=.false.
+      end if
+      if (field_found) then
+        expected_here=expected_io == -1 .or. expected_io == io_configuration%my_io_rank
+        number_tracers=c_get_integer(io_configuration%dimension_sizing, "tfields")
+        do i=1, number_tracers
+          if (c_size(io_configuration%tracer_names) .ge. i) then
+            call enable_specific_field_by_name(trim(specific_name)//"_"//trim(c_get_string(io_configuration%tracer_names, i)), &
+                 diagnostics_mode, expected_here)
+          else
+            call enable_specific_field_by_name(trim(specific_name)//"_udef"//trim(conv_to_string(i)), &
+                 diagnostics_mode, expected_here)
+          end if
+        end do
+      end if
+    end do    
   end subroutine inform_writer_federator_fields_present  
 
   !> Determines whether a field is used by the writer federator or not
@@ -241,6 +424,15 @@ contains
 
     is_field_split_on_q=c_contains(q_field_names, field_name)
   end function is_field_split_on_q  
+
+  !> Determines whether a field is split on tracer or not
+  !! @param field_name The field name to check whether it is being used or not
+  !! @returns Whether this field is used or not (and then further split to be constituient parts of tracer)
+  logical function is_field_split_on_tracer(field_name)
+    character(len=*), intent(in) :: field_name
+
+    is_field_split_on_tracer=c_contains(tracer_names, field_name)
+  end function is_field_split_on_tracer  
 
   !> Enables a specific field by its name, this will locate all the fields with this name and enable them
   !! @param field_name The name of the field to enable
@@ -308,6 +500,44 @@ contains
     end do    
   end subroutine provide_q_field_names_to_writer_federator
 
+
+  !> Provides the tracer field names to the write federator, this is required as on initialisation we don't know what these are and
+  !! only when MONC register do they inform the IO server of the specifics
+  !! @param tracer_field_names An ordered list of tracer field names
+  subroutine provide_tracer_names_to_writer_federator(tracer_provided_field_names)
+    type(list_type), intent(inout) :: tracer_provided_field_names
+
+    type(iterator_type) :: iterator, tracer_iterator
+    logical :: continue_search
+    integer :: writer_index, contents_index, i
+    character(len=STRING_LENGTH) :: search_field, field_name, specific_name
+
+    iterator=c_get_iterator(tracer_names)
+    do while (c_has_next(iterator))
+      specific_name=c_next_string(iterator)
+      tracer_iterator=c_get_iterator(tracer_provided_field_names)
+      i=1
+      do while (c_has_next(tracer_iterator))
+        search_field=trim(specific_name)//"_udef"//trim(conv_to_string(i))
+        field_name=trim(specific_name)//"_"//trim(c_next_string(tracer_iterator))        
+        continue_search=.true.
+        writer_index=1
+        contents_index=0
+        do while (continue_search)
+          contents_index=contents_index+1
+          continue_search=get_next_applicable_writer_entry(search_field, writer_index_point=writer_index, &
+               contents_index_point=contents_index)
+          if (continue_search) then
+            writer_entries(writer_index)%contents(contents_index)%field_name=field_name
+          end if
+        end do
+        i=i+1
+        call c_add_string(used_field_names, field_name)
+        call c_remove(used_field_names, search_field)
+      end do     
+    end do    
+  end subroutine provide_tracer_names_to_writer_federator
+
   subroutine provide_ordered_field_to_writer_federator(io_configuration, field_name, field_namespace, field_values, &
        timestep, time, source)
     type(io_configuration_type), intent(inout) :: io_configuration
@@ -346,7 +576,7 @@ contains
               call log_log(LOG_DEBUG, "[WRITE FED VALUE STORE] Storing value for field "//trim(field_name)//" ts="//&
                    trim(conv_to_string(timestep))// " t="//trim(conv_to_string(time)))
             end if
-            call check_thread_status(forthread_mutex_lock(writer_entries(writer_index)%contents(contents_index)%values_mutex))           
+            call check_thread_status(forthread_mutex_lock(writer_entries(writer_index)%contents(contents_index)%values_mutex))
             call c_put_generic(writer_entries(writer_index)%contents(contents_index)%values_to_write, conv_to_string(time), &
                  generic, .false.)
             call check_thread_status(forthread_mutex_unlock(writer_entries(writer_index)%contents(contents_index)%values_mutex))
@@ -399,6 +629,25 @@ contains
              timestep, time, source)
         index=index+individual_size
       end do
+    else if (c_contains(tracer_names, field_name)) then
+
+      if (c_contains(tracer_splits, field_name)) then
+        individual_size=c_get_integer(tracer_splits, field_name)
+      else if (source .gt. -1) then
+        individual_size=get_size_of_collective_tracer(io_configuration, field_name, source)
+      else
+        call log_log(LOG_WARN, &
+              "Can not find tracer split field in tracer field names or collective field names with source, ignoring")
+        return
+      end if
+      iterator=c_get_iterator(io_configuration%tracer_names)
+      index=1
+      do while (c_has_next(iterator))
+        call provide_ordered_single_field_to_writer_federator(io_configuration, &
+             trim(field_name)//"_"//trim(c_next_string(iterator)), field_namespace, field_values(index:index+individual_size-1), &
+             timestep, time, source)
+        index=index+individual_size
+      end do
     end if
   end subroutine provide_ordered_field_to_writer_federator_real_values
 
@@ -427,6 +676,31 @@ contains
     end select    
   end function get_size_of_collective_q  
 
+  !> Retrieves the data size for each tracer entry of a collective tracer field for the specific source MONC that has sent data
+  !! @param io_configuration The IO server configuration
+  !! @param field_name The field name to write (if appropriate)
+  !! @param source  MONC source for the communicated fields
+  !! @returns The size (elements) per tracer split field
+  integer function get_size_of_collective_tracer(io_configuration, field_name, source)
+    type(io_configuration_type), intent(inout) :: io_configuration
+    character(len=*), intent(in) :: field_name
+    integer, intent(in) :: source
+
+    class(*), pointer :: generic
+    integer :: i, monc_index
+    
+    get_size_of_collective_tracer=1
+    monc_index=get_monc_location(io_configuration, source)
+    generic=>c_get_generic(collective_tracer_dims, field_name)
+    select type(generic)
+      type is(collective_tracer_representation_type)
+        do i=1, size(generic%dimensions)
+          get_size_of_collective_tracer=&
+               get_size_of_collective_tracer*io_configuration%registered_moncs(monc_index)%local_dim_sizes(generic%dimensions(i))
+        end do        
+    end select    
+  end function get_size_of_collective_tracer  
+
   !> Provides a single ordered field, i.e. Q fields have been split by this point
   !! @param io_configuration The IO server configuration
   !! @param field_name The field name to write (if appropriate)
@@ -451,6 +725,7 @@ contains
     continue_search=.true.
     writer_index=1
     contents_index=0
+
     if (c_contains(used_field_names, field_name)) then
       do while (continue_search)
         contents_index=contents_index+1
@@ -467,11 +742,12 @@ contains
             if (writer_entries(writer_index)%contents(contents_index)%collective_write .and. source .gt. -1) then
               result_values=writer_entries(writer_index)%contents(contents_index)%time_manipulation(field_values, &
                    writer_entries(writer_index)%contents(contents_index)%output_frequency, &
-                   trim(field_name)//"#"//conv_to_string(source), timestep, time)
+                   trim(field_name)//"#"//conv_to_string(source), timestep, time,          &
+                   time_basis .or. force_output_on_interval)
             else
               result_values=writer_entries(writer_index)%contents(contents_index)%time_manipulation(field_values, &
                    writer_entries(writer_index)%contents(contents_index)%output_frequency, &
-                   field_name, timestep, time)
+                   field_name, timestep, time, time_basis .or. force_output_on_interval)
             end if
             generic=>result_values
             call c_put_generic(typed_result_values, conv_to_string(&
@@ -535,7 +811,7 @@ contains
     call c_put_generic(stored_monc_values%monc_values, conv_to_string(source), generic, .false.)
   end subroutine write_collective_write_value  
 
-  !> For a specific field wil determine and handle any outstanding fields writes until an outstanding write
+  !> For a specific field, will determine and handle any outstanding field writes until an outstanding write
   !! can not be performed or the outstanding list is empty
   !! @param specific_field The specific field that we are concerned with
   subroutine determine_if_outstanding_field_can_be_written(io_configuration, writer_entry, specific_field)
@@ -551,7 +827,9 @@ contains
       if (field_write_success) then
         if (log_get_logging_level() .ge. LOG_DEBUG) then
           call log_log(LOG_DEBUG, "Flushed outstanding field ts="//conv_to_string(writer_entry%write_timestep)//&
-               " write time="//conv_to_string(writer_entry%write_time))
+               " write time="//conv_to_string(writer_entry%write_time)//&
+               ", "//trim(conv_to_string(io_configuration%my_io_rank))//&
+               ", "//trim(conv_to_string(writer_entry%num_fields_to_write)) )
         end if
         call check_thread_status(forthread_mutex_lock(writer_entry%num_fields_to_write_mutex))
         writer_entry%num_fields_to_write=writer_entry%num_fields_to_write-1
@@ -564,7 +842,7 @@ contains
     end if
   end subroutine determine_if_outstanding_field_can_be_written  
 
-  !> Determines if a file can be written to its overarching write representation. If so then a write is issued, otherwise
+  !> Determines if a field can be written to its overarching write representation. If so then a write is issued, otherwise
   !! an outstanding write point is registered which will be checked frequency to do a write later on
   !! @param specific_field The specific field we are checking and going to write if possible
   !! @param timestep The current timestep that we are at for this write
@@ -585,6 +863,9 @@ contains
     type(iterator_type) :: iterator
     type(mapentry_type) :: map_entry
     type(write_field_collective_values_type), pointer :: multi_monc_entries
+    type(netcdf_diagnostics_type), pointer :: file_state
+    type(netcdf_diagnostics_timeseries_type), pointer :: timeseries_diag
+
     class(*), pointer :: generic
         
     num_matching=0
@@ -612,8 +893,11 @@ contains
       end do
     end if
 
-    if (num_matching .gt. 0 .and. (specific_field%ready_to_write(largest_value_found, specific_field%output_frequency, write_time, &
-         specific_field%latest_timestep_values, timestep) .or. entry_beyond_this_write)) then
+    ! Obtain the correct expected number of time entires for this writer file.
+    file_state=>get_file_state(writer_entry%filename, timestep, .true.)
+    timeseries_diag=>get_specific_timeseries_dimension(&
+              file_state, specific_field%output_frequency, specific_field%timestep_frequency)
+    if ((num_matching .eq. timeseries_diag%num_entries)) then
       if (.not. specific_field%collective_write .or. .not. specific_field%collective_contiguous_optimisation) then
         if (specific_field%issue_write) then
           call write_variable(io_configuration, specific_field, writer_entry%filename, timestep, write_time)
@@ -624,10 +908,10 @@ contains
       if (present(field_written)) field_written=.true.
     else
       if (log_get_logging_level() .ge. LOG_DEBUG) then
-          call log_log(LOG_DEBUG, "Setting outstanding field ts="//conv_to_string(writer_entry%write_timestep)//&
+        call log_log(LOG_DEBUG, "Setting outstanding field ts="//conv_to_string(writer_entry%write_timestep)//&
                " write time="//conv_to_string(writer_entry%write_time)//" prev="//conv_to_string(previous_write_time)//&
                " largest entry="//conv_to_string(largest_value_found)//" num matching="//conv_to_string(num_matching))
-        end if
+      end if
       specific_field%pending_to_write=.true.
       if (present(field_written)) field_written=.false.
     end if
@@ -647,6 +931,7 @@ contains
     integer :: i, timestep
     real(kind=DEFAULT_PRECISION) :: time
     logical :: terminated
+    character(len=STRING_LENGTH) :: timestep_key
 
     if (is_field_present(io_configuration, source, data_id, "timestep") .and. &
          is_field_present(io_configuration, source, data_id, "time")) then
@@ -658,68 +943,183 @@ contains
       else
         terminated=.false.
       end if
-      do i=1, size(writer_entries)
-        call check_writer_trigger(io_configuration, i, timestep, real(time, kind=4), terminated)
-      end do
+
+      ! Call out to evaluate pending writer entries if not currently_writing
+      call check_thread_status(forthread_mutex_lock(currently_writing_mutex))
+      if (.not. currently_writing) then
+        call check_thread_status(forthread_mutex_unlock(currently_writing_mutex))
+        call evaluate_writer_issue(io_configuration)
+      else
+        call check_thread_status(forthread_mutex_unlock(currently_writing_mutex))
+      end if
     end if
+
   end subroutine check_writer_for_trigger
 
-  !> Checks a writer trigger and issues a file creation along with field write if the conditions (time or timestep) are met.
-  !! This will either create and write to the file or store a pending state if one is already open (required due to 
-  !! NetCDF/HDF5 limitations with thread safety and parallel access.)
-  !! @param io_configuration The IO server configuration
-  !! @param writer_entry_index Index of the writer we are concerned with
-  !! @param timestep The corresponding timestep
-  !! @param time The corresponding model time
-  subroutine check_writer_trigger(io_configuration, writer_entry_index, timestep, time, terminated)
+
+  !> Considers the situation to determine the index of the writer entry to issue, if any
+  !! @param chain_override Allows determination to proceed when currently_writing=.true.
+  subroutine evaluate_writer_issue(io_configuration, chain_override)
     type(io_configuration_type), intent(inout) :: io_configuration
-    integer, intent(in) :: writer_entry_index, timestep
-    real, intent(in) :: time
-    logical, intent(in) :: terminated
-
-    real :: time_difference
-    integer :: i
-    logical :: issue_write, issue_terminated_write
+    logical, intent(in), optional :: chain_override
+  
+    integer :: timestep, index_to_issue
+    logical :: terminated, regular_pending_exists, non_io_dump_pending_exists, &
+               non_io_regular_exists, time_points_complete, override, first_instance
+    type(iterator_type) :: iterator
+    type(mapentry_type) :: map_entry
+    integer :: i, next_pending_timestep
+    type(pending_write_type), pointer :: ptr
+    class(*), pointer :: generic
+  
+    ! Initialise
+    index_to_issue = 0
+    next_pending_timestep = huge(next_pending_timestep)
+    regular_pending_exists = .false.
+    non_io_dump_pending_exists = .false.
+    non_io_regular_exists = .false.
+    override = .false.
+    first_instance = .true.
+    if (present(chain_override)) override = chain_override
     
-    call check_thread_status(forthread_mutex_lock(writer_entries(writer_entry_index)%trigger_and_write_mutex))
-    issue_terminated_write=writer_entries(writer_entry_index)%write_on_terminate .and. terminated
-    if (writer_entries(writer_entry_index)%write_on_model_time) then
-      time_difference=time-writer_entries(writer_entry_index)%latest_pending_write_time
-      issue_write=time_difference .ge. writer_entries(writer_entry_index)%write_time_frequency      
-    else
-      if (writer_entries(writer_entry_index)%write_timestep_frequency .gt. 0) then
-        issue_write=writer_entries(writer_entry_index)%latest_pending_write_timestep .ne. timestep .and. &
-             mod(timestep, writer_entries(writer_entry_index)%write_timestep_frequency) == 0
-      else
-        issue_write=.false.
-      end if
-      issue_terminated_write=issue_terminated_write .and. &
-           writer_entries(writer_entry_index)%latest_pending_write_timestep .ne. timestep
-    end if
+    ! Lock activity on critical items
+    call check_thread_status(forthread_mutex_lock(currently_writing_mutex))
+    do i=1,size(writer_entries)
+      call check_thread_status(forthread_mutex_lock(writer_entries(i)%pending_writes_mutex))
+    end do
+  
+    ! Only look for files to write if no files are being written.
+    if ((.not. currently_writing) .or. override) then
+  
+      ! Find next pending write timestep
+      do i=1,size(writer_entries)
+        if (.not. c_is_empty(writer_entries(i)%pending_writes)) then
+          generic=>c_get_generic(writer_entries(i)%pending_writes,1)
+          select type(generic)
+          type is (pending_write_type)
+          next_pending_timestep = min(next_pending_timestep, generic%timestep)
+          if (.not. writer_entries(i)%write_on_terminate) regular_pending_exists = .true.
+  
+          if (.not. writer_entries(i)%contains_io_status_dump) then
+            non_io_dump_pending_exists = .true.
+            if (.not. writer_entries(i)%write_on_terminate) then
+              non_io_regular_exists = .true.
+            end if
+          end if
+  
+          end select
+        end if
+      end do
+  
+      ! Only proceed if there is some pending write
+      if (next_pending_timestep .lt. huge(next_pending_timestep)) then
 
-    if (issue_write .or. issue_terminated_write) then
-      writer_entries(writer_entry_index)%latest_pending_write_time=time
-      writer_entries(writer_entry_index)%latest_pending_write_timestep=timestep
+        ! Evaluate each writer entry by looping over them
+        do i=1,size(writer_entries)
+  
+          ! Reinitialise
+          time_points_complete = .true.
+  
+          ! Only look for files to write where there are pending writes
+          if (.not. c_is_empty(writer_entries(i)%pending_writes)) then
+  
+            ! Get information for 1st pending write in the queue
+            generic=>c_get_generic(writer_entries(i)%pending_writes,1)
+            select type(generic)
+            type is (pending_write_type)
+  
+              ! Determine if this pending write is ready to be issued [(t)tp_complete = true]
+              timestep = generic%timestep
+              terminated = generic%terminated_write
+            end select
+  
+            !Writer order is:
+            !  1. regular writes without dumps
+            !  2. terminated writes without dumps
+            !  3. regular writes with dumps
+            !  4. terminated writes with dumps
+  
+            ! Skip writers with contains_io_status_dump when a non_io_dump_pending_exists
+            if (writer_entries(i)%contains_io_status_dump .and. &
+                non_io_dump_pending_exists) cycle 
+                                              ! Allows 1 & 2 ahead of 3 & 4.
+  
+            !  --- At this point, exclusively io_dump or non-io_dump writes ---
+            !  ---   are being evaluated this time through the subroutine   ---
+            
+            if (non_io_dump_pending_exists) then
+              if (terminated .and. non_io_regular_exists) cycle  
+                                              ! allows 1 (regular) ahead of 2 (terminated)
+            else ! only io_dump writers exist
+              if (terminated .and. regular_pending_exists) cycle 
+                                              ! allows 3 (regular) ahead of 4 (terminated)
+            end if
+           
+            !  --- At this point, exclusively terminated or regular writes ---
+            !  ---  are being evaluated this time through the subroutine   ---
+            !  --- We want to lock onto the first such pending writer in   ---
+            !  ---  the loop that has the next_pending_timestep. ---
+  
+            ! Only evaluate this writer if it is the first match of the next_pending_timestep
+            if (timestep .eq. next_pending_timestep .and. first_instance) then
+  
+              ! Here, this is the first match of this kind of write. Prevent further evaluation.
+              first_instance = .false.
+              index_to_issue = i   ! This is the index of the writer we shall issue now.
+              exit  ! found next writer index, exit writer loop to write
+            end if ! timestep matches next_pending_timestep, check next writer 
 
-      call check_thread_status(forthread_mutex_lock(currently_writing_mutex))    
-
-      if (currently_writing) then
+          end if ! pending writes exist, check next writer 
+          if (.not. first_instance) exit 
+        end do ! Loop to evaluate each writer entry
+      end if ! condition that some pending write exists
+  
+  
+      ! Issue pending write when a set of tests succeeds and an appropriate writer is found
+      if (index_to_issue .gt. 0) then
+  
+        ! Ensure writing mode change and remove entry from pending list
+        currently_writing = .true.
+        generic=>c_pop_generic(writer_entries(index_to_issue)%pending_writes)
+  
+        ! Unlock critical items
+        do i=size(writer_entries),1,-1
+          call check_thread_status(forthread_mutex_unlock(writer_entries(i)%pending_writes_mutex))
+        end do
         call check_thread_status(forthread_mutex_unlock(currently_writing_mutex))
-        call check_thread_status(forthread_mutex_unlock(writer_entries(writer_entry_index)%trigger_and_write_mutex))
-        call register_pending_file_write(writer_entry_index, timestep, time, &
-             writer_entries(writer_entry_index)%write_on_terminate .and. terminated)
-      else
-        currently_writing=.true.
+  
+        ! Unhash the generic and issue a write.
+        select type(generic)
+          type is (pending_write_type)
+  
+          call issue_actual_write(io_configuration, writer_entries(index_to_issue), &
+                                  generic%timestep, generic%write_time, generic%terminated_write)
+          ptr => generic
+          deallocate(ptr)
+        end select
+  
+      else ! no writer was found
+        currently_writing = .false.
+  
+        ! Unlock critical items
+        do i=size(writer_entries),1,-1
+          call check_thread_status(forthread_mutex_unlock(writer_entries(i)%pending_writes_mutex))
+        end do
         call check_thread_status(forthread_mutex_unlock(currently_writing_mutex))
-        call check_thread_status(forthread_mutex_unlock(writer_entries(writer_entry_index)%trigger_and_write_mutex))
-        call issue_actual_write(io_configuration, writer_entries(writer_entry_index), timestep, time, &
-             writer_entries(writer_entry_index)%write_on_terminate .and. terminated)
-      end if
-    else
-      call check_thread_status(forthread_mutex_unlock(writer_entries(writer_entry_index)%trigger_and_write_mutex))
-    end if
-  end subroutine check_writer_trigger
-
+      end if ! ready to issue write
+  
+    else ! is currently_writing
+      ! Basically, do nothing.
+      ! Unlock critical items
+      do i=size(writer_entries),1,-1
+        call check_thread_status(forthread_mutex_unlock(writer_entries(i)%pending_writes_mutex))
+      end do
+      call check_thread_status(forthread_mutex_unlock(currently_writing_mutex))
+    end if ! .not. currently_writing
+  
+  end subroutine evaluate_writer_issue
+  
+  
   !> Issues the actual file creation, write of available fields and closure if all completed. 
   !! @param io_configuration The IO server configuration
   !! @param writer_entry_index Index of the writer we are concerned with
@@ -736,6 +1136,9 @@ contains
     logical :: field_written
     type(map_type) :: applicable_time_points
 
+    call log_log(LOG_DEBUG, "File "//trim(writer_entry%filename)//" started. "//&
+                            trim(conv_to_string(io_configuration%my_global_rank)))
+
     call check_thread_status(forthread_mutex_lock(collective_contiguous_initialisation_mutex))
     do i=1, size(writer_entry%contents)
       if (writer_entry%contents(i)%enabled .and. writer_entry%contents(i)%collective_write) then
@@ -749,7 +1152,8 @@ contains
     writer_entry%write_time=time
     writer_entry%write_timestep=timestep
     applicable_time_points=extract_applicable_time_points(writer_entry%previous_write_time, time)    
-    call define_netcdf_file(io_configuration, writer_entry, timestep, time, applicable_time_points, terminated_write)
+    call define_netcdf_file(io_configuration, writer_entry, timestep, time, applicable_time_points, terminated_write, &
+                            time_basis)
     call c_free(applicable_time_points)
     total_outstanding=0
     total_flds=0
@@ -774,6 +1178,7 @@ contains
            //" total="//trim(conv_to_string(total_flds))//" written="//trim(conv_to_string(num_written))//&
            " outstanding="//trim(conv_to_string(total_outstanding)))
     end if
+
     if (total_outstanding == 0) then
       call close_diagnostics_file(io_configuration, writer_entry, timestep, time)
     end if    
@@ -883,9 +1288,14 @@ contains
     integer, intent(in) :: timestep
     real, intent(in) :: time
 
+
     if (log_get_logging_level() .ge. LOG_DEBUG) then
-      call log_log(LOG_DEBUG, "Issue close for NetCDF file at timestep "//trim(conv_to_string(timestep)))
+      call log_log(LOG_DEBUG, "Issue close for NetCDF file: "//&
+                              trim(writer_entry%filename)//&
+                        ", "//trim(conv_to_string(io_configuration%my_io_rank))//&
+                        ", "//trim(conv_to_string(timestep)))
     end if
+
     call perform_global_callback(io_configuration, writer_entry%filename, timestep, handle_close_diagnostics_globalcallback)
   end subroutine close_diagnostics_file
 
@@ -894,19 +1304,19 @@ contains
   !! pending file writes to process any others that are waiting in the queue
   !! @param io_configuration The IO server configuration
   !! @param values The inter IO resulting values, we don't care about these
-  !! @param field_name The field name that is being communicated
+  !! @param filename The name of the file that is being closed
   !! @param timestep The write timestep
-  subroutine handle_close_diagnostics_globalcallback(io_configuration, values, field_name, timestep)
+  subroutine handle_close_diagnostics_globalcallback(io_configuration, values, filename, timestep)
     type(io_configuration_type), intent(inout) :: io_configuration
     real(DEFAULT_PRECISION), dimension(:) :: values
-    character(len=STRING_LENGTH) :: field_name
+    character(len=STRING_LENGTH) :: filename
     integer :: timestep
     
     type(writer_type), pointer :: writer_entry
     integer :: i
-    logical :: terminated, done_chain_run
+    logical :: terminated
 
-    writer_entry=>get_writer_entry_from_netcdf(field_name, timestep, terminated)    
+    writer_entry=>get_writer_entry_from_netcdf(filename, timestep, terminated)    
 
     do i=1, size(writer_entry%contents)
       if (writer_entry%contents(i)%enabled .and. writer_entry%contents(i)%collective_write .and. &
@@ -934,56 +1344,15 @@ contains
       call check_thread_status(forthread_rwlock_unlock(time_points_rwlock))
     end if
 
-    call close_netcdf_file(io_configuration, field_name, timestep)
+    call close_netcdf_file(io_configuration, filename, timestep)
 
-    done_chain_run=.false.
-    do i=1, size(writer_entries)
-      if (writer_entries(i)%filename .ne. writer_entry%filename) then
-        done_chain_run=check_for_and_issue_chain_write(io_configuration, writer_entries(i))
-        if (done_chain_run) exit
-      end if
-    end do
-    if (.not. done_chain_run) done_chain_run=check_for_and_issue_chain_write(io_configuration, writer_entry)
+    ! At this point, currently_writing=.true.
+    ! We want to see if any more writes exist, and issue them if they do exist.
+    ! If none, we're done.  If some exist, the process writes and loops back to this point.
+    call evaluate_writer_issue(io_configuration, chain_override=.true.)
 
-    if (.not. done_chain_run) then
-      call check_thread_status(forthread_mutex_lock(currently_writing_mutex))
-      currently_writing=.false.
-      call check_thread_status(forthread_mutex_unlock(currently_writing_mutex))
-      if (log_get_logging_level() .ge. LOG_DEBUG) then
-        call log_log(LOG_DEBUG, "No more pending entries to chain to at ts= "//trim(conv_to_string(timestep)))
-      end if
-    end if
   end subroutine handle_close_diagnostics_globalcallback
 
-  !> Will check whether there are any pending writes and if so will issue a chain write for this
-  !! @param io_configuration The IO server configuration
-  !! @param writer_entry The specific writer entry
-  !! @returns Whether a chain write was issued or not
-  logical function check_for_and_issue_chain_write(io_configuration, writer_entry)
-    type(io_configuration_type), intent(inout) :: io_configuration
-    type(writer_type), intent(inout) :: writer_entry
-
-    class(*), pointer :: generic
-
-    call check_thread_status(forthread_mutex_lock(writer_entry%pending_writes_mutex))
-    if (.not. c_is_empty(writer_entry%pending_writes)) then
-      check_for_and_issue_chain_write=.true.
-      generic=>c_pop_generic(writer_entry%pending_writes)    
-      call check_thread_status(forthread_mutex_unlock(writer_entry%pending_writes_mutex))
-      select type(generic)
-      type is (pending_write_type)
-        if (log_get_logging_level() .ge. LOG_DEBUG) then
-          call log_log(LOG_DEBUG, "Chain to next pending entry ts= "//trim(conv_to_string(generic%timestep)))
-        end if
-        call issue_actual_write(io_configuration, writer_entry, generic%timestep, &
-             generic%write_time, generic%terminated_write)
-        deallocate(generic)
-      end select
-    else
-      check_for_and_issue_chain_write=.false.
-      call check_thread_status(forthread_mutex_unlock(writer_entry%pending_writes_mutex))
-    end if    
-  end function check_for_and_issue_chain_write
   
   !> Registers a pending file write which will be actioned later on
   !! @param writer_entry_index Index of the writer entry
@@ -1051,10 +1420,11 @@ contains
     type(io_configuration_type), intent(inout) :: io_configuration
     integer, intent(in) :: writer_entry_index
 
-    integer :: i, number_contents, group_index, number_q_fields
+    integer :: i, number_contents, group_index, number_q_fields, number_tracers
 
     get_total_number_writer_fields=0
     number_q_fields=c_get_integer(io_configuration%dimension_sizing, "qfields")
+    number_tracers=c_get_integer(io_configuration%dimension_sizing, "tfields")
 
     number_contents=io_configuration%file_writers(writer_entry_index)%number_of_contents
     do i=1, number_contents
@@ -1064,12 +1434,12 @@ contains
         if (group_index == 0) call log_log(LOG_ERROR, "Can not find group '"//trim(&
              io_configuration%file_writers(writer_entry_index)%contents(i)%facet_name)//"'")
         get_total_number_writer_fields=get_total_number_writer_fields+&
-             get_group_number_of_fields(io_configuration, io_configuration%groups(group_index)%members, number_q_fields, &
-             io_configuration%groups(group_index)%namespace)
+             get_group_number_of_fields(io_configuration, io_configuration%groups(group_index)%members, &
+             number_q_fields, number_tracers, io_configuration%groups(group_index)%namespace)
       else if (io_configuration%file_writers(writer_entry_index)%contents(i)%facet_type == FIELD_TYPE) then
         ! NSE
         get_total_number_writer_fields=get_total_number_writer_fields+get_field_number_of_fields(io_configuration, &
-             io_configuration%file_writers(writer_entry_index)%contents(i)%facet_name, "", number_q_fields)
+             io_configuration%file_writers(writer_entry_index)%contents(i)%facet_name, "", number_q_fields, number_tracers)
       end if
     end do
   end function get_total_number_writer_fields
@@ -1078,11 +1448,12 @@ contains
   !! @param io_configuration The IO server configuration
   !! @param group_members The members of the group
   !! @param num_q_fields The number of Q fields
+  !! @param num_tracers The number of tracer fields
   !! @returns The number of fields that make up this group
-  integer function get_group_number_of_fields(io_configuration, group_members, num_q_fields, namespace)
+  integer function get_group_number_of_fields(io_configuration, group_members, num_q_fields, num_tracers, namespace)
     type(io_configuration_type), intent(inout) :: io_configuration
     type(list_type) :: group_members
-    integer, intent(in) :: num_q_fields
+    integer, intent(in) :: num_q_fields, num_tracers
     character(len=STRING_LENGTH), intent(in) :: namespace
 
     type(iterator_type) :: iterator
@@ -1093,20 +1464,21 @@ contains
     do while (c_has_next(iterator))
       field_name=c_next_string(iterator)
       get_group_number_of_fields=get_group_number_of_fields+get_field_number_of_fields(io_configuration, field_name, namespace, &
-           num_q_fields)
+           num_q_fields, num_tracers)
     end do
   end function get_group_number_of_fields
 
-  !> Retrieves the number of fields that make up this field, if it is a Q field then it will be split into many subfields
+  !> Retrieves the number of fields that make up this field, if it is a Q or tracer field then it will be split into many subfields
   !! hence it is not a simple 1-1 mapping
   !! @param io_configuration The IO server configuration
   !! @param field_name The name of the field
   !! @param num_q_fields The number of Q fields
+  !! @param num_tracers The number of tracer fields
   !! @returns The number of fields that make up this field
-  integer function get_field_number_of_fields(io_configuration, field_name, field_namespace, num_q_fields)
+  integer function get_field_number_of_fields(io_configuration, field_name, field_namespace, num_q_fields, num_tracers)
     type(io_configuration_type), intent(inout) :: io_configuration
-    character(len=STRING_LENGTH), intent(in) :: field_name, field_namespace
-    integer, intent(in) :: num_q_fields
+    character(len=*), intent(in) :: field_name, field_namespace
+    integer, intent(in) :: num_q_fields, num_tracers
 
     type(io_configuration_field_type) :: prognostic_field_configuration
     type(io_configuration_data_definition_type) :: prognostic_containing_data_defn
@@ -1117,6 +1489,9 @@ contains
         if (diagnostic_field_configuration%dim_size_defns(diagnostic_field_configuration%dimensions) .eq. "qfields") then
           get_field_number_of_fields=num_q_fields
           return
+        else if (diagnostic_field_configuration%dim_size_defns(diagnostic_field_configuration%dimensions) .eq. "tfields") then
+          get_field_number_of_fields=num_tracers
+          return
         end if
       end if
       get_field_number_of_fields=1
@@ -1125,6 +1500,9 @@ contains
       if (prognostic_field_configuration%field_type == ARRAY_FIELD_TYPE) then
         if (prognostic_field_configuration%dim_size_defns(prognostic_field_configuration%dimensions) .eq. "qfields") then
           get_field_number_of_fields=num_q_fields
+          return
+        else if (prognostic_field_configuration%dim_size_defns(prognostic_field_configuration%dimensions) .eq. "tfields") then
+          get_field_number_of_fields=num_tracers
           return
         end if
       end if
@@ -1167,7 +1545,8 @@ contains
     end do    
   end function add_group_of_fields_to_writer_entry
 
-  !> Adds a field to the writer entry, this will split the Q fields. However at initialisation we don't know what the Q
+  !> Adds a field to the writer entry, this will split the Q and tracer fields. 
+  !! However at initialisation we don't know what the Q and tracer
   !! fields are called, hence place a marker which will be replaced later on
   !! @param io_configuration The IO server configuration
   !! @param writer_entry_index Index of the writer entry that we are dealing with
@@ -1175,7 +1554,7 @@ contains
   !! @param my_facet_index The current field index in this internal module representation of the structure
   !! @param field_name The name of the field that we are constructing
   !! @param writer_field_names The field names in the writer (for duplication checking)
-  !! @param duplicate_field_names Duplicate field names in the wrier, for duplication checking
+  !! @param duplicate_field_names Duplicate field names in the writer, for duplication checking
   !! @param diagnostic_generation_frequency Generation frequency of the diagnostics
   !! @returns Location for next field to be written to
   integer function add_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
@@ -1186,11 +1565,12 @@ contains
     type(hashset_type), intent(inout) :: writer_field_names, duplicate_field_names
     type(hashmap_type), intent(inout) :: diagnostic_generation_frequency
 
-    integer :: i, number_q_fields, tot_size
+    integer :: i, number_q_fields, number_tracers, tot_size
     type(io_configuration_field_type) :: prognostic_field_configuration
     type(io_configuration_data_definition_type) :: prognostic_containing_data_defn
     type(io_configuration_diagnostic_field_type) :: diagnostic_field_configuration
     type(collective_q_field_representation_type), pointer :: collective_q_field
+    type(collective_tracer_representation_type), pointer :: collective_tracer
     class(*), pointer :: generic
     
     if (get_diagnostic_field_configuration(io_configuration, field_name, field_namespace, diagnostic_field_configuration)) then
@@ -1208,6 +1588,20 @@ contains
           end do
           call c_put_integer(q_field_splits, field_name, tot_size)
           add_field_to_writer_entry=number_q_fields
+          return
+        else if (diagnostic_field_configuration%dim_size_defns(diagnostic_field_configuration%dimensions) .eq. "tfields") then  
+          number_tracers=c_get_integer(io_configuration%dimension_sizing, "tfields")
+          do i=1, number_tracers
+            call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
+                 my_facet_index+i, trim(field_name)//"_udef"//trim(conv_to_string(i)), field_namespace, writer_field_names, &
+                 duplicate_field_names, c_get_integer(diagnostic_generation_frequency, field_name), diagnostic_field_configuration)
+          end do
+          tot_size=1
+          do i=1, writer_entries(writer_entry_index)%contents(my_facet_index+number_tracers)%dimensions
+            tot_size=tot_size*writer_entries(writer_entry_index)%contents(my_facet_index+number_tracers)%actual_dim_size(i)
+          end do
+          call c_put_integer(tracer_splits, field_name, tot_size)
+          add_field_to_writer_entry=number_tracers
           return
         end if
       end if
@@ -1231,7 +1625,8 @@ contains
             allocate(collective_q_field%dimensions(&
                  writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dimensions))
             do i=1, writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dimensions
-              if (trim(writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dim_size_defns(i)) == "z") then
+              if (trim(writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dim_size_defns(i)) == "z" .or. &
+                  trim(writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dim_size_defns(i)) == "zn" ) then
                 collective_q_field%dimensions(i)=1
               else if (trim(writer_entries(writer_entry_index)%contents(my_facet_index+number_q_fields)%dim_size_defns(i)) &
                    == "y") then
@@ -1252,6 +1647,43 @@ contains
           end if
           call c_add_string(q_field_names, field_name)
           add_field_to_writer_entry=number_q_fields
+          return
+        else if (prognostic_field_configuration%dim_size_defns(prognostic_field_configuration%dimensions) .eq. "tfields") then  
+          number_tracers=c_get_integer(io_configuration%dimension_sizing, "tfields")
+          do i=1, number_tracers
+            
+            call add_specific_field_to_writer_entry(io_configuration, writer_entry_index, io_config_facet_index, &
+                 my_facet_index+i, trim(field_name)//"_udef"//trim(conv_to_string(i)), field_namespace, writer_field_names, &
+                 duplicate_field_names, prognostic_containing_data_defn%frequency, &
+                 prognostic_field_configuration=prognostic_field_configuration)
+          end do
+          if (prognostic_field_configuration%collective) then
+            allocate(collective_tracer)
+            allocate(collective_tracer%dimensions(&
+                 writer_entries(writer_entry_index)%contents(my_facet_index+number_tracers)%dimensions))
+            do i=1, writer_entries(writer_entry_index)%contents(my_facet_index+number_tracers)%dimensions
+              if (trim(writer_entries(writer_entry_index)%contents(my_facet_index+number_tracers)%dim_size_defns(i)) == "z" .or. &
+                  trim(writer_entries(writer_entry_index)%contents(my_facet_index+number_tracers)%dim_size_defns(i)) == "zn" ) then
+                collective_tracer%dimensions(i)=1
+              else if (trim(writer_entries(writer_entry_index)%contents(my_facet_index+number_tracers)%dim_size_defns(i)) &
+                   == "y") then
+                collective_tracer%dimensions(i)=2
+              else if (trim(writer_entries(writer_entry_index)%contents(my_facet_index+number_tracers)%dim_size_defns(i)) &
+                   == "x") then
+                collective_tracer%dimensions(i)=3
+              end if
+            end do
+            generic=>collective_tracer
+            call c_put_generic(collective_tracer_dims, field_name, generic, .false.)
+          else
+            tot_size=1
+            do i=1, writer_entries(writer_entry_index)%contents(my_facet_index+number_tracers)%dimensions
+              tot_size=tot_size*writer_entries(writer_entry_index)%contents(my_facet_index+number_tracers)%actual_dim_size(i)
+            end do
+            call c_put_integer(tracer_splits, field_name, tot_size)
+          end if
+          call c_add_string(tracer_names, field_name)
+          add_field_to_writer_entry=number_tracers
           return
         end if     
       end if
@@ -1369,11 +1801,32 @@ contains
         writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions=&
              writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions-1
       end if      
+      if (writer_entries(writer_entry_index)%contents(my_facet_index)%dim_size_defns(&
+           writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions) .eq. "tfields") then
+        writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions=&
+             writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions-1
+      end if      
       do i=1, writer_entries(writer_entry_index)%contents(my_facet_index)%dimensions
         writer_entries(writer_entry_index)%contents(my_facet_index)%actual_dim_size(i)=c_get_integer(&
              io_configuration%dimension_sizing, writer_entries(writer_entry_index)%contents(my_facet_index)%dim_size_defns(i))
       end do      
     end if    
+
+    if (writer_entries(writer_entry_index)%contents(my_facet_index)%output_frequency .gt. 0) then
+      if ( time_basis .and. mod( nint(writer_entries(writer_entry_index)%contents(my_facet_index)%output_frequency), &
+                writer_entries(writer_entry_index)%contents(my_facet_index)%timestep_frequency) .ne. 0 ) then
+        call log_log(LOG_ERROR, "The output interval for '"//trim(field_name)//  &
+                                "' must be a multiple of its sampling interval when using time_basis=.true.")
+      end if
+      if ( (time_basis .or. force_output_on_interval) &
+           .and. mod( nint(writer_entries(writer_entry_index)%write_time_frequency), &
+                 nint(writer_entries(writer_entry_index)%contents(my_facet_index)%output_frequency)) .ne. 0 ) then
+        call log_log(LOG_ERROR, "The file writing interval for the file containing '"//trim(field_name)//  &
+                                "' must be a multiple of its output interval when using "//&
+                                "time_basis=.true. or force_output_on_interval=.true.")
+      end if
+    end if
+
     call check_thread_status(forthread_mutex_init(writer_entries(writer_entry_index)%contents(my_facet_index)%values_mutex, -1))
   end subroutine add_specific_field_to_writer_entry
 

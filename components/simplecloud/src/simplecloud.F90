@@ -34,8 +34,6 @@ implicit none
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable ::         &
                tend_pr_tot_th,  tend_pr_tot_qv,  tend_pr_tot_ql,  tend_pr_tot_tabs
   logical :: l_tend_pr_tot_th,l_tend_pr_tot_qv,l_tend_pr_tot_ql,l_tend_pr_tot_tabs
-  integer :: diagnostic_generation_frequency
-
 
   public simplecloud_get_descriptor
 
@@ -239,9 +237,6 @@ contains
       allocate( tend_pr_tot_tabs(current_state%local_grid%size(Z_INDEX)) )
     endif
 
-    ! Save the sampling_frequency to force diagnostic calculation on select time steps
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
-
   end subroutine initialisation_callback  
 
 
@@ -282,6 +277,9 @@ contains
 
     real(DEFAULT_PRECISION) :: dtm  ! Local timestep variable
     integer :: target_x_index, target_y_index
+    logical :: calculate_diagnostics
+
+    calculate_diagnostics = current_state%diagnostic_sample_timestep
 
     ! Zero profile tendency totals on first instance in the sum
     if (current_state%first_timestep_column) then
@@ -311,9 +309,7 @@ contains
     target_y_index=jcol-current_state%local_grid%halo_size(Y_INDEX)
     target_x_index=icol-current_state%local_grid%halo_size(X_INDEX)
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
-      call save_precomponent_tendencies(current_state, icol, jcol, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) call save_precomponent_tendencies(current_state, icol, jcol, target_x_index, target_y_index)
 
     do k=2,k_cloudmax
 
@@ -378,9 +374,7 @@ contains
       end if
     end do
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
-      call compute_component_tendencies(current_state, icol, jcol, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) call compute_component_tendencies(current_state, icol, jcol, target_x_index, target_y_index)
 
   end subroutine timestep_callback
 

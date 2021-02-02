@@ -9,7 +9,7 @@ module get_and_test_socrates_options_mod
  use conversions_mod, only : conv_to_string
  use q_indices_mod, only: get_q_index, standard_q_names
  use optionsdatabase_mod, only : options_get_string, options_get_integer, &
-       options_get_real, options_get_logical
+       options_get_real, options_get_logical, options_has_key
  
  use def_socrates_options, only: str_socrates_options
  
@@ -175,11 +175,6 @@ contains
                (LOG_ERROR, "Socrates - start time is outside sensible range, check config - STOP")
        endif
        !
-       socrates_opt%rad_int_time = options_get_real(current_state%options_database, "rad_int_time")
-       if (socrates_opt%rad_int_time <= 0.0) then
-          call log_master_log &
-               (LOG_WARN, "Socrates - rad_int_time less than 0.0, SOCRATES will be called every timestep")
-       endif
        
        ! Now get the surface albedo variables
        socrates_opt%l_variable_srf_albedo = options_get_logical(current_state%options_database, "l_variable_srf_albedo")
@@ -201,6 +196,19 @@ contains
                (LOG_ERROR, "Socrates - longitude is outside sensible range, check config - STOP")
        endif
     endif ! end l_solar_fixed
+
+    ! Read the radiation call interval
+    socrates_opt%rad_interval = options_get_integer(current_state%options_database, "rad_interval")
+    if (socrates_opt%rad_interval <= 0) then
+       call log_master_log &
+            (LOG_WARN, "Socrates - rad_interval <= 0 ; SOCRATES will be called every timestep")
+    endif
+    if (options_has_key(current_state%options_database, "rad_int_time")) then
+       call log_master_log &
+            (LOG_ERROR, "Socrates - option key 'rad_int_time' is deprecated and no longer functions.  "//&
+                        "Please remove this from your configuration, and use 'rad_interval', which "//&
+                        "has functionality dependent upon 'time_basis'.")
+    end if
 
     if (socrates_opt%surface_albedo < 0.0 .or. socrates_opt%surface_albedo > 1.0) then
        call log_master_log &
