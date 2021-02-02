@@ -47,7 +47,7 @@ module iobridge_mod
   type io_configuration_data_definition_type
      character(len=STRING_LENGTH) :: name
      logical :: send_on_terminate
-     integer :: number_of_data_fields, frequency, mpi_datatype
+     integer :: number_of_data_fields, frequency, mpi_datatype, command_data
      type(io_configuration_field_type), dimension(:), allocatable :: fields
      integer :: dump_requests(2) !< Dump non blocking send request handles
      character, dimension(:), allocatable :: send_buffer !< Send buffer which holds the model during a dump
