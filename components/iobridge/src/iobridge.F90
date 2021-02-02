@@ -925,10 +925,11 @@ contains
       end if
     end do
 
-    if (current_state%traj_tracer_index .gt. 0 .and. data_definition%name == "3d_tracer_data"    &
-        .and. mod(nint(current_state%time+current_state%dtm),traj_interval) .eq. 0) then
-      call reinitialise_trajectories(current_state)
-       current_state%reinit_tracer=.true.
+    if (current_state%traj_tracer_index .gt. 0 .and. data_definition%name == "3d_tracer_data") then 
+       if (mod(nint(current_state%time+current_state%dtm),traj_interval) .eq. 0) then
+          call reinitialise_trajectories(current_state)
+          current_state%reinit_tracer=.true.
+       endif
     end if
       
   end subroutine pack_send_buffer
