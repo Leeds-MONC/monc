@@ -20,6 +20,16 @@ complete re-write of the Met Office LEM using modern software design with
 a flexible plug 'n play component based architecture with a focus on high
 performance computing (HPC) scaling and efficiency.  '
 
+# Compiling and Running on Leeds ARC machines
+
+To make compilation more simple on the ARC systems, a script called `monc_compile_arc.sh` has been written which loads the necessary modules and compiles MONC using fcm. A second script, `submonc.sge`, can be used to submit a MONC task using the command `qsub submonc.sge` and similarly loads the required modules before submitting the job.
+
+### MPI libraries and compilers on ARC
+
+Testing has shown MONC to be incompatible with intel compilers at present (at the very least with intel 19.04), and so the compilation script uses the gnu compiler (version 4.8.5 by default on arc4, but tested and working with gcc 8.3.0 and gcc 6.3.0). 
+
+MONC has been known to sometimes have issues with openmpi, and so mvapich2 is recommended. Mvapich2 is incapable of running with multiple threads however, and testing has shown successful runs using all three MPI variants available on arc4 (openmpi, intelmpi and mvapich2) so while mvapich2 is the recommended variant, its use remains only a recommendation rather than a necessity.
+
 # Contributing
 
 > **Note**: Github have written their own guides on [what git

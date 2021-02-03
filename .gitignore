@@ -5,7 +5,9 @@ fcm-make-as-parsed.cfg
 fcm-make-on-success.cfg
 fcm-make.log
 preprocess/
+monc_stdout/
 
+submonc.sge.[oe]*
 .*.sw*
 *.nc
 *.autogen

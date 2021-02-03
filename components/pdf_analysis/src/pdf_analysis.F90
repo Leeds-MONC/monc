@@ -1,4 +1,4 @@
-!> Calculates fields related to distributions of data on full-domain horizontal 2d slices 
+!> Calculates fields related to distributions of data on full-domain horizontal 2d slices
 module pdf_analysis_mod
   use monc_component_mod, only : COMPONENT_ARRAY_FIELD_TYPE, &
       COMPONENT_DOUBLE_DATA_TYPE, component_descriptor_type, &
@@ -7,7 +7,7 @@ module pdf_analysis_mod
   use grids_mod, only : X_INDEX, Y_INDEX, Z_INDEX
   use datadefn_mod, only : DEFAULT_PRECISION, PRECISION_TYPE
   use optionsdatabase_mod, only : options_has_key, options_get_logical, options_get_integer, options_get_string, options_get_real
-  use mpi, only : MPI_SUM, MPI_IN_PLACE, MPI_INT, MPI_REAL, MPI_DOUBLE 
+  use mpi, only : MPI_SUM, MPI_IN_PLACE, MPI_INT, MPI_REAL, MPI_DOUBLE
   use logging_mod, only : LOG_INFO, LOG_DEBUG, LOG_ERROR, log_master_log, log_is_master
   use conversions_mod, only : conv_to_string
   implicit none
@@ -25,7 +25,7 @@ module pdf_analysis_mod
                                                         ! these are available on all processes
 
   integer :: tpts  ! total number of horizontal grid points on full domain
-  integer :: lpts  ! local number of horizontal grid points on 
+  integer :: lpts  ! local number of horizontal grid points on
 
   logical :: show_critical_w  ! stdout diagnostic logical
 
@@ -78,7 +78,7 @@ contains
     show_critical_w = options_get_logical(current_state%options_database, "show_critical_w")
 
     !> Allocate space for the global 2d field only on a single process
-!    if (current_state%parallel%my_rank == 0) 
+!    if (current_state%parallel%my_rank == 0)
      allocate(tmp_all(tpts))
 !    else
 !      allocate(tmp_all(1))
@@ -89,7 +89,7 @@ contains
     call mpi_allgather(lpts, 1, MPI_INT, gpts_on_proc, 1, MPI_INT, current_state%parallel%monc_communicator, ierr)
 
     !> Allocate and initialize displacement values
-    allocate(displacements(current_state%parallel%processes)) 
+    allocate(displacements(current_state%parallel%processes))
     displacements(1) = 0
     do inc = 2, current_state%parallel%processes
       displacements(inc) = displacements(inc-1) + gpts_on_proc(inc-1)
@@ -113,7 +113,7 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
 
     !> Current forumulation only handles vertical velocity percentiles.
-    !! Future enhancements may employ this component to perform additional 
+    !! Future enhancements may employ this component to perform additional
     !! operations that require access to full horizontal fields, such as
     !! pdf calculations.
 
@@ -127,7 +127,7 @@ contains
   subroutine finalisation_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    if (allocated(tmp_all)) deallocate(tmp_all)    
+    if (allocated(tmp_all)) deallocate(tmp_all)
   end subroutine finalisation_callback
 
 
@@ -138,7 +138,7 @@ contains
     real(kind=DEFAULT_PRECISION), dimension(lpts) :: tmp_var
 
     integer :: i, j, k, num_neg, num_pos, dd_thresh_pos, ud_thresh_pos
-    integer :: max_up_k, min_dwn_k 
+    integer :: max_up_k, min_dwn_k
     real(kind=DEFAULT_PRECISION), dimension((lpts+1)/2) :: T
     real(kind=DEFAULT_PRECISION), dimension((tpts+1)/2) :: Tall
     real(kind=DEFAULT_PRECISION)                        :: max_up, min_dwn, &
@@ -155,7 +155,7 @@ contains
     min_dwn_k  = 0
 
     !> reset thresholds
-    current_state%global_grid%configuration%vertical%w_dwn(:) = 0.0_DEFAULT_PRECISION 
+    current_state%global_grid%configuration%vertical%w_dwn(:) = 0.0_DEFAULT_PRECISION
     current_state%global_grid%configuration%vertical%w_up(:)  = 0.0_DEFAULT_PRECISION
 
     !> Loop over levels
@@ -185,7 +185,7 @@ contains
          num_neg = count(tmp_all < 0.0_DEFAULT_PRECISION)
          num_pos = count(tmp_all > 0.0_DEFAULT_PRECISION)
 
-         dd_thresh_pos = int(num_neg * dwnpercrit) 
+         dd_thresh_pos = int(num_neg * dwnpercrit)
          ud_thresh_pos = tpts - int(num_pos * uppercrit) + 1
 
          if ( dd_thresh_pos == 0 ) dd_thresh_pos = 1
@@ -200,7 +200,7 @@ contains
              min_dwn_th = tmp_all(dd_thresh_pos)
              min_dwn = tmp_all(1)  ! sorted array
              min_dwn_k = k
-           end if 
+           end if
            if ( tmp_all(ud_thresh_pos) > max_up_th ) then
              max_up_th = tmp_all(ud_thresh_pos)
              max_up = tmp_all(tpts)  ! sorted array
@@ -227,12 +227,12 @@ contains
       call log_master_log(LOG_INFO, 'Maximum updraft:   '&
                           //trim(conv_to_string(max_up))//' at level '//trim(conv_to_string(max_up_k)) )
       call log_master_log(LOG_INFO, 'Minimum downdraft threshold:   '&
-                          //trim(conv_to_string(min_dwn_th))//' found at level '//trim(conv_to_string(min_dwn_k)) )   
+                          //trim(conv_to_string(min_dwn_th))//' found at level '//trim(conv_to_string(min_dwn_k)) )
       call log_master_log(LOG_INFO, 'Minimum downdraft:   '&
                           //trim(conv_to_string(min_dwn))//' at level '//trim(conv_to_string(min_dwn_k)) )
     end if ! show_critical_w
 
-  end subroutine calculate_w_percentiles   
+  end subroutine calculate_w_percentiles
 
 
   !> Combines with MergeSort sorting algorithm taken from:
@@ -240,14 +240,14 @@ contains
   !  and modified to match local type and renamed to avoid confusion with intrinsic merge
   !  All parameters based on MergeSort.  No need to modify anything.
   subroutine MergeSortMerge(A,NA,B,NB,C,NC)
- 
+
     integer, intent(in) :: NA,NB,NC                              ! Normal usage: NA+NB = NC
     real(kind=DEFAULT_PRECISION), intent(in out) :: A(NA)        ! B overlays C(NA+1:NC)
     real(kind=DEFAULT_PRECISION), intent(in)     :: B(NB)
     real(kind=DEFAULT_PRECISION), intent(in out) :: C(NC)
- 
+
     integer :: I,J,K
- 
+
     I = 1; J = 1; K = 1;
     do while(I <= NA .and. J <= NB)
       if (A(I) <= B(J)) then
@@ -265,9 +265,9 @@ contains
       K = K + 1
     enddo
     return
- 
+
   end subroutine mergesortmerge
- 
+
   !> Combines with MergeSortMerge sorting algorithm taken from:
   !  https://rosettacode.org/wiki/Sorting_algorithms/Merge_sort#Fortran
   !  and modified to match local type
@@ -275,14 +275,14 @@ contains
   !! @N size of A
   !! @T I don't really understand T
   recursive subroutine MergeSort(A,N,T)
- 
+
     integer, intent(in) :: N
     real(kind=DEFAULT_PRECISION), dimension(N), intent(in out) :: A
     real(kind=DEFAULT_PRECISION), dimension((N+1)/2), intent (out) :: T
- 
+
     integer :: NA,NB
     real(kind=DEFAULT_PRECISION) :: V
- 
+
     if (N < 2) return
     if (N == 2) then
       if (A(1) > A(2)) then
@@ -291,19 +291,19 @@ contains
         A(2) = V
       endif
       return
-    endif      
+    endif
     NA=(N+1)/2
     NB=N-NA
- 
+
     call MergeSort(A,NA,T)
     call MergeSort(A(NA+1),NB,T)
- 
+
     if (A(NA) > A(NA+1)) then
       T(1:NA)=A(1:NA)
       call MergeSortMerge(T,NA,A(NA+1),NB,A,N)
     endif
     return
- 
+
   end subroutine MergeSort
 
 
@@ -341,7 +341,7 @@ contains
     else if (name .eq. "critical_downdraft_local") then
       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)), &
                source=current_state%global_grid%configuration%vertical%w_dwn(:))
-    end if 
+    end if
   end subroutine field_value_retrieval_callback
 
 end module pdf_analysis_mod

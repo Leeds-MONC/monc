@@ -11,7 +11,8 @@ module conditional_diagnostics_whole_mod
   use grids_mod, only : Z_INDEX
   use datadefn_mod, only : PRECISION_TYPE, DEFAULT_PRECISION
   use mpi, only : MPI_SUM, MPI_IN_PLACE, MPI_INT, MPI_REAL, MPI_DOUBLE
-  !use missing_data_mod, only: rmdi
+  use missing_data_mod, only: rmdi
+
   use optionsdatabase_mod, only : options_get_integer
 
 
@@ -22,8 +23,6 @@ module conditional_diagnostics_whole_mod
 #endif
 
   integer :: diagnostic_generation_frequency
-  Real, Parameter    :: RMDI     = -32768.0*32768.0
-
   public conditional_diagnostics_whole_get_descriptor
 
 contains
