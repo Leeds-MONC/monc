@@ -298,7 +298,7 @@ contains
     integer, intent(in) :: halo_depth
     type(halo_communication_type), intent(out) :: halo_state
 
-    integer :: number_comm_requests
+    integer :: number_comm_requests, i
 
     halo_state%involve_corners = involve_corners
     halo_state%halo_depth = halo_depth
@@ -308,6 +308,10 @@ contains
       allocate(halo_state%halo_swap_neighbours(halo_state%number_distinct_neighbours))
       halo_state%halo_swap_neighbours = populate_halo_swap_neighbours(current_state%local_grid, &
            current_state%parallel%my_rank, halo_state%number_distinct_neighbours, involve_corners)
+      do i=1, halo_state%number_distinct_neighbours
+        halo_state%halo_swap_neighbours%halo_corners =0
+        halo_state%halo_swap_neighbours%halo_pages =0
+      end do
       call deduce_halo_pages_per_neighbour(current_state, halo_state%halo_swap_neighbours, &
            halo_state%number_distinct_neighbours, get_fields_per_halo_cell, &
            halo_state%fields_per_cell, halo_depth)
