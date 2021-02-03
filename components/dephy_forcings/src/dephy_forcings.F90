@@ -4,21 +4,20 @@
 ! NOTES
 ! - Note q in MONC is mixing ratio (rather than specific humidity, as is more usual)
 ! - Module needs to be initialised after gridmanager but before random noise
+! - This may need to be checked
 
 ! TODO
-! - Make code self-documenting
-! - Handle (evolving) surface pressure, and surface pressure initialisation
+! - Check for possible problematic nature of modifying both current state and vertical grid simultaneously
+!   and check what "target" keyword does in this context.
+! - Handle (evolving) surface pressure, and surface pressure initialisation from file
+! - Make code self-documenting with Doxygen
 ! - Add diagnostics
 ! - Implement lat/lon dependence for radiation (socrates_opt%latitude,socrates_opt%longitude)
 ! - Handle damping in prescribed fashion (could be a question for DEPHY community)?
 ! - Improve interpolation routines? (replace by Steffen interpolation)
 ! - Code up finalisation callback (deallocation)?
-! - Ensure in some way that we are not in "column mode" when subroutines are called
-!   (this looks harder, maybe use a "dirty" approach that simply checks the current column during the
-!   timestep routine is always the same)
+! - Implement a better column mode check?
 ! - Discuss best way to do lowerbc and z0/z0th reinitialisation
-! - Check for possible problematic nature of modifying both current state and vertical grid simultaneously
-!   and check what "target" keyword does in this context.
 ! - Check grid vertical halo size
 ! - Discuss best way to refer to z-coordinates
 
@@ -78,6 +77,10 @@ module dephy_forcings_mod
   integer :: height_len_dephy
   integer :: kkp !module wide parameter for vertical grid
   logical :: l_verbose=.false. ! Temporary flag for dirty debugging
+  ! Three parameters below are meant to catch the model being in column mode.
+  integer :: column_check_x !
+  integer :: column_check_y !
+  integer :: n_dephy_passes=0 ! start checking after the initial two dephy passes
 
   ! Surface fields (time-dependent)
   real(kind=DEFAULT_PRECISION), allocatable :: lat_traj_dephy(:), &
@@ -285,6 +288,7 @@ contains
 
     ! update forcing and current fields
     call dephy_time_interpolate(current_state)
+    call dephy_column_mode_check(current_state)
 
     ! Reset z0 and z0th, and related parameters
     z0=z0_traj
@@ -413,6 +417,25 @@ contains
 
   end subroutine dephy_sanity_checks
 
+  subroutine dephy_column_mode_check(current_state)
+    implicit none
+    type(model_state_type), target, intent(inout) :: current_state
+
+    ! perform check only after second time-step fully completed
+    ! since current column may be different in first time step.
+    if(n_dephy_passes<2) then
+      column_check_x=current_state%column_local_x
+      column_check_y=current_state%column_local_y
+      n_dephy_passes=n_dephy_passes+1
+    else
+      if(.not. (column_check_x==current_state%column_local_x .and. &
+      column_check_y==current_state%column_local_y)) then
+        call log_master_log(LOG_ERROR, "DEPHY: WAYWARD FRIAR ERROR. MONC SEEMS TO BE RUNNING IN COLUMN MODE WHILE RUNNING DEPHY!")
+      end if
+      n_dephy_passes=n_dephy_passes+1
+    endif
+
+  end subroutine dephy_column_mode_check
 
   subroutine dephy_read_dimension_variable(field,netcdf_name,dim_length)
     implicit none
