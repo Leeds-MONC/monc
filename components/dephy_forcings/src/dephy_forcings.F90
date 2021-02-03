@@ -10,9 +10,10 @@
 ! - Check for possible problematic nature of modifying both current state and vertical grid simultaneously
 !   and check what "target" keyword does in this context.
 ! - Handle (evolving) surface pressure, and surface pressure initialisation from file
+! - Deal with surface non-zero height above sea level?
 ! - Make code self-documenting with Doxygen
 ! - Add diagnostics
-! - Implement lat/lon dependence for radiation (socrates_opt%latitude,socrates_opt%longitude)
+! - Implement lat/lon dependence for radiation (socrates_opt%latitude,socrates_opt%longitude,socrates_opt%l_variable_srf_albedo,socrates_opt%surface_albedo)
 ! - Handle damping in prescribed fashion (could be a question for DEPHY community)?
 ! - Improve interpolation routines? (replace by Steffen interpolation)
 ! - Code up finalisation callback (deallocation)?
