@@ -43,7 +43,7 @@ diag_write_freq=600.0
 checkpoint_frequency=0
 checkpoint_file="checkpoint_files_dephy_dump.nc"
 check_walltime_frequency=100
-walltime_limit=00:30:00
+walltime_limit=01:00:00
 
 # Advection choices
 advection_flow_fields=pw
