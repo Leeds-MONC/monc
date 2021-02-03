@@ -19,7 +19,7 @@ module gridmanager_mod
 #ifndef TEST_MODE
   private
 #endif
-  
+
   ! 1 = No adjustment
   ! 2 = ensure P0=PSF by adjusting THREF profile by constant factor
   ! 3 = ensure P0=PSF by adjusting PSF (not advised)
@@ -28,7 +28,9 @@ module gridmanager_mod
   real, parameter :: DEFAULT_SPACING = 1.E9  !< The default spacing used if no grid is active in a specific dimension
   real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: qinit
 
-  public gridmanager_get_descriptor
+  public gridmanager_get_descriptor,set_up_vertical_reference_properties,set_anelastic_pressure, &
+    setup_reference_state_liquid_water_temperature_and_saturation, &
+    calculate_mixing_length_for_neutral_case, set_buoyancy_coefficient
 
 contains
 
@@ -57,7 +59,7 @@ contains
     call initialise_verticalgrid_configuration_type(current_state)
     dimensions=1
     if (current_state%global_grid%active(X_INDEX)) dimensions = dimensions+1
-    if (current_state%global_grid%active(Y_INDEX)) dimensions = dimensions+1   
+    if (current_state%global_grid%active(Y_INDEX)) dimensions = dimensions+1
     call log_master_log(LOG_INFO, trim(conv_to_string(dimensions))//"D system; z="//&
          trim(conv_to_string(current_state%global_grid%size(Z_INDEX)))//", y="//&
          trim(conv_to_string(current_state%global_grid%size(Y_INDEX)))//", x="//&
@@ -84,7 +86,7 @@ contains
          vertical_grid%q_rand, vertical_grid%theta_rand, vertical_grid%w_subs, vertical_grid%w_rand, &
          vertical_grid%q_force, vertical_grid%theta_force, vertical_grid%u_force, vertical_grid%v_force &
          )
-  end subroutine finalise_callback  
+  end subroutine finalise_callback
 
   !> Will initialise the vertical grid configuration
   !! @param current_state The current model state_mod
@@ -100,7 +102,7 @@ contains
          current_state%origional_vertical_grid_setup, current_state%continuation_run)
     call set_vertical_reference_profile(current_state, current_state%global_grid%configuration%vertical, &
          current_state%global_grid%size(Z_INDEX))
-    
+
   end subroutine initialise_verticalgrid_configuration_type
 
   !> Sets up the vertical grid reference profile at each point
@@ -117,7 +119,7 @@ contains
     call calculate_initial_profiles(current_state, vertical_grid)
     call set_up_vertical_reference_properties(current_state, vertical_grid, current_state%global_grid%size(Z_INDEX))
     call set_anelastic_pressure(current_state)
-    ! 
+    !
     call set_qv_init_from_rh(current_state)
 
     do k=2,kkp-1
@@ -130,9 +132,9 @@ contains
     end do
     do k=2,kkp-1
       ! advection onto p-level from below
-      vertical_grid%tzc1(k)=0.25_DEFAULT_PRECISION*vertical_grid%rdz(k)*vertical_grid%rho(k-1)/vertical_grid%rhon(k) 
+      vertical_grid%tzc1(k)=0.25_DEFAULT_PRECISION*vertical_grid%rdz(k)*vertical_grid%rho(k-1)/vertical_grid%rhon(k)
       ! advection onto p-level from above
-      vertical_grid%tzc2(k)=0.25_DEFAULT_PRECISION*vertical_grid%rdz(k)*vertical_grid%rho(k)/vertical_grid%rhon(k) 
+      vertical_grid%tzc2(k)=0.25_DEFAULT_PRECISION*vertical_grid%rdz(k)*vertical_grid%rho(k)/vertical_grid%rhon(k)
     end do
     do k=2,kkp-1
       ! advection onto w-level (K) from below
@@ -146,7 +148,7 @@ contains
     vertical_grid%czg(k)=-vertical_grid%czb(k)
     vertical_grid%czh(k)=vertical_grid%czb(k)*vertical_grid%cza(k-1)
     vertical_grid%tzc2(k)=0.25_DEFAULT_PRECISION*vertical_grid%rdz(k)*vertical_grid%rho(k)/vertical_grid%rhon(k)
-    vertical_grid%tzc1(k)=0.25_DEFAULT_PRECISION*vertical_grid%rdz(k)*vertical_grid%rho(k-1)/vertical_grid%rhon(k) 
+    vertical_grid%tzc1(k)=0.25_DEFAULT_PRECISION*vertical_grid%rdz(k)*vertical_grid%rho(k-1)/vertical_grid%rhon(k)
     vertical_grid%czn=vertical_grid%dzn(2)*0.5_DEFAULT_PRECISION
     vertical_grid%zlogm=log(1.0_DEFAULT_PRECISION+vertical_grid%zn(2)/z0)
     vertical_grid%zlogth=log((vertical_grid%zn(2)+z0)/z0th)
@@ -191,7 +193,7 @@ contains
     logical :: l_matchthref    ! if .true. then initialize thref to be the same as theta_init
 
     character(len=STRING_LENGTH), dimension(:), allocatable :: names_init_pl_q ! names of q variables to initialize
-    
+
     real(kind=DEFAULT_PRECISION), allocatable :: f_init_pl_q_tmp(:) !temporary 1D storage of initial q field
     real(kind=DEFAULT_PRECISION), allocatable :: zgrid(:)  ! z grid to use in interpolation
 
@@ -199,7 +201,7 @@ contains
     real(kind=DEFAULT_PRECISION) :: qsat
 
     allocate(zgrid(current_state%local_grid%local_domain_end_index(Z_INDEX)))
-    
+
     zztop = current_state%global_grid%top(Z_INDEX)
 
     ! Initialize everything to zero.  This won't make sense for theta.
@@ -209,13 +211,13 @@ contains
     vertical_grid%theta_init = 0.0_DEFAULT_PRECISION
 
     l_init_pl_theta=options_get_logical(current_state%options_database, "l_init_pl_theta")
-    l_init_pl_rh=options_get_logical(current_state%options_database, "l_init_pl_rh") 
+    l_init_pl_rh=options_get_logical(current_state%options_database, "l_init_pl_rh")
     l_init_pl_q=options_get_logical(current_state%options_database, "l_init_pl_q")
     if (l_init_pl_q) then
       allocate(names_init_pl_q(options_get_array_size(current_state%options_database, "names_init_pl_q")))
       call options_get_string_array(current_state%options_database, "names_init_pl_q", names_init_pl_q)
       do n = 1,size(names_init_pl_q)
-         if (trim(names_init_pl_q(n)) .eq. 'vapour' .and. l_init_pl_rh) then 
+         if (trim(names_init_pl_q(n)) .eq. 'vapour' .and. l_init_pl_rh) then
             call log_master_log(LOG_ERROR, "Initialisation of vapour and RH - STOP")
          endif
       enddo
@@ -262,7 +264,7 @@ contains
         do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
           do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
             current_state%th%data(:,j,i) = current_state%global_grid%configuration%vertical%theta_init(:) - &
-                 current_state%global_grid%configuration%vertical%thref(:) 
+                 current_state%global_grid%configuration%vertical%thref(:)
           end do
         end do
       end if
@@ -338,7 +340,7 @@ contains
       end do
       deallocate(f_init_pl_q_tmp, z_init_pl_q, f_init_pl_q, names_init_pl_q)
    end if
-    deallocate(zgrid)      
+    deallocate(zgrid)
   end subroutine calculate_initial_profiles
 
   !> Calculates the mixing length for the neutral case
@@ -356,8 +358,8 @@ contains
       vertical_grid%rneutml(k)=sqrt(1.0_DEFAULT_PRECISION/(1.0_DEFAULT_PRECISION/(von_karman_constant*&
            (vertical_grid%z(k)+z0))**2+1.0_DEFAULT_PRECISION/current_state%rmlmax**2) )
       vertical_grid%rneutml_sq(k)=vertical_grid%rneutml(k)*vertical_grid%rneutml(k)
-    end do    
-  end subroutine calculate_mixing_length_for_neutral_case 
+    end do
+  end subroutine calculate_mixing_length_for_neutral_case
 
   !> Sets the buoyancy coefficient from the grid configuration and configuration
   !! @param current_state The current model state_mod
@@ -368,15 +370,15 @@ contains
     type(vertical_grid_configuration_type), intent(inout) :: vertical_grid
     integer, intent(in) :: kkp
 
-    integer :: k    
+    integer :: k
 
     if (.not. current_state%passive_th) then
-      if(current_state%use_anelastic_equations)then                                                      
-        do k=1, kkp-1          
+      if(current_state%use_anelastic_equations)then
+        do k=1, kkp-1
           vertical_grid%buoy_co(k)=cp*(vertical_grid%prefn(k)**r_over_cp-vertical_grid%prefn(k+1)**r_over_cp)/&
                ((current_state%surface_reference_pressure**r_over_cp)*vertical_grid%dzn(k+1))
         end do
-      else                                                                     
+      else
         vertical_grid%buoy_co(1:kkp-1)=G/current_state%thref0        ! _Boussinesq
       end if
       ! Dummy value at top level
@@ -397,14 +399,15 @@ contains
 
     real(kind=DEFAULT_PRECISION) :: delta_t=1.0_DEFAULT_PRECISION, qlinit, tinit, qsatin, dqsatdtin, dsatfacin
     integer :: iter, k
-    
+
     do k=1,kkp
        vertical_grid%tref(k)=vertical_grid%thref(k)*(vertical_grid%prefn(k)/current_state%surface_reference_pressure)**r_over_cp
-      vertical_grid%tstarpr(k)=0.0_DEFAULT_PRECISION
-   end do
+       vertical_grid%tstarpr(k)=0.0_DEFAULT_PRECISION
+    end do
+
    if (current_state%th%active) then
       ! PREFRCP is used and hence calculated if theta is active
-      do k = 1,kkp   
+      do k = 1,kkp
          vertical_grid%prefrcp(k)=(current_state%surface_reference_pressure/vertical_grid%prefn(k))**r_over_cp
          vertical_grid%rprefrcp(k)=1.0_DEFAULT_PRECISION/vertical_grid%prefrcp(k)
          ! Denotion between setup run and chain run in LEM - need to consider here too
@@ -438,12 +441,12 @@ contains
             ! Denotion between setup run and chain run in LEM - need to consider here too
             vertical_grid%tstarpr(k)= tinit-vertical_grid%tref(k)
             vertical_grid%qsat(k)=qsatin
-            vertical_grid%dqsatdt(k)=dqsatdtin        
+            vertical_grid%dqsatdt(k)=dqsatdtin
             vertical_grid%qsatfac(k)= ( 1.0_DEFAULT_PRECISION/ ( 1.0_DEFAULT_PRECISION + rlvap_over_cp*dqsatdtin ) )
          end do
       endif
    end if
-  end subroutine setup_reference_state_liquid_water_temperature_and_saturation  
+  end subroutine setup_reference_state_liquid_water_temperature_and_saturation
 
   !> Sets up the reference properties for the vertical grid at each point
   !! @param current_state The current model state_mod
@@ -453,12 +456,12 @@ contains
     type(model_state_type), intent(inout) :: current_state
     type(vertical_grid_configuration_type), intent(inout) :: vertical_grid
     integer, intent(in) :: kkp
-    
+
     integer :: k
 
     do k=1,kkp
 !       vertical_grid%thref(k)=current_state%thref0
-!       vertical_grid%theta_init(k)=vertical_grid%thref(k) ! In LEM this can also be set from configuration (TODO)       
+!       vertical_grid%theta_init(k)=vertical_grid%thref(k) ! In LEM this can also be set from configuration (TODO)
        vertical_grid%prefn(k)=0.0_DEFAULT_PRECISION
        vertical_grid%pdiff(k)=0.0_DEFAULT_PRECISION
        vertical_grid%rho(k)=current_state%rhobous
@@ -468,7 +471,7 @@ contains
       vertical_grid%dthref(k)=vertical_grid%thref(k+1)-vertical_grid%thref(k)
     end do
     vertical_grid%dthref(kkp)=0.0_DEFAULT_PRECISION
-  end subroutine set_up_vertical_reference_properties  
+  end subroutine set_up_vertical_reference_properties
 
   !> Sets up and smooths the vertical grid. This is based upon the grid configuration already read in
   !! @param vertical_grid The vertical grid
@@ -495,13 +498,13 @@ contains
         call new_vertical_grid_setup(vertical_grid, kgd, kkp, zztop)
       end if
     end if
-    
+
     ! Regardless of the vertical grid computation method, set the level deltas
     do k=2,kkp
        vertical_grid%dz(k)=vertical_grid%z(k)-vertical_grid%z(k-1)
-       vertical_grid%dzn(k)= vertical_grid%zn(k)-vertical_grid%zn(k-1)                                                     
-       vertical_grid%rdz(k)=1./vertical_grid%dz(k)                                                          
-       vertical_grid%rdzn(k)=1./vertical_grid%dzn(k)                                                        
+       vertical_grid%dzn(k)= vertical_grid%zn(k)-vertical_grid%zn(k-1)
+       vertical_grid%rdz(k)=1./vertical_grid%dz(k)
+       vertical_grid%rdzn(k)=1./vertical_grid%dzn(k)
     end do
     vertical_grid%dzn(1)=0.d0
   end subroutine set_up_and_smooth_grid
@@ -521,7 +524,7 @@ contains
     real(kind=DEFAULT_PRECISION), intent(in) :: zztop
 
     integer :: n, k
-    
+
     call create_linear_grid(vertical_grid, kgd, hgd, ninitp, kkp, zztop)
     ! Smooth grid
     vertical_grid%z(1)=0.0_DEFAULT_PRECISION
@@ -585,8 +588,8 @@ contains
         end if
         a(k)=a0+real(k-k0, kind=DEFAULT_PRECISION)*d0
       end if
-    end do    
-    
+    end do
+
     do k=1, kkp
       vertical_grid%z(k)=a(k*2)
       vertical_grid%zn(k)=a(2*k-1)
@@ -625,7 +628,7 @@ contains
         if(kgd(i) .gt. 0) then
           kmax=kgd(i)
           zmax=hgd(i)
-          
+
           do k=kgd(i-1)+1,kgd(i)
             vertical_grid%z(k)=hgd(i-1)+(hgd(i)-hgd(i-1))*real(k-kgd(i-1), kind=DEFAULT_PRECISION)&
                  /real(kgd(i)-kgd(i-1), kind=DEFAULT_PRECISION)
@@ -667,7 +670,7 @@ contains
     if (.not. allocated(vertical_grid%zn)) allocate(vertical_grid%zn(n))
 
     allocate(vertical_grid%q_rand(n,nq), vertical_grid%q_init(n,nq), vertical_grid%q_force(n,nq))
-  end subroutine allocate_vertical_grid_data  
+  end subroutine allocate_vertical_grid_data
 
   !> Initialises the horizontal grid configurations
   !! @param current_state The current model state_mod
@@ -689,7 +692,7 @@ contains
          0.25_DEFAULT_PRECISION/current_state%global_grid%configuration%horizontal%dx
     current_state%global_grid%configuration%horizontal%tcy=&
          0.25_DEFAULT_PRECISION/current_state%global_grid%configuration%horizontal%dy
-  end subroutine initialise_horizontalgrid_configuration_types  
+  end subroutine initialise_horizontalgrid_configuration_types
 
   !> Set reference profile of potential temperature for the Boussinesq/Anelastic approximation
   !! Note that this is not in general the same as the profile defining the initial vertical distribution of potential
@@ -698,7 +701,7 @@ contains
   !! @param current_state The current model state
   subroutine set_anelastic_pressure(current_state)
     type(model_state_type), intent(inout) :: current_state
-    
+
     if (current_state%use_anelastic_equations) then
       call compute_anelastic_pressure_profile_and_density(current_state)
     else
@@ -711,7 +714,8 @@ contains
         current_state%global_grid%configuration%vertical%rhon=current_state%rhobous
         current_state%global_grid%configuration%vertical%pdiff=0.0_DEFAULT_PRECISION
     end if
-  end subroutine set_anelastic_pressure  
+
+  end subroutine set_anelastic_pressure
 
   !> Computes the anelastic pressure only - if we are using Boussinesq approximation
   !! @param current_state The current model state
@@ -723,7 +727,7 @@ contains
         ,   ptop  &!pressure at z=ZN(KKP)
         , thprof(current_state%local_grid%size(Z_INDEX))
 
-    
+
     ! TODO: NOTE - we are mocking in thprof at the moment, this should be read from a configuration and used here instead
     thprof=0.0_DEFAULT_PRECISION
     ptop=0.0_DEFAULT_PRECISION
@@ -749,7 +753,7 @@ contains
       end do
       p0=0.5_DEFAULT_PRECISION*(current_state%global_grid%configuration%vertical%prefn(1)+&
              current_state%global_grid%configuration%vertical%prefn(2))
-      if (ipass .eq. 1) then                                                       
+      if (ipass .eq. 1) then
         ptop=current_state%surface_pressure**r_over_cp+ptop**r_over_cp-p0**r_over_cp
         if (ptop .le. 0.0_DEFAULT_PRECISION .and. current_state%parallel%my_rank==0) then
           call log_log(LOG_ERROR, "Negative ptop in setup of anelastic. Need a warmer THREF or different setup options")
@@ -757,7 +761,7 @@ contains
         ptop=ptop**(1.0_DEFAULT_PRECISION/r_over_cp)
       end if
     end do
-  end subroutine compute_anelastic_pressure_profile_only  
+  end subroutine compute_anelastic_pressure_profile_only
 
   !> Computes the anelastic pressure and density - if we are using Anelastic approximation
   !! @param current_state The current model state
@@ -772,14 +776,14 @@ contains
     ptop=0.0_DEFAULT_PRECISION
     current_state%global_grid%configuration%vertical%pdiff(current_state%local_grid%size(Z_INDEX))=0.0_DEFAULT_PRECISION
     do ipass=1,2 ! _after first pass, may adjust basic states
-        if (ipass .eq. 1 .or. ANELASTIC_PROFILE_MODE .gt. 1) then                                     
+        if (ipass .eq. 1 .or. ANELASTIC_PROFILE_MODE .gt. 1) then
             current_state%global_grid%configuration%vertical%prefn(current_state%local_grid%size(Z_INDEX))=&
                  (ptop/current_state%surface_reference_pressure)**r_over_cp
             do k=current_state%local_grid%size(Z_INDEX)-1,1,-1
                 current_state%global_grid%configuration%vertical%pdiff(k)=G*&
                      current_state%global_grid%configuration%vertical%dzn(k+1)/(0.5_DEFAULT_PRECISION*cp*&
                      (current_state%global_grid%configuration%vertical%thref(k)+&
-                     current_state%global_grid%configuration%vertical%thref(k+1)))                
+                     current_state%global_grid%configuration%vertical%thref(k+1)))
             end do
             do k=current_state%local_grid%size(Z_INDEX)-1,1,-1
                 current_state%global_grid%configuration%vertical%prefn(k)=&
@@ -789,8 +793,8 @@ contains
             do k=current_state%local_grid%size(Z_INDEX),1,-1
                 current_state%global_grid%configuration%vertical%prefn(k)=current_state%surface_reference_pressure*&
                      current_state%global_grid%configuration%vertical%prefn(k)**(1.0_DEFAULT_PRECISION/r_over_cp)
-            end do           
-        end if                                                                    
+            end do
+        end if
         p0=0.5_DEFAULT_PRECISION*(current_state%global_grid%configuration%vertical%prefn(1)+&
              current_state%global_grid%configuration%vertical%prefn(2))
         !       !-------------------------------------------------------------
@@ -802,7 +806,7 @@ contains
         !       ! _Option 3 tends to give rather large changes in PSF, so
         !       !   I prefer 2 or 4 for most purposes
         !       !-------------------------------------------------------------
-        if (ipass .eq. 1 .and. ANELASTIC_PROFILE_MODE .eq. 2) then                                    
+        if (ipass .eq. 1 .and. ANELASTIC_PROFILE_MODE .eq. 2) then
             !             ! _adjust THREF profile by constant factor to enforce
             !             !    P0 = (fixed) PSF
             thfactor=((p0/current_state%surface_reference_pressure)**r_over_cp-(ptop/current_state%surface_reference_pressure)**&
@@ -813,14 +817,14 @@ contains
                      current_state%global_grid%configuration%vertical%thref(k)*thfactor
             end do
         end if
-        if (ipass .eq. 1 .and. ANELASTIC_PROFILE_MODE .eq. 4) then                                    
+        if (ipass .eq. 1 .and. ANELASTIC_PROFILE_MODE .eq. 4) then
             !             ! _adjust PTOP so that P0 = (fixed) PSF
             ptop=current_state%surface_pressure**r_over_cp+ptop**r_over_cp-p0**r_over_cp
             if (ptop .le. 0.0_DEFAULT_PRECISION .and. current_state%parallel%my_rank==0) then
                 call log_log(LOG_ERROR, "Negative ptop in setup of anelastic. Need a warmer THREF or different setup options")
             end if
             ptop=ptop**(1.0_DEFAULT_PRECISION/r_over_cp)
-        end if                                                                    
+        end if
     end do
     !     !---------------------------------------
     !     ! _Finally compute density from pressure
@@ -832,12 +836,12 @@ contains
     end do
     do k=1,current_state%local_grid%size(Z_INDEX)-1
         current_state%global_grid%configuration%vertical%rho(k)=sqrt(current_state%global_grid%configuration%vertical%rhon(k)*&
-             current_state%global_grid%configuration%vertical%rhon(k+1))                                           
+             current_state%global_grid%configuration%vertical%rhon(k+1))
     end do
     current_state%global_grid%configuration%vertical%rho(current_state%local_grid%size(Z_INDEX))=&
          current_state%global_grid%configuration%vertical%rhon(current_state%local_grid%size(Z_INDEX))**2/&
-         current_state%global_grid%configuration%vertical%rhon(current_state%local_grid%size(Z_INDEX)-1)    
-  end subroutine compute_anelastic_pressure_profile_and_density  
+         current_state%global_grid%configuration%vertical%rhon(current_state%local_grid%size(Z_INDEX)-1)
+  end subroutine compute_anelastic_pressure_profile_and_density
 
 
   subroutine check_top(zztop, z, info)
@@ -862,7 +866,7 @@ contains
     end if
 
   end subroutine check_input_levels
-  
+
   subroutine set_qv_init_from_rh(current_state)
 
     type(model_state_type), intent(inout) :: current_state
@@ -882,10 +886,10 @@ contains
     vertical_grid=current_state%global_grid%configuration%vertical
 
     allocate(zgrid(current_state%local_grid%local_domain_end_index(Z_INDEX)))
-    
+
     zztop = current_state%global_grid%top(Z_INDEX)
 
-    l_init_pl_rh=options_get_logical(current_state%options_database, "l_init_pl_rh") 
+    l_init_pl_rh=options_get_logical(current_state%options_database, "l_init_pl_rh")
 
     if (l_init_pl_rh)then
        allocate(z_init_pl_rh(options_get_array_size(current_state%options_database, "z_init_pl_rh")), &
@@ -897,7 +901,7 @@ contains
        zgrid=current_state%global_grid%configuration%vertical%zn(:)
       call piecewise_linear_1d(z_init_pl_rh(1:size(z_init_pl_rh)), f_init_pl_rh(1:size(f_init_pl_rh)), zgrid, &
            current_state%global_grid%configuration%vertical%rh_init)
-      
+
       if (.not. current_state%passive_q .and. current_state%th%active) then
          iq=get_q_index('vapour', 'piecewise_initialization')
          allocate(TdegK(current_state%local_grid%local_domain_end_index(Z_INDEX)))
@@ -905,8 +909,8 @@ contains
               (vertical_grid%prefn(:)/current_state%surface_reference_pressure)**r_over_cp
          do k = current_state%local_grid%local_domain_start_index(Z_INDEX), &
               current_state%local_grid%local_domain_end_index(Z_INDEX)
-            qsat=qsaturation(TdegK(k), current_state%global_grid%configuration%vertical%prefn(k)/100.)    
-            current_state%global_grid%configuration%vertical%q_init(k, iq) = & 
+            qsat=qsaturation(TdegK(k), current_state%global_grid%configuration%vertical%prefn(k)/100.)
+            current_state%global_grid%configuration%vertical%q_init(k, iq) = &
                  (current_state%global_grid%configuration%vertical%rh_init(k)/100.0)*qsat
             !print *,  current_state%global_grid%configuration%vertical%rh_init(k), &
             !     current_state%global_grid%configuration%vertical%q_init(k, iq), &
@@ -926,7 +930,7 @@ contains
       else
          call log_master_log(LOG_ERROR, "Initialising with RH but q and/or theta passive")
       end if
-      
+
       deallocate(z_init_pl_rh, f_init_pl_rh)
     end if
 
