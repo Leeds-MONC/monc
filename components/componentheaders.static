@@ -22,6 +22,7 @@ use meanprofiles_mod, only : meanprofiles_get_descriptor
 use modelsynopsis_mod, only : modelsynopsis_get_descriptor
 use petsc_solver_mod, only : petsc_solver_get_descriptor
 use pressuresource_mod, only : pressuresource_get_descriptor
+use tvdadvection_mod, only : tvdadvection_get_descriptor
 use profile_diagnostics_mod, only : profile_diagnostics_get_descriptor
 use pstep_mod, only : pstep_get_descriptor
 use pwadvection_mod, only : pwadvection_get_descriptor
@@ -38,13 +39,11 @@ use subgrid_profile_diagnostics_mod, only : subgrid_profile_diagnostics_get_desc
 use swapsmooth_mod, only : swapsmooth_get_descriptor
 use terminationcheck_mod, only : terminationcheck_get_descriptor
 use thadvection_mod, only : thadvection_get_descriptor
-use tvdadvection_mod, only : tvdadvection_get_descriptor
 use viscosity_mod, only : viscosity_get_descriptor
 use lwrad_exponential_mod, only : lwrad_exponential_get_descriptor
 use lateral_bcs_mod, only : lateral_bcs_get_descriptor
 use casim_mod, only : casim_get_descriptor
 use casim_profile_dgs_mod, only: casim_profile_dgs_get_descriptor
-use socrates_couple_mod, only : socrates_couple_get_descriptor
 use conditional_diagnostics_column_mod, only : conditional_diagnostics_column_get_descriptor
 use conditional_diagnostics_whole_mod, only : conditional_diagnostics_whole_get_descriptor
 use pdf_analysis_mod, only : pdf_analysis_get_descriptor

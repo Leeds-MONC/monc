@@ -1,4 +1,4 @@
-SRCSF = src/ultimateflux.F90 src/tvdadvection.F90
+SRCSF =src/def_tvd_diagnostic_terms.F90 src/ultimateflux.F90 src/tvdadvection.F90
 
 BUILDDIR=build
 COREDIR=../../model_core/build
