@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -pe ib 4 
-#$ -l h_rt=1:00:0
+#$ -l h_rt=3:00:0
 #$ -l h_vmem=1G
 #$ -l placement=scatter
 #$ -cwd -V
