@@ -13,3 +13,6 @@ submonc.sge.[oe]*
 *.autogen
 __pycache__/
 .pytest_cache/
+
+## exclude conversion matlab files included for reference
+radiosonde_LEM*
