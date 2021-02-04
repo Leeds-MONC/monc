@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -pe ib 4 
-#$ -l h_rt=3:00:0
+#$ -pe ib 20 
+#$ -l h_rt=5:00:0
 #$ -l h_vmem=1G
 #$ -l placement=scatter
 #$ -cwd -V
@@ -41,7 +41,7 @@ export MONC_THREAD_MULTIPLE MV2_ENABLE_AFFINITY MV2_SHOW_CPU_BINDING \
 export OMP_NUM_THREADS=1
 
 # set env variables for submission command
-config_path='testcases/stratus/mbl_sc.mcf'
-checkpoint_fn="checkpoint_files/mbl_sc_dump.nc"
+config_path='testcases/stratus/mbl_sc_casim.mcf'
+checkpoint_fn="checkpoint_files/mbl_sc_casim_dump.nc"
 
-mpirun -np 4 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_mbl-sc_dump_1
+mpirun -np 20 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_mbl-sc-casim_dump_1
