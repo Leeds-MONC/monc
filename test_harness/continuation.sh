@@ -89,7 +89,7 @@ run_monc() {
                 # Cold start
 		if [ $RUN_MONC_CONFIG -eq 1 ]; then
     		    echo "Start MONC with configuration file $TESTCASE"
-		    eval 'aprun -n $NPES $MONC_EXEC --config=$TESTCASE --logging=4 >> $outputfn 2>&1'
+		    eval 'aprun -n $NPES $MONC_EXEC --config=$TESTCASE >> $outputfn 2>&1'
 
                 # Reconfiguration
                 elif [ $RUN_MONC_CONFIG -eq 2 ]; then
@@ -102,7 +102,7 @@ run_monc() {
                 # Restart
 		else
 		    echo "Restarting MONC with checkpoint file $checkpoint_filename"
-		    eval 'aprun -n $NPES $MONC_EXEC --checkpoint=$checkpoint_filename --logging=4 >> $outputfn 2>&1'
+		    eval 'aprun -n $NPES $MONC_EXEC --checkpoint=$checkpoint_filename >> $outputfn 2>&1'
   	fi
 fi
 }
