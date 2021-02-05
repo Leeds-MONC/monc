@@ -44,16 +44,16 @@ ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 diagnostic_file="diagnostic_files/mbl_sc_casim_dg.nc"
 moncs_per_io_server=8
 sampling_frequency=75
-3d_sampling_frequency=4500
-mm=1800.0
+3d_sampling_frequency=20
+mm=600.0
 mm1=60.0
-diag_write_freq=7260.0
+diag_write_freq=7200.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="checkpoint_files/mbl_sc_casim_dump.nc"
 check_walltime_frequency=100
-walltime_limit=05:00:00
+walltime_limit=08:00:00
 
 # Advection choices
 advection_flow_fields=pw
