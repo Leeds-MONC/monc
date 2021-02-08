@@ -20,3 +20,5 @@ radiosonde_LEM*
 ## ignore core.d* output files
 core.d*
 
+## ignore tar files
+*.tar
