@@ -16,3 +16,7 @@ __pycache__/
 
 ## exclude conversion matlab files included for reference
 radiosonde_LEM*
+
+## ignore core.d* output files
+core.d*
+
