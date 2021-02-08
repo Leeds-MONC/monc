@@ -35,16 +35,16 @@ socrates_couple_enabled=.true.
 
 display_synopsis_frequency=100
 nn_consolidation=1
-termination_time=7500.
+termination_time=14400.
 dtm=0.2
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 diagnostic_file="diagnostic_files/ascos_cntrl_dg.nc"
-moncs_per_io_server=8
-sampling_frequency=75
-3d_sampling_frequency=4500
-mm=1800.0
+moncs_per_io_server=4
+sampling_frequency=2
+3d_sampling_frequency=20
+mm=600.0
 mm1=60.0
 diag_write_freq=7260.0
 
