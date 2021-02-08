@@ -107,8 +107,11 @@ l_matchthref=.false.
 
 # Random noise
 l_rand_pl_theta=.true.
-z_rand_pl_theta=0.0, 600.0, 601.0, 1600.
-f_rand_pl_theta=0.1, 0.1, 0.0001, 0.0001
+z_rand_pl_theta=0.0, 300.0, 600.0, 2400.
+f_rand_pl_theta=0.0001, 0.1, 0.1, 0.0001
+l_rand_pl_q=.true.
+z_rand_pl_q=0.0, 300.0, 600.0, 2400.
+f_rand_pl_q=0.0001, 0.1, 0.1, 0.0001
 
 # Simple cloud
 max_height_cloud=1600.
