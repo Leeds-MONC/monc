@@ -126,8 +126,8 @@ surface_geostrophic_wind_y=0.0
 
 # Damping configuration
 dmptim=0.001
-zdmp=1000.0
-hdmp=650.0
+zdmp=1800.0
+hdmp=600.0
 
 # Subsidence profile
 l_subs_pl_theta=.true.
