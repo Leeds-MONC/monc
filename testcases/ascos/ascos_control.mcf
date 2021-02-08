@@ -114,8 +114,8 @@ f_rand_pl_theta=0.1, 0.1, 0.0001, 0.0001
 max_height_cloud=1600.
 
 # physical constants
-z0=0.002
-z0th=0.0002
+z0=5e-4
+z0th=5e-5
 
 # Coriolis
 fcoriol=0.00007
@@ -145,11 +145,11 @@ subsidence_local_q=.true.
 # type_of_surface_boundary_conditions=PRESCRIBED_SURFACE_VALUE=1
 use_surface_boundary_conditions=.true.
 use_time_varying_surface_values= .false.
-type_of_surface_boundary_conditions = 1
+type_of_surface_boundary_conditions = 0
 surface_boundary_input_times = 0
-surface_temperatures  = 288.2
-#surface_latent_heat_flux   = 130.052
-#surface_sensible_heat_flux = 8.04
+surface_temperatures  = 271.0
+surface_latent_heat_flux   = 2.06
+surface_sensible_heat_flux = -0.08
 
 # SOCRATES inputs
 mcc_temperature_profile  = components/socrates_couple/data/mcc_profiles/one_km/sas.t.nc
