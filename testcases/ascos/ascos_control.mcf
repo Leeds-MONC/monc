@@ -189,8 +189,8 @@ mphys_nq_s=0 # snow mass
 mphys_nq_g=0 # graupel mass
 
 l_fix_re       = .true.
-fixed_cloud_re = 4.4 # effective radius for cloud droplets 4.4 microns
-fixed_ice_re   = 15.0 # effective radius for ice 15 microns
+fixed_cloud_re = 7.3 # effective radius for cloud droplets 7.3 microns
+fixed_ice_re   = 25.3 # effective radius for ice 25.3 microns
 # Radiation settings - variables and switches for exponential radiation (LWEXP)
 longwave_exp_decay = 130.0 # longwave rad exponential decay factor
 cltop_longwave_flux = 70.0 # cloud top longwave flux (Wm-2)
