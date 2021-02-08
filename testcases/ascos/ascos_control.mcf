@@ -46,7 +46,7 @@ sampling_frequency=2
 3d_sampling_frequency=20
 mm=600.0
 mm1=60.0
-diag_write_freq=7260.0
+diag_write_freq=14400.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
