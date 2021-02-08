@@ -35,18 +35,19 @@ socrates_couple_enabled=.true.
 
 display_synopsis_frequency=100
 nn_consolidation=1
-termination_time=14400.
-dtm=0.2
+termination_time=10800.
+dtm=0.4
+
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 diagnostic_file="diagnostic_files/ascos_cntrl_dg.nc"
-moncs_per_io_server=4
-sampling_frequency=2
-3d_sampling_frequency=20
-mm=600.0
+moncs_per_io_server=8
+sampling_frequency=20
+3d_sampling_frequency=100
+mm=3600.0
 mm1=60.0
-diag_write_freq=14400.0
+diag_write_freq=10800.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
@@ -71,8 +72,8 @@ cfl_dtmmin=0.001
 thref0=268.7
 surface_pressure=102050.
 surface_reference_pressure=102050.
-x_size=480
-y_size=480
+x_size=240
+y_size=240
 z_size=361
 dxx=10
 dyy=10
@@ -91,27 +92,20 @@ backscatter=.false.
 use_viscosity_and_diffusion=.true.
 
 # Initialization of fields
-l_init_pl_theta=.true.
-z_init_pl_theta=0.0, 600.0, 601.0, 1600.0, 2395.0
-f_init_pl_theta=269.2, 271.7104, 271.7831, 285.8084, 291.7911
-l_init_pl_u=.true.
-z_init_pl_u=0.0, 1601.0
-f_init_pl_u=5.0, 5.0
+l_init_pl_theta=.false.
+l_init_pl_u=.false.
 l_init_pl_v=.false.
-l_init_pl_q=.true.
-names_init_pl_q=vapour
-z_init_pl_q=0.0, 600.0, 601.0, 1600.0
-f_init_pl_q=9.1e-3, 9.1e-3, 6.1e-3, 5.6e-3
+l_init_pl_q=.false.
 
 l_matchthref=.false.
 
 # Random noise
-l_rand_pl_theta=.true.
-z_rand_pl_theta=0.0, 300.0, 600.0, 2400.
-f_rand_pl_theta=0.0001, 0.1, 0.1, 0.0001
-l_rand_pl_q=.true.
-z_rand_pl_q=0.0, 300.0, 600.0, 2400.
-f_rand_pl_q=0.0001, 0.1, 0.1, 0.0001
+#l_rand_pl_theta=.true.
+#z_rand_pl_theta=0.0, 300.0, 600.0, 2400.
+#f_rand_pl_theta=0.0001, 0.1, 0.1, 0.0001
+#l_rand_pl_q=.true.
+#z_rand_pl_q=0.0, 300.0, 600.0, 2400.
+#f_rand_pl_q=0.0001, 0.1, 0.1, 0.0001
 
 # Simple cloud
 max_height_cloud=2400.
@@ -134,8 +128,8 @@ hdmp=600.0
 
 # Subsidence profile
 l_subs_pl_theta=.false.
-z_subs_pl=0.0, 1600.0
-f_subs_pl=0.000005,0.000005
+#z_subs_pl=0.0, 1600.0
+#f_subs_pl=0.000005,0.000005
 l_subs_pl_q=.false.
 
 #SUBSIDENCE=1, DIVERGENCE=0
