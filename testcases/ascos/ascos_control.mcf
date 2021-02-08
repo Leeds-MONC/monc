@@ -75,7 +75,7 @@ x_size=480
 y_size=480
 z_size=361
 dxx=10
-dyy=00
+dyy=10
 zztop=2400.0
 kgd=241, 361
 hgd=1200., 2400.
@@ -114,7 +114,7 @@ z_rand_pl_q=0.0, 300.0, 600.0, 2400.
 f_rand_pl_q=0.0001, 0.1, 0.1, 0.0001
 
 # Simple cloud
-max_height_cloud=1600.
+max_height_cloud=2400.
 
 # physical constants
 z0=5e-4
