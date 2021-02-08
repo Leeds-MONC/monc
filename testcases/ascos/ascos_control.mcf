@@ -36,7 +36,7 @@ socrates_couple_enabled=.true.
 display_synopsis_frequency=100
 nn_consolidation=1
 termination_time=7500.
-dtm=0.4
+dtm=0.2
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
@@ -68,14 +68,14 @@ cfl_dtmmin=0.001
 
 # Simple setup configuration
 # We'll want to change this reference profile later
-thref0=288.0
+thref0=268.7
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=128
-y_size=128
-z_size=100
-dxx=50
-dyy=50
+x_size=480
+y_size=480
+z_size=361
+dxx=10
+dyy=00
 zztop=2400.0
 kgd=241, 361
 hgd=1200., 2400.
@@ -92,8 +92,8 @@ use_viscosity_and_diffusion=.true.
 
 # Initialization of fields
 l_init_pl_theta=.true.
-z_init_pl_theta=0.0, 600.0, 601.0, 1600.0
-f_init_pl_theta=287.75, 287.75, 299.75, 306.45
+z_init_pl_theta=0.0, 600.0, 601.0, 1600.0, 2395.0
+f_init_pl_theta=269.2, 271.7104, 271.7831, 285.8084, 291.7911
 l_init_pl_u=.true.
 z_init_pl_u=0.0, 1601.0
 f_init_pl_u=5.0, 5.0
