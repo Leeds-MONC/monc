@@ -69,8 +69,8 @@ cfl_dtmmin=0.001
 # Simple setup configuration
 # We'll want to change this reference profile later
 thref0=268.7
-surface_pressure=100000.
-surface_reference_pressure=100000.
+surface_pressure=102050.
+surface_reference_pressure=102050.
 x_size=480
 y_size=480
 z_size=361
