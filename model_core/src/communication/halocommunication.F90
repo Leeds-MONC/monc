@@ -306,8 +306,9 @@ contains
          current_state%local_grid, current_state%parallel%my_rank, involve_corners)
     if (halo_state%number_distinct_neighbours .gt. 0) then
       allocate(halo_state%halo_swap_neighbours(halo_state%number_distinct_neighbours))
-      halo_state%halo_swap_neighbours = populate_halo_swap_neighbours(current_state%local_grid, &
-           current_state%parallel%my_rank, halo_state%number_distinct_neighbours, involve_corners)
+      call populate_halo_swap_neighbours(current_state%local_grid, &
+              current_state%parallel%my_rank, halo_state%number_distinct_neighbours, &
+              involve_corners, halo_state)
       do i=1, halo_state%number_distinct_neighbours
         halo_state%halo_swap_neighbours%halo_corners =0
         halo_state%halo_swap_neighbours%halo_pages =0
@@ -647,14 +648,13 @@ contains
   !! @param my_rank My global PID
   !! @param number_distinct_neighbours The number of distinct neighbours that I have
   !! @param include_corners Whether to include corners or not
-  function populate_halo_swap_neighbours(local_grid, my_rank, number_distinct_neighbours, &
-       involve_corners)
+  subroutine populate_halo_swap_neighbours(local_grid, my_rank, number_distinct_neighbours, &
+       involve_corners, halo_swap_state)
     type(local_grid_type), intent(inout) :: local_grid
     integer, intent(in) :: my_rank, number_distinct_neighbours
     logical, intent(in) :: involve_corners
+    type(halo_communication_type), intent(inout) :: halo_swap_state
 
-    type(neighbour_description_type), dimension(number_distinct_neighbours) :: &
-         populate_halo_swap_neighbours
     integer :: i, j, current_pid_location, temp_neighbour_pids(merge(16, 8, involve_corners))
 
     current_pid_location=0
@@ -665,9 +665,9 @@ contains
              has_pid_already_been_seen(temp_neighbour_pids, &
              local_grid%neighbours(i,j))) then
           current_pid_location=current_pid_location+1
-          populate_halo_swap_neighbours(current_pid_location)%pid=local_grid%neighbours(i,j)
+          halo_swap_state%halo_swap_neighbours(current_pid_location)%pid=local_grid%neighbours(i,j)
           temp_neighbour_pids(current_pid_location)=local_grid%neighbours(i,j)
-          populate_halo_swap_neighbours(current_pid_location)%dimension=i
+          halo_swap_state%halo_swap_neighbours(current_pid_location)%dimension=i
         end if
       end do
     end do
@@ -679,15 +679,15 @@ contains
                has_pid_already_been_seen(temp_neighbour_pids, &
                local_grid%corner_neighbours(j,i))) then
             current_pid_location=current_pid_location+1
-            populate_halo_swap_neighbours(current_pid_location)%pid = &
+            halo_swap_state%halo_swap_neighbours(current_pid_location)%pid = &
                  local_grid%corner_neighbours(j,i)
             temp_neighbour_pids(current_pid_location)=local_grid%corner_neighbours(j,i)
-            populate_halo_swap_neighbours(current_pid_location)%dimension=0
+            halo_swap_state%halo_swap_neighbours(current_pid_location)%dimension=0
           end if
         end do
       end do
     end if
-  end function populate_halo_swap_neighbours
+  end subroutine populate_halo_swap_neighbours
 
   !> Deduces the number of halo pages per neighbour halo swap and places this information in the appropriate data
   !! structures. We call a "page" of data the contiguous data of a field that we are going to send, such as 
