@@ -205,6 +205,7 @@ contains
     alloc_y=current_state%local_grid%size(Y_INDEX) + current_state%local_grid%halo_size(Y_INDEX) * 2
     alloc_x=current_state%local_grid%size(X_INDEX) + current_state%local_grid%halo_size(X_INDEX) * 2
 
+    !!! Might need re-thinking: vertical grid passed into subroutines as well as current state
     vertical_grid=current_state%global_grid%configuration%vertical
 
     if (.not. current_state%initialised) then
