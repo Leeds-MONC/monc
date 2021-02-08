@@ -1,6 +1,6 @@
 #!/bin/bash
 #$ -pe ib 40
-#$ -l h_rt=04:00:0
+#$ -l h_rt=05:00:0
 #$ -l h_vmem=1G
 #$ -l placement=scatter
 #$ -cwd -V
@@ -17,7 +17,7 @@ echo Starting job
 module purge
 module load user
 module switch intel gnu
-#module switch openmpi mvapich2
+module switch openmpi mvapich2
 module load netcdf hdf5 fftw fcm
 
 if [ ! -d checkpoint_files ]; then mkdir checkpoint_files; fi
@@ -41,7 +41,7 @@ export MONC_THREAD_MULTIPLE MV2_ENABLE_AFFINITY MV2_SHOW_CPU_BINDING \
 export OMP_NUM_THREADS=1
 
 # set env variables for submission command
-config_path='testcases/stratus/mbl_sc_casim.mcf'
-checkpoint_fn="checkpoint_files/mbl_sc_casim_dump.nc"
+config_path='testcases/ascos/ascos_control.mcf'
+checkpoint_fn="checkpoint_files/ascos_cntrl_dump.nc"
 
-mpirun -np 40 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_mbl-sc-casim_dump_3
+mpirun -np 40 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_ascos_cntrl_dump_1
