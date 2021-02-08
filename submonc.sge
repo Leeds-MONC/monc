@@ -1,6 +1,6 @@
 #!/bin/bash
-#$ -pe ib 32
-#$ -l h_rt=10:00:0
+#$ -pe ib 40
+#$ -l h_rt=04:00:0
 #$ -l h_vmem=1G
 #$ -l placement=scatter
 #$ -cwd -V
@@ -17,7 +17,7 @@ echo Starting job
 module purge
 module load user
 module switch intel gnu
-module switch openmpi mvapich2
+#module switch openmpi mvapich2
 module load netcdf hdf5 fftw fcm
 
 if [ ! -d checkpoint_files ]; then mkdir checkpoint_files; fi
@@ -44,4 +44,4 @@ export OMP_NUM_THREADS=1
 config_path='testcases/stratus/mbl_sc_casim.mcf'
 checkpoint_fn="checkpoint_files/mbl_sc_casim_dump.nc"
 
-mpirun -np 32 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_mbl-sc-casim_dump_2
+mpirun -np 40 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_mbl-sc-casim_dump_3
