@@ -27,7 +27,7 @@ if [ ! -d diagnostic_files ]; then mkdir diagnostic_files; fi
 # Allow multi-threading on cray
 export MPICH_MAX_THREAD_SAFETY=multiple
 
-# MVAPICH2 RUNTIME VARIABLES 
+# MVAPICH2 RUNTIME VARIABLES
 MONC_THREAD_MULTIPLE=0
 MV2_ENABLE_AFFINITY=0
 MV2_SHOW_CPU_BINDING=1
@@ -36,7 +36,7 @@ export MONC_THREAD_MULTIPLE MV2_ENABLE_AFFINITY MV2_SHOW_CPU_BINDING \
        MV2_USE_THREAD_WARNING
 
 # Set the number of threads to 1
-#   This prevents any system libraries from automatically  
+#   This prevents any system libraries from automatically
 #   using threading.
 export OMP_NUM_THREADS=1
 
@@ -44,4 +44,4 @@ export OMP_NUM_THREADS=1
 config_path='testcases/ascos/ascos_control.mcf'
 checkpoint_fn="checkpoint_files/ascos_cntrl_dump.nc"
 
-mpirun -np 40 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_ascos_cntrl_dump_1
+mpirun -np 40 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_ascos_cntrl_dump_2
