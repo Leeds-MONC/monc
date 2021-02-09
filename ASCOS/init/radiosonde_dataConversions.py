@@ -52,7 +52,7 @@ def quicklooksSonde(sonde, sondenumber):
     plt.rc('ytick',labelsize=MED_SIZE)
     plt.figure(figsize=(12,5))
     plt.rc('legend',fontsize=MED_SIZE)
-    plt.subplots_adjust(top = 0.9, bottom = 0.12, right = 0.9, left = 0.12,
+    plt.subplots_adjust(top = 0.9, bottom = 0.12, right = 0.92, left = 0.1,
             hspace = 0.22, wspace = 0.4)
 
     yylim = 2.4e3
