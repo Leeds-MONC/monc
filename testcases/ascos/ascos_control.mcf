@@ -50,7 +50,7 @@ mm1=60.0
 diag_write_freq=10800.0
 
 # Checkpoint configuration
-checkpoint_frequency=0
+checkpoint_frequency=3000
 checkpoint_file="checkpoint_files/ascos_cntrl_dump.nc"
 check_walltime_frequency=100
 walltime_limit=04:00:00
