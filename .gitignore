@@ -25,3 +25,8 @@ core.d*
 
 ## ignore DATA/ folder
 ASCOS/DATA/*
+
+## ignore figures
+ASCOS/FIGS/*
+*.png
+*.svg

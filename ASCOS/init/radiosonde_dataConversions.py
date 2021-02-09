@@ -26,7 +26,7 @@ from readMAT import readMatlabStruct, readMatlabData
 from physFuncts import calcThetaE, calcThetaVL
 from pyFixes import py3_FixNPLoad
 
-def quicklooksSonde(sonde):
+def quicklooksSonde(sonde, sondenumber):
 
     '''
     Notes from Tom's readme:
@@ -74,6 +74,7 @@ def quicklooksSonde(sonde):
     plt.xlabel('Rel. Hum. [%]')
     plt.ylim([0,yylim])
 
+    plt.savefig('../FIGS/Quicklooks_' + sondenumber + '.png')
     plt.show()
 
 
@@ -101,12 +102,13 @@ def main():
     ## -------------------------------------------------------------
     ## Load radiosonde from 20180827 1200UTC (as in Tom's work)
     ## -------------------------------------------------------------
-    sonde = sondes['X080827_12_EDT']
+    sondenumber = 'X080827_12_EDT'
+    sonde = sondes[sondenumber]
 
     ## -------------------------------------------------------------
     ## Quicklook plots of chosen sonde
     ## -------------------------------------------------------------
-    figure = quicklooksSonde(sonde)
+    figure = quicklooksSonde(sonde, sondenumber)
 
     # -------------------------------------------------------------
     # FIN.
