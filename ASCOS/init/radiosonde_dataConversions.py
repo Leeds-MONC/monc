@@ -55,21 +55,24 @@ def quicklooksSonde(sonde):
     plt.subplots_adjust(top = 0.9, bottom = 0.12, right = 0.9, left = 0.12,
             hspace = 0.22, wspace = 0.4)
 
+    yylim = 2.4e3
+
     plt.subplot(131)
     plt.plot(sonde[:,2], sonde[:,6])
     plt.ylabel('Z [m]')
     plt.xlabel('Temperature [K]')
-    plt.ylim([0,1e4])
+    plt.ylim([0,yylim])
+    plt.xlim([265,276])
 
     plt.subplot(132)
     plt.plot(sonde[:,9], sonde[:,6])
     plt.xlabel('Spec. Hum. [g/kg]')
-    plt.ylim([0,1e4])
+    plt.ylim([0,yylim])
 
     plt.subplot(133)
     plt.plot(sonde[:,3], sonde[:,6])
     plt.xlabel('Rel. Hum. [%]')
-    plt.ylim([0,1e4])
+    plt.ylim([0,yylim])
 
     plt.show()
 
