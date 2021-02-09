@@ -33,6 +33,7 @@ use setfluxlook_mod, only : setfluxlook_get_descriptor
 use simplecloud_mod, only : simplecloud_get_descriptor
 use simplesetup_mod, only : simplesetup_get_descriptor
 use smagorinsky_mod, only : smagorinsky_get_descriptor
+use socrates_couple_mod, only : socrates_couple_get_descriptor
 use stepfields_mod, only : stepfields_get_descriptor
 use steppingdirection_mod, only : steppingdirection_get_descriptor
 use subgrid_profile_diagnostics_mod, only : subgrid_profile_diagnostics_get_descriptor
