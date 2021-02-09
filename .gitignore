@@ -22,3 +22,6 @@ core.d*
 
 ## ignore tar files
 *.tar
+
+## ignore DATA/ folder
+ASCOS/DATA/*
