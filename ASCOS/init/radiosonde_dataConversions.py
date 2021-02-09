@@ -22,7 +22,7 @@ import seaborn as sns
 import sys
 sys.path.insert(1, '../py_functions/')
 from time_functions import calcTime_Mat2DOY, calcTime_Date2DOY
-from readMAT import readMatlabStruct
+from readMAT import readMatlabStruct, readMatlabData
 from physFuncts import calcThetaE, calcThetaVL
 from pyFixes import py3_FixNPLoad
 
@@ -33,6 +33,19 @@ def main():
     print ('')
     print ('Start: ' + time.strftime("%c"))
     print ('')
+
+    '''
+    Python script to build initialisation data for MONC from radiosondes
+    '''
+
+    print ('Import ASCOS radiosonde data:')
+    print ('...')
+
+    print ('Load radiosonde data from Jutta...')
+    sondes = readMatlabData('../DATA/radiosondes.mat')
+
+    print ('')
+    print (sondes.keys())
 
     # -------------------------------------------------------------
     # FIN.

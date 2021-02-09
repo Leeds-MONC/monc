@@ -86,7 +86,7 @@ def readMatlabData(filename):
     print ('')
 
     print ('Finished! :)')
-    print ('Reading out ' + filename + ' data within .mat file')
+    print ('Reading out ' + filename + ' data')
     print ('')
 
     return dat     #### returns dictionary containing matlab data
