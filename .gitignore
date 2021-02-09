@@ -30,3 +30,6 @@ ASCOS/DATA/*
 ASCOS/FIGS/*
 *.png
 *.svg
+
+## ignore working data
+*.npy
