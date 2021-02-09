@@ -62,3 +62,31 @@ def readMatlabStruct(filename):
     print ('')
 
     return b     #### returns structured numpy array containing matlab struct
+
+
+def readMatlabData(filename):
+
+    #### EXAMPLE OF USE:
+    #### data = readMatlabData('../../jutta/UserReadyData/radiosondes/SondeData_h10int_V02.mat')
+
+    #### for reference:
+        #### find struct name with:
+            #### sio.whosmat(filename)
+
+    ### ----------------------------------
+    ### Find struct name from .mat file using sio
+    ### ----------------------------------
+    dat = sio.whosmat(filename)
+
+    #### --------------------------------------------------------------------
+    #### LOAD MATLAB FILE USING SCIPY
+    #### --------------------------------------------------------------------
+    print ('Reading in .mat data...')
+    dat = loadmat(filename)
+    print ('')
+
+    print ('Finished! :)')
+    print ('Reading out ' + filename + ' data within .mat file')
+    print ('')
+
+    return dat     #### returns dictionary containing matlab data
