@@ -96,7 +96,7 @@ def main():
     sondes = readMatlabData('../DATA/radiosondes.mat')
 
     print ('')
-    print (sondes.keys())
+    # print (sondes.keys())
 
     ## -------------------------------------------------------------
     ## Load radiosonde from 20180827 1200UTC (as in Tom's work)
