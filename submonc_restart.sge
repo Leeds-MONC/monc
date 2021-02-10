@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -pe ib 40
+#$ -pe ib 4
 #$ -l h_rt=01:00:0
 #$ -l h_vmem=2G
 #$ -l placement=scatter
@@ -47,7 +47,7 @@ export MONC_EXEC='./build/bin/monc_driver.exe'
 # Standard output log file:
 export MONC_OUT='monc_stdout/ascos_control.out'
 # Number of processors
-export NPES=40
+export NPES=4
 # Get checkpoint file details from config file:
 export CHKPT_DIR=$(dirname $(grep '^checkpoint_file=' ${MONC_CONFIG} | \
              awk -F '=' '{print $2}' | sed 's|"||g' | sed "s|'||g"))
