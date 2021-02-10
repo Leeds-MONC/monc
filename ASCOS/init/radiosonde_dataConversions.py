@@ -188,7 +188,7 @@ def LEM_LoadTHINIT_QINIT1(data,sondenumber):
         -- Data copied from gillian/LEM/tom_arc1/morr2712/UPDATES/setprofileASCOS.f
     '''
 
-    data['thinit'] = np.zeros(np.size(data['thref']))
+    data['thinit'] = data['thref']
 
 #              DO L=1,KKP
 #           IF (ITHPROF.EQ.1) THEN
