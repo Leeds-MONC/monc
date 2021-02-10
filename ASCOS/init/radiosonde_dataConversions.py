@@ -423,6 +423,8 @@ def LEM_LoadTHINIT_QINIT1(data,sondenumber):
     plt.savefig('../FIGS/Quicklooks_LEM-ASCOS1_thinit-qinit1_' + sondenumber + '.png')
     plt.show()
 
+    print (data['ascos1']['thref'])
+
     return data
 
 def main():
