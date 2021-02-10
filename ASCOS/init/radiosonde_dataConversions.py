@@ -26,7 +26,7 @@ from readMAT import readMatlabStruct, readMatlabData
 from physFuncts import calcThetaE, calcThetaVL
 from pyFixes import py3_FixNPLoad
 
-def quicklooksSonde(sonde, sondenumber):
+def quicklooksSonde(data, sondenumber):
 
     '''
     Notes from Tom's readme:
@@ -58,19 +58,19 @@ def quicklooksSonde(sonde, sondenumber):
     yylim = 2.4e3
 
     plt.subplot(131)
-    plt.plot(sonde[:,2], sonde[:,6])
+    plt.plot(data['sonde'][:,2], data['sonde'][:,6])
     plt.ylabel('Z [m]')
     plt.xlabel('Temperature [K]')
     plt.ylim([0,yylim])
     plt.xlim([265,276])
 
     plt.subplot(132)
-    plt.plot(sonde[:,9], sonde[:,6])
+    plt.plot(data['sonde'][:,9], data['sonde'][:,6])
     plt.xlabel('Spec. Hum. [g/kg]')
     plt.ylim([0,yylim])
 
     plt.subplot(133)
-    plt.plot(sonde[:,3], sonde[:,6])
+    plt.plot(data['sonde'][:,3], data['sonde'][:,6])
     plt.xlabel('Rel. Hum. [%]')
     plt.ylim([0,yylim])
 
@@ -102,18 +102,24 @@ def main():
     ## -------------------------------------------------------------
     ## Load radiosonde from 20180827 1200UTC (as in Tom's work)
     ## -------------------------------------------------------------
+    data = {}
     sondenumber = 'X080827_12_EDT'
-    sonde = sondes[sondenumber]
+    data['sonde'] = sondes[sondenumber]
 
     ## -------------------------------------------------------------
     ## Quicklook plots of chosen sonde
     ## -------------------------------------------------------------
-    figure = quicklooksSonde(sonde, sondenumber)
+    figure = quicklooksSonde(data, sondenumber)
+
+    ## -------------------------------------------------------------
+    ## Read in data from LEM namelists
+    ## -------------------------------------------------------------
+    # figure = quicklooksSonde(data, sondenumber)
 
     ## -------------------------------------------------------------
     ## save out working data for testing
     ## -------------------------------------------------------------
-    np.save('working_data', sonde)
+    np.save('working_data', data)
 
     # -------------------------------------------------------------
     # FIN.
