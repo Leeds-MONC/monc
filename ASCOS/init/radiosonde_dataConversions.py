@@ -77,11 +77,11 @@ def quicklooksSonde(data, sondenumber):
     plt.savefig('../FIGS/Quicklooks_' + sondenumber + '.png')
     plt.show()
 
-
-def LEM_Load(data, sondenumber):
+def LEM_LoadTHREF(data, sondenumber):
 
     '''
-    Data copied from gillian/LEM/tom_arc1/morr2712/NAMELIST/nmlFORCE_ASCOS1
+    Load initialisation reference potential temperature profile
+        -- Data copied from gillian/LEM/tom_arc1/morr2712/NAMELIST/nmlFORCE_ASCOS1
     '''
     #### dz is 5m between 0 and 1157.5 m, then linearly interpolated to 10m between 1285m and 2395m
     data['ascos1'] = {}
@@ -92,7 +92,7 @@ def LEM_Load(data, sondenumber):
                             1255.0162, 1265.0026, 1275.0002])
     data['ascos1']['z'][249:] = np.arange(1285., 2396., 10.0)
 
-    data['ascos1']['th'] = np.array([269.2,269.2029,269.2059,269.209,269.2124,269.216,
+    data['ascos1']['thref'] = np.array([269.2,269.2029,269.2059,269.209,269.2124,269.216,
                             269.22,269.2244,269.2293,269.2348,269.241,269.2479,269.2556,
                             269.2642,269.2736,269.2841,269.2956,269.3083,269.322,269.3369,
                             269.3531,269.3704,269.3889,269.4086,269.4295,269.4514,269.4745,
@@ -147,11 +147,10 @@ def LEM_Load(data, sondenumber):
 
     data['pressure'] = data['sonde'][:,7]*1e2
     data['temperature'] = data['sonde'][:,2]
-    data['q'] = data['sonde'][:,9]
+    data['q'] = data['sonde'][:,9]/1e3
     data['z'] = data['sonde'][:,6]
 
     data['theta'], data['thetaE'] = calcThetaE(data['temperature'], data['pressure'], data['q'])
-
 
     ####    --------------- FIGURE
 
@@ -171,7 +170,7 @@ def LEM_Load(data, sondenumber):
 
     yylim = 2.4e3
 
-    plt.plot(data['ascos1']['th'], data['ascos1']['z'], label = 'ASCOS1')
+    plt.plot(data['ascos1']['thref'], data['ascos1']['z'], label = 'ASCOS1')
     plt.plot(data['theta'], data['z'], label = 'SONDE')
     plt.ylabel('Z [m]')
     plt.xlabel('$\Theta$ [K]')
@@ -181,6 +180,169 @@ def LEM_Load(data, sondenumber):
     plt.savefig('../FIGS/Quicklooks_LEM-ASCOS1_' + sondenumber + '.png')
     plt.show()
 
+def LEM_LoadTHINIT_QINIT1(data,sondenumber):
+
+
+    '''
+    Calculate initialisation potential temperature and moisture profiles
+        -- Data copied from gillian/LEM/tom_arc1/morr2712/UPDATES/setprofileASCOS.f
+    '''
+
+    data['thinit'] = np.zeros(np.size(data['thref']))
+
+#              DO L=1,KKP
+#           IF (ITHPROF.EQ.1) THEN
+#             IF (PREFN(L) .LT. 87700.) THEN ! Below Inversion
+#                THINIT(L)=282.6 + 9.5/(87700.-75000.)
+#      &                   *(87700.-PREFN(L)) !
+#             ELSEIF ((PREFN(L) .GE. 87700.).AND. ! Below Inversion
+#      &              (PREFN(L) .LT. 94500.)) THEN ! Below Inversion
+#                THINIT(L)=271.6 + 11.0/(94500.-87700.)
+#      &                   *(94500.-PREFN(L)) !
+#             ELSEIF ((PREFN(L) .GE. 94500.).AND.  ! Below Inversion
+#      &              (PREFN(L) .LT. 99800.)) THEN ! Below Inversion
+#                THINIT(L)=270.2
+#             ELSEIF (PREFN(L) .GE. 99800.) THEN ! Below Inversion
+#                THINIT(L)=269.2
+#             ENDIF
+#           ELSEIF (ITHPROF.EQ.2) THEN
+#             IF (PREFN(L) .LT. 87700.) THEN ! Below Inversion
+#                THINIT(L)=284.0 + 9.5/(87700.-75000.)
+#      &                   *(87700.-PREFN(L)) !
+#             ELSEIF ((PREFN(L) .GE. 87700.).AND. ! Below Inversion
+#      &              (PREFN(L) .LT. 94500.)) THEN ! Below Inversion
+#                THINIT(L)=273.0 + 11.0/(94500.-87700.)
+#      &                   *(94500.-PREFN(L)) !
+#             ELSEIF ((PREFN(L) .GE. 94500.).AND.  ! Below Inversion
+#      &              (PREFN(L) .LT. 99800.)) THEN ! Below Inversion
+#                THINIT(L)=270.2
+#             ELSEIF (PREFN(L) .GE. 99800.) THEN ! Below Inversion
+#                THINIT(L)=269.2
+#             ENDIF
+#           ELSEIF (ITHPROF.EQ.3) THEN
+#             IF (PREFN(L) .LT. 87700.) THEN ! Below Inversion
+#                THINIT(L)=285.4 + 9.5/(87700.-75000.)
+#      &                   *(87700.-PREFN(L)) !
+#             ELSEIF ((PREFN(L) .GE. 87700.).AND. ! Below Inversion
+#      &              (PREFN(L) .LT. 94500.)) THEN ! Below Inversion
+#                THINIT(L)=274.4 + 11.0/(94500.-87700.)
+#      &                   *(94500.-PREFN(L)) !
+#             ELSEIF ((PREFN(L) .GE. 94500.).AND.  ! Below Inversion
+#      &              (PREFN(L) .LT. 99800.)) THEN ! Below Inversion
+#                THINIT(L)=270.2
+#             ELSEIF (PREFN(L) .GE. 99800.) THEN ! Below Inversion
+#                THINIT(L)=269.2
+#             ENDIF
+#           ENDIF
+#          ENDDO
+#          print *, "done th"
+# ! Set moisture profile
+#          DO L=1,KKP
+#           IF (IQPROF.EQ.1) THEN   ! No inversion
+#             IF (PREFN(L) .LT. 94500.) THEN ! Above the moisture inversion top
+#                QINIT(L,1)=MAX(0.001,0.001*2.78-0.001*1.78/
+#      &                    (94500.-83300.)*(94500.-PREFN(L)))
+#             ELSEIF (PREFN(L) .GE. 94500.) THEN ! Below Inversion
+#                QINIT(L,1)=0.001*2.78
+#             ENDIF
+# !          IF (IQPROF.EQ.1) THEN   ! No inversion
+# !            IF (PREFN(L) .LT. 94500.) THEN ! Above the moisture inversion top
+# !               QINIT(L,1)=0.001*2.
+# !            ELSEIF (PREFN(L) .GE. 94500.) THEN ! Below Inversion
+# !               QINIT(L,1)=0.001*2.78
+# !            ENDIF
+#           ELSEIF (IQPROF.EQ.101) THEN   ! No inversion
+#             IF (PREFN(L) .LT. 87700.) THEN ! Above the moisture inversion top
+#                QINIT(L,1)=0.001*(2.)
+#             ELSEIF ((PREFN(L) .GE. 87700.).AND.  ! Below Inversion
+#      &              (PREFN(L) .LT. 94500.)) THEN
+#                QINIT(L,1)=0.001*2.78-0.001*(0.17+0.25)+0.001*1.2/
+#      &                    (94500.-87700.)*(94500.-PREFN(L))
+#             ELSEIF (PREFN(L) .GE. 94500.) THEN ! Below Inversion
+#                QINIT(L,1)=0.001*2.78
+#             ENDIF
+#           ELSEIF (IQPROF.EQ.102) THEN   ! No inversion
+#             IF (PREFN(L) .LT. 87700.) THEN ! Above the moisture inversion top
+#                QINIT(L,1)=0.001*(2.)
+#             ELSEIF ((PREFN(L) .GE. 87700.).AND.  ! Below Inversion
+#      &              (PREFN(L) .LT. 94500.)) THEN
+#                QINIT(L,1)=0.001*2.78-0.001*(0.50+0.25)+0.001*1.2/
+#      &                    (94500.-87700.)*(94500.-PREFN(L))
+#             ELSEIF (PREFN(L) .GE. 94500.) THEN ! Below Inversion
+#                QINIT(L,1)=0.001*2.78
+#             ENDIF
+#           ELSEIF (IQPROF.EQ.103) THEN   ! No inversion
+#             IF (PREFN(L) .LT. 87700.) THEN ! Above the moisture inversion top
+#                QINIT(L,1)=0.001*(2.)
+#             ELSEIF ((PREFN(L) .GE. 87700.).AND.  ! Below Inversion
+#      &              (PREFN(L) .LT. 94500.)) THEN
+#                QINIT(L,1)=0.001*2.78-0.001*(0.84+0.25)+0.001*1.2/
+#      &                    (94500.-87700.)*(94500.-PREFN(L))
+#             ELSEIF (PREFN(L) .GE. 94500.) THEN ! Below Inversion
+#                QINIT(L,1)=0.001*2.78
+#             ENDIF
+#           ELSEIF (IQPROF.EQ.201) THEN   ! No inversion
+#             IF (PREFN(L) .LT. 87700.) THEN ! Above the moisture inversion top
+#                QINIT(L,1)=0.001*(2.)
+#             ELSEIF ((PREFN(L) .GE. 87700.).AND.  ! Below Inversion
+#      &              (PREFN(L) .LT. 94500.)) THEN
+#                QINIT(L,1)=0.001*2.78-0.001*0.17+0.001*1.2/
+#      &                    (94500.-87700.)*(94500.-PREFN(L))
+#             ELSEIF (PREFN(L) .GE. 94500.) THEN ! Below Inversion
+#                QINIT(L,1)=0.001*2.78
+#             ENDIF
+#           ELSEIF (IQPROF.EQ.202) THEN   ! No inversion
+#             IF (PREFN(L) .LT. 87700.) THEN ! Above the moisture inversion top
+#                QINIT(L,1)=0.001*(2.)
+#             ELSEIF ((PREFN(L) .GE. 87700.).AND.  ! Below Inversion
+#      &              (PREFN(L) .LT. 94500.)) THEN
+#                QINIT(L,1)=0.001*2.78-0.001*0.50+0.001*1.2/
+#      &                    (94500.-87700.)*(94500.-PREFN(L))
+#             ELSEIF (PREFN(L) .GE. 94500.) THEN ! Below Inversion
+#                QINIT(L,1)=0.001*2.78
+#             ENDIF
+#           ELSEIF (IQPROF.EQ.203) THEN   ! No inversion
+#             IF (PREFN(L) .LT. 87700.) THEN ! Above the moisture inversion top
+#                QINIT(L,1)=0.001*(2.)
+#             ELSEIF ((PREFN(L) .GE. 87700.).AND.  ! Below Inversion
+#      &              (PREFN(L) .LT. 94500.)) THEN
+#                QINIT(L,1)=0.001*2.78-0.001*0.84+0.001*1.2/
+#      &                    (94500.-87700.)*(94500.-PREFN(L))
+#             ELSEIF (PREFN(L) .GE. 94500.) THEN ! Below Inversion
+#                QINIT(L,1)=0.001*2.78
+#             ENDIF
+#           ELSEIF (IQPROF.EQ.301) THEN   ! No inversion
+#             IF (PREFN(L) .LT. 87700.) THEN ! Above the moisture inversion top
+#                QINIT(L,1)=0.001*(2.)
+#             ELSEIF ((PREFN(L) .GE. 87700.).AND.  ! Below Inversion
+#      &              (PREFN(L) .LT. 94500.)) THEN
+#                QINIT(L,1)=0.001*2.78-0.001*(0.17-0.25)+0.001*1.2/
+#      &                    (94500.-87700.)*(94500.-PREFN(L))
+#             ELSEIF (PREFN(L) .GE. 94500.) THEN ! Below Inversion
+#                QINIT(L,1)=0.001*2.78
+#             ENDIF
+#           ELSEIF (IQPROF.EQ.302) THEN   ! No inversion
+#             IF (PREFN(L) .LT. 87700.) THEN ! Above the moisture inversion top
+#                QINIT(L,1)=0.001*(2.)
+#             ELSEIF ((PREFN(L) .GE. 87700.).AND.  ! Below Inversion
+#      &              (PREFN(L) .LT. 94500.)) THEN
+#                QINIT(L,1)=0.001*2.78-0.001*(0.50-0.25)+0.001*1.2/
+#      &                    (94500.-87700.)*(94500.-PREFN(L))
+#             ELSEIF (PREFN(L) .GE. 94500.) THEN ! Below Inversion
+#                QINIT(L,1)=0.001*2.78
+#             ENDIF
+#           ELSEIF (IQPROF.EQ.303) THEN   ! No inversion
+#             IF (PREFN(L) .LT. 87700.) THEN ! Above the moisture inversion top
+#                QINIT(L,1)=0.001*(2.)
+#             ELSEIF ((PREFN(L) .GE. 87700.).AND.  ! Below Inversion
+#      &              (PREFN(L) .LT. 94500.)) THEN
+#                QINIT(L,1)=0.001*2.78-0.001*(0.84-0.25)+0.001*1.2/
+#      &                    (94500.-87700.)*(94500.-PREFN(L))
+#             ELSEIF (PREFN(L) .GE. 94500.) THEN ! Below Inversion
+#                QINIT(L,1)=0.001*2.78
+#             ENDIF
+#           ENDIF
+#          ENDDO
 
 def main():
 
@@ -218,7 +380,7 @@ def main():
     ## -------------------------------------------------------------
     ## Read in data from LEM namelists
     ## -------------------------------------------------------------
-    figure = LEM_Load(data, sondenumber)
+    figure = LEM_LoadTHREF(data, sondenumber)
 
     ## -------------------------------------------------------------
     ## save out working data for testing
