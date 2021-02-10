@@ -1,7 +1,7 @@
 #!/bin/bash
-#$ -pe ib 4
-#$ -l h_rt=01:00:0
-#$ -l h_vmem=2G
+#$ -pe ib 40
+#$ -l h_rt=03:00:0
+#$ -l h_vmem=12G
 #$ -l placement=scatter
 #$ -cwd -V
 ##############################################################
@@ -47,7 +47,7 @@ export MONC_EXEC='./build/bin/monc_driver.exe'
 # Standard output log file:
 export MONC_OUT='monc_stdout/ascos_control.out'
 # Number of processors
-export NPES=4
+export NPES=40
 # Get checkpoint file details from config file:
 export CHKPT_DIR=$(dirname $(grep '^checkpoint_file=' ${MONC_CONFIG} | \
              awk -F '=' '{print $2}' | sed 's|"||g' | sed "s|'||g"))
@@ -61,7 +61,7 @@ export CHKPT_DIR=$(dirname $(grep '^checkpoint_file=' ${MONC_CONFIG} | \
 #fi
 
 # Check for most recent existing checkpoint file:
-export CHKPT_FILE=$(basename $(\ls -1v ${CHKPT_DIR} | tail -n 1) 2> /dev/null)
+# export CHKPT_FILE=$(basename $(\ls -1v ${CHKPT_DIR} | tail -n 1) 2> /dev/null)
 # If current chckpoint file is same as previous, give up:
 #if [ ! -z "${PREV_CHKPT_FILE}" ] && [ ! -z "${CHKPT_FILE}" ] ; then
 #  if [ "${PREV_CHKPT_FILE}" = "${CHKPT_FILE}" ] ; then

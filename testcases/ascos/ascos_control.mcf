@@ -36,7 +36,7 @@ socrates_couple_enabled=.true.
 display_synopsis_frequency=100
 nn_consolidation=1
 termination_time=10800.
-dtm=0.3
+dtm=0.4
 
 
 # IO server configuration
@@ -53,7 +53,7 @@ diag_write_freq=10800.0
 checkpoint_frequency=0
 checkpoint_file="checkpoint_files/ascos_cntrl_dump.nc"
 check_walltime_frequency=100
-walltime_limit=00:30:00
+walltime_limit=02:30:00
 
 # Advection choices
 advection_flow_fields=pw
