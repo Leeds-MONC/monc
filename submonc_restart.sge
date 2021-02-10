@@ -79,10 +79,12 @@ else
   export MONC_ARGS="--config=${MONC_CONFIG}"
 fi
 
+echo ""
 echo ${NPES}
 echo ${MONC_EXEC}
 echo ${MONC_ARGS}
 echo ${MONC_OUT}
+echo ""
 
 # RUN LIKE THE WIND
 mpirun -np $NPES ${MONC_EXEC} ${MONC_ARGS} &> ${MONC_OUT}
