@@ -153,32 +153,34 @@ def LEM_LoadTHREF(data, sondenumber):
     data['theta'], data['thetaE'] = calcThetaE(data['temperature'], data['pressure'], data['q'])
 
     ####    --------------- FIGURE
+    #
+    # SMALL_SIZE = 12
+    # MED_SIZE = 14
+    # LARGE_SIZE = 16
+    #
+    # plt.rc('font',size=MED_SIZE)
+    # plt.rc('axes',titlesize=MED_SIZE)
+    # plt.rc('axes',labelsize=MED_SIZE)
+    # plt.rc('xtick',labelsize=MED_SIZE)
+    # plt.rc('ytick',labelsize=MED_SIZE)
+    # plt.figure(figsize=(4,5))
+    # plt.rc('legend',fontsize=MED_SIZE)
+    # plt.subplots_adjust(top = 0.9, bottom = 0.12, right = 0.95, left = 0.25,
+    #         hspace = 0.22, wspace = 0.4)
+    #
+    # yylim = 2.4e3
+    #
+    # plt.plot(data['ascos1']['thref'], data['ascos1']['z'], label = 'ASCOS1')
+    # plt.plot(data['theta'], data['z'], label = 'SONDE')
+    # plt.ylabel('Z [m]')
+    # plt.xlabel('$\Theta$ [K]')
+    # plt.ylim([0,yylim])
+    # plt.xlim([265,295])
+    #
+    # plt.savefig('../FIGS/Quicklooks_LEM-ASCOS1_' + sondenumber + '.png')
+    # plt.show()
 
-    SMALL_SIZE = 12
-    MED_SIZE = 14
-    LARGE_SIZE = 16
-
-    plt.rc('font',size=MED_SIZE)
-    plt.rc('axes',titlesize=MED_SIZE)
-    plt.rc('axes',labelsize=MED_SIZE)
-    plt.rc('xtick',labelsize=MED_SIZE)
-    plt.rc('ytick',labelsize=MED_SIZE)
-    plt.figure(figsize=(4,5))
-    plt.rc('legend',fontsize=MED_SIZE)
-    plt.subplots_adjust(top = 0.9, bottom = 0.12, right = 0.95, left = 0.25,
-            hspace = 0.22, wspace = 0.4)
-
-    yylim = 2.4e3
-
-    plt.plot(data['ascos1']['thref'], data['ascos1']['z'], label = 'ASCOS1')
-    plt.plot(data['theta'], data['z'], label = 'SONDE')
-    plt.ylabel('Z [m]')
-    plt.xlabel('$\Theta$ [K]')
-    plt.ylim([0,yylim])
-    plt.xlim([265,295])
-
-    plt.savefig('../FIGS/Quicklooks_LEM-ASCOS1_' + sondenumber + '.png')
-    plt.show()
+    return data
 
 def LEM_LoadTHINIT_QINIT1(data,sondenumber):
 
@@ -188,7 +190,6 @@ def LEM_LoadTHINIT_QINIT1(data,sondenumber):
         -- Data copied from gillian/LEM/tom_arc1/morr2712/UPDATES/setprofileASCOS.f
     '''
 
-    data['thinit'] = data['thref']
 
 #              DO L=1,KKP
 #           IF (ITHPROF.EQ.1) THEN
@@ -344,6 +345,40 @@ def LEM_LoadTHINIT_QINIT1(data,sondenumber):
 #           ENDIF
 #          ENDDO
 
+
+    data['ascos1']['thinit'] = data['ascos1']['thref']
+
+    ####    --------------- FIGURE
+
+    SMALL_SIZE = 12
+    MED_SIZE = 14
+    LARGE_SIZE = 16
+
+    plt.rc('font',size=MED_SIZE)
+    plt.rc('axes',titlesize=MED_SIZE)
+    plt.rc('axes',labelsize=MED_SIZE)
+    plt.rc('xtick',labelsize=MED_SIZE)
+    plt.rc('ytick',labelsize=MED_SIZE)
+    plt.figure(figsize=(8,5))
+    plt.rc('legend',fontsize=MED_SIZE)
+    plt.subplots_adjust(top = 0.9, bottom = 0.12, right = 0.95, left = 0.2,
+            hspace = 0.22, wspace = 0.4)
+
+    yylim = 2.4e3
+
+    plt.subplot(121)
+    plt.plot(data['ascos1']['thinit'], data['ascos1']['z'], label = 'ASCOS1')
+    plt.plot(data['theta'], data['z'], label = 'SONDE')
+    plt.ylabel('Z [m]')
+    plt.xlabel('$\Theta$ [K]')
+    plt.ylim([0,yylim])
+    plt.xlim([265,295])
+
+    plt.savefig('../FIGS/Quicklooks_LEM-ASCOS1_thinit-qinit1_' + sondenumber + '.png')
+    plt.show()
+
+    return data
+
 def main():
 
     START_TIME = time.time()
@@ -380,7 +415,8 @@ def main():
     ## -------------------------------------------------------------
     ## Read in data from LEM namelists
     ## -------------------------------------------------------------
-    figure = LEM_LoadTHREF(data, sondenumber)
+    data = LEM_LoadTHREF(data, sondenumber)
+    data = LEM_LoadTHINIT_QINIT1(data, sondenumber)
 
     ## -------------------------------------------------------------
     ## save out working data for testing
