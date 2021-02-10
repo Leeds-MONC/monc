@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as mpl_cm
 import os
 import seaborn as sns
+from scipy.interpolate import interp1d
 
 #### import python functions
 import sys
@@ -189,8 +190,6 @@ def LEM_LoadTHINIT_QINIT1(data,sondenumber):
     Calculate initialisation potential temperature and moisture profiles
         -- Data copied from gillian/LEM/tom_arc1/morr2712/UPDATES/setprofileASCOS.f
     '''
-
-
 #              DO L=1,KKP
 #           IF (ITHPROF.EQ.1) THEN
 #             IF (PREFN(L) .LT. 87700.) THEN ! Below Inversion
@@ -347,6 +346,46 @@ def LEM_LoadTHINIT_QINIT1(data,sondenumber):
 
 
     data['ascos1']['thinit'] = data['ascos1']['thref']
+    data['ascos1']['qinit1'] = np.zeros(np.size(data['ascos1']['thinit']))
+
+    sondei1 = np.where(data['z'] > 1.5e3)
+    ascosi1 = np.where(data['ascos1']['z'] > 1.5e3)
+    data['ascos1']['qinit1'][ascosi1] = data['q'][sondei1[0][0]]
+
+    sondei2 = np.where(np.logical_and(data['z'] > 500, data['z'] < 1000))
+    maxindex = np.where(data['q'][sondei2] == np.nanmax(data['q'][sondei2]))
+    print (data['q'][sondei2][maxindex])
+    print (data['z'][sondei2][maxindex])
+        ### inversion of 0.00257 kg/kg at 654 m
+
+    ascosi2 = np.where(np.logical_and(data['ascos1']['z'] > 650, data['ascos1']['z'] < 660))
+    print (data['ascos1']['z'][ascosi2[0][0]])
+
+    data['ascos1']['qinit1'][ascosi2[0][0]] = data['q'][sondei2][maxindex]
+
+    sondei3 = np.where(np.logical_and(data['z'] > data['z'][sondei2][maxindex], data['z'] < data['z'][sondei1[0][0]]))
+    # print (data['z'][ascosi2[0][0]])
+    # print (data['ascos1']['z'][ascosi1[0][0]])
+    ascosi3 = np.where(np.logical_and(data['ascos1']['z'] > data['ascos1']['z'][ascosi2[0][0]], data['ascos1']['z'] < data['ascos1']['z'][ascosi1[0][0]]))
+
+    print ([data['z'][sondei3[0][0]],data['z'][sondei1[0][0]]])
+    print ([data['q'][sondei3[0][0]],data['q'][sondei1[0][0]]])
+    print (data['ascos1']['z'][int(ascosi3[0][0])+2:ascosi3[0][-1]])
+
+    interp_qinit1 = interp1d([data['z'][sondei3[0][0]],data['z'][sondei1[0][0]]],[data['q'][sondei3[0][0]],data['q'][sondei1[0][0]]])
+    q1temp = interp_qinit1(data['ascos1']['z'][int(ascosi3[0][0])+2:ascosi3[0][-1]])
+    data['ascos1']['qinit1'][int(ascosi3[0][0])+2:ascosi3[0][-1]] = q1temp
+    data['ascos1']['qinit1'][int(ascosi1[0][0]-1)] = data['q'][sondei1[0][0]]
+
+    data['ascos1']['qinit1'][0:int(ascosi3[0][0])+2] = data['q'][sondei2][maxindex]
+
+    # Zindex = np.where(data['ascos1']['z'] < data['z'][0])
+    # interp_qinit1 = interp1d(data['q'], data['z'])
+    # print (data['z'][data['z'] < 2.4e3])
+    # print (data['ascos1']['z'][int(Zindex[0][-1]+1):])
+    # data['ascos1']['qinit1'] = interp_qinit1(data['ascos1']['z'][int(Zindex[0][-1]+1):])
+
+    print (data['ascos1']['qinit1'])
 
     ####    --------------- FIGURE
 
@@ -361,7 +400,7 @@ def LEM_LoadTHINIT_QINIT1(data,sondenumber):
     plt.rc('ytick',labelsize=MED_SIZE)
     plt.figure(figsize=(8,5))
     plt.rc('legend',fontsize=MED_SIZE)
-    plt.subplots_adjust(top = 0.9, bottom = 0.12, right = 0.95, left = 0.2,
+    plt.subplots_adjust(top = 0.9, bottom = 0.12, right = 0.95, left = 0.1,
             hspace = 0.22, wspace = 0.4)
 
     yylim = 2.4e3
@@ -373,6 +412,13 @@ def LEM_LoadTHINIT_QINIT1(data,sondenumber):
     plt.xlabel('$\Theta$ [K]')
     plt.ylim([0,yylim])
     plt.xlim([265,295])
+
+    plt.subplot(122)
+    plt.plot(data['ascos1']['qinit1'][data['ascos1']['qinit1'] > 0], data['ascos1']['z'][data['ascos1']['qinit1'] > 0], label = 'ASCOS1')
+    plt.plot(data['q'], data['z'], label = 'SONDE')
+    plt.xlabel('q [kg/kg]')
+    plt.grid('on')
+    plt.ylim([0,yylim])
 
     plt.savefig('../FIGS/Quicklooks_LEM-ASCOS1_thinit-qinit1_' + sondenumber + '.png')
     plt.show()
@@ -410,7 +456,7 @@ def main():
     ## -------------------------------------------------------------
     ## Quicklook plots of chosen sonde
     ## -------------------------------------------------------------
-    figure = quicklooksSonde(data, sondenumber)
+    # figure = quicklooksSonde(data, sondenumber)
 
     ## -------------------------------------------------------------
     ## Read in data from LEM namelists
