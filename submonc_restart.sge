@@ -1,7 +1,7 @@
 #!/bin/bash
 #$ -pe ib 40
 #$ -l h_rt=01:00:0
-#$ -l h_vmem=1G
+#$ -l h_vmem=2G
 #$ -l placement=scatter
 #$ -cwd -V
 ##############################################################
@@ -74,7 +74,7 @@ export CHKPT_FILE=$(basename $(\ls -1v ${CHKPT_DIR} | tail -n 1) 2> /dev/null)
 
 # If we have a checkpoint file, restart MONC, else, start from config:
 if [ ! -z "${CHKPT_FILE}" ] ; then
-  export MONC_ARGS="--checkpoint=${CHKPT_DIR}/${CHKPT_FILE} --dtm=0.4"
+  export MONC_ARGS="--checkpoint=${CHKPT_DIR}/${CHKPT_FILE} --dtm=0.3"
 else
   export MONC_ARGS="--config=${MONC_CONFIG}"
 fi
