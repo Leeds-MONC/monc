@@ -61,7 +61,7 @@ export CHKPT_DIR=$(dirname $(grep '^checkpoint_file=' ${MONC_CONFIG} | \
 #fi
 
 # Check for most recent existing checkpoint file:
-export CHKPT_FILE=$(basename $(\ls -1v ${CHKPT_DIR} | tail -n 1) 2> /dev/null)
+# export CHKPT_FILE=$(basename $(\ls -1v ${CHKPT_DIR} | tail -n 1) 2> /dev/null)
 # If current chckpoint file is same as previous, give up:
 #if [ ! -z "${PREV_CHKPT_FILE}" ] && [ ! -z "${CHKPT_FILE}" ] ; then
 #  if [ "${PREV_CHKPT_FILE}" = "${CHKPT_FILE}" ] ; then
