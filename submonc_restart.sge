@@ -74,7 +74,8 @@ export CHKPT_DIR=$(dirname $(grep '^checkpoint_file=' ${MONC_CONFIG} | \
 
 # If we have a checkpoint file, restart MONC, else, start from config:
 if [ ! -z "${CHKPT_FILE}" ] ; then
-  export MONC_ARGS="--checkpoint=${CHKPT_DIR}/${CHKPT_FILE} --dtm=0.3"
+  export MONC_ARGS="--checkpoint=${CHKPT_DIR}/${CHKPT_FILE}"
+  export MONC_OUT='monc_stdout/ascos_control_restart.out'
 else
   export MONC_ARGS="--config=${MONC_CONFIG}"
 fi
