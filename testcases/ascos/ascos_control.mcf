@@ -121,7 +121,7 @@ z0=5e-4
 z0th=5e-5
 
 # Coriolis
-fcoriol=0.000145
+fcoriol=0.0001453
 geostrophic_wind_rate_of_change_in_x=0.0
 geostrophic_wind_rate_of_change_in_y=0.0
 surface_geostrophic_wind_x=-8.0
