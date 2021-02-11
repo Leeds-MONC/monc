@@ -340,7 +340,7 @@ def LEM_LoadQINIT2(data, sondenumber):
 
     ### adapt temperature array
     data['monc']['temperature'] = np.zeros(np.size(data['monc']['z']))
-    data['monc']['temperature'][0] = temp_T[0] 
+    data['monc']['temperature'][0] = temp_T[0]
     data['monc']['temperature'][1] = temp_T[1] - 0.3
     data['monc']['temperature'][2] = temp_T[2] - 0.5
     data['monc']['temperature'][3] = temp_T[3] - 0.7
@@ -350,6 +350,7 @@ def LEM_LoadQINIT2(data, sondenumber):
     data['monc']['temperature'][11] = temp_T[11] - 0.25
     data['monc']['temperature'][12] = temp_T[12] - 0.6
 
+    ### calculate qinit2
     ### interpolate free troposphere temperatures from radiosonde onto monc namelist gridding
     interp_temp = interp1d(data['z'], data['temperature'])
     data['monc']['temperature'][13:] = interp_temp(data['monc']['z'][13:])
@@ -368,6 +369,10 @@ def LEM_LoadQINIT2(data, sondenumber):
 
     data['monc']['qinit2'] = dlwcdz[:-1] * dheight
     data['monc']['qinit2'] = np.append(data['monc']['qinit2'], 0.)
+
+    ### adapt theta (thinit and thref) based on revised temperature profile
+    data['monc']['thinit'], thetaE = calcThetaE(data['monc']['temperature'], data['monc']['pressure'], data['monc']['qinit1'])
+    data['monc']['thref'] = data['monc']['thinit']
 
     ####    --------------- FIGURE
 
