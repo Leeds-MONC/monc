@@ -52,7 +52,7 @@ if [ `git config svn-remote.${LOCAL_BRANCH_NAME}.url` ]; then
   exit 1
 fi
 
-git config --add svn-remote.${LOCAL_BRANCH_NAME}.url https://code.metoffice.gov.uk/svn/monc/main/branches/pkg/adrianhill/vn0.9.0_to_0.9.x_part1_pkg
+git config --add svn-remote.${LOCAL_BRANCH_NAME}.url https://code.metoffice.gov.uk/svn/monc/main/${REMOTE_SVN_PATH}
 git config --add svn-remote.${LOCAL_BRANCH_NAME}.fetch :refs/remotes/mosrs/${LOCAL_BRANCH_NAME}
 git svn fetch ${LOCAL_BRANCH_NAME}
 git checkout remotes/mosrs/${LOCAL_BRANCH_NAME} -b ${LOCAL_BRANCH_NAME}
