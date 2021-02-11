@@ -7,7 +7,7 @@ module pdf_analysis_mod
   use grids_mod, only : X_INDEX, Y_INDEX, Z_INDEX
   use datadefn_mod, only : DEFAULT_PRECISION, PRECISION_TYPE
   use optionsdatabase_mod, only : options_has_key, options_get_logical, options_get_integer, options_get_string, options_get_real
-  use mpi, only : MPI_SUM, MPI_IN_PLACE, MPI_INT, MPI_REAL, MPI_DOUBLE, MPI_Comm
+  use mpi, only : MPI_SUM, MPI_IN_PLACE, MPI_INT, MPI_REAL, MPI_DOUBLE
   use logging_mod, only : LOG_INFO, LOG_DEBUG, LOG_ERROR, log_master_log, log_is_master
   use conversions_mod, only : conv_to_string
   implicit none
