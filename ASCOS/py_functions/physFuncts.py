@@ -250,6 +250,8 @@ def adiabatic_lwc(temperature, pressure):
     %    From Brenguier (1991)
     '''
 
+    print('Calculating theoretical adiabatic rate of LWC increase with height:')
+
     # Define constants
     e  = 0.62198        # ratio of the molecular weight of water vapor to dry air
     g  = -9.81         # acceleration due to gravity (m s-1)
@@ -277,5 +279,39 @@ def adiabatic_lwc(temperature, pressure):
 
     # Returns dlwc/dz in kg m-3 m-1
     dlwcdz = rhoa * dqldz
+    print('...')
+
+    print('...')
+    print('Done!')
 
     return dlwcdz, dqldz, dqdp
+
+def calcTemperature(theta, pressure):
+
+    """
+    Function to calculate temperature from theta and pressure
+    ==============================
+    inputs:
+    pressure = Pa
+    potential temperature = K
+
+    """
+
+    L_vap = 2.555e6    # J/kg
+    L_sub = 2.836e6  # J/kg
+    cp = 1004.6      # J/kg.K
+    cpd = 1005.7     # J/kg.K
+
+    Rd = 287.04   # dry air J kg^-1 K^-1
+    Rv = 461.50
+
+    kd = Rd/cpd     # k dry air
+
+    print('Calculating temperature:')
+    temperature = theta / np.power(1e5 / pressure, (Rd/cp))
+    print('...')
+
+    print('...')
+    print('Done!')
+
+    return theta, thetaE
