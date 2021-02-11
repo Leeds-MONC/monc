@@ -13,3 +13,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: build
+      run: |
+        ./utils/arc/monc_compile_arc.sh
+    - name: run
+      run: |
+        ./utils/arc/submonc.sge
