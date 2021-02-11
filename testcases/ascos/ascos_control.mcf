@@ -112,12 +112,6 @@ l_matchthref=.false.
 #l_rand_pl_q=.true.
 #z_rand_pl_q=0.0, 300.0, 600.0, 2400.
 #f_rand_pl_q=0.0001, 0.1, 0.1, 0.0001
-#l_rand_pl_u=.true.
-#z_rand_pl_u=0.0, 600.0, 1200., 1800. 2400.
-#f_rand_pl_u=-8.0, -8.0, -8.0, -8.0, -8.0
-#l_rand_pl_v=.true.
-#z_rand_pl_v=0.0, 600.0, 1200., 1800. 2400.
-#f_rand_pl_v=-3.5, -3.5, -3.5, -3.5, -3.5
 
 # Simple cloud
 max_height_cloud=2400.
