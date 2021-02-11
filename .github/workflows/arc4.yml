@@ -15,6 +15,7 @@ jobs:
     - uses: actions/checkout@v2
     - name: build
       run: |
+        source /apps/Modules/3.2.10/init/bash
         ./utils/arc/monc_compile_arc.sh
     - name: run
       run: |
