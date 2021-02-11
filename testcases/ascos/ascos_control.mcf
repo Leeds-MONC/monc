@@ -35,7 +35,7 @@ socrates_couple_enabled=.true.
 
 display_synopsis_frequency=100
 nn_consolidation=1
-termination_time=10800.
+termination_time=50410.
 dtm=0.4
 
 
@@ -47,7 +47,7 @@ sampling_frequency=20
 3d_sampling_frequency=100
 mm=3600.0
 mm1=60.0
-diag_write_freq=10800.0
+diag_write_freq=50400.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
