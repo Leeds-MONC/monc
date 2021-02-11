@@ -262,10 +262,10 @@ def adiabatic_lwc(temperature, pressure):
     # returns saturation vapour pressure (es) in Pa and
     # specific humidity mixing ratio (qs) in kg kg-1
     es = svp(T)
-    qs=0.62198.*es./(pressure-es);
+    qs=0.62198*es/(pressure-es)
 
     # calculate the density of the air (kg m-3)
-    rhoa = pressure / (R * (1 + (0.6 * qs)) * temperature);
+    rhoa = pressure / (R * (1 + (0.6 * qs)) * temperature)
 
     # These equations expect temperature in K, pressure in
     # Pa, svp in Pa
