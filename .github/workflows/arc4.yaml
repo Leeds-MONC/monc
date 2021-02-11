@@ -9,7 +9,7 @@ on:
 jobs:
   build:
 
-    runs-on: ARC4
+    #runs-on: ARC4
 
     steps:
     - uses: actions/checkout@v2
