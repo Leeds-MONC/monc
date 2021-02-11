@@ -150,8 +150,6 @@ def calcThetaVL(temperature, pressure, q, ql, qi, tim, height):
 
     return theta, theta_l, theta_vl
 
-
-
 def svp(T):
 
     """
@@ -233,3 +231,51 @@ def calcRH(temperature, pressure, q):
                 #### gives RH as a percentage
 
     return rh
+
+def adiabatic_lwc(temperature, pressure):
+
+    '''
+    % [dlwcdz, dqldz, dqdp] = adiabatic_lwc(temperature, pressure)
+    %
+    %    Calculates the theoretical adiabatic rate of increase of LWC with
+    %    height, or pressure, given the cloud base temperature and pressure
+    %
+    %    Prefers: temperature in K
+    %             pressure in Pa
+    %
+    %    Returns: dlwc/dz in kg m-3 m-1
+    %             dql/dz  in kg kg-1 m-1
+    %             dql/dp  in kg kg-1 Pa-1
+    %
+    %    From Brenguier (1991)
+    '''
+
+    # Define constants
+    e  = 0.62198        # ratio of the molecular weight of water vapor to dry air
+    g  = -9.81         # acceleration due to gravity (m s-1)
+    cp = 1005          # heat capacity of air at const pressure (J kg-1 K-1)
+    L  = 2.5e6         # latent heat of evaporation (J kg-1)
+    R  = 461.5 * e     # specific gas constant for dry air (J kg-1 K-1)
+    drylapse = -g / cp # dry lapse rate (K m-1)
+
+    # This function requires temperature in Kelvin, pressure in Pa,
+    # returns saturation vapour pressure (es) in Pa and
+    # specific humidity mixing ratio (qs) in kg kg-1
+    es = svp(T)
+    qs=0.62198.*es./(pressure-es);
+
+    # calculate the density of the air (kg m-3)
+    rhoa = pressure / (R * (1 + (0.6 * qs)) * temperature);
+
+    # These equations expect temperature in K, pressure in
+    # Pa, svp in Pa
+    # Returns dql/dp in kg kg-1 Pa-1
+    dqldp = -(1 - ((cp * temperature) / (L * e))) * (1 / ((cp * temperature / (L * e)) + (L * qs * rhoa / ((pressure - es))))) * (e * es) * ((pressure - es)^(-2))
+
+    # Returns dql/dz in kg kg-1 m-1
+    dqldz = - (1 - (cp * temperature / (L * e))) * (1 / ((cp * temperature / (L * e)) + (L * qs * rhoa / (pressure - es)) )) * (rhoa * g * e * es) * ((pressure - es)^(-2))
+
+    # Returns dlwc/dz in kg m-3 m-1
+    dlwcdz = rhoa * dqldz
+
+    return dlwcdz, dqldz, dqdp
