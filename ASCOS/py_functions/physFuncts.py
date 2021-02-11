@@ -272,10 +272,10 @@ def adiabatic_lwc(temperature, pressure):
     # These equations expect temperature in K, pressure in
     # Pa, svp in Pa
     # Returns dql/dp in kg kg-1 Pa-1
-    dqldp = -(1 - ((cp * temperature) / (L * e))) * (1 / ((cp * temperature / (L * e)) + (L * qs * rhoa / ((pressure - es))))) * (e * es) * ((pressure - es)^(-2))
+    dqldp = -(1 - ((cp * temperature) / (L * e))) * (1 / ((cp * temperature / (L * e)) + (L * qs * rhoa / ((pressure - es))))) * (e * es) * (np.power(pressure - es, -2))
 
     # Returns dql/dz in kg kg-1 m-1
-    dqldz = - (1 - (cp * temperature / (L * e))) * (1 / ((cp * temperature / (L * e)) + (L * qs * rhoa / (pressure - es)) )) * (rhoa * g * e * es) * ((pressure - es)^(-2))
+    dqldz = - (1 - (cp * temperature / (L * e))) * (1 / ((cp * temperature / (L * e)) + (L * qs * rhoa / (pressure - es)) )) * (rhoa * g * e * es) * (np.power(pressure - es, -2))
 
     # Returns dlwc/dz in kg m-3 m-1
     dlwcdz = rhoa * dqldz
