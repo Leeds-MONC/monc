@@ -163,7 +163,7 @@ spectral_file_lw           = /projects/monc/fra23/socrates_spectra/ga7/sp_lw_ga7
 spectral_file_sw           = /projects/monc/fra23/socrates_spectra/ga7/sp_sw_ga7
 
 # 5 is clear sky, 2 is cloud (ice and liquid no overlap), 1 (ice and liquid full overlap)
-i_cloud_representation  = 2
+i_cloud_representation  = 1
 
 ## Time and location variables for socrates
 l_360 = .true.           #  360 days in year as opposed to 365 (a UM thing
