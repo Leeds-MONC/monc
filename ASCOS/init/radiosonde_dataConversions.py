@@ -336,8 +336,23 @@ def LEM_LoadQINIT2(data, sondenumber):
     data['monc']['pressure'][0] = 102050. ## reference surface pressure from mcf
 
     ### calculate temperature from thref and pressure
-    data['monc']['temperature'] = calcTemperature(data['monc']['thref'], data['monc']['pressure'])
+    temp_T = calcTemperature(data['monc']['thref'], data['monc']['pressure'])
 
+    ### adapt temperature array
+    data['monc']['temperature'] = np.zeros(np.size(data['monc']['z']))
+    data['monc']['temperature'][0] = temp_T[0] 
+    data['monc']['temperature'][1] = temp_T[1] - 0.3
+    data['monc']['temperature'][2] = temp_T[2] - 0.5
+    data['monc']['temperature'][3] = temp_T[3] - 0.7
+    data['monc']['temperature'][4] = temp_T[4] - 0.8
+    data['monc']['temperature'][5] = temp_T[5] - 0.3
+    data['monc']['temperature'][6:11] = temp_T[6:11]
+    data['monc']['temperature'][11] = temp_T[11] - 0.25
+    data['monc']['temperature'][12] = temp_T[12] - 0.6
+
+    ### interpolate free troposphere temperatures from radiosonde onto monc namelist gridding
+    interp_temp = interp1d(data['z'], data['temperature'])
+    data['monc']['temperature'][13:] = interp_temp(data['monc']['z'][13:])
 
     ### calculate adiabatic lwc rate of change
     dlwcdz, dqldz, dqdp = adiabatic_lwc(data['monc']['temperature'], data['monc']['pressure'])
@@ -346,7 +361,13 @@ def LEM_LoadQINIT2(data, sondenumber):
     print (dheight)
     print (dlwcdz)
 
+    freetrop_index = np.where(data['monc']['z'] > 600.0)
+    dheight[int(freetrop_index[0][0]):] = 0.0   ## ignore points in the free troposphere
+    blcloud_index = np.where(data['monc']['z'] < 300.0)
+    dheight[blcloud_index] = 0.0   ## ignore points in the free troposphere
+
     data['monc']['qinit2'] = dlwcdz[:-1] * dheight
+    data['monc']['qinit2'] = np.append(data['monc']['qinit2'], 0.)
 
     ####    --------------- FIGURE
 
@@ -367,8 +388,8 @@ def LEM_LoadQINIT2(data, sondenumber):
     yylim = 2.4e3
 
     plt.subplot(151)
-    plt.plot(data['ascos1']['thinit'], data['ascos1']['z'], label = 'ASCOS1')
-    plt.plot(data['theta'], data['z'], label = 'SONDE')
+    plt.plot(data['ascos1']['thinit'], data['ascos1']['z'], color = 'steelblue', label = 'ASCOS1')
+    plt.plot(data['theta'], data['z'], color = 'darkorange', label = 'SONDE')
     plt.plot(data['monc']['thref'], data['monc']['z'], 'k.', label = 'monc-namelist')
     plt.ylabel('Z [m]')
     plt.xlabel('$\Theta$ [K]')
@@ -377,17 +398,17 @@ def LEM_LoadQINIT2(data, sondenumber):
     plt.xlim([265,295])
 
     plt.subplot(152)
-    plt.plot(data['ascos1']['qinit1'][data['ascos1']['qinit1'] > 0], data['ascos1']['z'][data['ascos1']['qinit1'] > 0], label = 'ASCOS1')
-    plt.plot(data['q'], data['z'], label = 'SONDE')
-    plt.plot(data['monc']['qinit1'], data['monc']['z'], 'k.', label = 'monc-namelist')
-    plt.xlabel('qinit1 [kg/kg]')
+    plt.plot(data['ascos1']['qinit1'][data['ascos1']['qinit1'] > 0]*1e3, data['ascos1']['z'][data['ascos1']['qinit1'] > 0], color = 'steelblue', label = 'LEM-ASCOS1')
+    plt.plot(data['q']*1e3, data['z'], color = 'darkorange', label = 'SONDE')
+    plt.plot(data['monc']['qinit1']*1e3, data['monc']['z'], 'k.', label = 'monc-namelist')
+    plt.xlabel('qinit1 [g/kg]')
     plt.grid('on')
     plt.ylim([0,yylim])
-    plt.legend(bbox_to_anchor=(0.5, 1.01, 1., .102), loc=3, ncol=3)
+    plt.legend(bbox_to_anchor=(0.25, 1.01, 1., .102), loc=3, ncol=3)
 
     plt.subplot(153)
-    # plt.plot(data['ascos1']['qinit1'][data['ascos1']['qinit1'] > 0], data['ascos1']['z'][data['ascos1']['qinit1'] > 0], label = 'ASCOS1')
-    plt.plot(data['pressure'], data['z'], label = 'SONDE')
+    # plt.plot(data['ascos1']['qinit1'][data['ascos1']['qinit1'] > 0], data['ascos1']['z'][data['ascos1']['qinit1'] > 0], color = 'steelblue', label = 'ASCOS1')
+    plt.plot(data['pressure'], data['z'], color = 'darkorange', label = 'SONDE')
     plt.plot(data['monc']['pressure'], data['monc']['z'], 'k.', label = 'monc-namelist')
     plt.xlabel('pressure [Pa]')
     plt.grid('on')
@@ -395,8 +416,8 @@ def LEM_LoadQINIT2(data, sondenumber):
     plt.xlim([7e4, 10.5e4])
 
     plt.subplot(154)
-    # plt.plot(data['ascos1']['qinit1'][data['ascos1']['qinit1'] > 0], data['ascos1']['z'][data['ascos1']['qinit1'] > 0], label = 'ASCOS1')
-    plt.plot(data['temperature'], data['z'], label = 'SONDE')
+    # plt.plot(data['ascos1']['qinit1'][data['ascos1']['qinit1'] > 0], data['ascos1']['z'][data['ascos1']['qinit1'] > 0], color = 'steelblue', label = 'ASCOS1')
+    plt.plot(data['temperature'], data['z'], color = 'darkorange', label = 'SONDE')
     plt.plot(data['monc']['temperature'], data['monc']['z'], 'k.', label = 'monc-namelist')
     plt.xlabel('temperature [K]')
     plt.grid('on')
@@ -404,8 +425,8 @@ def LEM_LoadQINIT2(data, sondenumber):
     plt.xlim([265,275])
 
     plt.subplot(155)
-    plt.plot(data['monc']['qinit2'], data['monc']['z'][:-1], 'k.', label = 'monc-namelist')
-    plt.xlabel('qinit2 [kg/kg]')
+    plt.plot(data['monc']['qinit2']*1e3, data['monc']['z'][:], 'k.', label = 'monc-namelist')
+    plt.xlabel('qinit2 [g/kg]')
     plt.grid('on')
     plt.ylim([0,yylim])
     # plt.xlim([265,275])
