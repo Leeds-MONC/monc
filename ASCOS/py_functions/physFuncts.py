@@ -314,4 +314,4 @@ def calcTemperature(theta, pressure):
     print('...')
     print('Done!')
 
-    return theta, thetaE
+    return temperature
