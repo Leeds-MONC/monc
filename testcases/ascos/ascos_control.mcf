@@ -1,0 +1,200 @@
+# Marins Sc configuration based on Hill et al 2009, JAS
+
+# Global configuration
+global_configuration=global_config
+
+# Override global component defaults
+cfltest_enabled=.true.
+fftsolver_enabled=.true.
+iterativesolver_enabled=.false.
+pw_advection_enabled=.true.
+simplesetup_enabled=.true.
+smagorinsky_enabled=.true.
+lower_bc_enabled=.true.
+setfluxlook_enabled=.true. #This must be set to true if running with lower_bc
+viscosity_enabled=.true.
+diffusion_enabled=.true.
+simplecloud_enabled=.true.
+casim_enabled=.false.
+coriolis_enabled=.true.
+damping_enabled=.true.
+forcing_enabled=.true.
+galilean_transformation=.true. # Needs debugging
+randomnoise_enabled=.true.
+mean_profiles_enabled=.true. #This must be set to true if running with damping
+th_advection_enabled=.false.
+lwrad_exponential_enabled=.false.
+iobridge_enabled=.true.
+scalar_diagnostics_enabled=.true.
+profile_diagnostics_enabled=.true.
+subgrid_profile_diagnostics_enabled=.true.
+flux_budget_enabled=.true.
+socrates_couple_enabled=.true.
+
+# Control configuration
+
+display_synopsis_frequency=100
+nn_consolidation=1
+termination_time=10800.
+dtm=0.4
+
+
+# IO server configuration
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
+diagnostic_file="diagnostic_files/ascos_cntrl_dg.nc"
+moncs_per_io_server=8
+sampling_frequency=20
+3d_sampling_frequency=100
+mm=3600.0
+mm1=60.0
+diag_write_freq=10800.0
+
+# Checkpoint configuration
+checkpoint_frequency=0
+checkpoint_file="checkpoint_files/ascos_cntrl_dump.nc"
+check_walltime_frequency=100
+walltime_limit=01:00:00
+
+# Advection choices
+advection_flow_fields=pw
+advection_theta_field=tvd
+advection_q_fields=tvd
+
+# CFL configuration
+cfl_frequency=100
+cfl_cvismax=0.4
+cfl_cvelmax=0.4
+cfl_dtmmax=0.4
+cfl_dtmmin=0.001
+
+# Simple setup configuration
+# We'll want to change this reference profile later
+thref0=268.7
+surface_pressure=102050.
+surface_reference_pressure=102050.
+x_size=480
+y_size=480
+z_size=361
+dxx=10
+dyy=10
+zztop=2400.0
+kgd=241, 361
+hgd=1200., 2400.
+nsmth=40
+rmlmax=11.5
+enable_theta=.true.
+number_q_fields=2
+use_anelastic_equations=.false.
+origional_vertical_grid_setup=.true.
+passive_th=.false.
+passive_q=.false.
+backscatter=.false.
+use_viscosity_and_diffusion=.true.
+
+# Initialization of fields
+l_init_pl_theta=.true.
+z_init_pl_theta = 0.0,50.0,100.0,150.0,200.0,250.0,300.0,350.0,400.0,450.0,500.0,550.0,600.0,650.0,700.0,800.0,900.0,1000.0,1100.0,1200.0,1300.0,1400.0,1500.0,1600.0,1700.0,1800.0,1900.0,2000.0,2100.0,2200.0,2300.0,2400.0
+f_init_pl_theta = 269.2,268.95,268.86,268.89,269.07,269.79,270.22,270.32,270.43,270.58,270.78,270.89,271.14,272.69,274.75,276.55,278.79,280.87,282.13,283.23,284.71,285.68,286.69,287.61,287.98,288.52,289.12,289.89,290.02,290.5,290.95,291.24
+l_init_pl_u=.true.
+z_init_pl_u=0.0, 600.0, 1200., 1800., 2400.
+f_init_pl_u=-8.0, -8.0, -8.0, -8.0, -8.0
+l_init_pl_v=.true.
+z_init_pl_v=0.0, 600.0, 1200., 1800., 2400.
+f_init_pl_v=-3.5, -3.5, -3.5, -3.5, -3.5
+l_init_pl_q=.true.
+names_init_pl_q=vapour, cloud_liquid_mass
+z_init_pl_q = 0.0,50.0,100.0,150.0,200.0,250.0,300.0,350.0,400.0,450.0,500.0,550.0,600.0,650.0,700.0,800.0,900.0,1000.0,1100.0,1200.0,1300.0,1400.0,1500.0,1600.0,1700.0,1800.0,1900.0,2000.0,2100.0,2200.0,2300.0,2400.0
+f_init_pl_q = 0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00246,0.00228,0.00211,0.00193,0.00176,0.00159,0.00141,0.00124,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.0,0.0,0.0,0.0,0.0,0.0,7e-05,7e-05,7e-05,7e-05,7e-05,7e-05,7e-05,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0
+
+l_matchthref=.false.
+
+# Random noise
+l_rand_pl_theta=.true.
+z_rand_pl_theta=0.0, 300.0, 600.0, 2400.
+f_rand_pl_theta=0.0001, 0.1, 0.1, 0.0001
+
+# Simple cloud
+max_height_cloud=2400.
+
+# physical constants
+z0=5e-4
+z0th=5e-5
+
+# Coriolis
+fcoriol=0.0001453
+geostrophic_wind_rate_of_change_in_x=0.0
+geostrophic_wind_rate_of_change_in_y=0.0
+surface_geostrophic_wind_x=-8.0
+surface_geostrophic_wind_y=-3.5
+
+# Damping configuration
+dmptim=0.001
+zdmp=1800.0
+hdmp=600.0
+
+# Subsidence profile
+l_subs_pl_theta=.false.
+#z_subs_pl=0.0, 1600.0
+#f_subs_pl=0.000005,0.000005
+l_subs_pl_q=.false.
+
+#SUBSIDENCE=1, DIVERGENCE=0
+subsidence_input_type=0
+subsidence_local_theta=.true.
+subsidence_local_q=.true.
+
+# surface flux config
+# type_of_surface_boundary_conditions=PRESCRIBED_FLUX=0
+# type_of_surface_boundary_conditions=PRESCRIBED_SURFACE_VALUE=1
+use_surface_boundary_conditions=.true.
+use_time_varying_surface_values= .false.
+type_of_surface_boundary_conditions = 0
+surface_boundary_input_times = 0
+surface_temperatures  = 271.0
+surface_latent_heat_flux   = 2.06
+surface_sensible_heat_flux = -0.08
+
+# SOCRATES inputs
+mcc_temperature_profile  = components/socrates_couple/data/mcc_profiles/one_km/sas.t.nc
+mcc_vapour_profile       = components/socrates_couple/data/mcc_profiles/one_km/sas.q.nc
+mcc_ozone_profile        = components/socrates_couple/data/mcc_profiles/one_km/sas.o3.nc
+# Add options for rad_cntrl
+spectral_file_lw           = /projects/monc/fra23/socrates_spectra/ga7/sp_lw_ga7
+spectral_file_sw           = /projects/monc/fra23/socrates_spectra/ga7/sp_sw_ga7
+
+# 5 is clear sky, 2 is cloud (ice and liquid no overlap), 1 (ice and liquid full overlap)
+i_cloud_representation  = 1
+
+## Time and location variables for socrates
+l_360 = .true.           #  360 days in year as opposed to 365 (a UM thing
+                         #  in the LEM, is this still required??)
+l_solar_fixed  = .false. # true equals fixed insolation using value in sol_fixed
+l_no_solar     = .false.  # no solar, only longwave
+#solar_fixed    = 1361.0  # prescribed insolation value
+#sec_fixed      = 1.15470054   # prescribed 1/cos(solar_zenith_angle)
+latitude       = 87.35    # latitude for the location of radiation calc
+longitude      = -8.55  # longitude for the location of radiation calc
+rad_start_year = 2008.0  # simulation year for earth sun distance
+rad_start_day  = 240.0   # day number from January 1st
+rad_int_time   = 600.0   # Radiation integration timestep
+rad_start_time = 11.35    # Start time for the radiation
+
+## Surface albedo variables for socrates
+l_variable_srf_albedo = .false. # not coded yet but will allow variable
+                                # surface albedo with solar zenith angle
+surface_albedo = 0.84    # surface albedo (fixed in time)
+
+mphys_nq_l=1 # cloud liquid mass
+mphys_nd_l=0 # cloud drop number
+mphys_nq_r=0 # rain mass
+mphys_nq_i=0 # ice mass
+mphys_nq_s=0 # snow mass
+mphys_nq_g=0 # graupel mass
+
+l_fix_re       = .true.
+fixed_cloud_re = 7.3 # effective radius for cloud droplets 7.3 microns
+fixed_ice_re   = 25.3 # effective radius for ice 25.3 microns
+# Radiation settings - variables and switches for exponential radiation (LWEXP)
+longwave_exp_decay = 130.0 # longwave rad exponential decay factor
+cltop_longwave_flux = 70.0 # cloud top longwave flux (Wm-2)
+clbase_longwave_flux = 0.0 # cloud base longwave flux (Wm-2)
