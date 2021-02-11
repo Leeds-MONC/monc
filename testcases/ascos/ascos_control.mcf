@@ -72,8 +72,8 @@ cfl_dtmmin=0.001
 thref0=268.7
 surface_pressure=102050.
 surface_reference_pressure=102050.
-x_size=240
-y_size=240
+x_size=480
+y_size=480
 z_size=361
 dxx=10
 dyy=10
@@ -109,9 +109,9 @@ f_init_pl_q = 0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.
 l_matchthref=.false.
 
 # Random noise
-#l_rand_pl_q=.true.
-#z_rand_pl_q=0.0, 300.0, 600.0, 2400.
-#f_rand_pl_q=0.0001, 0.1, 0.1, 0.0001
+l_rand_pl_q=.true.
+z_rand_pl_q=0.0, 300.0, 600.0, 2400.
+f_rand_pl_q=0.0001, 0.1, 0.1, 0.0001
 
 # Simple cloud
 max_height_cloud=2400.
