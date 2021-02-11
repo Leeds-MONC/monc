@@ -19,4 +19,4 @@ jobs:
         ./utils/arc/monc_compile_arc.sh
     - name: run
       run: |
-        ./utils/arc/submonc.sge
+        bash utils/arc/submonc.sge
