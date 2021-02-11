@@ -2,9 +2,8 @@ name: ARC4 compile and run
 
 on:
   push:
-    branches: [ $default-branch ]
-  pull_request:
-    branches: [ $default-branch ]
+    branches:
+      - arc4-continuous-integration  # Set a branch name to trigger deployment
 
 jobs:
   build:
