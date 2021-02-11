@@ -284,7 +284,7 @@ def adiabatic_lwc(temperature, pressure):
     print('...')
     print('Done!')
 
-    return dlwcdz, dqldz, dqdp
+    return dlwcdz, dqldz, dqldp
 
 def calcTemperature(theta, pressure):
 
