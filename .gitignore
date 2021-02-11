@@ -13,3 +13,5 @@ submonc.sge.[oe]*
 *.autogen
 __pycache__/
 .pytest_cache/
+
+.conda/environment.yml
