@@ -24,7 +24,7 @@ import sys
 sys.path.insert(1, '../py_functions/')
 from time_functions import calcTime_Mat2DOY, calcTime_Date2DOY
 from readMAT import readMatlabStruct, readMatlabData
-from physFuncts import calcThetaE, calcThetaVL, adiabatic_lwc
+from physFuncts import calcThetaE, calcThetaVL, adiabatic_lwc, calcTemperature
 from pyFixes import py3_FixNPLoad
 
 def quicklooksSonde(data, sondenumber):
@@ -226,7 +226,7 @@ def LEM_LoadTHINIT_QINIT1(data,sondenumber):
     data['ascos1']['qinit1'][0:int(ascosi3[0][0])+2] = data['q'][sondei2][maxindex]
 
     ### build new height array for namelist initialisation
-    nml_Z = np.arange(0., 701., 50.)
+    nml_Z = np.arange(0., 700., 50.)
     nml_Z = np.append(nml_Z, np.arange(700., 2301., 100.))
     print (nml_Z)
 
@@ -243,68 +243,71 @@ def LEM_LoadTHINIT_QINIT1(data,sondenumber):
     nml_qinit1 = np.append(nml_qinit1, data['ascos1']['qinit1'][-1])
     nml_thref = np.append(nml_thref, data['ascos1']['thref'][-1])
 
-    ####    --------------- FIGURE
-
-    SMALL_SIZE = 12
-    MED_SIZE = 14
-    LARGE_SIZE = 16
-
-    plt.rc('font',size=MED_SIZE)
-    plt.rc('axes',titlesize=MED_SIZE)
-    plt.rc('axes',labelsize=MED_SIZE)
-    plt.rc('xtick',labelsize=MED_SIZE)
-    plt.rc('ytick',labelsize=MED_SIZE)
-    plt.figure(figsize=(8,5))
-    plt.rc('legend',fontsize=MED_SIZE)
-    plt.subplots_adjust(top = 0.9, bottom = 0.12, right = 0.95, left = 0.1,
-            hspace = 0.22, wspace = 0.4)
-
-    yylim = 2.4e3
-
-    plt.subplot(121)
-    plt.plot(data['ascos1']['thinit'], data['ascos1']['z'], label = 'ASCOS1')
-    plt.plot(data['theta'], data['z'], label = 'SONDE')
-    plt.plot(nml_thref, nml_Z, '.', label = 'monc-namelist')
-    plt.ylabel('Z [m]')
-    plt.xlabel('$\Theta$ [K]')
-    plt.ylim([0,yylim])
-    plt.xlim([265,295])
-
-    plt.subplot(122)
-    plt.plot(data['ascos1']['qinit1'][data['ascos1']['qinit1'] > 0], data['ascos1']['z'][data['ascos1']['qinit1'] > 0], label = 'ASCOS1')
-    plt.plot(data['q'], data['z'], label = 'SONDE')
-    plt.plot(nml_qinit1, nml_Z, '.', label = 'monc-namelist')
-    plt.xlabel('q [kg/kg]')
-    plt.grid('on')
-    plt.ylim([0,yylim])
-    plt.legend()
-
-    plt.savefig('../FIGS/Quicklooks_LEM-ASCOS1-MONCnmlist_thinit-qinit1_' + sondenumber + '.png')
-    plt.show()
-
-    print ('z_init_pl_theta = ')
-    for line in nml_Z: sys.stdout.write('' + str(line).strip() + ',')
-    print ('')
-
-                # z_init_pl_theta = 0.0,50.0,100.0,150.0,200.0,250.0,300.0,350.0,400.0,450.0,500.0,550.0,600.0,650.0,700.0,700.0,800.0,900.0,1000.0,1100.0,1200.0,1300.0,1400.0,1500.0,1600.0,1700.0,1800.0,1900.0,2000.0,2100.0,2200.0,2300.0,2400.0
-
-    print ('f_init_pl_theta = ')
-    for line in nml_thref: sys.stdout.write('' + str(np.round(line,2)).strip() + ',')
-    print ('')
-
-                # f_init_pl_theta = 269.2,269.24,269.36,269.59,269.87,270.09,270.22,270.32,270.43,270.58,270.78,271.14,271.75,272.57,273.5,273.5,275.41,277.28,279.12,280.92,282.59,283.47,284.27,285.06,285.85,286.62,287.39,288.15,288.9,289.64,290.38,291.1,291.79
-
-    print ('z_init_pl_q = ')
-    for line in nml_qinit1: sys.stdout.write('' + str(np.round(line,5)).strip() + ',')
-    print ('')
-
-                # z_init_pl_q = 0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00246,0.00246,0.00228,0.00211,0.00193,0.00176,0.00159,0.00141,0.00124,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105
-
+    ### save to dictionary so data can be easily passed to next function
     data['monc'] = {}
     data['monc']['z'] = nml_Z
     data['monc']['thref'] = nml_thref
     data['monc']['thinit'] = nml_thref
     data['monc']['qinit1'] = nml_qinit1
+
+
+    ####    --------------- FIGURE
+
+    # SMALL_SIZE = 12
+    # MED_SIZE = 14
+    # LARGE_SIZE = 16
+    #
+    # plt.rc('font',size=MED_SIZE)
+    # plt.rc('axes',titlesize=MED_SIZE)
+    # plt.rc('axes',labelsize=MED_SIZE)
+    # plt.rc('xtick',labelsize=MED_SIZE)
+    # plt.rc('ytick',labelsize=MED_SIZE)
+    # plt.figure(figsize=(8,5))
+    # plt.rc('legend',fontsize=MED_SIZE)
+    # plt.subplots_adjust(top = 0.9, bottom = 0.12, right = 0.95, left = 0.1,
+    #         hspace = 0.22, wspace = 0.4)
+    #
+    # yylim = 2.4e3
+
+    # plt.subplot(121)
+    # plt.plot(data['ascos1']['thinit'], data['ascos1']['z'], label = 'ASCOS1')
+    # plt.plot(data['theta'], data['z'], label = 'SONDE')
+    # plt.plot(nml_thref, nml_Z, '.', label = 'monc-namelist')
+    # plt.ylabel('Z [m]')
+    # plt.xlabel('$\Theta$ [K]')
+    # plt.ylim([0,yylim])
+    # plt.xlim([265,295])
+    #
+    # plt.subplot(122)
+    # plt.plot(data['ascos1']['qinit1'][data['ascos1']['qinit1'] > 0], data['ascos1']['z'][data['ascos1']['qinit1'] > 0], label = 'ASCOS1')
+    # plt.plot(data['q'], data['z'], label = 'SONDE')
+    # plt.plot(nml_qinit1, nml_Z, '.', label = 'monc-namelist')
+    # plt.xlabel('q [kg/kg]')
+    # plt.grid('on')
+    # plt.ylim([0,yylim])
+    # plt.legend()
+    #
+    # plt.savefig('../FIGS/Quicklooks_LEM-ASCOS1-MONCnmlist_thinit-qinit1_' + sondenumber + '.png')
+    # plt.show()
+
+    ### print out to terminal in format for monc namelists
+    print ('z_init_pl_theta = ')
+    for line in nml_Z: sys.stdout.write('' + str(line).strip() + ',')
+    print ('')
+
+                # z_init_pl_theta = 0.0,50.0,100.0,150.0,200.0,250.0,300.0,350.0,400.0,450.0,500.0,550.0,600.0,650.0,700.0,800.0,900.0,1000.0,1100.0,1200.0,1300.0,1400.0,1500.0,1600.0,1700.0,1800.0,1900.0,2000.0,2100.0,2200.0,2300.0,2400.0
+
+    print ('f_init_pl_theta = ')
+    for line in nml_thref: sys.stdout.write('' + str(np.round(line,2)).strip() + ',')
+    print ('')
+
+                # f_init_pl_theta = 269.2,269.24,269.36,269.59,269.87,270.09,270.22,270.32,270.43,270.58,270.78,271.14,271.75,272.57,273.5,275.41,277.28,279.12,280.92,282.59,283.47,284.27,285.06,285.85,286.62,287.39,288.15,288.9,289.64,290.38,291.1,291.79
+
+    print ('f_init_pl_q = ')
+    for line in nml_qinit1: sys.stdout.write('' + str(np.round(line,5)).strip() + ',')
+    print ('')
+
+                # f_init_pl_q = 0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00257,0.00246,0.00228,0.00211,0.00193,0.00176,0.00159,0.00141,0.00124,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105,0.00105
 
 
     ### namelist entries, saved for later:
@@ -319,13 +322,96 @@ def LEM_LoadTHINIT_QINIT1(data,sondenumber):
 def LEM_LoadQINIT2(data, sondenumber):
 
     '''
-    Calculate adiabatic lwc up to 650m (main inversion)
+    Calculate adiabatic lwc up to 650m (main inversion):
+        -- take thref and pressure, & calculate temperature
         # lwc_adiabatic(ii,liquid_bases(jj):liquid_tops(jj)) = dlwc_dz.*[1:(liquid_tops(jj)-liquid_bases(jj)+1)].*dheight;
     '''
 
-    interp_pres = interp1d(data['z'],data['pressure'])
-    data['monc']['pressure'] = interp_thref(data['monc']['z'])
+    print (data['z'])
+    print (data['monc']['z'][1:])
 
+    data['monc']['pressure'] = np.zeros(np.size(data['monc']['z']))
+    interp_pres = interp1d(data['z'],data['pressure'])
+    data['monc']['pressure'][1:] = interp_pres(data['monc']['z'][1:])
+    data['monc']['pressure'][0] = 102050. ## reference surface pressure from mcf
+
+    ### calculate temperature from thref and pressure
+    data['monc']['temperature'] = calcTemperature(data['monc']['thref'], data['monc']['pressure'])
+
+
+    ### calculate adiabatic lwc rate of change
+    dlwcdz, dqldz, dqdp = adiabatic_lwc(data['monc']['temperature'], data['monc']['pressure'])
+    dheight = data['monc']['z'][1:] - data['monc']['z'][:-1]
+
+    print (dheight)
+    print (dlwcdz)
+
+    data['monc']['qinit2'] = dlwcdz[:-1] * dheight
+
+    ####    --------------- FIGURE
+
+    SMALL_SIZE = 12
+    MED_SIZE = 14
+    LARGE_SIZE = 16
+
+    plt.rc('font',size=MED_SIZE)
+    plt.rc('axes',titlesize=MED_SIZE)
+    plt.rc('axes',labelsize=MED_SIZE)
+    plt.rc('xtick',labelsize=MED_SIZE)
+    plt.rc('ytick',labelsize=MED_SIZE)
+    plt.figure(figsize=(13,5))
+    plt.rc('legend',fontsize=MED_SIZE)
+    plt.subplots_adjust(top = 0.9, bottom = 0.12, right = 0.95, left = 0.1,
+            hspace = 0.22, wspace = 0.4)
+
+    yylim = 2.4e3
+
+    plt.subplot(151)
+    plt.plot(data['ascos1']['thinit'], data['ascos1']['z'], label = 'ASCOS1')
+    plt.plot(data['theta'], data['z'], label = 'SONDE')
+    plt.plot(data['monc']['thref'], data['monc']['z'], 'k.', label = 'monc-namelist')
+    plt.ylabel('Z [m]')
+    plt.xlabel('$\Theta$ [K]')
+    plt.grid('on')
+    plt.ylim([0,yylim])
+    plt.xlim([265,295])
+
+    plt.subplot(152)
+    plt.plot(data['ascos1']['qinit1'][data['ascos1']['qinit1'] > 0], data['ascos1']['z'][data['ascos1']['qinit1'] > 0], label = 'ASCOS1')
+    plt.plot(data['q'], data['z'], label = 'SONDE')
+    plt.plot(data['monc']['qinit1'], data['monc']['z'], 'k.', label = 'monc-namelist')
+    plt.xlabel('qinit1 [kg/kg]')
+    plt.grid('on')
+    plt.ylim([0,yylim])
+    plt.legend(bbox_to_anchor=(0.5, 1.01, 1., .102), loc=3, ncol=3)
+
+    plt.subplot(153)
+    # plt.plot(data['ascos1']['qinit1'][data['ascos1']['qinit1'] > 0], data['ascos1']['z'][data['ascos1']['qinit1'] > 0], label = 'ASCOS1')
+    plt.plot(data['pressure'], data['z'], label = 'SONDE')
+    plt.plot(data['monc']['pressure'], data['monc']['z'], 'k.', label = 'monc-namelist')
+    plt.xlabel('pressure [Pa]')
+    plt.grid('on')
+    plt.ylim([0,yylim])
+    plt.xlim([7e4, 10.5e4])
+
+    plt.subplot(154)
+    # plt.plot(data['ascos1']['qinit1'][data['ascos1']['qinit1'] > 0], data['ascos1']['z'][data['ascos1']['qinit1'] > 0], label = 'ASCOS1')
+    plt.plot(data['temperature'], data['z'], label = 'SONDE')
+    plt.plot(data['monc']['temperature'], data['monc']['z'], 'k.', label = 'monc-namelist')
+    plt.xlabel('temperature [K]')
+    plt.grid('on')
+    plt.ylim([0,yylim])
+    plt.xlim([265,275])
+
+    plt.subplot(155)
+    plt.plot(data['monc']['qinit2'], data['monc']['z'][:-1], 'k.', label = 'monc-namelist')
+    plt.xlabel('qinit2 [kg/kg]')
+    plt.grid('on')
+    plt.ylim([0,yylim])
+    # plt.xlim([265,275])
+
+    # plt.savefig('../FIGS/Quicklooks_LEM-ASCOS1-MONCnmlist_thinit-qinit1_' + sondenumber + '.png')
+    plt.show()
 
 def main():
 
