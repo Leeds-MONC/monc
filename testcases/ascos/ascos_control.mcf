@@ -35,7 +35,7 @@ socrates_couple_enabled=.true.
 
 display_synopsis_frequency=100
 nn_consolidation=1
-termination_time=50410.
+termination_time=28810.
 dtm=0.4
 
 
@@ -47,13 +47,13 @@ sampling_frequency=20
 3d_sampling_frequency=100
 mm=3600.0
 mm1=60.0
-diag_write_freq=50400.0
+diag_write_freq=28800.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="checkpoint_files/ascos_cntrl_dump.nc"
 check_walltime_frequency=100
-walltime_limit=23:30:00
+walltime_limit=09:30:00
 
 # Advection choices
 advection_flow_fields=pw
@@ -72,8 +72,8 @@ cfl_dtmmin=0.001
 thref0=268.7
 surface_pressure=102050.
 surface_reference_pressure=102050.
-x_size=480
-y_size=480
+x_size=240
+y_size=240
 z_size=361
 dxx=10
 dyy=10
