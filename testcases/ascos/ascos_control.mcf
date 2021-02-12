@@ -53,7 +53,7 @@ diag_write_freq=28800.0
 checkpoint_frequency=0
 checkpoint_file="checkpoint_files/ascos_cntrl_dump.nc"
 check_walltime_frequency=100
-walltime_limit=09:30:00
+walltime_limit=05:30:00
 
 # Advection choices
 advection_flow_fields=pw
