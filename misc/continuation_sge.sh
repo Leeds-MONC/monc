@@ -73,13 +73,13 @@ run_monc() {
 			fi
 		echo "..."
 		# fi
-	# else
-	# 	if [ -z "$crun" ]; then
-	# 		RUN_MONC_CONFIG=1
-	# 	else
-	# 		echo "Error, this is configured as a continuation run but output and/or checkpoint file not found, check your script parameters"
-	# 		exit
-	# 	fi
+	else
+		if [ ! -z "$checkpoint_filename" ]; then
+			RUN_MONC_CONFIG=1
+		else
+			echo "Error, this is configured as a continuation run but output and/or checkpoint file not found, check your script parameters"
+			exit
+		fi
 	fi
 
 	echo " "
