@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -pe ib 4
+#$ -pe ib 72
 #$ -l h_rt=1:00:0
 #$ -l h_vmem=12G
 #$ -l placement=scatter
@@ -49,14 +49,14 @@ export MONC_EXEC='./build/bin/monc_driver.exe'
 # Standard output log file:
 export MONC_OUT='monc_stdout/ascos_control.out'
 # Number of processors
-export NPES=4
+export NPES=72
 # Get checkpoint file details from config file:
 export CP_DIR='checkpoint_files'
 
 
 export STDOUT_DIR=monc_stdout
 
-export RUN_NAME=ascos_cntrl_
+export RUN_NAME=ascos_control_
 
 export MAX_CONTINUATION_RUNS=200
 
