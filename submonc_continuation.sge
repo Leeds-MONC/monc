@@ -62,8 +62,6 @@ export MAX_CONTINUATION_RUNS=200
 
 ulimit -c unlimited
 
-
-
 # Check for previous checkpoint file:
 #if [ -r "${MONC_OUT}" ] ; then
 #  PREV_CKPT_FILE=$(basename $(grep \
