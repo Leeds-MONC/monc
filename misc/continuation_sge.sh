@@ -74,7 +74,7 @@ run_monc() {
 		echo "..."
 		# fi
 	else
-		if [ ! -z "$checkpoint_filename" ]; then
+		if [ ! -f "$checkpoint_filename" ]; then
 			RUN_MONC_CONFIG=1
 		else
 			echo "Error, this is configured as a continuation run but output and/or checkpoint file not found, check your script parameters"
