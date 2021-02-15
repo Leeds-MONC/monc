@@ -47,7 +47,7 @@ run_monc() {
 		determine_if_finished $output_filename
 		if [ $terminated_run -eq 0 ]; then
 			outputid=`sed 's/.*_//' <<< "$output_filename"`
-			if [ -z "$crun" ] || [ $crun -ne $outputid ]; then
+			# if [ -z "$crun" ] || [ $crun -ne $outputid ]; then
 				if [ -z "$cpfile" ] || [ "$cpfile" != "$checkpoint_filename" ]; then
 					RUN_MONC_CP=1
 				else
@@ -58,14 +58,14 @@ run_monc() {
 				echo "Not running MONC as there is no new output from the previous run, there was probably a submission error"
 				exit
 			fi
-		fi
-	else
-		if [ -z "$crun" ]; then
-			RUN_MONC_CONFIG=1
-		else
-			echo "Error, this is configured as a continuation run but output and/or checkpoint file not found, check your script parameters"
-			exit
-		fi
+		# fi
+	# else
+	# 	if [ -z "$crun" ]; then
+	# 		RUN_MONC_CONFIG=1
+	# 	else
+	# 		echo "Error, this is configured as a continuation run but output and/or checkpoint file not found, check your script parameters"
+	# 		exit
+	# 	fi
 	fi
 
 	if [ $RUN_MONC_CONFIG -eq 1 ] || [ $RUN_MONC_CP -eq 1 ]; then
