@@ -78,7 +78,7 @@ run_monc() {
 		local outputfn=$STDOUT_DIR"/output_"$RUN_NAME$outputid
 
 		if [ $RUN_MONC_CONFIG -eq 1 ]; then
-    		    echo "Start MONC with configuration file $config"
+    		    echo "Start MONC with configuration file $TESTCASE"
 		    eval 'mpirun -np $NPES $MONC_EXEC --config=$TESTCASE &> $outputfn'
 		else
 		    echo "Restarting MONC with checkpoint file $checkpoint_filename"
