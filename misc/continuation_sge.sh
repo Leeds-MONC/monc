@@ -53,6 +53,7 @@ run_monc() {
 	echo " "
 	echo "output_filename = $output_filename"
 	echo "checkpoint_filename = $checkpoint_filename"
+	echo "..."
 
 	if [ ! -z "$output_filename" ] && [ ! -z "$checkpoint_filename" ]; then
 		determine_if_finished $output_filename
