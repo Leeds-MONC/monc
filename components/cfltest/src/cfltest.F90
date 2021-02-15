@@ -1,7 +1,7 @@
 !> This contains the CFL test. It will perform the local advective CFL and Galilean transfromation calculations,
 !! compute the global values of these, then check the cfl criterion and determine an absolute new dtm. Depending upon the
 !! maximum and increment values this is then smoothed into a new dtm value. The value of dtm is physically set to this new
-!! value at the start of the next timestep. 
+!! value at the start of the next timestep.
 module cfltest_mod
   use datadefn_mod, only : DEFAULT_PRECISION, PRECISION_TYPE
   use monc_component_mod, only : component_descriptor_type
@@ -12,7 +12,7 @@ module cfltest_mod
   use conversions_mod, only : conv_to_string
   use optionsdatabase_mod, only : options_get_integer, options_get_real, options_get_logical
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
-  use mpi, only : MPI_MAX, MPI_MIN  
+  use mpi, only : MPI_MAX, MPI_MIN
   implicit none
 
 #ifndef TEST_MODE
@@ -35,7 +35,7 @@ contains
     cfltest_get_descriptor%timestep=>timestep_callback
   end function cfltest_get_descriptor
 
-  !> Called at initialisation, will read in configuration and use either configured or default values. 
+  !> Called at initialisation, will read in configuration and use either configured or default values.
   !! @param current_state The current model state
   subroutine initialisation_callback(current_state)
     type(model_state_type), intent(inout), target :: current_state
@@ -111,13 +111,13 @@ contains
         end if
         if (current_state%dtm_new .lt. dtmmin) then
           call log_log(LOG_ERROR, "Timestep too small, dtmnew="//trim(conv_to_string(current_state%dtm_new, 5))//&
-               " dtmmin="//trim(conv_to_string(dtmmin, 5)))
+               " dtmmin="//trim(conv_to_string(dtmmin, 5))//" dtm_old="//trim(conv_to_string(current_state%dtm, 5)))
         end if
         if (l_monitor_cfl) then
           call log_log(LOG_INFO, " --- CFL Monitoring Information --- ")
           call log_log(LOG_INFO, "dtm changed from "//trim(conv_to_string(current_state%dtm, 5))//" to "//&
                                  trim(conv_to_string(current_state%dtm_new, 5)))
-          if (cfl_number .gt. 0.0) then 
+          if (cfl_number .gt. 0.0) then
             call log_log(LOG_INFO, "cfl_number :  "//trim(conv_to_string(cfl_number))//"  (change divisor)")
             call log_log(LOG_INFO, "cvis       :  "//trim(conv_to_string(current_state%cvis)) )
             call log_log(LOG_INFO, "cvel       :  "//trim(conv_to_string(current_state%cvel)) )
@@ -130,7 +130,7 @@ contains
         end if ! l_monitor_cfl
       end if ! Diagnostic Writing
     end if
-  end subroutine update_dtm_based_on_absolute  
+  end subroutine update_dtm_based_on_absolute
 
   !> Performs the CFL and Galilean transformation calculations. First locally and then will determine the global value
   !! of each calculation. If U, V or W are not active then these are set to 0 and the calculation use these values
@@ -143,14 +143,14 @@ contains
          global_zvmax, global_cvel_z, global_cvis
 
 #ifdef U_ACTIVE
-    current_state%local_zumin=current_state%local_zumin+current_state%ugal               ! _undo Gal-trfm                        
+    current_state%local_zumin=current_state%local_zumin+current_state%ugal               ! _undo Gal-trfm
     current_state%local_zumax=current_state%local_zumax+current_state%ugal
 #else
     current_state%local_zumin=0.0_DEFAULT_PRECISION
     current_state%local_zumax=0.0_DEFAULT_PRECISION
 #endif
 #ifdef V_ACTIVE
-    current_state%local_zvmin=current_state%local_zvmin+current_state%vgal               ! _undo Gal-trfm                        
+    current_state%local_zvmin=current_state%local_zvmin+current_state%vgal               ! _undo Gal-trfm
     current_state%local_zvmax=current_state%local_zvmax+current_state%vgal
 #else
     current_state%local_zvmin=0.0_DEFAULT_PRECISION
@@ -181,7 +181,7 @@ contains
     current_state%cvel_x=max(abs(global_zumax-current_state%ugal), abs(global_zumin-current_state%ugal))
     current_state%cvel_y=max(abs(global_zvmax-current_state%vgal), abs(global_zvmin-current_state%vgal))
     current_state%cvis=global_cvis
-  end subroutine perform_cfl_and_galilean_transformation_calculation 
+  end subroutine perform_cfl_and_galilean_transformation_calculation
 
   !> Gets the global reduction values based upon the local contributions of CFL and Galilean transformations provided
   !! @param local_zumin Local contribution to ZU minimum
