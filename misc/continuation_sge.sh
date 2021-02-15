@@ -1,5 +1,6 @@
 
 determine_if_finished() {
+	echo "Determining if MONC has previously terminated..."
 	terminated_run=0
 	local search_line=`grep "Model run complete due to model time" $1`
 	local found_cont=`echo "$search_line" | wc -c`
@@ -24,6 +25,7 @@ determine_if_finished() {
 			fi
 		fi
 	fi
+	echo "terminated_run = $terminated_run, so previous MONC run has finished"
 }
 
 RUN_MONC_CONFIG=0
@@ -31,20 +33,30 @@ RUN_MONC_CP=0
 outputid=0
 
 run_monc() {
+	echo "Running MONC:"
 	if [ ! -f $MONC_EXEC ]; then
 		echo "Error - executable $MONC_EXEC does not exist"
 		exit
+	else
+		echo "Executable $MONC_EXEC exists, proceeding..."
 	fi
 	if [ ! -z "$crun" ] && [ $crun -ge $MAX_CONTINUATION_RUNS ]; then
 		echo "This has been run $crun times which exceeds your configured maximum number of runs"
 		exit
+	else
+		echo "$crun less than $MAX_CONTINUATION_RUNS, proceeding..."
 	fi
 
 	local output_filename=`ls -rt1 $STDOUT_DIR/output_$RUN_NAME* 2> /dev/null | tail -1`
 	local checkpoint_filename=`ls -rt1 $CP_DIR/$RUN_NAME*.nc 2> /dev/null | tail -1`
 
+	echo " "
+	echo "output_filename = $output_filename"
+	echo "checkpoint_filename = $checkpoint_filename"
+
 	if [ ! -z "$output_filename" ] && [ ! -z "$checkpoint_filename" ]; then
 		determine_if_finished $output_filename
+		echo "..."
 		if [ $terminated_run -eq 0 ]; then
 			outputid=`sed 's/.*_//' <<< "$output_filename"`
 			# if [ -z "$crun" ] || [ $crun -ne $outputid ]; then
@@ -58,6 +70,7 @@ run_monc() {
 				echo "Not running MONC as there is no new output from the previous run, there was probably a submission error"
 				exit
 			fi
+		echo "..."
 		# fi
 	# else
 	# 	if [ -z "$crun" ]; then
@@ -67,6 +80,10 @@ run_monc() {
 	# 		exit
 	# 	fi
 	fi
+
+	echo " "
+	echo "RUN_MONC_CONFIG = $RUN_MONC_CONFIG"
+	echo "RUN_MONC_CP = $RUN_MONC_CP"
 
 	if [ $RUN_MONC_CONFIG -eq 1 ] || [ $RUN_MONC_CP -eq 1 ]; then
 		export OMP_NUM_THREADS=1
