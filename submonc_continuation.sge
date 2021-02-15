@@ -56,7 +56,7 @@ export CP_DIR='checkpoint_files'
 
 export STDOUT_DIR=monc_stdout
 
-export RUN_NAME=ascos_control_
+export RUN_NAME=ascos_cntrl_
 
 export MAX_CONTINUATION_RUNS=200
 

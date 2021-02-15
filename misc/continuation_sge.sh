@@ -40,12 +40,12 @@ run_monc() {
 	else
 		echo "Executable $MONC_EXEC exists, proceeding..."
 	fi
-	if [ ! -z "$crun" ] && [ $crun -ge $MAX_CONTINUATION_RUNS ]; then
-		echo "This has been run $crun times which exceeds your configured maximum number of runs"
-		exit
-	else
-		echo "$crun less than $MAX_CONTINUATION_RUNS, proceeding..."
-	fi
+	# if [ ! -z "$crun" ] && [ $crun -ge $MAX_CONTINUATION_RUNS ]; then
+	# 	echo "This has been run $crun times which exceeds your configured maximum number of runs"
+	# 	exit
+	# else
+	# 	echo "$crun less than $MAX_CONTINUATION_RUNS, proceeding..."		### tested, crun not output to text file
+	# fi
 
 	local output_filename=`ls -rt1 $STDOUT_DIR/output_$RUN_NAME* 2> /dev/null | tail -1`
 	local checkpoint_filename=`ls -rt1 $CP_DIR/$RUN_NAME*.nc 2> /dev/null | tail -1`
