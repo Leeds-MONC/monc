@@ -110,10 +110,8 @@ contains
                trim(conv_to_string(current_state%dtm_new, 5)))
         end if
         if (current_state%dtm_new .lt. dtmmin) then
-          call log_log(LOG_ERROR, "Timestep too small, dtmold="//trim(conv_to_string(current_state%dtm, 5))//&
-               " cfl_number="//trim(conv_to_string(cfl_number, 5))//&
-               " dtmnew="//trim(conv_to_string(current_state%dtm_new, 5))//&
-               " dtmmin="//trim(conv_to_string(dtmmin, 5))//
+          call log_log(LOG_ERROR, "Timestep too small, dtmnew="//trim(conv_to_string(current_state%dtm_new, 5))//&
+               " dtmmin="//trim(conv_to_string(dtmmin, 5)))
         end if
         if (l_monitor_cfl) then
           call log_log(LOG_INFO, " --- CFL Monitoring Information --- ")
