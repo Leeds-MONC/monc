@@ -40,7 +40,7 @@ dtm=0.4
 
 
 # IO server configuration
-ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
+ioserver_configuration_file="testcases/course_examples/test_description.xml"
 diagnostic_file="diagnostic_files/ascos_control_dg.nc"
 moncs_per_io_server=8
 sampling_frequency=20
@@ -61,10 +61,10 @@ advection_theta_field=tvd
 advection_q_fields=tvd
 
 # CFL configuration
-cfl_frequency=100
+cfl_frequency=10
 cfl_cvismax=0.4
 cfl_cvelmax=0.4
-cfl_dtmmax=0.4
+cfl_dtmmax=2.0
 cfl_dtmmin=0.001
 
 # Simple setup configuration
