@@ -15,7 +15,7 @@ diffusion_enabled=.true.
 simplecloud_enabled=.true.
 coriolis_enabled=.true.
 damping_enabled=.true.
-forcing_enabled=.true. 
+forcing_enabled=.true.
 galilean_transformation=.true. # Needs debugging
 randomnoise_enabled=.true.
 mean_profiles_enabled=.true. #This must be set to true if running with damping
@@ -32,6 +32,7 @@ dtm=0.2
 
 # IO server configuration
 ioserver_configuration_file="testcases/course_examples/test_description.xml"
+diagnostic_file="diagnostic_files/fire_sc_dg.nc"
 moncs_per_io_server=4
 sampling_frequency=2
 3d_sampling_frequency=20
@@ -68,7 +69,7 @@ z_size=50
 dxx=100
 dyy=100
 zztop=1600.0
-kgd=10, 30, 40, 50 
+kgd=10, 30, 40, 50
 hgd=300., 700., 1000., 1600.
 nsmth=40
 rmlmax=6.9
@@ -93,7 +94,7 @@ l_init_pl_q=.true.
 names_init_pl_q=vapour
 z_init_pl_q=0.0, 600.0, 601.0, 1600.0
 f_init_pl_q=9.2e-3, 9.2e-3, 6.2e-3, 6.2e-3
-  
+
 l_matchthref=.false.
 
 # Random noise
@@ -126,7 +127,7 @@ hdmp=650.0
 # Subsidence profile
 l_subs_pl_theta=.true.
 z_subs_pl=0.0, 1600.0
-f_subs_pl=0.000005,0.000005 
+f_subs_pl=0.000005,0.000005
 l_subs_pl_q=.true.
 
 #SUBSIDENCE=1, DIVERGENCE=0
@@ -139,15 +140,13 @@ subsidence_local_q=.true.
 # type_of_surface_boundary_conditions=PRESCRIBED_SURFACE_VALUE=1
 use_surface_boundary_conditions=.false.
 use_time_varying_surface_values= .false.
-type_of_surface_boundary_conditions = 1 
+type_of_surface_boundary_conditions = 1
 surface_boundary_input_times = 0
 surface_temperatures  = 288.2
 #surface_latent_heat_flux   = 130.052
 #surface_sensible_heat_flux = 8.04
 
-# Radiation settings - variables and switches for exponential radiation (LWEXP) 
+# Radiation settings - variables and switches for exponential radiation (LWEXP)
 longwave_exp_decay = 130.0 # longwave rad exponential decay factor
 cltop_longwave_flux = 70.0 # cloud top longwave flux (Wm-2)
 clbase_longwave_flux = 0.0 # cloud base longwave flux (Wm-2)
-
-
