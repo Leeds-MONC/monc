@@ -27,7 +27,7 @@ profile_diagnostics_enabled=.true.
 
 # Control configuration
 display_synopsis_frequency=100
-termination_time=7200.
+termination_time=28810.
 dtm=0.2
 
 # IO server configuration
@@ -38,13 +38,13 @@ sampling_frequency=2
 3d_sampling_frequency=20
 mm=600.0
 mm1=60.0
-diag_write_freq=7200.0
+diag_write_freq=28800.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="fire_sc_dump.nc"
 check_walltime_frequency=10
-walltime_limit=00:30:00
+walltime_limit=00:15:00
 
 # Advection choices
 advection_flow_fields=pw
