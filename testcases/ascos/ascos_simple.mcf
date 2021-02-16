@@ -44,7 +44,7 @@ diag_write_freq=28800.0
 checkpoint_frequency=0
 checkpoint_file="checkpoint_files/ascos_simple_dump.nc"
 check_walltime_frequency=10
-walltime_limit=00:05:00
+walltime_limit=00:20:00
 
 # Advection choices
 advection_flow_fields=pw
@@ -60,9 +60,9 @@ cfl_dtmmin=0.001
 
 # Simple setup configuration
 # We'll want to change this reference profile later
-thref0=288.0
-surface_pressure=100000.
-surface_reference_pressure=100000.
+thref0=268.7
+surface_pressure=102050.
+surface_reference_pressure=102050.
 x_size=32
 y_size=32
 z_size=50
