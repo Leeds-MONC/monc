@@ -31,8 +31,8 @@ termination_time=28810.
 dtm=0.2
 
 # IO server configuration
-ioserver_configuration_file="testcases/course_examples/test_description.xml"
-diagnostic_file="diagnostic_files/fire_sc_dg.nc"
+ioserver_configuration_file="testcases/ascos/test_description.xml"
+diagnostic_file="diagnostic_files/ascos_simple_dg.nc"
 moncs_per_io_server=4
 sampling_frequency=2
 3d_sampling_frequency=20
@@ -42,7 +42,7 @@ diag_write_freq=28800.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
-checkpoint_file="fire_sc_dump.nc"
+checkpoint_file="checkpoint_files/ascos_simple_dump.nc"
 check_walltime_frequency=10
 walltime_limit=00:05:00
 
