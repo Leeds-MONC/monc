@@ -44,7 +44,7 @@ diag_write_freq=28800.0
 checkpoint_frequency=0
 checkpoint_file="fire_sc_dump.nc"
 check_walltime_frequency=10
-walltime_limit=00:15:00
+walltime_limit=00:05:00
 
 # Advection choices
 advection_flow_fields=pw
