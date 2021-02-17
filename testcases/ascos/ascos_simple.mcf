@@ -128,10 +128,10 @@ zdmp=1800.0
 hdmp=600.0
 
 # Subsidence profile
-l_subs_pl_theta=.true.
+l_subs_pl_theta=.false.
 z_subs_pl=0.0, 1600.0, 2400.0
 f_subs_pl=0.000005,0.000005,0.000005
-l_subs_pl_q=.true.
+l_subs_pl_q=.false.
 
 #SUBSIDENCE=1, DIVERGENCE=0
 subsidence_input_type=0
