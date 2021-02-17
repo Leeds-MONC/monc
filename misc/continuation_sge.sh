@@ -1,6 +1,6 @@
 
 determine_if_finished() {
-	echo "Determining if MONC has previously terminated..."
+	echo "Determining if MONC has previously completed..."
 	terminated_run=0
 	local search_line=`grep "Model run complete due to model time" $1`
 	local found_cont=`echo "$search_line" | wc -c`
