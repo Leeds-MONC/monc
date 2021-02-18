@@ -23,27 +23,27 @@ contains
     real(kind=DEFAULT_PRECISION) :: field_lem(size(field))
 
     real(kind=DEFAULT_PRECISION) :: verylow, veryhigh
-    
+
     integer :: nn,k  ! loop counters
     integer :: nnodes    ! number of input values
 
     nnodes=size(zvals)
 
 
-    ! Code replicated from the LEM. This duplicates the interpolation of the 
+    ! Code replicated from the LEM. This duplicates the interpolation of the
     ! LEM exactly
-    verylow = -1.0e5          
-    
-    initgd_lem(1) = vals(1) 
-    zngd_lem(1) = verylow 
-    DO nn=2,nnodes+1              
+    verylow = -1.0e5
+
+    initgd_lem(1) = vals(1)
+    zngd_lem(1) = verylow
+    DO nn=2,nnodes+1
        initgd_lem(nn) = vals(nn-1)
-       zngd_lem(nn) = zvals(nn-1) 
+       zngd_lem(nn) = zvals(nn-1)
     ENDDO
 
     do nn=1,nnodes
        DO k=1,size(field)
-          IF( zngd_lem(nn).LE.zgrid(k) .AND. zgrid(k).LT.zngd_lem(nn+1)) then 
+          IF( zngd_lem(nn).LE.zgrid(k) .AND. zgrid(k).LT.zngd_lem(nn+1)) then
              field(k) = initgd_lem(nn) + ( initgd_lem(nn+1) - initgd_lem(nn))*(zgrid(k)- zngd_lem(nn))/ &
                   (zngd_lem(nn+1) - zngd_lem(nn))
           end IF
@@ -54,7 +54,7 @@ contains
     if (zgrid(size(field)) == zngd_lem(nnodes+1)) Then
        field(size(field)) = initgd_lem(nnodes+1)
     endif
-    
+
   end subroutine piecewise_linear_1d
 
   !> Does a simple 1d linear interpolation to a point
@@ -68,10 +68,10 @@ contains
     real(kind=DEFAULT_PRECISION), intent(in) :: z
     real(kind=DEFAULT_PRECISION), intent(out) :: f
     character(*), intent(in), optional :: extrapolate
-    
+
     integer :: nn  ! loop counter
     integer :: nnodes    ! number of input values
-    
+
     integer, parameter :: MAXCHARS=20
     character(MAXCHARS) :: ext_type
 
@@ -86,7 +86,7 @@ contains
     ext_type='linear'
     if (present(extrapolate))ext_type=trim(extrapolate)
 
-    if (z < zvals(1))then 
+    if (z < zvals(1))then
       nn=1
       select case (trim(ext_type))
       case ('linear')
@@ -97,10 +97,10 @@ contains
       end select
       return
     end if
-      
+
     if (present(extrapolate))ext_type=trim(extrapolate)
 
-    if (z >= zvals(nnodes))then 
+    if (z >= zvals(nnodes))then
       nn=nnodes
       select case (trim(ext_type))
       case ('linear')
@@ -129,7 +129,7 @@ contains
   !! @param f output interpolated value
   subroutine piecewise_linear_2d(zvals, time_vals, vals, z, field)
 
-    ! Assumes input variables (vals) are 2-D, with dims (z, time) 
+    ! Assumes input variables (vals) are 2-D, with dims (z, time)
 
     real(kind=DEFAULT_PRECISION), intent(in) :: zvals(:), time_vals(:)
     real(kind=DEFAULT_PRECISION), intent(in) :: vals(:,:)
@@ -137,11 +137,11 @@ contains
     real(kind=DEFAULT_PRECISION), intent(out) :: field(:,:)
 
     real(kind=DEFAULT_PRECISION) :: scale_tmp
-    
+
     integer :: nn, k_monc, k_force                     ! loop counter
     integer :: nz_force, nt_force, nz_monc, nt_monc    ! time and height array sizes for forcing and monc grids
     integer :: nnodes                                  ! number of input values
-    
+
     nz_force = size(zvals)
     nt_force = size(time_vals)
     nz_monc  = size(z)
@@ -150,45 +150,45 @@ contains
     if ( zvals(1) .GT. zvals(nz_force) ) then   ! pressure
        call log_master_log(LOG_ERROR, "Input forcing uses pressure, this has not been coded"// &
             " - please modify your forcing file to using height coordinates or modify the" // &
-            " interpolation routine in model_core to work with pressure coords - STOP") 
+            " interpolation routine in model_core to work with pressure coords - STOP")
     else
-       do k_monc=2,nz_monc                                                     
-          do k_force=1,nz_force-1                                          
-             if( z(k_monc) >= zvals(k_force) .AND. z(k_monc) < zvals(k_force+1) ) then                  
+       do k_monc=2,nz_monc
+          do k_force=1,nz_force-1
+             if( z(k_monc) >= zvals(k_force) .AND. z(k_monc) < zvals(k_force+1) ) then
                 scale_tmp = ( z(k_monc) - zvals(k_force) ) /              &
-                     ( zvals(k_force+1) - zvals(k_force) )               
-                do nn=1, nt_force                                       
-                   field(k_monc,nn) = vals(k_force,nn) +                  &           
-                        (  vals(k_force+1,nn) - vals(k_force,nn) )        &          
-                        * scale_tmp                           
+                     ( zvals(k_force+1) - zvals(k_force) )
+                do nn=1, nt_force
+                   field(k_monc,nn) = vals(k_force,nn) +                  &
+                        (  vals(k_force+1,nn) - vals(k_force,nn) )        &
+                        * scale_tmp
                 enddo
              endif
           enddo
        enddo
        ! now examine the cases below and above forlevs(1) and forlevs(ktmfor
-       ! uses the local vertical gradient in the forcing to determine the   
-       ! new values                                                         
-       do k_monc=2,nz_monc                                                
-          if ( z(k_monc) >= zvals(nt_force) ) then                    
-             scale_tmp = ( z(k_monc) - zvals(nz_force) )                   &                
-                  / ( zvals(nz_force) - zvals(nz_force-1) )           
-             do nn=1,nt_force                                            
-                field(k_monc,nn) = vals(nz_force,nn) +                  &           
-                     (  vals(nz_force,nn) - vals(nz_force-1,nn) )        &          
-                     * scale_tmp   
+       ! uses the local vertical gradient in the forcing to determine the
+       ! new values
+       do k_monc=2,nz_monc
+          if ( z(k_monc) >= zvals(nz_force) ) then
+             scale_tmp = ( z(k_monc) - zvals(nz_force) )                   &
+                  / ( zvals(nz_force) - zvals(nz_force-1) )
+             do nn=1,nt_force
+                field(k_monc,nn) = vals(nz_force,nn) +                  &
+                     (  vals(nz_force,nn) - vals(nz_force-1,nn) )        &
+                     * scale_tmp
              enddo
-          elseif ( z(k_monc) < zvals(1) )THEN                     
-             scale_tmp = ( z(k_monc) - zvals(1) )                        &                      
-                  / ( zvals(1) - zvals(2) )                       
-             do nn=1,nt_force  
-                field(k_monc,nn) = vals(1,nn) +                  &           
-                     (  vals(1,nn) - vals(2,nn) )        &          
-                     * scale_tmp   
+          elseif ( z(k_monc) < zvals(1) )THEN
+             scale_tmp = ( z(k_monc) - zvals(1) )                        &
+                  / ( zvals(1) - zvals(2) )
+             do nn=1,nt_force
+                field(k_monc,nn) = vals(1,nn) +                  &
+                     (  vals(1,nn) - vals(2,nn) )        &
+                     * scale_tmp
              enddo
           endif
        enddo
-       !                                                                    
-    endif   ! pressure or height   
+       !
+    endif   ! pressure or height
 
   end subroutine piecewise_linear_2d
 
@@ -200,10 +200,10 @@ contains
     real(kind=DEFAULT_PRECISION), intent(in) :: z
     real(kind=DEFAULT_PRECISION), intent(out) :: f(:) ! height
     character(*), intent(in), optional :: extrapolate
-    
+
     integer :: nn  ! loop counter
     integer :: nnodes    ! number of input values
-    
+
     integer, parameter :: MAXCHARS=20
     character(MAXCHARS) :: ext_type
 
@@ -217,7 +217,7 @@ contains
     !
     ext_type='linear'
     if (present(extrapolate))ext_type=trim(extrapolate)
-    
+
     ! test where model time is outside the bounds of the input forcing times
 
     ! 1) less than the lowest time level in forcing times
@@ -226,11 +226,11 @@ contains
       f(:) = vals(:,nn)
       return
     end if
-      
+
     !if (present(extrapolate))ext_type=trim(extrapolate)
 
     ! 2) greater than the last time level in the forcing times, make forcing constant
-    if (z >= zvals(nnodes))then 
+    if (z >= zvals(nnodes))then
        nn=nnodes
        f(:) = vals(:,nn)
        return
@@ -238,7 +238,7 @@ contains
 
     ! Time is within the bounds of the forcing input time
 
-    do nn = 1, nnodes-1       
+    do nn = 1, nnodes-1
        if (zvals(nn) <= z .and. z < zvals(nn+1)) then
           select case (trim(ext_type))
           case ('linear')
@@ -251,7 +251,7 @@ contains
        endif
     enddo
 
-    
+
   end subroutine interpolate_point_linear_2d
 
 end module interpolation_mod
