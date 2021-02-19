@@ -17,7 +17,7 @@ echo Starting job
 
 module purge
 module load user
-module switch intel gnu/8.3.0
+module switch intel gnu/native
 module switch openmpi mvapich2
 module load netcdf hdf5 fftw fcm
 
@@ -44,4 +44,4 @@ export OMP_NUM_THREADS=1
 config_path='testcases/ascos/ascos_simple.mcf'
 checkpoint_fn="checkpoint_files/ascos_simple_dump.nc"
 
-mpirun -np 4 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_straka_dump_1
+mpirun -np 4 ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn &> monc_stdout/output_ascos_dump_1
