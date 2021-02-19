@@ -17,7 +17,7 @@ echo "START TIME: $(date)"
 module purge
 module load user
 module switch intel gnu
-module switch openmpi mvapich2
+# module switch openmpi mvapich2
 module load netcdf hdf5 fftw fcm
 
 if [ ! -d checkpoint_files ]; then mkdir checkpoint_files; fi
