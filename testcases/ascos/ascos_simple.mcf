@@ -33,7 +33,7 @@ dtm=0.2
 
 # IO server configuration
 ioserver_configuration_file="testcases/ascos/test_description.xml"
-diagnostic_file="diagnostic_files/ascos_simple_dg.nc"
+diagnostic_file="diagnostic_files/ascos_simple_diags.nc"
 moncs_per_io_server=8
 sampling_frequency=2
 3d_sampling_frequency=20
@@ -43,7 +43,7 @@ diag_write_freq=28800.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
-checkpoint_file="checkpoint_files/ascos_simple_dump.nc"
+checkpoint_file="checkpoint_files/ascos_simple_checkpoint.nc"
 check_walltime_frequency=10
 walltime_limit=00:10:00
 
