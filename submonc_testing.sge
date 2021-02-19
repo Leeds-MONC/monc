@@ -94,7 +94,7 @@ ulimit -c unlimited
 
 # Simple testing
 export CHKPT_FILE="ascos_simple_dump.nc"
-export MONC_OUT=$STDOUT_DIR"/output_"$RUN_NAME$outputid
+export MONC_OUT=$STDOUT_DIR"/output_"$RUN_NAME
 export MONC_ARGS="--config=${TESTCASE} --checkpoint=${CP_DIR}/${CHKPT_FILE}"
 
 
