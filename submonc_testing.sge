@@ -92,26 +92,26 @@ ulimit -c unlimited
 # fi
 
 
-# Simple testing
-export CHKPT_FILE="ascos_simple_dump.nc"
-export MONC_OUT=$STDOUT_DIR"/output_"$RUN_NAME
-export MONC_ARGS="--config=${TESTCASE} --checkpoint=${CP_DIR}/${CHKPT_FILE}"
-
-
-echo ""
-echo ${NPES}
-echo ${MONC_EXEC}
-echo ${MONC_ARGS}
-echo ${MONC_OUT}
-echo ""
-
-# # RUN LIKE THE WIND
-mpirun -np $NPES ${MONC_EXEC} ${MONC_ARGS} &> ${MONC_OUT}
-
-
-# . misc/continuation_sge.sh
+# # Simple testing
+# export CHKPT_FILE="ascos_simple_dump.nc"
+# export MONC_OUT=$STDOUT_DIR"/output_ascos_simple"
+# export MONC_ARGS="--config=${TESTCASE} --checkpoint=${CP_DIR}/${CHKPT_FILE}"
 #
-# run_monc
+#
+# echo ""
+# echo ${NPES}
+# echo ${MONC_EXEC}
+# echo ${MONC_ARGS}
+# echo ${MONC_OUT}
+# echo ""
+#
+# # # RUN LIKE THE WIND
+# mpirun -np $NPES ${MONC_EXEC} ${MONC_ARGS} &> ${MONC_OUT}
+
+
+. misc/continuation_sge.sh
+
+run_monc
 
 
 echo "END TIME: $(date)"
