@@ -18,7 +18,7 @@ echo Starting job
 module purge
 module load user
 module switch intel gnu/8.3.0
-#module switch openmpi mvapich2
+module switch openmpi mvapich2
 module load netcdf hdf5 fftw fcm
 
 module list
@@ -30,9 +30,10 @@ if [ ! -d diagnostic_files ]; then mkdir diagnostic_files; fi
 # MVAPICH2 RUNTIME VARIABLES
 MONC_THREAD_MULTIPLE=0
 MV2_ENABLE_AFFINITY=0
-#MV2_SHOW_CPU_BINDING=1
+MV2_SHOW_CPU_BINDING=1
 MV2_USE_THREAD_WARNING=0
-export MONC_THREAD_MULTIPLE MV2_ENABLE_AFFINITY MV2_USE_THREAD_WARNING
+export MONC_THREAD_MULTIPLE MV2_ENABLE_AFFINITY MV2_SHOW_CPU_BINDING \
+      MV2_USE_THREAD_WARNING
 
 # Set the number of threads to 1
 #   This prevents any system libraries from automatically
