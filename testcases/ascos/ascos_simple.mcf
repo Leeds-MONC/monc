@@ -24,6 +24,7 @@ lwrad_exponential_enabled=.false.
 iobridge_enabled=.true.
 scalar_diagnostics_enabled=.true.
 profile_diagnostics_enabled=.true.
+flux_budget_enabled=.true.
 socrates_couple_enabled=.true.
 
 # Control configuration
