@@ -1,0 +1,117 @@
+#!/bin/bash
+#$ -pe ib 16
+#$ -l h_rt=00:20:00
+#$ -l h_vmem=12G
+#$ -l placement=scatter
+#$ -cwd -V
+##############################################################
+#### THIS IS AN EXAMPLE SCRIPT TO DEMONSTRATE HOW TO      ####
+#### SUBMIT A STANDARD monc JOB WITHOUT A RESTART         ####
+#### Script assumes that there are directories called     ####
+#### monc_stdout , checkpoint_files and diagnostic_files  ####
+#### If these do not exist, MONC will fail                ####
+##############################################################
+
+echo "START TIME: $(date)"
+
+module purge
+module load user
+module switch intel gnu/native
+module switch openmpi mvapich2
+module load netcdf hdf5 fftw fcm
+
+if [ ! -d checkpoint_files ]; then mkdir checkpoint_files; fi
+if [ ! -d monc_stdout ]; then mkdir monc_stdout; fi
+if [ ! -d diagnostic_files ]; then mkdir diagnostic_files; fi
+
+# Allow multi-threading on cray
+# export MPICH_MAX_THREAD_SAFETY=multiple
+
+# MVAPICH2 RUNTIME VARIABLES
+MONC_THREAD_MULTIPLE=0
+MV2_ENABLE_AFFINITY=0
+MV2_SHOW_CPU_BINDING=1
+MV2_USE_THREAD_WARNING=0
+export MONC_THREAD_MULTIPLE MV2_ENABLE_AFFINITY MV2_SHOW_CPU_BINDING \
+       MV2_USE_THREAD_WARNING
+
+# Set the number of threads to 1
+#   This prevents any system libraries from automatically
+#   using threading.
+export OMP_NUM_THREADS=1
+
+# Set the submission filename:
+export SUBMISSION_SCRIPT_NAME='submonc_ascos_simple.sge'
+# Set the job files:
+export TESTCASE="testcases/ascos/ascos_simple.mcf"
+# Path to MONC executable:
+export MONC_EXEC='./build/bin/monc_driver.exe'
+# Standard output log file:
+# export MONC_OUT='monc_stdout/ascos_control.out'
+# Number of processors
+export NPES=16
+# Get checkpoint file details from config file:
+export CP_DIR='checkpoint_files'
+
+# standard output directory
+export STDOUT_DIR=monc_stdout
+# run name for file naming
+export RUN_NAME=ascos_simple_
+# limit to the number of checkpoint restarts
+export MAX_CONTINUATION_RUNS=200
+
+ulimit -c unlimited
+
+# Check for previous checkpoint file:
+#if [ -r "${MONC_OUT}" ] ; then
+#  PREV_CKPT_FILE=$(basename $(grep \
+#                     'Restarted configuration from checkpoint file' \
+#                     ${MONC_OUT} | egrep -o '[0-9a-zA-Z_/-]+\.nc') \
+#                     2> /dev/null)
+#fi
+#
+# # Check for most recent existing checkpoint file:
+# export CHKPT_FILE=$(basename $(\ls -1v ${CHKPT_DIR} | tail -n 1) 2> /dev/null)
+# # If current chckpoint file is same as previous, give up:
+# #if [ ! -z "${PREV_CHKPT_FILE}" ] && [ ! -z "${CHKPT_FILE}" ] ; then
+# #  if [ "${PREV_CHKPT_FILE}" = "${CHKPT_FILE}" ] ; then
+# #    echo "Previous checkpoint file is same as current (${CHKPT_FILE})"
+# #    # Display end time:
+# #    echo "END TIME: $(date)"
+#  #   exit 1
+# #  fi
+# #fi
+#
+# # If we have a checkpoint file, restart MONC, else, start from config:
+# outputfn=$STDOUT_DIR"/output_"$RUN_NAME$outputid
+# if [ ! -z "${CHKPT_FILE}" ] ; then
+#   export MONC_ARGS="--checkpoint=${CP_DIR}/${CHKPT_FILE}"
+#   export MONC_OUT=$outputfn
+# else
+#   export MONC_ARGS="--config=${TESTCASE}"
+# fi
+
+
+# # Simple testing
+# export CHKPT_FILE="ascos_simple_dump.nc"
+# export MONC_OUT=$STDOUT_DIR"/output_ascos_simple"
+# export MONC_ARGS="--config=${TESTCASE} --checkpoint=${CP_DIR}/${CHKPT_FILE}"
+#
+#
+# echo ""
+# echo ${NPES}
+# echo ${MONC_EXEC}
+# echo ${MONC_ARGS}
+# echo ${MONC_OUT}
+# echo ""
+#
+# # # RUN LIKE THE WIND
+# mpirun -np $NPES ${MONC_EXEC} ${MONC_ARGS} &> ${MONC_OUT}
+
+
+. misc/continuation_sge.sh
+
+run_monc
+
+
+echo "END TIME: $(date)"
