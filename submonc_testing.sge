@@ -49,7 +49,7 @@ export MONC_EXEC='./build/bin/monc_driver.exe'
 # Standard output log file:
 # export MONC_OUT='monc_stdout/ascos_control.out'
 # Number of processors
-export NPES=16
+export NPES=20
 # Get checkpoint file details from config file:
 export CP_DIR='checkpoint_files'
 
