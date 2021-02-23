@@ -196,3 +196,14 @@ fixed_ice_re   = 25.3 # effective radius for ice 25.3 microns
 longwave_exp_decay = 130.0 # longwave rad exponential decay factor
 cltop_longwave_flux = 70.0 # cloud top longwave flux (Wm-2)
 clbase_longwave_flux = 0.0 # cloud base longwave flux (Wm-2)
+
+#CASIM options
+number_q_fields=5
+option=22000
+l_warm=.false.
+
+aerosol_option=0
+iopt_act=0
+iopt_inuc=0
+process_level=0
+l_override_checks = .true.
