@@ -43,7 +43,7 @@ export OMP_NUM_THREADS=1
 # Set the submission filename:
 export SUBMISSION_SCRIPT_NAME='submonc_testing.sge'
 # Set the job files:
-export TESTCASE="testcases/ascos/ascos_simple.mcf"
+export TESTCASE="testcases/ascos/ascos_casim.mcf"
 # Path to MONC executable:
 export MONC_EXEC='./build/bin/monc_driver.exe'
 # Standard output log file:
@@ -56,7 +56,7 @@ export CP_DIR='checkpoint_files'
 # standard output directory
 export STDOUT_DIR=monc_stdout
 # run name for file naming
-export RUN_NAME=ascos_simple_
+export RUN_NAME=ascos_casim_
 # limit to the number of checkpoint restarts
 export MAX_CONTINUATION_RUNS=200
 
