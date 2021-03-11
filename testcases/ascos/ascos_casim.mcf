@@ -31,7 +31,7 @@ socrates_couple_enabled=.true.
 
 # Control configuration
 display_synopsis_frequency=100
-termination_time=28810.
+termination_time=7200.
 dtm=0.2
 
 # IO server configuration
@@ -42,7 +42,7 @@ sampling_frequency=2
 3d_sampling_frequency=20
 mm=600.0
 mm1=60.0
-diag_write_freq=28800.0
+diag_write_freq=7200.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
@@ -198,8 +198,8 @@ cltop_longwave_flux = 70.0 # cloud top longwave flux (Wm-2)
 clbase_longwave_flux = 0.0 # cloud base longwave flux (Wm-2)
 
 #CASIM options
-number_q_fields=11
-option=22222
+number_q_fields=5
+option=22000
 l_warm=.false.
 
 aerosol_option=0
