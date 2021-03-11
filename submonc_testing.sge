@@ -43,7 +43,7 @@ export OMP_NUM_THREADS=1
 # Set the submission filename:
 export SUBMISSION_SCRIPT_NAME='submonc_testing.sge'
 # Set the job files:
-export TESTCASE="testcases/ascos/ascos_casim.mcf"
+export TESTCASE="testcases/course_examples/fire_sc_casim.mcf"
 # Path to MONC executable:
 export MONC_EXEC='./build/bin/monc_driver.exe'
 # Standard output log file:
