@@ -200,7 +200,7 @@ clbase_longwave_flux = 0.0 # cloud base longwave flux (Wm-2)
 #CASIM options
 number_q_fields=5
 option=22000
-l_warm=.false.
+l_warm=.true.
 
 aerosol_option=0
 iopt_act=0
