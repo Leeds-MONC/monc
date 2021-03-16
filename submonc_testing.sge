@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -pe ib 4
+#$ -pe ib 16
 #$ -l h_rt=00:30:00
 #$ -l h_vmem=12G
 #$ -l placement=scatter
