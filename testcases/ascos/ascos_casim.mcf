@@ -25,6 +25,9 @@ lwrad_exponential_enabled=.false.
 iobridge_enabled=.true.
 scalar_diagnostics_enabled=.true.
 profile_diagnostics_enabled=.true.
+subgrid_profile_diagnostics_enabled=.true.
+flux_budget_enabled=.true.
+socrates_couple_enabled=.true.
 
 # Control configuration
 display_synopsis_frequency=100
@@ -32,7 +35,8 @@ termination_time=7200.
 dtm=0.2
 
 # IO server configuration
-ioserver_configuration_file="testcases/course_examples/test_description.xml"
+ioserver_configuration_file="testcases/ascos/test_description.xml"
+diagnostic_file="diagnostic_files/ascos_casim_dg.nc"
 moncs_per_io_server=4
 sampling_frequency=2
 3d_sampling_frequency=20
@@ -42,7 +46,7 @@ diag_write_freq=7200.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
-checkpoint_file="fire_sc_dump.nc"
+checkpoint_file="checkpoint_files/ascos_casim_dump.nc"
 check_walltime_frequency=10
 walltime_limit=00:30:00
 
