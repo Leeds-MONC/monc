@@ -160,7 +160,7 @@ spectral_file_lw           = /home/home01/eargy/socrates_spectra/ga3_0/sp_lw_ga3
 spectral_file_sw           = /home/home01/eargy/socrates_spectra/ga3_0/sp_sw_ga3_0
 
 # 5 is clear sky, 2 is cloud (ice and liquid no overlap), 1 (ice and liquid full overlap)
-i_cloud_representation  = 1
+i_cloud_representation  = 2
 
 ## Time and location variables for socrates
 l_360 = .true.           #  360 days in year as opposed to 365 (a UM thing
