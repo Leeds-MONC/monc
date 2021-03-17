@@ -184,7 +184,7 @@ surface_albedo = 0.84    # surface albedo (fixed in time)
 mphys_nq_l=1 # cloud liquid mass
 mphys_nd_l=0 # cloud drop number
 mphys_nq_r=0 # rain mass
-mphys_nq_i=0 # ice mass
+mphys_nq_i=1 # ice mass
 mphys_nq_s=0 # snow mass
 mphys_nq_g=0 # graupel mass
 
