@@ -32,5 +32,8 @@ ASCOS/FIGS/*
 *.png
 *.svg
 
+## ignore output
+ASCOS/output/*
+
 ## ignore working data
 *.npy
