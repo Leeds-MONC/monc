@@ -1,0 +1,22 @@
+name: ARC4 CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ARC4
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: build
+      run: |
+        source /apps/Modules/3.2.10/init/bash
+        ./utils/arc/monc_compile_arc.sh
+    - name: run
+      run: |
+        bash utils/arc/submonc.sge
