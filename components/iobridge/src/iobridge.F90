@@ -47,7 +47,7 @@ module iobridge_mod
   type io_configuration_data_definition_type
      character(len=STRING_LENGTH) :: name
      logical :: send_on_terminate
-     integer :: number_of_data_fields, frequency, mpi_datatype
+     integer :: number_of_data_fields, frequency, mpi_datatype, command_data
      type(io_configuration_field_type), dimension(:), allocatable :: fields
      integer :: dump_requests(2) !< Dump non blocking send request handles
      character, dimension(:), allocatable :: send_buffer !< Send buffer which holds the model during a dump
@@ -59,7 +59,7 @@ module iobridge_mod
 
   public iobridge_get_descriptor
 
-contains 
+contains
 
   type(component_descriptor_type) function iobridge_get_descriptor()
     iobridge_get_descriptor%name="iobridge"
@@ -137,13 +137,16 @@ contains
     ! Pack the send buffer and send it to the IO server
     call pack_send_buffer(current_state, data_definitions(data_index))
 
-    command_to_send=DATA_COMMAND_START+data_index
-    call mpi_issend(command_to_send, 1, MPI_INT, current_state%parallel%corresponding_io_server_process, &
+    !command_to_send=DATA_COMMAND_START+data_index
+    !call mpi_issend(command_to_send, 1, MPI_INT, current_state%parallel%corresponding_io_server_process, &
+    data_definitions(data_index)%command_data=DATA_COMMAND_START+data_index
+    call mpi_issend(data_definitions(data_index)%command_data, 1, MPI_INT, &
+            current_state%parallel%corresponding_io_server_process, &
          COMMAND_TAG, MPI_COMM_WORLD, data_definitions(data_index)%dump_requests(1), ierr)
     call mpi_issend(data_definitions(data_index)%send_buffer, 1, data_definitions(data_index)%mpi_datatype, &
          current_state%parallel%corresponding_io_server_process, DATA_TAG+data_index, MPI_COMM_WORLD, &
          data_definitions(data_index)%dump_requests(2), ierr)
-  end subroutine send_data_to_io_server  
+  end subroutine send_data_to_io_server
 
   !> Finalisation call back, called at the end of the model run
   !! @param current_state The current model state
@@ -155,7 +158,7 @@ contains
     if (.not. io_server_enabled) return
     in_finalisation_callback=.true.
 
-    do i=1, size(data_definitions)      
+    do i=1, size(data_definitions)
       if (data_definitions(i)%send_on_terminate) then
         call send_data_to_io_server(current_state, i)
       end if
@@ -178,7 +181,7 @@ contains
       dump_send_buffer_size=build_mpi_data_type_for_definition(data_definitions(i))
       data_definitions(i)%dump_requests=(/MPI_REQUEST_NULL, MPI_REQUEST_NULL/)
       allocate(data_definitions(i)%send_buffer(dump_send_buffer_size))
-    end do    
+    end do
   end subroutine build_mpi_data_types
 
   !> Builds the MPI data type for a specific definition with sizing information
@@ -201,7 +204,7 @@ contains
     field_ignores=0
     do i=1, specific_data_definition%number_of_data_fields
       if (data_type == 0) then
-        prev_data_type=data_type        
+        prev_data_type=data_type
         data_type=specific_data_definition%fields(i)%data_type
       else
         if (data_type .ne. specific_data_definition%fields(i)%data_type) then
@@ -211,7 +214,7 @@ contains
           field_start=i
           field_array_sizes=0
           field_ignores=0
-          prev_data_type=data_type                   
+          prev_data_type=data_type
           data_type=specific_data_definition%fields(i)%data_type
           type_counts=type_counts+1
         end if
@@ -246,7 +249,7 @@ contains
           field_size_info=get_sendable_field_sizing(specific_data_definition%fields(i)%name, field_found)
           specific_data_definition%fields(i)%enabled=field_found
           if (.not. field_found) field_ignores=field_ignores+1
-        end if        
+        end if
       end if
     end do
     if (field_start .le. i-1) then
@@ -256,7 +259,7 @@ contains
       type_counts=type_counts+1
     end if
 
-    call mpi_type_struct(type_counts, block_counts, offsets, old_types, specific_data_definition%mpi_datatype, ierr) 
+    call mpi_type_struct(type_counts, block_counts, offsets, old_types, specific_data_definition%mpi_datatype, ierr)
     call mpi_type_commit(specific_data_definition%mpi_datatype, ierr)
     call mpi_type_size(specific_data_definition%mpi_datatype, tempsize, ierr)
     build_mpi_data_type_for_definition=tempsize
@@ -274,7 +277,7 @@ contains
     published_field_descriptors=get_all_component_published_fields()
     do i=1, c_size(published_field_descriptors)
       call populate_component_public_field(current_state, c_get_string(published_field_descriptors, i))
-    end do    
+    end do
   end subroutine populate_sendable_fields
 
   !> Populates the field information for a specific publically available field offered by one of the components
@@ -301,7 +304,7 @@ contains
       generic_data=>field_sizing
       call c_put_generic(sendable_fields, field_name, generic_data, .false.)
     end if
-  end subroutine populate_component_public_field  
+  end subroutine populate_component_public_field
 
   !> Populates the globally visible sendable fields which is a key value pair mapping between name and description of that field
   !! @param current_state The current model state
@@ -364,7 +367,7 @@ contains
     raw_generic=>generate_sendable_description(z_size, y_size, x_size)
     call c_put_generic(sendable_fields, "w", raw_generic, .false.)
     call c_put_generic(sendable_fields, "zw", raw_generic, .false.)
-#endif          
+#endif
     if (current_state%number_q_fields .gt. 0) then
       raw_generic=>generate_sendable_description(z_size, y_size, x_size, current_state%number_q_fields)
       call c_put_generic(sendable_fields, "q", raw_generic, .false.)
@@ -387,7 +390,7 @@ contains
     end if
     if (current_state%p%active) then
       raw_generic=>generate_sendable_description(z_size, y_size, x_size)
-      call c_put_generic(sendable_fields, "p", raw_generic, .false.)   
+      call c_put_generic(sendable_fields, "p", raw_generic, .false.)
     end if
     ! need to dump heating rate tendency from socrates radiation
     if (is_component_enabled(current_state%options_database, "socrates_couple")) then
@@ -395,7 +398,7 @@ contains
        call c_put_generic(sendable_fields, "sth_lw", raw_generic, .false.)
        call c_put_generic(sendable_fields, "sth_sw", raw_generic, .false.)
     endif
-       
+
     if (is_component_enabled(current_state%options_database, "pdf_analysis")) then
       if (allocated(current_state%global_grid%configuration%vertical%w_up)) then
         raw_generic=>generate_sendable_description(z_size)
@@ -406,9 +409,9 @@ contains
         raw_generic=>generate_sendable_description(z_size)
         call c_put_generic(sendable_fields, "w_dwn", raw_generic, .false.)
       end if
-    end if 
+    end if
 
-  end subroutine populate_globally_visible_sendable_fields  
+  end subroutine populate_globally_visible_sendable_fields
 
   !> Generates a sendable description based upon the dimension information supplied, missing arguments means that dimension
   !! does not exist
@@ -471,7 +474,7 @@ contains
     call mpi_waitall(2, request_handles, MPI_STATUSES_IGNORE, ierr)
     deallocate(data_description)
     deallocate(buffer)
-  end subroutine send_monc_specific_data_to_server  
+  end subroutine send_monc_specific_data_to_server
 
   !> Assembles all the data field sizing information and sends this to the IO server
   !! @param current_state The current model state
@@ -486,7 +489,7 @@ contains
 
     integer :: ierr, i, next_index, request_handle
     character(len=STRING_LENGTH) :: field_name
-    
+
     call package_local_monc_decomposition_into_descriptions(current_state, data_description)
     next_index=5
     do i=1, number_unique_fields
@@ -494,8 +497,8 @@ contains
       if (c_contains(sendable_fields, field_name)) then
         call assemble_individual_description(data_description, next_index, field_name, get_sendable_field_sizing(field_name))
         next_index=next_index+1
-      end if      
-    end do    
+      end if
+    end do
 
     call mpi_isend(data_description, next_index-1, mpi_type_data_sizing_description, &
          current_state%parallel%corresponding_io_server_process, DATA_TAG, MPI_COMM_WORLD, request_handle, ierr)
@@ -509,27 +512,27 @@ contains
   integer function send_general_monc_information_to_server(current_state, buffer)
     type(model_state_type), target, intent(inout) :: current_state
     character, dimension(:), intent(inout) :: buffer
-    
+
     character(len=STRING_LENGTH) :: q_field_name, cd_field_name
     type(q_metadata_type) :: q_meta_data
-    integer :: current_loc, n, ierr, request_handle    
-    
+    integer :: current_loc, n, ierr, request_handle
+
     current_loc=1
     current_loc=pack_array_field(buffer, current_loc, real_array_1d=current_state%global_grid%configuration%vertical%zn)
     if (current_state%number_q_fields .gt. 0) then
       do n=1, current_state%number_q_fields
-        q_meta_data=get_indices_descriptor(n)       
+        q_meta_data=get_indices_descriptor(n)
         if (q_meta_data%l_used) then
           q_field_name=q_meta_data%name
         else
           q_field_name="qfield_"//trim(conv_to_string(n))
-        end if        
+        end if
         current_loc=pack_scalar_field(buffer, current_loc, string_value=q_field_name)
       end do
     end if
     current_loc=pack_array_field(buffer, current_loc, real_array_1d=current_state%global_grid%configuration%vertical%z)
 
-    do n=1,ncond*2 
+    do n=1,ncond*2
       if (n .le. ncond) then
         cd_field_name = cond_request(n)
         current_loc=pack_scalar_field(buffer, current_loc, string_value=cd_field_name)
@@ -541,7 +544,7 @@ contains
         cd_field_name = ".not. "//trim(cond_long(n-ncond))
         current_loc=pack_scalar_field(buffer, current_loc, string_value=cd_field_name)
       end if
-    end do    
+    end do
     do n=1,ndiag
       cd_field_name = diag_request(n)
       current_loc=pack_scalar_field(buffer, current_loc, string_value=cd_field_name)
@@ -551,9 +554,9 @@ contains
 
 
     call mpi_isend(buffer, current_loc-1, MPI_BYTE, current_state%parallel%corresponding_io_server_process, &
-         DATA_TAG, MPI_COMM_WORLD, request_handle, ierr)    
+         DATA_TAG, MPI_COMM_WORLD, request_handle, ierr)
     send_general_monc_information_to_server=request_handle
-  end function send_general_monc_information_to_server  
+  end function send_general_monc_information_to_server
 
   !> Packages the local MONC decomposition information into descriptions for communication
   !! @param current_state The current model state
@@ -580,7 +583,7 @@ contains
     sizing_info%number_dimensions=1
     sizing_info%dimensions(1)=get_number_active_q_indices()
     call assemble_individual_description(data_description, 4, NUMBER_Q_INDICIES_KEY, sizing_info)
-  end subroutine package_local_monc_decomposition_into_descriptions  
+  end subroutine package_local_monc_decomposition_into_descriptions
 
   !> Retrieves the sizing information associated with a specific field
   !! @param field_name The field name to look up
@@ -615,7 +618,7 @@ contains
         get_component_field_descriptor=generic
       end select
     end if
-  end function get_component_field_descriptor   
+  end function get_component_field_descriptor
 
   !> Will assemble an individual description of an array data field
   !! @param data_description The data structure used to describe the size of arrays
@@ -635,8 +638,8 @@ contains
     data_description(index)%field_name=field_name
     data_description(index)%dimensions=field_sizing_description%number_dimensions
     data_description(index)%dim_sizes=field_sizing_description%dimensions
-  end subroutine assemble_individual_description 
-  
+  end subroutine assemble_individual_description
+
   !> Registers this MONC with the corresponding IO server. This will encapsulate the entire protocol, which is sending the
   !! registration command, receiving the data and field definitions from the IO server and then sending back the sizing
   !! for the fields that this MONC will contribute.
@@ -682,7 +685,7 @@ contains
     get_total_number_of_fields=0
     do i=1, number_defns
       get_total_number_of_fields=get_total_number_of_fields+definition_descriptions(i)%number_fields
-    end do    
+    end do
   end function get_total_number_of_fields
 
   !> Based upon the received data and field definitions this will configure the IO bridge internal representation of these
@@ -712,7 +715,7 @@ contains
       field_index=data_definitions(definition_index)%number_of_data_fields+1
       data_definitions(definition_index)%number_of_data_fields=field_index
       data_definitions(definition_index)%fields(field_index)%name=field_descriptions(i)%field_name
-      data_definitions(definition_index)%fields(field_index)%field_type=field_descriptions(i)%field_type      
+      data_definitions(definition_index)%fields(field_index)%field_type=field_descriptions(i)%field_type
       data_definitions(definition_index)%fields(field_index)%data_type=field_descriptions(i)%data_type
       data_definitions(definition_index)%fields(field_index)%optional=field_descriptions(i)%optional
       if (field_descriptions(i)%optional .or. field_descriptions(i)%field_type == ARRAY_FIELD_TYPE .or. &
@@ -720,7 +723,7 @@ contains
         call c_put_integer(unique_field_names, field_descriptions(i)%field_name, 1)
       end if
       if (.not. field_descriptions(i)%optional) data_definitions(definition_index)%fields(field_index)%enabled=.true.
-    end do    
+    end do
   end subroutine populate_data_definition_configuration
 
   !> Looks up a specific definition based upon its name and returns the index
@@ -737,7 +740,7 @@ contains
       end if
     end do
     get_definition_index=-1
-  end function get_definition_index  
+  end function get_definition_index
 
   !> Packs the current state into the send buffer. This iterates through each field in the data description and adds it to the
   !! send buffer
@@ -867,9 +870,9 @@ contains
            current_buffer_point, real_value=published_value%scalar_real)
     else if (field_descriptor%data_type == COMPONENT_INTEGER_DATA_TYPE) then
       handle_component_field_scalar_packing_into_send_buffer=pack_scalar_field(data_definition%send_buffer, &
-           current_buffer_point, int_value=published_value%scalar_int)         
+           current_buffer_point, int_value=published_value%scalar_int)
     end if
-  end function handle_component_field_scalar_packing_into_send_buffer 
+  end function handle_component_field_scalar_packing_into_send_buffer
 
   !> Packs map fields into the send buffer
   !! @param current_state The current model state
@@ -898,8 +901,8 @@ contains
       end do
       pack_map_into_send_buffer=pack_map_field(data_definition%send_buffer, current_buffer_point, q_indicies_map)
       call c_free(q_indicies_map)
-    end if    
-  end function pack_map_into_send_buffer  
+    end if
+  end function pack_map_into_send_buffer
 
   !> Packs array fields into the send bufer
   !! @param current_state The current model state
@@ -1003,7 +1006,7 @@ contains
            current_state%local_grid)
     else if (field%name .eq. "sth_lw") then
       pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer,  &
-            current_state%sth_lw, current_buffer_point, current_state%local_grid) 
+            current_state%sth_lw, current_buffer_point, current_state%local_grid)
     else if (field%name .eq. "sth_sw") then
       pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer,  &
             current_state%sth_sw, current_buffer_point, current_state%local_grid)
@@ -1018,7 +1021,7 @@ contains
 !!$            current_state%sth_sw, current_buffer_point, current_state%local_grid)
 !!$    else if (field%name .eq. "lww_down_surf") then
 !!$      pack_array_into_send_buffer=pack_prognostic_flow_field(data_definition%send_buffer,  &
-!!$            current_state%sth_sw, current_buffer_point, current_state%local_grid)  
+!!$            current_state%sth_sw, current_buffer_point, current_state%local_grid)
     else
        ! Handle component field here
        pack_array_into_send_buffer=handle_component_field_array_packing_into_send_buffer(current_state, &
@@ -1068,7 +1071,7 @@ contains
 
   !> Packs the data of a specific prognostic field into a buffer
   !! @param buffer The buffer to pack the field into
-  !! @param prognostic The prognostic field  
+  !! @param prognostic The prognostic field
   !! @param start_offset The starting offset to write into the buffer
   !! @param local_grid Description of the local grid
   !! @returns The next location in the buffer to write to (next start offset)
@@ -1076,7 +1079,7 @@ contains
     character, dimension(:), allocatable, intent(inout) :: buffer
     type(prognostic_field_type), intent(inout) :: prognostic
     integer, intent(in) :: start_offset
-    type(local_grid_type), intent(inout) :: local_grid    
+    type(local_grid_type), intent(inout) :: local_grid
 
     integer :: target_end
 
@@ -1088,7 +1091,7 @@ contains
          local_grid%local_domain_start_index(X_INDEX): local_grid%local_domain_end_index(X_INDEX)), &
          buffer(start_offset : target_end))
     pack_prognostic_flow_field=target_end+1
-  end function pack_prognostic_flow_field  
+  end function pack_prognostic_flow_field
 
   !> Packs the Q fields into the send buffer
   !! @param buffer The send buffer to pack into
@@ -1101,7 +1104,7 @@ contains
     character, dimension(:), allocatable, intent(inout) :: buffer
     type(prognostic_field_type), dimension(:), intent(inout) :: q_fields
     integer, intent(in) :: start_offset, number_q_fields
-    type(local_grid_type), intent(inout) :: local_grid    
+    type(local_grid_type), intent(inout) :: local_grid
 
     integer :: target_end, i, current_starting_index
 
@@ -1115,8 +1118,8 @@ contains
            local_grid%local_domain_start_index(Y_INDEX): local_grid%local_domain_end_index(Y_INDEX), &
            local_grid%local_domain_start_index(X_INDEX): local_grid%local_domain_end_index(X_INDEX)), &
            buffer(current_starting_index : target_end))
-      current_starting_index=target_end+1      
+      current_starting_index=target_end+1
     end do
     pack_q_fields=target_end+1
-  end function pack_q_fields   
+  end function pack_q_fields
 end module iobridge_mod
