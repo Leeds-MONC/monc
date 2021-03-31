@@ -1,12 +1,24 @@
 #!/bin/bash
+#SBATCH --job-name=MONC_straka_4core
+#SBATCH --output=%x.o%j
+  # %x gives job-name (SLURM_JOB_NAME)
+  # %j gives jobid (individual SLURM_JOB_ID)
+  # %A gives jobid (master     SLURM_ARRAY_JOB_ID)
+  # %a gives array task id number
+  #  https://slurm.schedmd.com/sbatch.html
+#SBATCH --open-mode=append
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=4
+#SBATCH --ntasks=4
+#SBATCH --cpus-per-task=1
+#SBATCH --time=00:10:00
+#SBATCH --account=n02
 #SBATCH --partition=standard
 #SBATCH --qos=standard
 
-#SBATCH --job-name=monc
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=4
-
-#SBATCH --time=00:10:00
+### Push to development queue
+## #SBATCH --reservation=shortqos
+## #SBATCH --qos=short
 
 echo Starting job
 
