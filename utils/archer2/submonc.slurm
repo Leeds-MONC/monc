@@ -14,11 +14,9 @@
 #SBATCH --time=00:10:00
 #SBATCH --account=n02
 #SBATCH --partition=standard
-#SBATCH --qos=standard
 
-### Push to development queue
-## #SBATCH --reservation=shortqos
-## #SBATCH --qos=short
+#SBATCH --reservation=shortqos
+#SBATCH --qos=short
 
 echo Starting job
 
