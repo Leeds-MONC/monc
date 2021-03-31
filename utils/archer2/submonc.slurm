@@ -14,7 +14,6 @@
 #SBATCH --time=00:10:00
 #SBATCH --account=n02
 #SBATCH --partition=standard
-
 #SBATCH --reservation=shortqos
 #SBATCH --qos=short
 
@@ -55,7 +54,7 @@ module load cray-fftw/3.3.8.7
 module load petsc/3.13.3
 module load atp
 export ATP_ENABLED=1
-ulimit -c unlimited
+#ulimit -c unlimited
 
 module list
 
