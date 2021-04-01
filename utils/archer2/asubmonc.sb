@@ -59,7 +59,7 @@ pwd
 ulimit -c unlimited
 
 # set variables for submission command----------------------
-export SUBMISSION_SCRIPT_NAME=asubmonc.sb
+export SUBMISSION_SCRIPT_NAME=./utils/archer2/asubmonc.sb
 export MONC_EXEC=./build/bin/monc_driver.exe
 
 export TESTCASE=testcases/tank_experiments/straka.mcf
