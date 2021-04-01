@@ -26,7 +26,6 @@ module use --append /work/y07/shared/archer2-modules/modulefiles-cse-utils
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-libs
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-apps
 module use --append /opt/cray/pe/perftools/20.10.0/modulefiles
-module use --append /opt/cray/pe/perftools/20.09.0/modulefiles
 module use --append /opt/cray/pe/craype/2.7.0/modulefiles
 module use --append /usr/local/Modules/modulefiles
 module use --append /opt/cray/pe/cpe-prgenv/7.0.0
@@ -34,6 +33,7 @@ module use --append /opt/cray/pe/modulefiles
 module use --append /opt/cray/pe/craype-targets/default/modulefiles
 module use --append /opt/modulefiles
 module use --append /opt/cray/modulefiles
+module load epcc-job-env
 module load cpe-gnu
 module load gcc/9.3.0
 module load craype
@@ -65,7 +65,5 @@ if [ ! -d diagnostic_files ]; then mkdir diagnostic_files; fi
 # set env variables for submission command
 config_path='tests/straka_short.mcf'
 checkpoint_fn="checkpoint_files/straka_dump.nc"
-
-srun ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn
 
 srun --unbuffered --cpu-bind=cores --distribution=block:block --hint=nomultithread ./build/bin/monc_driver.exe --config=$config_path  --checkpoint_file=$checkpoint_fn
