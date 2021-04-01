@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=MONC_ScFull_128
+#SBATCH --job-name=MONC_Straka_4core_new
 #SBATCH --output=%x.o%j
   # %x gives job-name (SLURM_JOB_NAME)
   # %j gives jobid (individual SLURM_JOB_ID)
@@ -8,17 +8,14 @@
   #  https://slurm.schedmd.com/sbatch.html
 #SBATCH --open-mode=append
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=128
-#SBATCH --ntasks=128
+#SBATCH --ntasks-per-node=4
+#SBATCH --ntasks=4
 #SBATCH --cpus-per-task=1
-#SBATCH --time=00:20:00
+#SBATCH --time=00:10:00
 #SBATCH --account=n02
 #SBATCH --partition=standard
-#SBATCH --qos=standard
-
-### Push to development queue
-## #SBATCH --reservation=shortqos
-## #SBATCH --qos=short
+#SBATCH --reservation=shortqos
+#SBATCH --qos=short
 
 # MODULES
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-pyvenvs
@@ -55,7 +52,6 @@ module load cray-fftw/3.3.8.7
 module load petsc/3.13.3
 module load atp
 export ATP_ENABLED=1
-ulimit -c unlimited
 
 module list
 pwd
@@ -66,7 +62,7 @@ ulimit -c unlimited
 export SUBMISSION_SCRIPT_NAME=asubmonc.sb
 export MONC_EXEC=./build/bin/monc_driver.exe
 
-export TESTCASE=testcases/ScFull_128.mcf
+export TESTCASE=testcases/tank_experiments/straka.mcf
 export STDOUT_DIR=monc_stdout
 export CP_DIR=checkpoint_files
 export RUN_NAME=${SLURM_JOB_NAME}_dump_
