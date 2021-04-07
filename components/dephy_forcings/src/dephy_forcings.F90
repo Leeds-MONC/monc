@@ -206,11 +206,11 @@ contains
     alloc_x=current_state%local_grid%size(X_INDEX) + current_state%local_grid%halo_size(X_INDEX) * 2
 
     !!! Might need re-thinking: vertical grid passed into subroutines as well as current state
-    vertical_grid=current_state%global_grid%configuration%vertical
-
     if (.not. current_state%initialised) then
       call log_log(LOG_ERROR, "Must initialise the model state_mod before constructing the grid properties")
     end if
+
+    vertical_grid=current_state%global_grid%configuration%vertical
 
     ! get DEPHY filename, which needs to be trimmed
     dephy_file=options_get_string(current_state%options_database, "dephy_file")
@@ -279,7 +279,7 @@ contains
 
     if(l_verbose) write(*,*) "initialised dephy 9"
 
-    call dephy_bughunting(current_state)
+    !call dephy_bughunting(current_state)
 
   end subroutine initialise_callback
 
@@ -1191,7 +1191,7 @@ contains
   end subroutine lowerbc_reset_constants
 
 
-!!! COPY OF PIECEWISE LINEAR INTERPOLATION ROUTINE, BUT INLCUDING THE K=1 LEVEL
+!!! COPY OF PIECEWISE LINEAR INTERPOLATION ROUTINE, BUT INCLUDING THE K=1 LEVEL
 !!! MAINLY TO BE SAFE
 
   !> Does a simple 1d linear interpolation to a point
