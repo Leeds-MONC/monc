@@ -47,7 +47,7 @@ module iobridge_mod
   type io_configuration_data_definition_type
      character(len=STRING_LENGTH) :: name
      logical :: send_on_terminate
-     integer :: number_of_data_fields, frequency, mpi_datatype!, command_data
+     integer :: number_of_data_fields, frequency, mpi_datatype, command_data
      type(io_configuration_field_type), dimension(:), allocatable :: fields
      integer :: dump_requests(2) !< Dump non blocking send request handles
      character, dimension(:), allocatable :: send_buffer !< Send buffer which holds the model during a dump
@@ -137,11 +137,11 @@ contains
     ! Pack the send buffer and send it to the IO server
     call pack_send_buffer(current_state, data_definitions(data_index))
 
-    command_to_send=DATA_COMMAND_START+data_index
-    call mpi_issend(command_to_send, 1, MPI_INT, current_state%parallel%corresponding_io_server_process, &
-    !data_definitions(data_index)%command_data=DATA_COMMAND_START+data_index
-    !call mpi_issend(data_definitions(data_index)%command_data, 1, MPI_INT, &
-    !        current_state%parallel%corresponding_io_server_process, &
+    !command_to_send=DATA_COMMAND_START+data_index
+    !call mpi_issend(command_to_send, 1, MPI_INT, current_state%parallel%corresponding_io_server_process, &
+    data_definitions(data_index)%command_data=DATA_COMMAND_START+data_index
+    call mpi_issend(data_definitions(data_index)%command_data, 1, MPI_INT, &
+            current_state%parallel%corresponding_io_server_process, &
          COMMAND_TAG, MPI_COMM_WORLD, data_definitions(data_index)%dump_requests(1), ierr)
     call mpi_issend(data_definitions(data_index)%send_buffer, 1, data_definitions(data_index)%mpi_datatype, &
          current_state%parallel%corresponding_io_server_process, DATA_TAG+data_index, MPI_COMM_WORLD, &
