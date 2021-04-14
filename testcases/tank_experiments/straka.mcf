@@ -35,7 +35,7 @@ dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 diagnostic_file="diagnostic_files/straka.nc"
-moncs_per_io_server=3
+moncs_per_io_server=7
 sampling_frequency=4
 3d_sampling_frequency=20
 mm=5.0
