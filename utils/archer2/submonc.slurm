@@ -54,7 +54,8 @@ module load cray-fftw/3.3.8.7
 module load petsc/3.13.3
 module load atp
 export ATP_ENABLED=1
-#ulimit -c unlimited
+export OMP_NUM_THREADS=1
+ulimit -c unlimited
 
 module list
 

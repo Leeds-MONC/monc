@@ -1,3 +1,15 @@
+#!/usr/bin/env bash
+
+keywrdfile=$( sed "s|= |= $( pwd -P )\/fcm-make\/|g" fcm-make/keyword.cfg )
+if [ ! -f ~/.metomi/fcm/keyword.cfg ]; then
+  mkdir -p ~/.metomi/fcm
+  echo ${keywrdfile} > ~/.metomi/fcm/keyword.cfg
+else
+  if cat ~/.metomi/fcm/keyword.cfg | grep -q -v "${keywrdfile}"; then
+    echo ${keywrdfile} >> ~/.metomi/fcm/keyword.cfg
+  fi
+fi
+
 export PATH=$PATH:/work/y07/shared/umshared/bin
 export PATH=$PATH:/work/y07/shared/umshared/software/bin
 . mosrs-setup-gpg-agent
@@ -37,4 +49,29 @@ module load petsc/3.13.3
 module load atp
 export ATP_ENABLED=1
 
-fcm make -j4 -f fcm-make/monc-cray-gnu.cfg
+echo "Compile options: "
+echo "(1)   MONC Standalone,"
+echo "(2)   MONC with CASIM,"
+echo "(3)   MONC with SOCRATES,"
+echo "(4)   MONC with CASIM and SOCRATES"
+echo ""
+echo "Select which option [1-4]: "
+read compileoption
+
+case $compileoption in
+1)
+  echo "fcm make -j4 -f fcm-make/monc-cray-gnu.cfg"
+  ;;
+2)
+  echo "fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/casim.cfg"
+  ;;
+3)
+  echo "fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/socrates.cfg"
+  ;;
+4)
+  echo "fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/casim_socrates.cfg"
+  ;;
+*)
+  echo "Unexpected compilation option. Should be an integer in the range 1-4"
+  ;;
+esac
