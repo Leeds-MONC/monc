@@ -8,8 +8,8 @@
   #  https://slurm.schedmd.com/sbatch.html
 #SBATCH --open-mode=append
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=8
-#SBATCH --ntasks=8
+#SBATCH --ntasks-per-node=4
+#SBATCH --ntasks=4
 #SBATCH --cpus-per-task=1
 #SBATCH --time=00:10:00
 #SBATCH --account=n02-NEP013406
