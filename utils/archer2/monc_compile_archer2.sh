@@ -60,16 +60,16 @@ read compileoption
 
 case $compileoption in
 1)
-  echo "fcm make -j4 -f fcm-make/monc-cray-gnu.cfg"
+  fcm make -j4 -f fcm-make/monc-cray-gnu.cfg
   ;;
 2)
-  echo "fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/casim.cfg"
+  fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/casim.cfg
   ;;
 3)
-  echo "fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/socrates.cfg"
+  fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/socrates.cfg
   ;;
 4)
-  echo "fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/casim_socrates.cfg"
+  fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/casim_socrates.cfg
   ;;
 *)
   echo "Unexpected compilation option. Should be an integer in the range 1-4"
