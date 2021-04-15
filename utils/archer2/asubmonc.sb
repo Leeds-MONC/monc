@@ -1,12 +1,12 @@
 #!/bin/bash
-#SBATCH --job-name=MONC_bomex_Casim_Socrates_64core_new
+#SBATCH --job-name=MONC_bomex_Casim_Socrates_128core_new
 #SBATCH --output=%x.o%j
 #SBATCH --open-mode=append
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=64
-#SBATCH --ntasks=64
+#SBATCH --ntasks-per-node=128
+#SBATCH --ntasks=128
 #SBATCH --cpus-per-task=1
-#SBATCH --time=00:20:00
+#SBATCH --time=00:30:00
 #SBATCH --account=n02-NEP013406
 #SBATCH --partition=standard
 #SBATCH --reservation=shortqos
