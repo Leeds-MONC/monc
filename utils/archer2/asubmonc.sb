@@ -6,13 +6,14 @@
 #SBATCH --ntasks-per-node=128
 #SBATCH --ntasks=128
 #SBATCH --cpus-per-task=1
-#SBATCH --time=00:30:00
+#SBATCH --time=00:20:00
 #SBATCH --account=n02-NEP013406
 #SBATCH --partition=standard
 #SBATCH --reservation=shortqos
 #SBATCH --qos=short
 
 # MODULES
+module purge
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-pyvenvs
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-pymods
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-utils
@@ -27,8 +28,13 @@ module use --append /opt/cray/pe/modulefiles
 module use --append /opt/cray/pe/craype-targets/default/modulefiles
 module use --append /opt/modulefiles
 module use --append /opt/cray/modulefiles
-module load cpe-gnu
-module load gcc/9.3.0
+if [ $compiler == "gnu" ]; then
+  module load cpe-gnu
+  module load gcc/9.3.0
+elif [ $compiler == "cray" ]; then
+  module load cpe-cray
+  module load cce
+fi
 module load craype
 module load craype-x86-rome
 module load --notuasked libfabric

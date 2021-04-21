@@ -10,10 +10,14 @@ else
   fi
 fi
 
+compiler=gnu
+#compiler=cray
+
 export PATH=$PATH:/work/y07/shared/umshared/bin
 export PATH=$PATH:/work/y07/shared/umshared/software/bin
 . mosrs-setup-gpg-agent
 
+module purge
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-pyvenvs
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-pymods
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-utils
@@ -28,8 +32,13 @@ module use --append /opt/cray/pe/modulefiles
 module use --append /opt/cray/pe/craype-targets/default/modulefiles
 module use --append /opt/modulefiles
 module use --append /opt/cray/modulefiles
-module load cpe-gnu
-module load gcc/9.3.0
+if [ $compiler == "gnu" ]; then
+  module load cpe-gnu
+  module load gcc/9.3.0
+elif [ $compiler == "cray" ]; then
+  module load cpe-cray
+  module load cce
+fi
 module load craype
 module load craype-x86-rome
 module load --notuasked libfabric
@@ -49,6 +58,12 @@ module load petsc/3.13.3
 module load atp
 export ATP_ENABLED=1
 
+if [ $compiler == "gnu" ]; then
+  fcmconfig="fcm-make/monc-cray-gnu.cfg"
+elif [ $compiler == "cray" ]; then
+  fcmconfig="fcm-make/monc-cray-cray.cfg"
+fi
+
 echo "Compile options: "
 echo "(1)   MONC Standalone,"
 echo "(2)   MONC with CASIM,"
@@ -60,16 +75,16 @@ read compileoption
 
 case $compileoption in
 1)
-  fcm make -j4 -f fcm-make/monc-cray-gnu.cfg
+  fcm make -j4 -f $fcmconfig
   ;;
 2)
-  fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/casim.cfg
+  fcm make -j4 -f $fcmconfig -f fcm-make/casim.cfg
   ;;
 3)
-  fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/socrates.cfg
+  fcm make -j4 -f $fcmconfig -f fcm-make/socrates.cfg
   ;;
 4)
-  fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/casim_socrates.cfg
+  fcm make -j4 -f $fcmconfig -f fcm-make/casim_socrates.cfg
   ;;
 *)
   echo "Unexpected compilation option. Should be an integer in the range 1-4"

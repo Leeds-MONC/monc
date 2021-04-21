@@ -19,13 +19,18 @@
 
 echo Starting job
 
+compiler=gnu
+#compiler=cray
+
 # set up default ARCHER2 job environment
+module purge
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-pyvenvs
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-pymods
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-utils
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-libs
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-apps
 module use --append /opt/cray/pe/perftools/20.10.0/modulefiles
+module use --append /opt/cray/pe/perftools/20.09.0/modulefiles
 module use --append /opt/cray/pe/craype/2.7.0/modulefiles
 module use --append /usr/local/Modules/modulefiles
 module use --append /opt/cray/pe/cpe-prgenv/7.0.0
@@ -33,9 +38,13 @@ module use --append /opt/cray/pe/modulefiles
 module use --append /opt/cray/pe/craype-targets/default/modulefiles
 module use --append /opt/modulefiles
 module use --append /opt/cray/modulefiles
-module load epcc-job-env
-module load cpe-gnu
-module load gcc/9.3.0
+if [ $compiler == "gnu" ]; then
+  module load cpe-gnu
+  module load gcc/9.3.0
+elif [ $compiler == "cray" ]; then
+  module load cpe-cray
+  module load cce
+fi
 module load craype
 module load craype-x86-rome
 module load --notuasked libfabric
