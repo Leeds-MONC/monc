@@ -13,7 +13,7 @@ Aim: instructions on how to retrieve, compile and run MONC with CASIM and SOCRAT
 
 **SOCRATES** provides functionality to compute column-wise longwave absorption and emission of radiation represented by cooling and heating at every grid point.
 
-The guide is split into three steps: a) retrieving a copy of MONC, b) compiling MONC on ARC4 and c) compiling MONC with SOCRATES and CASIM.
+The guide is split into three steps: a) retrieving a copy of MONC, b) compiling and running MONC on ARC4 and c) compiling and running MONC with SOCRATES and CASIM.
 
 # a. Retrieving MONC
 
@@ -26,13 +26,13 @@ $> git clone https://github.com/<your-github-username>/monc/
 
 # b. Compiling and running MONC on ARC4
 
-To compile and run MONC on ARC4 you will need to ensure that the correct versions of required libraries are loaded and then compilation to take place. This should all be taken care of by the script in [utils/arc/compile_monc.sh](../utils/arc/compile_monc.sh) which can be run with
+To compile and run MONC on ARC4 you will need to ensure that the correct versions of required libraries are loaded and then compilation can take place. This should all be taken care of by the script in [utils/arc/compile_monc.sh](../utils/arc/compile_monc.sh) which can be run with
 
 ```bash
 $> bash utils/arc/compile_monc.sh
 ```
 
-from the root of the repository. For completeness the steps the contents of that script are detailed below.
+from the root of the repository. For completeness the steps the contents of that script are detailed below, after which details on running MONC on ARC4 are given.
 
 ## 1. Make sure the dependencies of MONC are available
 
@@ -64,10 +64,10 @@ $> fcm make -f fcm-make/monc-arc4-gnu.cfg -N --ignore-lock –j4
 
 ## 3. Submitting a MONC run
 
-Job submission script (and example is given in [../utils/arc4/submonc.sge](submonc.sge)) should have the following important features:
+Job submission script (an example is given in [../utils/arc4/submonc.sge](submonc.sge)) should have the following important features:
 
 1. Job _walltime_ longer than _walltime_ in monc configuration
-2. Module loads (or later `module load monc-dependencies`)
+2. Module loads (to make required external libraries available at runtime)
 3. MVAPICH variables:
 ```
 MONC_THREAD_MULTIPLE=0 # to do with "thread-pooling" in MONC
@@ -78,7 +78,7 @@ export MONC_THREAD_MULTIPLE MV2_ENABLE_AFFINITY \
 MV2_SHOW_CPU_BINDING MV2_USE_THREAD_WARNING
 ```
 
-The you execute your job submission script
+Then you execute your job submission script
 ```bash
 $> qsub <you-job-script.sub>
 ```
