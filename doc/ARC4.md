@@ -51,7 +51,7 @@ At time of writing CP compiled with the following versions: gnu compiler `4.4.7`
 Notes on versions:
 
 - gnu version: At time of writing Craig Poku's copy of MONC only works with `gnu/4.4.7`, but changes for `gnu/8.3.0`
-- MPI implementation: `openmpi` or mvapich2 doesn't allow for multithreading, but Rachel Stratton has found MONC to be more stable with `mvapich` on ARC4
+- MPI implementation: `openmpi` or mvapich2 doesn't allow for multithreading, but Rachel Sansom has found MONC to be more stable with `mvapich` on ARC4
 - fftw: due to licensing issues use of fftw is no longer the default Fourier transform used on the head of MOSRS `trunk`, instead ffte is used in current head-of-trunk on MOSRS (ffte is included with the MONC sourcecode on MOSRS `trunk`). In principle there is no issue of using FFTW and if your research can work with the licensing and it is installed you might be happier using it. MOSRS was not clearly labelled before they made that change.
 
 ## 2. Compile your copy of MONC
@@ -132,7 +132,7 @@ Check what keywords are there by doing following command:
 $> fcm keyword-print
 ```
 
-If `socrates` or `casim` or not listed in these keywords you will to point `fcm` to the correct set of keywords. add the following in a file at `~/.metomi/fcm/keyword.cfg`:
+If you don't see `socrates` or `casim` mentioned in the list of keywords you will need to give `fcm` the correct set of keywords by adding the following in a file at `~/.metomi/fcm/keyword.cfg` (you may need to create this file):
 
 ```
 location{primary, type:svn}[monc.x] = https://code.metoffice.gov.uk/svn/monc/main
@@ -148,7 +148,7 @@ location{primary}[socrates.x] = https://code.metoffice.gov.uk/svn/socrates/main
 location{primary}[socrates.xm] = file:///home/d04/fcm/srv/svn/socrates.xm/main
 ``` 
 
-The run `fcm keyword-print` again to check that the keywords now include `casim` and `socrates`.
+Then run `fcm keyword-print` again to check that the keywords now include `casim` and `socrates`.
 
 ## 3. Obtaining source-code for SOCRATES/CASIM and compiling MONC with these
 
@@ -160,7 +160,7 @@ When calling `fcm` you need to include the `casim.cfg`, `socrates.cfg` or `casim
 $> fcm make -f fcm-make/monc-arc4-gnu.cfg -f fcm-make/casim_socrates.cfg -N --ignore-lock –j4
 ```
 
-You need to place the `casim`/`socrates`/`casim_socrates` fcm make config file _after_ the MONC file. If building with both casim and socrates, it needs a single fcm make configuration that deals with both rather than using two different config files.
+You need to place the `casim`/`socrates`/`casim_socrates` fcm make config file _after_ the MONC file.
 
 You can change which versions of CASIM/SOCRATES are fetched from MOSRS by changing the `casim_revision` and `socrates_revision` variables in the `.cfg`-files. At time of writing the versions to use with MONC `0.9.0` are revision `um10.8` for SOCRATES and revision `6341` for CASIM. Later versions may require changes to MONC for compatibility.
 
