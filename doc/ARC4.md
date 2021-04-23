@@ -162,6 +162,8 @@ $> fcm make -f fcm-make/monc-arc4-gnu.cfg -f fcm-make/casim_socrates.cfg -N --ig
 
 You need to place the `casim`/`socrates`/`casim_socrates` fcm make config file _after_ the MONC file. If building with both casim and socrates, it needs a single fcm make configuration that deals with both rather than using two different config files.
 
+You can change which versions of CASIM/SOCRATES are fetched from MOSRS by changing the `casim_revision` and `socrates_revision` variables in the `.cfg`-files. At time of writing the versions to use with MONC `0.9.0` are revision `um10.8` for SOCRATES and revision `6341` for CASIM. Later versions may require changes to MONC for compatibility.
+
 The fcm configuration file does a number of things:
 
 1. Instruct fcm to _extract_ code for CASIM and SOCRATES (makes sure the source files arencluded)
