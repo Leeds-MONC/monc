@@ -5,7 +5,7 @@ if [ ! -f ~/.metomi/fcm/keyword.cfg ]; then
   mkdir -p ~/.metomi/fcm
   echo ${keywrdfile} > ~/.metomi/fcm/keyword.cfg
 else
-  if cat ~/.metomi/fcm/keyword.cfg | grep -q -v "${keywrdfile}"; then
+  if ! grep -q "${keywrdfile##* } ~/.metomi/fcm/keyword.cfg"; then
     echo ${keywrdfile} >> ~/.metomi/fcm/keyword.cfg
   fi
 fi
