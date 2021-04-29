@@ -15,7 +15,7 @@ fi
 module purge
 module load user
 module switch intel gnu/8.3.0
-#module switch openmpi mvapich2
+module switch openmpi mvapich2
 module load fftw netcdf hdf5 fcm
 . /nobackup/cemac/cemac.sh
 
