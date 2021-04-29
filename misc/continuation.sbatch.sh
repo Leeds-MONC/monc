@@ -59,7 +59,7 @@ run_monc() {
 				exit
 			fi
 		fi
-        elif [ ! -z "$checkpoint_filename" ] && [ -z "$crun" ] && [ -z "$cpfile" ]; then
+  elif [ ! -z "$checkpoint_filename" ] && [ -z "$crun" ] && [ -z "$cpfile" ]; then
 		RUN_MONC_CONFIG=2
 	else
 		if [ -z "$crun" ]; then
@@ -79,29 +79,29 @@ run_monc() {
 		((outputid++))
 		local outputfn=$STDOUT_DIR"/output_"$RUN_NAME$outputid
 
-                echo "This cycle is controlled by:$SUBMISSION_SCRIPT_NAME" > $outputfn
-                echo "This cycle job:$SLURM_JOB_ID:$SLURM_JOB_NAME" >> $outputfn
-                echo "Next cycle job:$submittedId" >> $outputfn
-                echo "" >> $outputfn
+    echo "This cycle is controlled by:$SUBMISSION_SCRIPT_NAME" > $outputfn
+    echo "This cycle job:$SLURM_JOB_ID:$SLURM_JOB_NAME" >> $outputfn
+    echo "Next cycle job:$submittedId" >> $outputfn
+    echo "" >> $outputfn
 
-                echo ""
+    echo ""
 
 		sb_flags='--unbuffered --cpu-bind=cores --distribution=block:block --hint=nomultithread'
 
-                # Cold start
+    # Cold start
 		if [ $RUN_MONC_CONFIG -eq 1 ]; then
-    		    echo "Start MONC with configuration file $TESTCASE"
-		    eval 'srun $sb_flags $MONC_EXEC --config=$TESTCASE >> ${outputfn} 2>&1'
+    	echo "Start MONC with configuration file $TESTCASE"
+		  eval 'srun $sb_flags $MONC_EXEC --config=$TESTCASE >> ${outputfn} 2>&1'
 
-                # Reconfiguration
-                elif [ $RUN_MONC_CONFIG -eq 2 ]; then
-                    echo "Reconfigure MONC with configuration file:"
-                    echo "  $TESTCASE and its linked xml file,"
-                    echo "  starting from checkpoint file:"
-                    echo "     $checkpoint_filename"
-                    eval 'srun $sb_flags $MONC_EXEC --reconfig=$TESTCASE --checkpoint=$checkpoint_filename --retain_model_time=.true. >> $outputfn 2>&1'
+    # Reconfiguration
+    elif [ $RUN_MONC_CONFIG -eq 2 ]; then
+      echo "Reconfigure MONC with configuration file:"
+      echo "  $TESTCASE and its linked xml file,"
+      echo "  starting from checkpoint file:"
+      echo "     $checkpoint_filename"
+      eval 'srun $sb_flags $MONC_EXEC --reconfig=$TESTCASE --checkpoint=$checkpoint_filename --retain_model_time=.true. >> $outputfn 2>&1'
 
-                # Restart
+    #Restart
 		else
 		    echo "Restarting MONC with checkpoint file $checkpoint_filename"
 		    eval 'srun $sb_flags $MONC_EXEC --checkpoint=$checkpoint_filename >> $outputfn 2>&1'
