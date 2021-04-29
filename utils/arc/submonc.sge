@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -pe ib 4 
+#$ -pe ib 4
 #$ -l h_rt=0:30:0
 #$ -l h_vmem=1G
 #$ -l placement=scatter
@@ -17,8 +17,8 @@ echo Starting job
 
 module purge
 module load user
-module switch intel gnu/8.3.0
-#module switch openmpi mvapich2
+module switch intel gnu
+module switch openmpi mvapich2
 module load netcdf hdf5 fftw fcm
 
 module list
@@ -27,16 +27,16 @@ if [ ! -d checkpoint_files ]; then mkdir checkpoint_files; fi
 if [ ! -d monc_stdout ]; then mkdir monc_stdout; fi
 if [ ! -d diagnostic_files ]; then mkdir diagnostic_files; fi
 
-# MVAPICH2 RUNTIME VARIABLES 
-#MONC_THREAD_MULTIPLE=0
-#MV2_ENABLE_AFFINITY=0
-#MV2_SHOW_CPU_BINDING=1
-#MV2_USE_THREAD_WARNING=0
-#export MONC_THREAD_MULTIPLE MV2_ENABLE_AFFINITY MV2_SHOW_CPU_BINDING \
-#       MV2_USE_THREAD_WARNING
+# MVAPICH2 RUNTIME VARIABLES
+MONC_THREAD_MULTIPLE=0
+MV2_ENABLE_AFFINITY=0
+MV2_SHOW_CPU_BINDING=1
+MV2_USE_THREAD_WARNING=0
+export MONC_THREAD_MULTIPLE MV2_ENABLE_AFFINITY MV2_SHOW_CPU_BINDING \
+       MV2_USE_THREAD_WARNING
 
 # Set the number of threads to 1
-#   This prevents any system libraries from automatically  
+#   This prevents any system libraries from automatically
 #   using threading.
 export OMP_NUM_THREADS=1
 
