@@ -12,6 +12,9 @@
 #SBATCH --reservation=shortqos
 #SBATCH --qos=short
 
+compiler=gnu
+#compiler=cray
+
 # MODULES
 module purge
 module use --append /work/y07/shared/archer2-modules/modulefiles-cse-pyvenvs
