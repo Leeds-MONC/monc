@@ -11,13 +11,16 @@ else
 fi
 
 #Script to compile Monc on ARC4:
-
+. /nobackup/cemac/cemac.sh
 module purge
 module load user
 module switch intel gnu
 module switch openmpi mvapich2
 module load fftw netcdf hdf5 fcm
-. /nobackup/cemac/cemac.sh
+module load svn
+
+export PATH=/nobackup/cemac/mosrs:$PATH
+mosrs-setup-gpg-agent
 
 echo "Compile options: "
 echo "(1)   MONC Standalone,"
