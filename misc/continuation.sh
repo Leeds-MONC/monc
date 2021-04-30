@@ -77,11 +77,9 @@ run_monc() {
 		((outputid++))
 		local outputfn=$STDOUT_DIR"/output_"$RUN_NAME$outputid
 
-    # Cold start
 		if [ $RUN_MONC_CONFIG -eq 1 ]; then
     		    echo "Start MONC with configuration file $config"
 		    eval 'aprun -B $MONC_EXEC --config=$TESTCASE &> $outputfn'
-    #Restart
 		else
 		    echo "Restarting MONC with checkpoint file $checkpoint_filename"
 		    eval 'aprun -B $MONC_EXEC --checkpoint=$checkpoint_filename &> $outputfn'
