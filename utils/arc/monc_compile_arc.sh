@@ -20,7 +20,7 @@ module load fftw netcdf hdf5 fcm
 module load svn
 
 export PATH=/nobackup/cemac/mosrs:$PATH
-mosrs-setup-gpg-agent
+. mosrs-setup-gpg-agent
 
 echo "Compile options: "
 echo "(1)   MONC Standalone,"
