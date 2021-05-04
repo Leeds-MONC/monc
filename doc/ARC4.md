@@ -1,9 +1,10 @@
-#
+# 
+
 ## A field guide to MONC with CASIM and SOCRATES on ARC4
 
 Chris Symonds, Mark Richardson, Steven Boeing, Craig Poku and Leif Denby
 
-23/4/2021
+4/5/2021
 
 Aim: instructions on how to retrieve, compile and run MONC with CASIM and SOCRATES, and notes on internal workings of the coupling between MONC and SOCRATES/CASIM
 
@@ -23,13 +24,12 @@ To get a copy of MONC from the Leeds fork on github is recommended you first [cr
 $> git clone https://github.com/<your-github-username>/monc/
 ```
 
-
 # b. Compiling and running MONC on ARC4
 
-To compile and run MONC on ARC4 you will need to ensure that the correct versions of required libraries are loaded and then compilation can take place. This should all be taken care of by the script in [utils/arc/compile_monc.sh](../utils/arc/compile_monc.sh) which can be run with
+To compile and run MONC on ARC4 you will need to ensure that the correct versions of required libraries are loaded and then compilation can take place. This should all be taken care of by the script in [utils/arc/monc_compile_arc.sh](../utils/arc/monc_compile_arc.sh) which can be run with
 
 ```bash
-$> bash utils/arc/compile_monc.sh
+$> bash utils/arc/monc_compile_arc.sh
 ```
 
 from the root of the repository. For completeness the steps the contents of that script are detailed below, after which details on running MONC on ARC4 are given.
@@ -41,16 +41,16 @@ Issue the following commands to load the correct modules with `module`:
 ```bash
 $> module purge
 $> module load user
-$> module switch intel gnu/4.4.7
+$> module switch intel gnu/native
 $> module switch openmpi mvapich2
 $> module load netcdf hdf5 fftw fcm
 ```
 
-At time of writing CP compiled with the following versions: gnu compiler `4.4.7`, mvapich2 `2.3.1`, fcm `2019.09.0`, hdf5 `1.8.21`, netcdf `4.6.3` and fftw `3.3.8`
+At time of writing MONC was compiled with the following versions: gnu compiler `4.8.5` (called `gnu/native` on `ARC4`), mvapich2 `2.3.1`, fcm `2019.09.0`, hdf5 `1.8.21`, netcdf `4.6.3` and fftw `3.3.8`
 
 Notes on versions:
 
-- gnu version: At time of writing Craig Poku's copy of MONC only works with `gnu/4.4.7`, but changes for `gnu/8.3.0`
+- gnu version: At time of writing (i.e. the version `v0.9.0` of) MONC only works with gnu compilers with version `4.x.x` (e.g. `gnu/native` on ARC4 which is `4.8.5`), but changes for gnu versions `>= 7.x.x` are being worked on by Chris Symonds (@cemac-ccs)
 - MPI implementation: `openmpi` or mvapich2 doesn't allow for multithreading, but Rachel Sansom has found MONC to be more stable with `mvapich` on ARC4
 - fftw: due to licensing issues use of fftw is no longer the default Fourier transform used on the head of MOSRS `trunk`, instead ffte is used in current head-of-trunk on MOSRS (ffte is included with the MONC sourcecode on MOSRS `trunk`). In principle there is no issue of using FFTW and if your research can work with the licensing and it is installed you might be happier using it. MOSRS was not clearly labelled before they made that change.
 
@@ -59,26 +59,28 @@ Notes on versions:
 `fcm` is here wrapping `make`, while including correct .cfg-files in `fcm-make/` define set up the compilation environment
 
 ```bash
-$> fcm make -f fcm-make/monc-arc4-gnu.cfg -N --ignore-lock –j4
+$> fcm make -j4 -f fcm-make/monc-arc4-gnu.cfg -N --ignore-lock
 ```
 
 ## 3. Submitting a MONC run
 
-Job submission script (an example is given in [../utils/arc4/submonc.sge](submonc.sge)) should have the following important features:
+Job submission script (an example is given in [../utils/arc/submonc.sge](submonc.sge)) should have the following important features:
 
 1. Job _walltime_ longer than _walltime_ in monc configuration
 2. Module loads (to make required external libraries available at runtime)
 3. MVAPICH variables:
-```
-MONC_THREAD_MULTIPLE=0 # to do with "thread-pooling" in MONC
-MV2_ENABLE_AFFINITY=0
-MV2_SHOW_CPU_BINDING=1
-MV2_USE_THREAD_WARNING=0
-export MONC_THREAD_MULTIPLE MV2_ENABLE_AFFINITY \
-MV2_SHOW_CPU_BINDING MV2_USE_THREAD_WARNING
-```
+   
+   ```
+   MONC_THREAD_MULTIPLE=0 # to do with "thread-pooling" in MONC
+   MV2_ENABLE_AFFINITY=0
+   MV2_SHOW_CPU_BINDING=1
+   MV2_USE_THREAD_WARNING=0
+   export MONC_THREAD_MULTIPLE MV2_ENABLE_AFFINITY \
+   MV2_SHOW_CPU_BINDING MV2_USE_THREAD_WARNING
+   ```
 
 Then you execute your job submission script
+
 ```bash
 $> qsub <you-job-script.sub>
 ```
@@ -100,6 +102,7 @@ If this run completed succesfully you can now continue onto compiling and runnin
 Due to the license of SOCRATES and CASIM the sourcecode for both resides on the MOSRS (Met Office Science Repository) for which you will need access to using MONC with CASIM/SOCRATES. Once you have your credentials you can follow the steps below to set up `fcm` so that you can retrieve SOCRATES/CASIM with `fcm` and compile MONC with either or both componeents.
 
 ## 1. Setup and check SVN connection
+
 Add MOSRS to `svn` (subversion) list of servers by adding the following lines to `~/.subversion/servers`
 
 ```
@@ -109,7 +112,6 @@ metofficesharedrepos = code*.metoffice.gov.uk
 [metofficesharedrepos]
 username = <your-username>
 store-plaintext-passwords=no
-
 ```
 
 [https://code.metoffice.gov.uk/trac/monc/wiki/MoncDoc/MoncUserguide/MosrsSetup](https://code.metoffice.gov.uk/trac/monc/wiki/MoncDoc/MoncUserguide/MosrsSetup)
@@ -144,11 +146,8 @@ location{primary}[monc-doc.x] = https://code.metoffice.gov.uk/svn/monc/doc
 location{primary}[monc-postproc.x] = https://code.metoffice.gov.uk/svn/monc/postproc 
 location{primary}[monc-scripts.x] = https://code.metoffice.gov.uk/svn/monc/scripts 
 location{primary}[monc.x] = https://code.metoffice.gov.uk/svn/monc/main 
-location{primary}[socrates.x] = https://code.metoffice.gov.uk/svn/socrates/main 
-location{primary}[socrates.xm] = file:///home/d04/fcm/srv/svn/socrates.xm/main
-``` 
-
-Then run `fcm keyword-print` again to check that the keywords now include `casim` and `socrates`.
+location{primary}[socrates.x] = https://code.metoffice.gov.uk/svn/socrates/main Then run `fcm keyword-print` again to check that the keywords now include `casim` and `socrates`.
+```
 
 ## 3. Obtaining source-code for SOCRATES/CASIM and compiling MONC with these
 
@@ -157,7 +156,7 @@ In addition to the steps above, a copy of the source code for SOCRATES/CASIM is 
 When calling `fcm` you need to include the `casim.cfg`, `socrates.cfg` or `casim_socrates.cfg` .cfg-files (if you're compiling with either CASIM, SOCRATES or both). Here we're including both CASIM and SOCRATES:
 
 ```bash
-$> fcm make -f fcm-make/monc-arc4-gnu.cfg -f fcm-make/casim_socrates.cfg -N --ignore-lock –j4
+$> fcm make -j4 -f fcm-make/monc-arc4-gnu.cfg -f fcm-make/casim_socrates.cfg -N --ignore-lock
 ```
 
 You need to place the `casim`/`socrates`/`casim_socrates` fcm make config file _after_ the MONC file.
@@ -171,29 +170,28 @@ The fcm configuration file does a number of things:
 3. Define locations of where SOCRATES/CASIM is coming from
 4. Set environment variables needed for CASIM/SOCRATES when being compiled to run inside MONC
 
-
 ## 2. Running MONC with CASIM and SOCRATES
 
 To run MONC with CASIM and SOCRATES three things are needed in the model configuration (`.mcf`) file:
 
 1. Flags to enable CASIM/SOCRATES and disable the functionality they replace
-
-	```
-	# required flags for CASIM
-	simplecloud_enabled=.false.
-	casim_enabled=.false.
-	# required flags for SOCRATES:
-	socrates_couple_enabled=.true.
-	lwrad_exponential_enabled=.false. # turn off "bulk-calculation of radiation"
-	```
+   
+   ```
+   # required flags for CASIM
+   simplecloud_enabled=.false.
+   casim_enabled=.false.
+   # required flags for SOCRATES:
+   socrates_couple_enabled=.true.
+   lwrad_exponential_enabled=.false. # turn off "bulk-calculation of radiation"
+   ```
 
 2. Test-case specific parameters. These will define what microphysics processes to include specific configuration parameters for CASIM.
-
-	```
-	# number of scalar fields allocated, this needs to match the
- 	# total number of tracers _required_. water vapour, graupel, etc
-	number_q_fields=9
-	```
+   
+   ```
+   # number of scalar fields allocated, this needs to match the
+    # total number of tracers _required_. water vapour, graupel, etc
+   number_q_fields=9
+   ```
 
 3. External files providing reference profiles for radiation calculations (SOCRATES) and microphysics (CASIM). Craig Poku noted that providing _relative paths_ for these files based on where CASIM/SOCRATES is checked out within the MONC source tree (when fcm is used to fetch CASIM/SOCREATES sources from MOSRS) doesn't work and these configuration file parameters should point to where one has checked out the SOCRATES/CASIM source by hand.
 
