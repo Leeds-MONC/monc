@@ -12,7 +12,7 @@
 #SBATCH --ntasks=4
 #SBATCH --cpus-per-task=1
 #SBATCH --time=00:10:00
-#SBATCH --account=n02-NEP013406
+#SBATCH --account=n02-NES015868
 #SBATCH --partition=standard
 #SBATCH --reservation=shortqos
 #SBATCH --qos=short
