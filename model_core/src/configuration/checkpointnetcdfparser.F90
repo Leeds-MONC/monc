@@ -19,7 +19,8 @@ module configuration_checkpoint_netcdf_parser_mod
   character(len=*), parameter :: OPTIONS_KEY="options_database", &  !< The options key which references the configuration
        OPTIONS_DIM_KEY="number_options" !< Options dimension key
 
-  public parse_configuration_checkpoint_netcdf
+  public parse_configuration_checkpoint_netcdf,remove_null_terminator_from_string
+
 contains
 
   !> Will parse the NetCDF checkpoint file and loads the configuration into the options database

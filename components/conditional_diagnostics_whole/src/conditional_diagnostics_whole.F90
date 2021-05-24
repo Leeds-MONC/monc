@@ -11,7 +11,7 @@ module conditional_diagnostics_whole_mod
   use grids_mod, only : Z_INDEX
   use datadefn_mod, only : PRECISION_TYPE, DEFAULT_PRECISION
   use mpi, only : MPI_SUM, MPI_IN_PLACE, MPI_INT, MPI_REAL, MPI_DOUBLE
-  use missing_data_mod, only: rmdi
+
   use optionsdatabase_mod, only : options_get_integer
 
 
@@ -22,8 +22,8 @@ module conditional_diagnostics_whole_mod
 #endif
 
   integer :: diagnostic_generation_frequency
-
   public conditional_diagnostics_whole_get_descriptor
+  Real, Parameter    :: RMDI     = -32768.0*32768.0
 
 contains
 
@@ -70,7 +70,7 @@ contains
                       PRECISION_TYPE, MPI_SUM, 0, current_state%parallel%monc_communicator, ierr)
     end if
 
-    !> Average summed diagnostics over the domain by dividing the total diagnostic for each condition 
+    !> Average summed diagnostics over the domain by dividing the total diagnostic for each condition
     !! by the total number of points for the associated conditions.
     !! This is NOT done for the area diagnostic, identified by the requested_area position in the array.
     !! Note: CondDiags_tot(k, ncond, ndiag)
@@ -106,7 +106,7 @@ contains
 
   end subroutine timestep_callback
 
-  
+
   !> Called on termination: currently doesn't need to do anything
   !! @param current_state The current model state
   subroutine finalisation_callback(current_state)

@@ -46,7 +46,7 @@ endif
 COMPILERFFLAGS=-O3
 COMPILERRECURSIVE=
 ACTIVE=-DU_ACTIVE -DV_ACTIVE -DW_ACTIVE -DUSE_MAKE
-DEBUG_FLAGS=-g -fcheck=all -ffpe-trap=invalid,zero,overflow -fbacktrace -DDEBUG_MODE
+DEBUG_FLAGS=-g -O0 -fcheck=all -ffpe-trap=invalid,zero,overflow -fbacktrace -DDEBUG_MODE
 
 FFLAGS=-I $(CORE_DIR)/$(BUILD_DIR) -I $(COMPONENTS_DIR)/$(BUILD_DIR) -I $(TESTCASE_DIR)/$(BUILD_DIR) -I $(IO_SERVER_DIR)/$(BUILD_DIR) $(COMPILERFFLAGS)
 LFLAGS=-L$(NETCDF_DIR)/lib -L./io -L misc/forthreads -L$(FFTW_DIR)/lib -L$(HDF5_DIR)/lib $(PETSC_LIB_PATH) -lnetcdff -lnetcdf -lhdf5 -lhdf5_hl -lz -lfftw3 -lpthread $(PETSC_LIBS)

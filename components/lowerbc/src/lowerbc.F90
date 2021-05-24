@@ -20,7 +20,7 @@ module lowerbc_mod
 #endif
 
   integer, parameter :: CONVERGENCE_SUCCESS=1, CONVERGENCE_RICHARDSON_TOO_LARGE=2, CONVERGENCE_FAILURE=3
-   
+
   real(kind=DEFAULT_PRECISION), parameter :: smth = 0.05_DEFAULT_PRECISION,& ! Smoothing between iterations
         tolm=1.0E-4_DEFAULT_PRECISION,  tolt=1.0E-4_DEFAULT_PRECISION ! Convergence tollerance for u and t star
 
@@ -34,6 +34,9 @@ module lowerbc_mod
   integer :: wrapping_comm_requests(4), y_wrapping_target_id, x_wrapping_target_id
 
   public lowerbc_get_descriptor
+  public tstrcona, rhmbc, ddbc, ddbc_x4, eecon, r2ddbc, rcmbc, tstrconb, &
+       x4con, xx0con, y2con, yy0con, viscous_courant_coefficient
+
 contains
 
   !> Descriptor of this component for registration
@@ -45,7 +48,7 @@ contains
     lowerbc_get_descriptor%timestep=>timestep_callback
     lowerbc_get_descriptor%finalisation=>finalisation_callback
   end function lowerbc_get_descriptor
-  
+
   subroutine initialisation_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
@@ -56,7 +59,7 @@ contains
     !          are allocated in their respective components
     if (.not. is_component_enabled(current_state%options_database, "diffusion")) then
       call log_master_log(LOG_ERROR, "Lowerbc requires the diffusion component to be enabled")
-    end if    
+    end if
     if (.not. is_component_enabled(current_state%options_database, "viscosity")) then
       call log_master_log(LOG_ERROR, "Lowerbc requires the viscosity component to be enabled")
     end if
@@ -71,7 +74,7 @@ contains
 
     if (num_wrapped_fields .gt. 0) then
       if (current_state%parallel%my_coords(Y_INDEX) == 0  .or. &
-           current_state%parallel%my_coords(Y_INDEX) == current_state%parallel%dim_sizes(Y_INDEX)-1) then        
+           current_state%parallel%my_coords(Y_INDEX) == current_state%parallel%dim_sizes(Y_INDEX)-1) then
         if (current_state%parallel%my_coords(Y_INDEX) == 0) then
           y_wrapping_target_id=current_state%local_grid%neighbours(Y_INDEX, 1)
         else
@@ -84,7 +87,7 @@ contains
       end if
 
       if (current_state%parallel%my_coords(X_INDEX) == 0  .or. &
-           current_state%parallel%my_coords(X_INDEX) == current_state%parallel%dim_sizes(X_INDEX)-1) then        
+           current_state%parallel%my_coords(X_INDEX) == current_state%parallel%dim_sizes(X_INDEX)-1) then
         if (current_state%parallel%my_coords(X_INDEX) == 0) then
           x_wrapping_target_id=current_state%local_grid%neighbours(X_INDEX, 1)
         else
@@ -102,10 +105,10 @@ contains
          current_state%global_grid%configuration%horizontal%dx)+&
          1.0_DEFAULT_PRECISION/(current_state%global_grid%configuration%horizontal%dy*&
          current_state%global_grid%configuration%horizontal%dy)
-    
+
     if ( current_state%use_surface_boundary_conditions .and.  &
          current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_VALUES) then
-      ! variables below are only required when PRESCRIBED_SURFACE_VALUES are used. 
+      ! variables below are only required when PRESCRIBED_SURFACE_VALUES are used.
        tstrcona=von_karman_constant/alphah*current_state%global_grid%configuration%vertical%zlogth
        bhbc=alphah*current_state%global_grid%configuration%vertical%zlogth
        rhmbc=betah*(current_state%global_grid%configuration%vertical%zn(2)+z0-z0th)/&
@@ -135,10 +138,10 @@ contains
        xx0con=0.0
        y2con=0.0
        yy0con=0.0
-    endif 
-    
+    endif
+
     ! Determine vapour index
-    if (.not. current_state%passive_q) then 
+    if (.not. current_state%passive_q) then
        iqv = get_q_index(standard_q_names%VAPOUR, 'lowerbc')
     endif
 
@@ -167,12 +170,12 @@ contains
 
     do i=1,current_state%number_q_fields
       allocate(current_state%disq(i)%data(z_size, y_size, x_size))
-    end do   
+    end do
   end subroutine allocate_applicable_fields
 
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
-    
+
     integer :: current_y_index, current_x_index
 
     current_y_index=current_state%column_local_y
@@ -189,8 +192,8 @@ contains
         call compute_lower_boundary_conditions(current_state, current_y_index, current_x_index, &
            current_state%zu, current_state%zv, current_state%zth, current_state%zth, current_state%zq, current_state%zq)
       end if
-    end if    
-  end subroutine timestep_callback  
+    end if
+  end subroutine timestep_callback
 
   subroutine compute_lower_boundary_conditions(current_state, current_y_index, current_x_index, zu, zv, zth, th, zq, q)
     type(model_state_type), target, intent(inout) :: current_state
@@ -211,7 +214,7 @@ contains
          current_state%column_local_x .gt. current_state%local_grid%local_domain_end_index(X_INDEX)+1)) then
 
           !if (.not. current_state%halo_column) then
-          ! Include one halo to ensure that the halo is set in tvdadvection. This is done using the 
+          ! Include one halo to ensure that the halo is set in tvdadvection. This is done using the
           ! logic from the timestep callback in tvdadvection in the timestep callback above
           horizontal_velocity_at_k2=0.0_DEFAULT_PRECISION
 #ifdef U_ACTIVE
@@ -222,7 +225,7 @@ contains
          horizontal_velocity_at_k2=horizontal_velocity_at_k2+(0.5_DEFAULT_PRECISION*(zv%data(&
               2,current_y_index,current_x_index)+zv%data(2,current_y_index-1,current_x_index))+current_state%vgal)**2
 #endif
-         horizontal_velocity_at_k2=sqrt(horizontal_velocity_at_k2)+smallp      
+         horizontal_velocity_at_k2=sqrt(horizontal_velocity_at_k2)+smallp
 
          if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_FLUXES) then
             call compute_using_fixed_surface_fluxes(current_state, current_y_index, current_x_index, &
@@ -240,7 +243,7 @@ contains
                current_state%disq(n)%data(1,current_y_index,current_x_index)=0.0_DEFAULT_PRECISION
             end do
         end if
-        
+
         !-----------------------
         ! _return viscous number
         !-----------------------
@@ -274,7 +277,7 @@ contains
            x_wrapping_target_id, 0, current_state%parallel%neighbour_comm, wrapping_comm_requests(3), ierr)
     end if
   end subroutine register_async_wrapping_recv_requests
-  
+
   !> Completes the asynchronous wrapping if required for periodic boundary conditions
   !! @param current_state The current model state
   !! @param zth Temperature field
@@ -290,26 +293,26 @@ contains
       if (allocated(y_wrapping_send_buffer)) then
         if (current_state%parallel%my_coords(Y_INDEX) == 0) then
           call package_y_wrapping_send_buffer(current_state, zth, zq, current_state%local_grid%local_domain_start_index(Y_INDEX),&
-               current_state%local_grid%local_domain_start_index(Y_INDEX)+1)        
+               current_state%local_grid%local_domain_start_index(Y_INDEX)+1)
         else
           call package_y_wrapping_send_buffer(current_state, zth, zq, current_state%local_grid%local_domain_end_index(Y_INDEX)-1,&
-               current_state%local_grid%local_domain_end_index(Y_INDEX))        
-        end if        
+               current_state%local_grid%local_domain_end_index(Y_INDEX))
+        end if
         call mpi_isend(y_wrapping_send_buffer, size(y_wrapping_send_buffer), PRECISION_TYPE, &
              y_wrapping_target_id, 0, current_state%parallel%neighbour_comm, &
-             wrapping_comm_requests(2), ierr)       
+             wrapping_comm_requests(2), ierr)
       end if
       if (allocated(x_wrapping_send_buffer)) then
         if (current_state%parallel%my_coords(X_INDEX) == 0) then
           call package_x_wrapping_send_buffer(current_state, zth, zq, current_state%local_grid%local_domain_start_index(X_INDEX),&
-               current_state%local_grid%local_domain_start_index(X_INDEX)+1)        
+               current_state%local_grid%local_domain_start_index(X_INDEX)+1)
         else
           call package_x_wrapping_send_buffer(current_state, zth, zq, current_state%local_grid%local_domain_end_index(X_INDEX)-1,&
-               current_state%local_grid%local_domain_end_index(X_INDEX))        
-        end if        
+               current_state%local_grid%local_domain_end_index(X_INDEX))
+        end if
         call mpi_isend(x_wrapping_send_buffer, size(x_wrapping_send_buffer), PRECISION_TYPE, &
              x_wrapping_target_id, 0, current_state%parallel%neighbour_comm, &
-             wrapping_comm_requests(4), ierr)        
+             wrapping_comm_requests(4), ierr)
       end if
 
       ! If send buffer is allocated then recv buffer is allocated, therefore only test the send buffer here and assume recv
@@ -321,7 +324,7 @@ contains
         else
           call unpackage_y_wrapping_recv_buffer(current_state, zth, zq, &
                current_state%local_grid%local_domain_end_index(Y_INDEX)+1, &
-               current_state%local_grid%local_domain_end_index(Y_INDEX)+2)          
+               current_state%local_grid%local_domain_end_index(Y_INDEX)+2)
         end if
       end if
       if (allocated(x_wrapping_recv_buffer)) then
@@ -330,10 +333,10 @@ contains
         else
           call unpackage_x_wrapping_recv_buffer(current_state, zth, zq, &
                current_state%local_grid%local_domain_end_index(X_INDEX)+1, &
-               current_state%local_grid%local_domain_end_index(X_INDEX)+2)          
+               current_state%local_grid%local_domain_end_index(X_INDEX)+2)
         end if
       end if
-    end if 
+    end if
     if (current_state%parallel%my_rank == y_wrapping_target_id) then
       if (current_state%th%active) then
         zth%data(1,1,:)=zth%data(1, current_state%local_grid%local_domain_end_index(Y_INDEX)-1, :)
@@ -418,7 +421,7 @@ contains
     integer, intent(in) :: first_x_index, second_x_index
 
     integer :: index_start, n
-    
+
     index_start=0
     if (current_state%th%active) then
       x_wrapping_send_buffer(:,1,1)=zth%data(1,:,first_x_index)
@@ -510,8 +513,8 @@ contains
          /ustr**3))/ (1.+sqrt(1.+gammah*von_karman_constant*current_state%fbuoy*z0th/ustr**3))))
     if (current_state%th%active) th%data(1, current_y_index, current_x_index)= &
          (current_state%surface_temperature_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
-         current_state%diff_coefficient%data(1, current_y_index, current_x_index))+th%data(2, current_y_index, current_x_index)-& 
-         current_state%global_grid%configuration%vertical%thref(1)+& 
+         current_state%diff_coefficient%data(1, current_y_index, current_x_index))+th%data(2, current_y_index, current_x_index)-&
+         current_state%global_grid%configuration%vertical%thref(1)+&
          current_state%global_grid%configuration%vertical%thref(2)
 
     ! Surface Flux of vapour
@@ -532,16 +535,16 @@ contains
 
     lookup_real_posn=1.0_DEFAULT_PRECISION+real(current_state%lookup_table_entries-1)*&
          log(vel/current_state%velmin)*current_state%aloginv
-    lookup_int_posn=int(lookup_real_posn)                                                         
+    lookup_int_posn=int(lookup_real_posn)
 
-    if (lookup_int_posn .ge. 1) then                                                       
+    if (lookup_int_posn .ge. 1) then
       if (lookup_int_posn .lt. current_state%lookup_table_entries) then      ! Linear interpolation
         look=current_state%lookup_table_ustr(lookup_int_posn)+ (lookup_real_posn-real(lookup_int_posn))*&
              (current_state%lookup_table_ustr(lookup_int_posn+1)-current_state%lookup_table_ustr(lookup_int_posn))
       else     ! Near neutral
         look=vel*current_state%cneut
       end if
-    else       ! Nearly free convection                                     
+    else       ! Nearly free convection
       look=vel**(-convective_limit)*current_state%cfc
     end if
   end function look
@@ -557,7 +560,7 @@ contains
 
     integer :: n
     real(kind=DEFAULT_PRECISION) :: ustr
-    
+
     ustr=horizontal_velocity_at_k2*current_state%global_grid%configuration%vertical%vk_on_zlogm
     current_state%vis_coefficient%data(1, current_y_index, current_x_index)=current_state%global_grid%configuration%vertical%czn*&
          ustr**2/horizontal_velocity_at_k2
@@ -566,8 +569,8 @@ contains
          current_state%global_grid%configuration%vertical%zlogm/(alphah*current_state%global_grid%configuration%vertical%zlogth)
     if (current_state%th%active) th%data(1, current_y_index, current_x_index)=  &
          (current_state%surface_temperature_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
-         current_state%diff_coefficient%data(1, current_y_index, current_x_index))+th%data(2, current_y_index, current_x_index)-& 
-         current_state%global_grid%configuration%vertical%thref(1)+& 
+         current_state%diff_coefficient%data(1, current_y_index, current_x_index))+th%data(2, current_y_index, current_x_index)-&
+         current_state%global_grid%configuration%vertical%thref(1)+&
          current_state%global_grid%configuration%vertical%thref(2)
 
     ! Flux of vapour
@@ -617,8 +620,8 @@ contains
            von_karman_constant*current_state%fbuoy* (current_state%global_grid%configuration%vertical%zn(2)+ z0-z0th)/ustr**3)
       if (current_state%th%active) th%data(1, current_y_index, current_x_index)= &
            (current_state%surface_temperature_flux*current_state%global_grid%configuration%vertical%dzn(2)/&
-           current_state%diff_coefficient%data(1, current_y_index, current_x_index))+th%data(2, current_y_index, current_x_index)-& 
-           current_state%global_grid%configuration%vertical%thref(1)+& 
+           current_state%diff_coefficient%data(1, current_y_index, current_x_index))+th%data(2, current_y_index, current_x_index)-&
+           current_state%global_grid%configuration%vertical%thref(1)+&
            current_state%global_grid%configuration%vertical%thref(2)
 
 
@@ -648,7 +651,7 @@ contains
       call handle_stable_fluxes(current_state, current_y_index, current_x_index, horizontal_velocity_at_k2, th, q)
     end if
   end subroutine compute_using_fixed_surface_fluxes
-  
+
 
   subroutine compute_using_fixed_surface_temperature(current_state, current_y_index, current_x_index, horizontal_velocity_at_k2, &
        zth, th, zq, q)
@@ -661,19 +664,19 @@ contains
     real(kind=DEFAULT_PRECISION) :: dthv_surf, ustr, thvstr
     integer :: convergence_status, n
 
-    if (current_state%passive_q) then ! i.e. q is not active 
+    if (current_state%passive_q) then ! i.e. q is not active
       ! Assuming no liquid water at level 2
       dthv_surf = zth%data(2, current_y_index, current_x_index) + &
          current_state%global_grid%configuration%vertical%thref(2) - current_state%theta_virtual_surf
-    else   
+    else
       dthv_surf=zth%data(2, current_y_index, current_x_index) + current_state%global_grid%configuration%vertical%thref(2)&
          *(1.0_DEFAULT_PRECISION + current_state%cq(current_state%water_vapour_mixing_ratio_index)*&
          zq(current_state%water_vapour_mixing_ratio_index)%data(2,current_y_index,current_x_index)) - &
-         current_state%theta_virtual_surf                                                                        
+         current_state%theta_virtual_surf
     end if
     convergence_status = mostbc(current_state, horizontal_velocity_at_k2, dthv_surf,&
          current_state%global_grid%configuration%vertical%zn(2), ustr, thvstr)
-                                                    
+
     current_state%vis_coefficient%data(1, current_y_index, current_x_index)=&
          current_state%global_grid%configuration%vertical%czn*ustr**2/horizontal_velocity_at_k2
     current_state%diff_coefficient%data(1, current_y_index, current_x_index)=&
@@ -682,7 +685,7 @@ contains
          (current_state%global_grid%configuration%vertical%thref(2)+current_state%global_grid%configuration%vertical%thref(1))
     th%data(1, current_y_index, current_x_index)=2.0*current_state%theta_surf-th%data(2, current_y_index, current_x_index)-&
          (current_state%global_grid%configuration%vertical%thref(2)+current_state%global_grid%configuration%vertical%thref(1))
-    
+
     if (current_state%number_q_fields .gt. 0) then
        n=iqv
        zq(n)%data(1, current_y_index, current_x_index)=zq(n)%data(2, current_y_index, current_x_index)
@@ -695,8 +698,8 @@ contains
                2.0_DEFAULT_PRECISION*current_state%surface_vapour_mixing_ratio-&
                q(current_state%water_vapour_mixing_ratio_index)%data(2,current_y_index,current_x_index)
        endif
-    end if    
-  end subroutine compute_using_fixed_surface_temperature  
+    end if
+  end subroutine compute_using_fixed_surface_temperature
 
   subroutine simple_boundary_values(current_state, current_y_index, current_x_index, th, q)
     type(model_state_type), target, intent(inout) :: current_state
@@ -724,8 +727,8 @@ contains
 
   !> Solves the Monin-Obukhov equations in the case of specified surface values of temperature and mixing ratio,combined
   !! into a specified value of virtual temperature. It is a modified version of the subroutine described in Bull and
-  !! Derbyshire (TDN197) based on the assumption that the similarity functions and roughness lengths for temperature and 
-  !! mixing ratio are the same. In that case, all the original theory can be used if we replace temperature by virtual 
+  !! Derbyshire (TDN197) based on the assumption that the similarity functions and roughness lengths for temperature and
+  !! mixing ratio are the same. In that case, all the original theory can be used if we replace temperature by virtual
   !! temperature.
   !! The form of the non-dimensionalised wind shear used is 1.0 + BETAM z/L  for the stable case and
   !! (1.0 - GAMMAM z/L)**1/4 for the unstable case. The form of the non-dimensionalised temperature gradient used is
@@ -743,7 +746,7 @@ contains
     real(kind=DEFAULT_PRECISION), intent(out) :: ustrdg, tstrdg
 
     if (delt .lt. 0.0_DEFAULT_PRECISION) then
-      if (delu .le. smallp) then 
+      if (delu .le. smallp) then
         ustrdg=0.0_DEFAULT_PRECISION
         tstrdg=tstrcona*delt
       else
@@ -758,7 +761,7 @@ contains
     else
       ! Trivial neutral case
         ustrdg=current_state%global_grid%configuration%vertical%vk_on_zlogm*delu
-        tstrdg=0.0_DEFAULT_PRECISION 
+        tstrdg=0.0_DEFAULT_PRECISION
         mostbc=CONVERGENCE_SUCCESS
     end if
 
@@ -768,7 +771,7 @@ contains
       else if(mostbc .eq. CONVERGENCE_FAILURE) then
         call log_log(LOG_ERROR, "Convergence failure after 200 iterations")
       end if
-    end if   
+    end if
   end function mostbc
 
   integer function solve_monin_obukhov_unstable_case(delu, delt, ellmocon, ustrdg, tstrdg, vertical_grid)
@@ -780,7 +783,7 @@ contains
     real(kind=DEFAULT_PRECISION) :: ellmo, psim, psih, x4, xx, xx0, y2, yy, yy0, err_ustr, err_tstr, &
          ustrl, tstrl, & ! U and T star at start of iteration
          ustrpl, tstrpl ! U and T star at end of iteration
-    
+
     ! First set initial values
     ustrl=vertical_grid%vk_on_zlogm*delu
     tstrl=tstrcona*delt
@@ -790,11 +793,11 @@ contains
       ellmo=ustrl*ustrl*ellmocon/tstrl
 
       ! Test for possible square root of negative quantity
-      x4=1.0_DEFAULT_PRECISION-x4con/ellmo      
-      if (x4 .lt. 0.0_DEFAULT_PRECISION) call log_log(LOG_ERROR, "Negative square root in x4")        
+      x4=1.0_DEFAULT_PRECISION-x4con/ellmo
+      if (x4 .lt. 0.0_DEFAULT_PRECISION) call log_log(LOG_ERROR, "Negative square root in x4")
 
       xx=sqrt(sqrt(x4))
-      xx0=sqrt(sqrt(1.0_DEFAULT_PRECISION-xx0con / ellmo))        
+      xx0=sqrt(sqrt(1.0_DEFAULT_PRECISION-xx0con / ellmo))
       psim=2.*( log((xx+1.0_DEFAULT_PRECISION)/(xx0+1.0_DEFAULT_PRECISION))-atan(xx)+atan(xx0) )+&
            log((xx*xx+1.0_DEFAULT_PRECISION)/(xx0*xx0+1.0_DEFAULT_PRECISION))
       ustrpl=von_karman_constant*delu/(vertical_grid%zlogm-psim)
@@ -807,13 +810,13 @@ contains
       psih=2.*log((1.0_DEFAULT_PRECISION+yy)/(1.0_DEFAULT_PRECISION+yy0))
       tstrpl=tstrconb*delt/(vertical_grid%zlogth-psih)
       err_ustr=abs((ustrpl-ustrl)/ ustrl)
-      err_tstr=abs((tstrpl-tstrl)/ tstrl)                                       
-      if ((err_tstr .lt. tolt) .and. (err_ustr .lt. tolm))  then                                                 
+      err_tstr=abs((tstrpl-tstrl)/ tstrl)
+      if ((err_tstr .lt. tolt) .and. (err_ustr .lt. tolm))  then
         ustrdg=ustrpl
         tstrdg=tstrpl
         solve_monin_obukhov_unstable_case=CONVERGENCE_SUCCESS
         return
-      else                                                                 
+      else
         ustrl=(1.0_DEFAULT_PRECISION-smth)*ustrpl+smth*ustrl
         tstrl=(1.0_DEFAULT_PRECISION-smth)*tstrpl+smth*tstrl
       end if
@@ -839,10 +842,10 @@ contains
         ustrdg=(-ee+sqrt(det))*r2ddbc
         tstrdg=ustrdg*(am-zlogm*ustrdg)*rcmbc
       else
-        solve_monin_obukhov_stable_case=CONVERGENCE_RICHARDSON_TOO_LARGE        
+        solve_monin_obukhov_stable_case=CONVERGENCE_RICHARDSON_TOO_LARGE
         ustrdg=0.0_DEFAULT_PRECISION
         tstrdg=0.0_DEFAULT_PRECISION
-      end if      
+      end if
     else if (ddbc .eq. 0.0_DEFAULT_PRECISION) then
       ! Degenerate case
       ustrdg=-ff/ee

@@ -1,8 +1,11 @@
-SRCSF =src/def_tvd_diagnostic_terms.F90 src/ultimateflux.F90 src/tvdadvection.F90
+SRCSF = src/dephy_forcings.F90
 
 BUILDDIR=build
 COREDIR=../../model_core/build
-FFLAGS=-I $(BUILDDIR) -I $(COREDIR) $(COMPILERFFLAGS)
+LOWERBCDIR=../lowerbc/build
+SETFLUXLOOKDIR=../setfluxlook/build
+GRIDMANAGERDIR=../gridmanager/build
+FFLAGS=-I $(BUILDDIR) -I $(COREDIR) -I $(LOWERBCDIR) -I $(SETFLUXLOOKDIR) -I $(GRIDMANAGERDIR) $(COMPILERFFLAGS)
 OBJS = $(patsubst %.F90,$(BUILDDIR)/%.o,$(SRCSF))
 
 all: create-build-dirs $(OBJS)
