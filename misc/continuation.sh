@@ -7,7 +7,7 @@ determine_if_finished() {
 		local mtime=`echo "$search_line" | awk '{ print $9 }'`
 		echo "Terminating chain run as MONC has exceeded termination time, model time is $mtime seconds"
 		terminated_run=1
-	else 
+	else
 		local search_line=`grep "messages file containing termination command" $1`
 		local found_cont=`echo "$search_line" | wc -c`
 		if [ $found_cont -gt 1 ]; then
@@ -56,11 +56,11 @@ run_monc() {
 				fi
 			else
 				echo "Not running MONC as there is no new output from the previous run, there was probably a submission error"
-				exit			
+				exit
 			fi
 		fi
 	else
-		if [ -z "$crun" ]; then 
+		if [ -z "$crun" ]; then
 			RUN_MONC_CONFIG=1
 		else
 			echo "Error, this is configured as a continuation run but output and/or checkpoint file not found, check your script parameters"
@@ -71,7 +71,7 @@ run_monc() {
 	if [ $RUN_MONC_CONFIG -eq 1 ] || [ $RUN_MONC_CP -eq 1 ]; then
 		export OMP_NUM_THREADS=1
 		export MPICH_MAX_THREAD_SAFETY=multiple
-	
+
 		local submittedId=$(qsub -W depend=afterany:$PBS_JOBID -v crun=$outputid,cpfile=$checkpoint_filename $SUBMISSION_SCRIPT_NAME)
 
 		((outputid++))

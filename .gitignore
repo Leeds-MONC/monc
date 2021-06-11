@@ -9,7 +9,6 @@ monc_stdout/
 
 submonc.sge.[oe]*
 .*.sw*
-*.nc
 *.autogen
 __pycache__/
 .pytest_cache/

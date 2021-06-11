@@ -1,5 +1,5 @@
 #!/bin/bash
-#$ -pe ib 4 
+#$ -pe ib 4
 #$ -l h_rt=0:30:0
 #$ -l h_vmem=1G
 #$ -l placement=scatter
@@ -27,7 +27,7 @@ if [ ! -d checkpoint_files ]; then mkdir checkpoint_files; fi
 if [ ! -d monc_stdout ]; then mkdir monc_stdout; fi
 if [ ! -d diagnostic_files ]; then mkdir diagnostic_files; fi
 
-# MVAPICH2 RUNTIME VARIABLES 
+# MVAPICH2 RUNTIME VARIABLES
 #MONC_THREAD_MULTIPLE=0
 #MV2_ENABLE_AFFINITY=0
 #MV2_SHOW_CPU_BINDING=1
@@ -36,7 +36,7 @@ if [ ! -d diagnostic_files ]; then mkdir diagnostic_files; fi
 #       MV2_USE_THREAD_WARNING
 
 # Set the number of threads to 1
-#   This prevents any system libraries from automatically  
+#   This prevents any system libraries from automatically
 #   using threading.
 export OMP_NUM_THREADS=1
 

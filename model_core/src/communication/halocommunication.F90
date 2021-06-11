@@ -1,8 +1,8 @@
-!> Provides the mechanism for halo swapping. This module contains the functionality required to 
-!! determine what messages get sent where, pack data up en mass, send and receive from 
-!! neighbouring processes and unpack into the appropriate data locations. There is also some 
-!! functionality to help local copying of data to corresponding locations. The idea is that the 
-!! caller will determine the policy (i.e. exactly what fields are to be communicated) through 
+!> Provides the mechanism for halo swapping. This module contains the functionality required to
+!! determine what messages get sent where, pack data up en mass, send and receive from
+!! neighbouring processes and unpack into the appropriate data locations. There is also some
+!! functionality to help local copying of data to corresponding locations. The idea is that the
+!! caller will determine the policy (i.e. exactly what fields are to be communicated) through
 !! procedure arguments and this mechanism can be used again and again. It implements bulk sending
 !! of all field data in one large message to reduce communication overhead
 module halo_communication_mod
@@ -19,9 +19,9 @@ module halo_communication_mod
 
 #ifndef TEST_MODE
   private
-#endif  
+#endif
 
-  !> Procedure interfaces used to determine the policy (i.e. the fields) of halo swapping and 
+  !> Procedure interfaces used to determine the policy (i.e. the fields) of halo swapping and
   !  data copying
   interface
      integer function get_fields_per_halo_cell_proc_interface(current_state)
@@ -80,25 +80,25 @@ module halo_communication_mod
        integer, intent(in) :: halo_depth
        logical, intent(in) :: involve_corners
        type(field_data_wrapper_type), dimension(:), intent(in), optional :: source_data
-     end subroutine perform_local_data_copy_proc_interface     
+     end subroutine perform_local_data_copy_proc_interface
   end interface
-  
+
   public copy_buffer_to_field, copy_field_to_buffer, copy_corner_to_buffer, &
        copy_buffer_to_corner, perform_local_data_copy_for_field, init_halo_communication, &
        finalise_halo_communication, initiate_nonblocking_halo_swap, &
-       complete_nonblocking_halo_swap, blocking_halo_swap, get_single_field_per_halo_cell       
+       complete_nonblocking_halo_swap, blocking_halo_swap, get_single_field_per_halo_cell
 contains
 
-  !> Performs the entire halo swap operation, this is simply a wrapper around the nonblocking 
+  !> Performs the entire halo swap operation, this is simply a wrapper around the nonblocking
   !! initiate and complete procedures and saves the programmer from calling these directly if
   !! they do not wish to interleave any computation
   !! @param current_state The current model state
   !! @param halo_swap_state The halo swapping state
   !! @param copy_to_halo_buffer Procedure pointer which is called to copy the data into the
   !!                            halo send buffer
-  !! @param perform_local_data_copy Procedure pointer which performs local data copying 
+  !! @param perform_local_data_copy Procedure pointer which performs local data copying
   !!                                (where the neighbour is the local process)
-  !! @param copy_from_halo_buffer Procedure pointer which copies received data from the halo 
+  !! @param copy_from_halo_buffer Procedure pointer which copies received data from the halo
   !!                              buffer into the field
   !! @param copy_corners_to_halo_buffer Optional procedure pointer which copies data in corners
   !!                                    to the halo send buffer
@@ -109,7 +109,7 @@ contains
   subroutine blocking_halo_swap(current_state, halo_swap_state, copy_to_halo_buffer, &
        perform_local_data_copy, copy_from_halo_buffer, copy_corners_to_halo_buffer, &
        copy_from_halo_buffer_to_corner, source_data)
-    
+
     type(model_state_type), intent(inout) :: current_state
     type(halo_communication_type), intent(inout) :: halo_swap_state
     procedure(copy_fields_to_halo_buffer_proc_interface) :: copy_to_halo_buffer
@@ -120,14 +120,14 @@ contains
     procedure(copy_halo_buffer_to_corner_proc_interface), optional :: &
          copy_from_halo_buffer_to_corner
     type(field_data_wrapper_type), dimension(:), intent(in), optional :: source_data
-    
+
     if ((present(copy_corners_to_halo_buffer) .and. .not. &
          present(copy_from_halo_buffer_to_corner)) .or. &
          (.not. present(copy_corners_to_halo_buffer) .and. &
          present(copy_from_halo_buffer_to_corner))) then
        call log_log(LOG_ERROR, "You must either provie no or both corner optional arguments to the halo swap function")
     end if
-    
+
     if (present(source_data)) then
        if (present(copy_corners_to_halo_buffer)) then
           call initiate_nonblocking_halo_swap(current_state, halo_swap_state, &
@@ -143,7 +143,7 @@ contains
       else
         call complete_nonblocking_halo_swap(current_state, halo_swap_state, &
              perform_local_data_copy, copy_from_halo_buffer, source_data=source_data)
-      end if      
+      end if
     else
       if (present(copy_corners_to_halo_buffer)) then
         call initiate_nonblocking_halo_swap(current_state, halo_swap_state, copy_to_halo_buffer,&
@@ -158,23 +158,23 @@ contains
       else
         call complete_nonblocking_halo_swap(current_state, halo_swap_state, &
              perform_local_data_copy, copy_from_halo_buffer)
-      end if      
-    end if    
+      end if
+    end if
   end subroutine blocking_halo_swap
-  
+
   !> This completes a nonblocking halo swap and it is only during this call that the data fields
-  !! themselves are modified. This will perform local data copying, wait for all outstanding 
-  !! receives to complete, copy the received buffer data into the data and then wait for all 
+  !! themselves are modified. This will perform local data copying, wait for all outstanding
+  !! receives to complete, copy the received buffer data into the data and then wait for all
   !! outstanding sends to complete
   !! @param current_state The current model state
   !! @param halo_swap_state The halo swapping state
-  !! @param perform_local_data_copy Procedure pointer which performs local data copying (where 
+  !! @param perform_local_data_copy Procedure pointer which performs local data copying (where
   !!                                the neighbour is the local process)
-  !! @param copy_from_halo_buffer Procedure pointer which copies received data from the halo 
+  !! @param copy_from_halo_buffer Procedure pointer which copies received data from the halo
   !!                              buffer into the field
-  !! @param copy_from_halo_buffer_to_corner Optional procedure pointer which copies halo data 
+  !! @param copy_from_halo_buffer_to_corner Optional procedure pointer which copies halo data
   !!                                        into field corners
-  !! @param source_data Optional source data which is read from into send buffers and written 
+  !! @param source_data Optional source data which is read from into send buffers and written
   !!                    into by receieve buffers
   subroutine complete_nonblocking_halo_swap(current_state, halo_swap_state, &
        perform_local_data_copy, copy_from_halo_buffer, copy_from_halo_buffer_to_corner, &
@@ -193,7 +193,7 @@ contains
          .or. (.not. present(copy_from_halo_buffer_to_corner) .and. &
          halo_swap_state%involve_corners)) then
       call log_log(LOG_WARN, "Inconsistent halo swap corner state and corner subroutine call arguments")
-    end if    
+    end if
 
     if (present(source_data)) then
       call perform_local_data_copy(current_state, halo_swap_state%halo_depth, &
@@ -229,31 +229,31 @@ contains
   end subroutine complete_nonblocking_halo_swap
 
   !> Initiates a non blocking halo swap, this registers the receive requests, copies data into
-  !! the send buffer and then registers send requests for these. As far as this call is 
+  !! the send buffer and then registers send requests for these. As far as this call is
   !! concerned, the data is immutable - no modifications will take place to it until the
   !! matching completion call is made
   !! @param current_state The current model state
   !! @param halo_swap_state The halo swapping state
-  !! @param copy_to_halo_buffer Procedure pointer which is called to copy the data into the halo 
+  !! @param copy_to_halo_buffer Procedure pointer which is called to copy the data into the halo
   !!                            send buffer
-  !! @param copy_corners_to_halo_buffer Optional procedure pointer which copies field corners 
+  !! @param copy_corners_to_halo_buffer Optional procedure pointer which copies field corners
   !!                                    into halo buffer
-  !! @param source_data Optional source data which is read from into send buffers and written 
+  !! @param source_data Optional source data which is read from into send buffers and written
   !!                    into by receieve buffers
   subroutine initiate_nonblocking_halo_swap(current_state, halo_swap_state, copy_to_halo_buffer, &
        copy_corners_to_halo_buffer, source_data)
-    
+
     type(model_state_type), intent(inout) :: current_state
     type(halo_communication_type), intent(inout) :: halo_swap_state
     procedure(copy_fields_to_halo_buffer_proc_interface) :: copy_to_halo_buffer
     procedure(copy_corners_to_halo_buffer_proc_interface), optional :: copy_corners_to_halo_buffer
     type(field_data_wrapper_type), dimension(:), intent(in), optional :: source_data
-    
+
     halo_swap_state%swap_in_progress = .true.
     if (halo_swap_state%number_distinct_neighbours .gt. 0) then
        halo_swap_state%send_requests(:) = MPI_REQUEST_NULL
        halo_swap_state%recv_requests(:) = MPI_REQUEST_NULL
-       
+
        if ((present(copy_corners_to_halo_buffer) .and. .not. halo_swap_state%involve_corners) &
             .or.  (.not. present(copy_corners_to_halo_buffer) .and. &
             halo_swap_state%involve_corners)) then
@@ -262,7 +262,7 @@ contains
 
        ! we call recv before send
        call recv_all_halos(current_state, halo_swap_state)
-       
+
        if (present(source_data)) then
           if (halo_swap_state%involve_corners .and. present(copy_corners_to_halo_buffer)) then
              call send_all_halos(current_state, halo_swap_state, copy_to_halo_buffer, &
@@ -280,7 +280,7 @@ contains
           end if
        end if
     end if
-  end subroutine initiate_nonblocking_halo_swap  
+  end subroutine initiate_nonblocking_halo_swap
 
   !> Initialises a halo swapping state, by determining the neighbours, size of data in each swap
   !! and allocating the required memory - which are communication buffers and request handles.
@@ -298,7 +298,7 @@ contains
     integer, intent(in) :: halo_depth
     type(halo_communication_type), intent(out) :: halo_state
 
-    integer :: number_comm_requests
+    integer :: number_comm_requests, i
 
     halo_state%involve_corners = involve_corners
     halo_state%halo_depth = halo_depth
@@ -306,8 +306,15 @@ contains
          current_state%local_grid, current_state%parallel%my_rank, involve_corners)
     if (halo_state%number_distinct_neighbours .gt. 0) then
       allocate(halo_state%halo_swap_neighbours(halo_state%number_distinct_neighbours))
-      halo_state%halo_swap_neighbours = populate_halo_swap_neighbours(current_state%local_grid, &
-           current_state%parallel%my_rank, halo_state%number_distinct_neighbours, involve_corners)
+      !halo_state%halo_swap_neighbours = populate_halo_swap_neighbours(current_state%local_grid, &
+      !     current_state%parallel%my_rank, halo_state%number_distinct_neighbours, involve_corners)
+      call populate_halo_swap_neighbours(current_state%local_grid, &
+              current_state%parallel%my_rank, halo_state%number_distinct_neighbours, &
+              involve_corners, halo_state)
+      do i=1, halo_state%number_distinct_neighbours
+        halo_state%halo_swap_neighbours%halo_corners =0
+        halo_state%halo_swap_neighbours%halo_pages =0
+      end do
       call deduce_halo_pages_per_neighbour(current_state, halo_state%halo_swap_neighbours, &
            halo_state%number_distinct_neighbours, get_fields_per_halo_cell, &
            halo_state%fields_per_cell, halo_depth)
@@ -322,7 +329,7 @@ contains
            halo_state%number_distinct_neighbours, involve_corners)
       call generate_recv_field_buffer_matches(current_state, halo_state%halo_depth, &
            halo_state%cell_match)
-      
+
       ! required for nonblocking MPI communcations
       number_comm_requests = get_number_communication_requests(halo_state%halo_swap_neighbours, &
            halo_state%number_distinct_neighbours)
@@ -385,7 +392,7 @@ contains
          local_grid%local_domain_end_index(Z_INDEX),&
          merge(y_target_index-1, y_target_index+1, corner_loc .lt. 3), &
          merge(x_target_index-1, x_target_index+1, corner_loc == 1 .or.&
-         corner_loc == 3))= halo_buffer(:,1,halo_page)    
+         corner_loc == 3))= halo_buffer(:,1,halo_page)
   end subroutine copy_buffer_to_corner
 
   !> Copies the received buffer for a specific field to the corresponding halo data of that
@@ -405,7 +412,7 @@ contains
 
     ! If the neighbours are the same then reverse our placement of the data due to wrapping
     ! around and order of
-    ! messages being sent. This is not an issue if the neighbours are different    
+    ! messages being sent. This is not an issue if the neighbours are different
     if (dim == X_INDEX) then
       field_data(local_grid%local_domain_start_index(Z_INDEX):&
            local_grid%local_domain_end_index(Z_INDEX),&
@@ -419,7 +426,7 @@ contains
            local_grid%local_domain_end_index(X_INDEX)) = &
            halo_buffer(:,:,halo_page)
     end if
-  end subroutine copy_buffer_to_field  
+  end subroutine copy_buffer_to_field
 
   !> Copies prognostic field data to send buffer for specific field, dimension, halo cell
   !! @param local_grid Description of the local grid
@@ -434,7 +441,7 @@ contains
     integer, intent(in) :: dim, source_index, halo_page
     real(kind=DEFAULT_PRECISION), dimension(:,:,:), intent(inout) :: halo_buffer
     real(kind=DEFAULT_PRECISION), dimension(:,:,:), intent(inout) :: field_data
-    
+
     if (dim == X_INDEX) then
        halo_buffer(:,:,halo_page) = field_data(local_grid%local_domain_start_index(Z_INDEX):&
             local_grid%local_domain_end_index(Z_INDEX), &
@@ -496,7 +503,7 @@ contains
   ! Private procedures acting as helpers
   !--------------------------------------------------------------------------
 
-  !> Determines the overall number of communication requests, which is made up of normal halo 
+  !> Determines the overall number of communication requests, which is made up of normal halo
   !! swaps and potentially corner
   !! swaps too if that is enabled
   !! @param halo_swap_neighbours Neighbouring halo swap state
@@ -516,9 +523,9 @@ contains
       if (halo_swap_neighbours(i)%recv_corner_size .gt. 0)&
            get_number_communication_requests=get_number_communication_requests+1
     end do
-  end function get_number_communication_requests  
+  end function get_number_communication_requests
 
-  !> Determines the amount (in elements) of data that each neighbour will be sent and I will 
+  !> Determines the amount (in elements) of data that each neighbour will be sent and I will
   !! receive from in a halo swap
   !! @param local_grid The local grid
   !! @param halo_swap_neighbours Structure describing state of halo swap neighbours
@@ -530,14 +537,14 @@ contains
     integer, intent(in) :: number_distinct_neighbours
     logical, intent(in) :: involve_corners
     type(neighbour_description_type), dimension(:), allocatable :: halo_swap_neighbours
-    
+
     integer :: i, normal_size, corner_size
 
     do i=1, number_distinct_neighbours
       if (halo_swap_neighbours(i)%halo_pages .gt. 0) then
         if (halo_swap_neighbours(i)%dimension == 0) then
           call log_log(LOG_ERROR, "Halo swapping with neighbour needed but dimension is 0 which suggests corner only")
-        end if        
+        end if
         normal_size=local_grid%size(Z_INDEX) * merge(local_grid%size(Y_INDEX), local_grid%size(X_INDEX), &
              halo_swap_neighbours(i)%dimension==X_INDEX)*halo_swap_neighbours(i)%halo_pages
       else
@@ -564,9 +571,9 @@ contains
     type(local_grid_type), intent(inout) :: local_grid
 
     determine_halo_corner_size = local_grid%halo_size(X_INDEX)*local_grid%halo_size(Y_INDEX)*&
-         local_grid%size(Z_INDEX)    
+         local_grid%size(Z_INDEX)
   end function determine_halo_corner_size
- 
+
   !> For a specific process id this determines the number of halo swap corner elements to involve
   !! in a communication
   !! @param local_grid The local grid
@@ -588,9 +595,9 @@ contains
           if (i==2) determine_halo_corner_element_sizes=determine_halo_corner_element_sizes+&
                local_grid%size(Z_INDEX)*2
         end if
-      end do      
-    end do    
-  end function determine_halo_corner_element_sizes  
+      end do
+    end do
+  end function determine_halo_corner_element_sizes
 
   !> Deduces the number of distinct neighbours that will be involved in a halo swap. This
   !! information is used to then allocate the appropriate amount of memory to store the
@@ -617,8 +624,8 @@ contains
                get_number_of_processes_involved_in_communication+1
           temp_neighbour_pids(get_number_of_processes_involved_in_communication) = &
                local_grid%neighbours(i,j)
-        end if        
-      end do      
+        end if
+      end do
     end do
 
     if (include_corners) then
@@ -631,9 +638,9 @@ contains
                  get_number_of_processes_involved_in_communication+1
             temp_neighbour_pids(get_number_of_processes_involved_in_communication) = &
                  local_grid%corner_neighbours(j,i)
-          end if          
+          end if
         end do
-      end do      
+      end do
     end if
   end function get_number_of_processes_involved_in_communication
 
@@ -643,14 +650,15 @@ contains
   !! @param my_rank My global PID
   !! @param number_distinct_neighbours The number of distinct neighbours that I have
   !! @param include_corners Whether to include corners or not
-  function populate_halo_swap_neighbours(local_grid, my_rank, number_distinct_neighbours, &
-       involve_corners)
+  subroutine populate_halo_swap_neighbours(local_grid, my_rank, number_distinct_neighbours, &
+       involve_corners, halo_swap_state)
     type(local_grid_type), intent(inout) :: local_grid
     integer, intent(in) :: my_rank, number_distinct_neighbours
     logical, intent(in) :: involve_corners
+    type(halo_communication_type), intent(inout) :: halo_swap_state
 
-    type(neighbour_description_type), dimension(number_distinct_neighbours) :: &
-         populate_halo_swap_neighbours
+    !type(neighbour_description_type), dimension(number_distinct_neighbours) :: &
+    !     populate_halo_swap_neighbours
     integer :: i, j, current_pid_location, temp_neighbour_pids(merge(16, 8, involve_corners))
 
     current_pid_location=0
@@ -661,9 +669,11 @@ contains
              has_pid_already_been_seen(temp_neighbour_pids, &
              local_grid%neighbours(i,j))) then
           current_pid_location=current_pid_location+1
-          populate_halo_swap_neighbours(current_pid_location)%pid=local_grid%neighbours(i,j)
+          !populate_halo_swap_neighbours(current_pid_location)%pid=local_grid%neighbours(i,j)
+          halo_swap_state%halo_swap_neighbours(current_pid_location)%pid=local_grid%neighbours(i,j)
           temp_neighbour_pids(current_pid_location)=local_grid%neighbours(i,j)
-          populate_halo_swap_neighbours(current_pid_location)%dimension=i
+          !populate_halo_swap_neighbours(current_pid_location)%dimension=i
+          halo_swap_state%halo_swap_neighbours(current_pid_location)%dimension=i
         end if
       end do
     end do
@@ -675,18 +685,20 @@ contains
                has_pid_already_been_seen(temp_neighbour_pids, &
                local_grid%corner_neighbours(j,i))) then
             current_pid_location=current_pid_location+1
-            populate_halo_swap_neighbours(current_pid_location)%pid = &
+            !populate_halo_swap_neighbours(current_pid_location)%pid = &
+            halo_swap_state%halo_swap_neighbours(current_pid_location)%pid = &
                  local_grid%corner_neighbours(j,i)
             temp_neighbour_pids(current_pid_location)=local_grid%corner_neighbours(j,i)
-            populate_halo_swap_neighbours(current_pid_location)%dimension=0
+            !populate_halo_swap_neighbours(current_pid_location)%dimension=0
+            halo_swap_state%halo_swap_neighbours(current_pid_location)%dimension=0
           end if
         end do
       end do
     end if
-  end function populate_halo_swap_neighbours
+  end subroutine populate_halo_swap_neighbours
 
   !> Deduces the number of halo pages per neighbour halo swap and places this information in the appropriate data
-  !! structures. We call a "page" of data the contiguous data of a field that we are going to send, such as 
+  !! structures. We call a "page" of data the contiguous data of a field that we are going to send, such as
   !! halo 1 of w, halo 1 of zw and halo 2 of w (assuming these go to the same neighbour as 1)
   !! @param current_state The current model state
   !! @param halo_swap_neighbours My neighbouring PIDs
@@ -743,10 +755,10 @@ contains
                 current_state%local_grid%corner_neighbours(j,i), number_distinct_neighbours)
            halo_swap_neighbours(pid_location)%halo_corners = &
                 halo_swap_neighbours(pid_location)%halo_corners + fields_per_cell
-        end if        
-      end do      
-    end do    
-  end subroutine deduce_halo_corners_per_neighbour  
+        end if
+      end do
+    end do
+  end subroutine deduce_halo_corners_per_neighbour
 
   !> Allocates the locally stored halo buffers (send and receive) for each neighbouring process
   !! @param local_grid Description of the local grid
@@ -778,10 +790,10 @@ contains
         allocate(halo_swap_neighbours(i)%recv_corner_buffer(local_grid%size(Z_INDEX), 4, &
              halo_swap_neighbours(i)%halo_corners))
       end if
-    end do    
+    end do
   end subroutine allocate_halo_buffers_for_each_neighbour
 
-  !> Precalculates the received buffer to field halo cell matches for each dimension and called 
+  !> Precalculates the received buffer to field halo cell matches for each dimension and called
   !! from the initialisation stage
   !! @param current_state The current model state
   !! @param halo_depth The halo depth
@@ -795,7 +807,7 @@ contains
     integer :: i,j
 
     same_neighbours = retrieve_same_neighbour_information(current_state%local_grid)
-    
+
     do i = 2,3
        if (halo_depth == 1) then
           cell_match(i,1)=1
@@ -814,17 +826,17 @@ contains
     end do
   end subroutine generate_recv_field_buffer_matches
 
-  !> Registers receive requests for all prognostic fields from the appropriate neighbouring 
+  !> Registers receive requests for all prognostic fields from the appropriate neighbouring
   !! processes (that we have already deduced in the initialisation stage.)
   !! @param current_state The current model state
   !! @param halo_swap_state The halo swap state
   subroutine recv_all_halos(current_state, halo_swap_state)
     type(model_state_type), intent(inout) :: current_state
     type(halo_communication_type), intent(inout) :: halo_swap_state
-    
+
     integer :: i, request_counter, ierr
 
-    request_counter = 1 
+    request_counter = 1
 
     do i = 1, halo_swap_state%number_distinct_neighbours
        if (halo_swap_state%halo_swap_neighbours(i)%recv_size .gt. 0) then
@@ -846,13 +858,13 @@ contains
     end do
   end subroutine recv_all_halos
 
-  !> Copies all applicable bits of the prognostics into a send buffer for each neighbour and 
+  !> Copies all applicable bits of the prognostics into a send buffer for each neighbour and
   !! then issues asynchronous sends of this data
   !! @param current_state The current model state
   !! @param halo_swap_state The halo swap state
-  !! @param copy_fields_to_halo_buffer Procedure pointer to copy the data from the fields into 
+  !! @param copy_fields_to_halo_buffer Procedure pointer to copy the data from the fields into
   !!                                   the send buffer
-  !! @param copy_corner_fields_to_halo_buffer Optional procedure pointer to copy corner fields 
+  !! @param copy_corner_fields_to_halo_buffer Optional procedure pointer to copy corner fields
   !!                                          into halo send buffer
   !! @param source_data Optional field data that can be copied from (passed to the user procedure)
   subroutine send_all_halos(current_state, halo_swap_state, copy_fields_to_halo_buffer, &
@@ -875,11 +887,11 @@ contains
     ! TODO: hardcoded to halodepth 1 or 2
     hstart = merge(2, 1, halo_swap_state%halo_depth==1)
     hend = merge(3, halo_depth*2, halo_swap_state%halo_depth==1)
-    
+
     do i=2, 3
        do j=hstart, hend
           if (current_state%parallel%my_rank .ne. current_state%local_grid%neighbours(i,j)) then
-             
+
              if (j==1) then
                 source_index = current_state%local_grid%local_domain_start_index(i)
              else if (j==2) then
@@ -891,7 +903,7 @@ contains
              else if (j==4) then
                 source_index = current_state%local_grid%local_domain_end_index(i)
              end if
-             
+
              pid_location = get_pid_neighbour_location(halo_swap_state%halo_swap_neighbours, &
                   current_state%local_grid%neighbours(i,j), &
                   halo_swap_state%number_distinct_neighbours)
@@ -913,7 +925,7 @@ contains
           end if
        end do
     end do
-    
+
     if (present(copy_corner_fields_to_halo_buffer)) then
        current_page(:)=1
        do j = 1, size(current_state%local_grid%corner_neighbours, 1)
@@ -938,7 +950,7 @@ contains
           end if
        end do
     end if
-    
+
     do i=1,halo_swap_state%number_distinct_neighbours
        if (halo_swap_state%halo_swap_neighbours(i)%send_size .gt. 0) then
           call mpi_isend(halo_swap_state%halo_swap_neighbours(i)%send_halo_buffer, &
@@ -958,7 +970,7 @@ contains
        end if
     end do
   end subroutine send_all_halos
-  
+
   !> Copies the received data (held in buffers) from neighbours into the correct halo location
   !! in the prognostic fields
   !! @param current_state The current model state
@@ -1074,7 +1086,7 @@ contains
              y_target_index, x_target_index)=&
              field_data(local_grid%local_domain_start_index(Z_INDEX):&
              local_grid%local_domain_end_index(Z_INDEX),y_source_index, x_source_index)
-        
+
         field_data(local_grid%local_domain_start_index(Z_INDEX):&
              local_grid%local_domain_end_index(Z_INDEX),&
              y_target_index+1, x_target_index)=&
@@ -1086,15 +1098,15 @@ contains
              y_target_index, x_target_index+1)=&
              field_data(local_grid%local_domain_start_index(Z_INDEX):&
              local_grid%local_domain_end_index(Z_INDEX),y_source_index, x_source_index+1)
-        
+
         field_data(local_grid%local_domain_start_index(Z_INDEX):&
              local_grid%local_domain_end_index(Z_INDEX),&
              y_target_index+1, x_target_index+1)=&
              field_data(local_grid%local_domain_start_index(Z_INDEX):&
-             local_grid%local_domain_end_index(Z_INDEX),y_source_index+1, x_source_index+1)       
-      end if      
-    end do    
-  end subroutine perform_local_data_copy_for_corners  
+             local_grid%local_domain_end_index(Z_INDEX),y_source_index+1, x_source_index+1)
+      end if
+    end do
+  end subroutine perform_local_data_copy_for_corners
 
   !> Performs a local data copy for a specific dimension of a prognostic field
   !! @param dim The dimension
@@ -1113,14 +1125,14 @@ contains
     hend=merge(3,4, halo_depth==1)
 
     do i=hstart, hend
-      if (local_grid%neighbours(dim,i) .eq. my_rank) then 
+      if (local_grid%neighbours(dim,i) .eq. my_rank) then
         if (i==1) then
           target_index=1
           source_index=local_grid%local_domain_end_index(dim)-1
-        else if (i==2) then 
+        else if (i==2) then
           target_index=2
           source_index=local_grid%local_domain_end_index(dim)
-        else if (i==3) then 
+        else if (i==3) then
           target_index=local_grid%local_domain_end_index(dim)+1
           source_index=local_grid%local_domain_start_index(dim)
         else if (i==4) then
@@ -1152,7 +1164,7 @@ contains
 
   !> Retrieves whether we have the same neighbours for L and R halo swaps in each dimension
   !!
-  !! This is because if we do then the data storage needs to be reversed - i.e. the first two 
+  !! This is because if we do then the data storage needs to be reversed - i.e. the first two
   !! messages sent to this process are Left and the second two are Right, but due to wrapping
   !! around, the L messages need to be put on the right halo and R messages on the left halo
   !! @param neighbours The neighbouring processes in each dimension
@@ -1162,7 +1174,7 @@ contains
     logical, dimension(3) :: retrieve_same_neighbour_information
 
     integer :: i, nd1, nd2
-    
+
     retrieve_same_neighbour_information=(/.true., .true., .true./)
 
     ! halo_size in X and Y are the same, therefore it does not matter which one we take
@@ -1181,7 +1193,7 @@ contains
   end function retrieve_same_neighbour_information
 
   !> Returns whether or not a specific process id has already been "seen" by searching a list
-  !! of already seen process ids. 
+  !! of already seen process ids.
   !! @param temp_neighbour_pids The process Ids already seen
   !! @param pid The PID to search for
   logical function has_pid_already_been_seen(temp_neighbour_pids, pid)
@@ -1195,7 +1207,7 @@ contains
       if (temp_neighbour_pids(i) == -1) then
         has_pid_already_been_seen=.false.
         return
-      end if      
+      end if
     end do
     has_pid_already_been_seen=.false.
   end function has_pid_already_been_seen
@@ -1217,7 +1229,7 @@ contains
       if (halo_swap_neighbours(i)%pid == pid) then
         get_pid_neighbour_location = i
         return
-      end if      
+      end if
     end do
     ! Not found
     get_pid_neighbour_location=-1
@@ -1227,8 +1239,8 @@ contains
   !! swap just one field
   !! @param current_state The current model state
   integer function get_single_field_per_halo_cell(current_state)
-    type(model_state_type), intent(inout) :: current_state    
+    type(model_state_type), intent(inout) :: current_state
 
     get_single_field_per_halo_cell=1
-  end function get_single_field_per_halo_cell  
+  end function get_single_field_per_halo_cell
 end module halo_communication_mod
