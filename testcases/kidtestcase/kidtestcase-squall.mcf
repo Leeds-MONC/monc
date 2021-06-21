@@ -55,7 +55,7 @@ diag_write_freq=3600.0
 checkpoint_frequency=0
 checkpoint_file="kid_squall_dump.nc"
 check_walltime_frequency=100
-walltime_limit=00:30:00
+walltime_limit=01:30:00
 
 # Simple setup configuration
 rhobous=1.0
@@ -63,7 +63,7 @@ thref0=300.0
 surface_pressure=100000.
 surface_reference_pressure=100000.
 x_size=240
-y_size=1
+y_size=2
 z_size=121
 dxx=1000
 dyy=1000
@@ -95,7 +95,7 @@ case_number=4
 
 #CASIM options
 
-option=22222
+option=23233
 l_warm=.false.
 
 aerosol_option=0
@@ -104,6 +104,6 @@ iopt_inuc=0
 process_level=0
 l_override_checks = .true.
 
-number_q_fields=11
+number_q_fields=14
 
 
