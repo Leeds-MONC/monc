@@ -508,6 +508,7 @@ process_level   = 0
 aerosol_option  = 2
 max_step_length = 120.0
 max_sed_length  = 2.0
+fixed_cloud_number = 50.0e6
 
 p1              = 3.0
 p2              = 0.0
@@ -585,7 +586,7 @@ l_pisub         = .true.
 l_pimlt         = .true.
 l_gamma_online  = .false.
 l_subseds_maxv  = .false.
-l_sed_eulexp  = .true.
+l_sed_eulexp  = .false.
 cfl_vt_max = 1.0
 l_kfsm = .false.
 
