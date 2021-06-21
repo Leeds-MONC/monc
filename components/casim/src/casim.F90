@@ -15,6 +15,7 @@ module casim_mod
   ! casim modules...
   use variable_precision, ONLY: wp
   use initialize, only: mphys_init
+  use mphys_parameters, only: cloud_params
   use mphys_switches, only: set_mphys_switches,  &
      l_warm,                                     &
      nq_l, nq_r, nq_i, nq_s, nq_g,               &
@@ -83,6 +84,8 @@ module casim_mod
                       ! so standard casim sed used
      , cfl_vt_max & ! cfl limit for sedimentation (default = 1.0)
      , l_kfsm
+  use mphys_constants, only: fixed_cloud_number
+
 
   use micro_main, only: shipway_microphysics
   use generic_diagnostic_variables, ONLY: casdiags, allocate_diagnostic_space, &
@@ -889,7 +892,7 @@ contains
     sp2             = options_get_real(current_state%options_database, 'sp2')
     sp3             = options_get_real(current_state%options_database, 'sp3')
     max_mu          = options_get_real(current_state%options_database, 'max_mu')
-    fix_mu          = options_get_real(current_state%options_database, 'fix_mu')
+    cloud_params%fix_mu = options_get_real(current_state%options_database, 'fix_mu')
 
     l_aaut          = options_get_logical(current_state%options_database, 'l_aaut')
     l_aacc          = options_get_logical(current_state%options_database, 'l_aacc')
@@ -964,6 +967,7 @@ contains
     l_sed_eulexp  = options_get_logical(current_state%options_database, 'l_sed_eulexp')
     cfl_vt_max      = options_get_real(current_state%options_database, 'cfl_vt_max')
     l_kfsm          = options_get_logical(current_state%options_database, 'l_kfsm')
+    fixed_cloud_number = options_get_real(current_state%options_database, 'fixed_cloud_number')
 
   end subroutine read_configuration
 
