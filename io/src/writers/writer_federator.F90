@@ -1813,10 +1813,12 @@ contains
     end if    
 
     if (writer_entries(writer_entry_index)%contents(my_facet_index)%output_frequency .gt. 0) then
-      if ( time_basis .and. mod( nint(writer_entries(writer_entry_index)%contents(my_facet_index)%output_frequency), &
+      if ( time_basis) then 
+          if (mod( nint(writer_entries(writer_entry_index)%contents(my_facet_index)%output_frequency), &
                 writer_entries(writer_entry_index)%contents(my_facet_index)%timestep_frequency) .ne. 0 ) then
-        call log_log(LOG_ERROR, "The output interval for '"//trim(field_name)//  &
-                                "' must be a multiple of its sampling interval when using time_basis=.true.")
+            call log_log(LOG_ERROR, "The output interval for '"//trim(field_name)//  &
+                                  "' must be a multiple of its sampling interval when using time_basis=.true.")
+          end if
       end if
       if ( (time_basis .or. force_output_on_interval) &
            .and. mod( nint(writer_entries(writer_entry_index)%write_time_frequency), &
