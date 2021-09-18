@@ -38,8 +38,8 @@ module def_socrates_options
           rad_time_hours,            &
           rad_year,                  &
           rad_start_day,             &
-          rad_day,                   &
-          rad_int_time
+          rad_day
+     integer ::     rad_interval
      !
      
      ! Surface albedo variables for socrates -read from configuration
@@ -75,8 +75,8 @@ module def_socrates_options
           hfc125_mmr,                &
           hfc134a_mmr
      ! logical to decide if it is a radiation timestep. This is true
-     ! if (time > ((rad_last_time + rad_int_time)) > 0.0)). Derived
-     ! in the timestep_callback in socrates_couple
+     ! if rad_interval .le. 0 or if current_state%radiation_timestep=.true.
+     ! (determined by timestepper and, when time_basis=.true., iobridge)
      logical :: l_rad_calc
       
    end type str_socrates_options

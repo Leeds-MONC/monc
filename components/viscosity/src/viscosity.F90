@@ -32,8 +32,6 @@ module viscosity_mod
        tend_pr_tot_u, tend_pr_tot_v, tend_pr_tot_w
   logical :: l_tend_pr_tot_u, l_tend_pr_tot_v, l_tend_pr_tot_w
 
-  integer :: diagnostic_generation_frequency
-
   public viscosity_get_descriptor
 
 contains
@@ -215,9 +213,6 @@ contains
       allocate( tend_pr_tot_w(current_state%local_grid%size(Z_INDEX)) )
     endif
 
-    ! Save the sampling_frequency to force diagnostic calculation on select time steps
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
-
   end subroutine initialisation_callback
 
   subroutine finalisation_callback(current_state)
@@ -242,9 +237,12 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    integer :: local_y, locaL_x, k, target_x_index, target_y_index
+    integer :: local_y, local_x, k, target_x_index, target_y_index
     real(kind=DEFAULT_PRECISION), dimension(current_state%local_grid%size(Z_INDEX)) :: tau12, tau12_ym1, tau12m1, &
          tau11, tau22, tau22_yp1, tau33, tau23_ym1, tau11p1, tau13, tau13m1, tau23
+    logical :: calculate_diagnostics
+
+    calculate_diagnostics = current_state%diagnostic_sample_timestep
 
     local_y=current_state%column_local_y
     local_x=current_state%column_local_x
@@ -272,9 +270,7 @@ contains
            perform_local_data_copy_for_vis, copy_halo_buffer_to_vis, copy_halo_buffer_to_vis_corners)
     end if
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
-      call save_precomponent_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) call save_precomponent_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
 
     if (current_state%field_stepping == FORWARD_STEPPING) then
       call calculate_tau(current_state, local_y, local_x, current_state%u, current_state%v, current_state%w, tau12, tau12_ym1, &
@@ -286,9 +282,7 @@ contains
     call calculate_viscous_sources(current_state, local_y, local_x, tau12, tau12_ym1, tau12m1, tau11, tau22, tau22_yp1, tau33, &
          tau11p1, tau13, tau13m1, tau23, tau23_ym1)
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0) then
-      call compute_component_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) call compute_component_tendencies(current_state, local_x, local_y, target_x_index, target_y_index)
 
   end subroutine timestep_callback
 

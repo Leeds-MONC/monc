@@ -3,8 +3,8 @@
 #PBS -l select=1
 #PBS -l walltime=00:20:00
 #PBS -j oe
-#PBS -A paracon
-#PBS -q development
+#PBS -P nexcs-n06
+#PBS -q nexcs
 
 
 ##############################################################

@@ -16,6 +16,7 @@ use gridmanager_mod, only : gridmanager_get_descriptor
 use haloswapper_mod, only : haloswapper_get_descriptor
 use iobridge_mod, only : iobridge_get_descriptor
 use iterativesolver_mod, only : iterativesolver_get_descriptor
+use iterativesolver_single_prec_mod, only : iterativesolver_single_prec_get_descriptor
 use kidreader_mod, only : kidreader_get_descriptor
 use lowerbc_mod, only : lowerbc_get_descriptor
 use meanprofiles_mod, only : meanprofiles_get_descriptor
@@ -48,3 +49,4 @@ use socrates_couple_mod, only : socrates_couple_get_descriptor
 use conditional_diagnostics_column_mod, only : conditional_diagnostics_column_get_descriptor
 use conditional_diagnostics_whole_mod, only : conditional_diagnostics_whole_get_descriptor
 use pdf_analysis_mod, only : pdf_analysis_get_descriptor
+use tracers_mod, only: tracers_get_descriptor

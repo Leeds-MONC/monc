@@ -14,16 +14,19 @@ module checkpointer_read_checkpoint_mod
   use logging_mod, only : LOG_INFO, LOG_ERROR, log_log, log_master_log
   use conversions_mod, only : conv_is_integer, conv_to_integer, conv_is_real, conv_to_real, conv_is_logical, conv_to_logical, &
        conv_to_string
-  use optionsdatabase_mod, only : options_add
+  use optionsdatabase_mod, only : options_add, options_get_logical, options_get_integer, options_get_string, options_get_real_array
   use checkpointer_common_mod, only : EMPTY_DIM_KEY, STRING_DIM_KEY, X_DIM_KEY, Y_DIM_KEY, &
        Z_DIM_KEY, Q_DIM_KEY, Q_KEY, ZQ_KEY, TH_KEY, ZTH_KEY, P_KEY, U_KEY, V_KEY, W_KEY, ZU_KEY, ZV_KEY, ZW_KEY, X_KEY, Y_KEY, &
        Z_KEY, ZN_KEY, NQFIELDS, UGAL, VGAL, TIME_KEY, TIMESTEP, CREATED_ATTRIBUTE_KEY, TITLE_ATTRIBUTE_KEY, ABSOLUTE_NEW_DTM_KEY, &
        DTM_KEY, DTM_NEW_KEY, Q_INDICES_DIM_KEY, Q_INDICES_KEY, Q_FIELD_ANONYMOUS_NAME, ZQ_FIELD_ANONYMOUS_NAME, &
        MAX_STRING_LENGTH, THREF, OLUBAR, OLZUBAR, OLVBAR, OLZVBAR, OLTHBAR, OLZTHBAR, OLQBAR, OLZQBAR, OLQBAR_ANONYMOUS_NAME, &
-       OLZQBAR_ANONYMOUS_NAME, RAD_LAST_TIME_KEY, STH_LW_KEY, STH_SW_KEY, check_status, remove_null_terminator_from_string, &
-       WUP, WDWN
+       OLZQBAR_ANONYMOUS_NAME, RAD_LAST_TIME_KEY, LAST_CFL_TIMESTEP_KEY, STH_LW_KEY, STH_SW_KEY, check_status, &
+       remove_null_terminator_from_string, WUP, WDWN, TRACER_DIM_KEY, TRACER_KEY, ZTRACER_KEY, NTRACERS_KEY, NRADTRACERS_KEY, &
+       NORMAL_STEP_KEY
   use datadefn_mod, only : DEFAULT_PRECISION
   use q_indices_mod, only : q_metadata_type, set_q_index, get_q_index, get_indices_descriptor, standard_q_names
+  use tracers_mod, only : get_tracer_name, reinitialise_trajectories, get_tracer_options, trajectories_enabled
+
   implicit none
 
 #ifndef TEST_MODE
@@ -49,7 +52,7 @@ contains
     attribute_value=read_specific_global_attribute(ncid, "created")
     call read_dimensions(ncid, z_dim, y_dim, x_dim, z_found, y_found, x_found)
     call load_global_grid(current_state, ncid, z_dim, y_dim, x_dim, z_found, y_found, x_found)    
-
+    call verify_checkpoint_and_config_agree(current_state)
     call decompose_grid(current_state)
 
     call load_q_indices(ncid)    
@@ -66,8 +69,17 @@ contains
       current_state%liquid_water_mixing_ratio_index=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'checkpoint')
     end if
 
-    call log_master_log(LOG_INFO, "Restarted configuration from checkpoint file `"//trim(filename)//"` created at "&
-         //attribute_value)
+    if ( current_state%reconfig_run ) then
+      call log_master_log(LOG_INFO, "Reconfigured with data from checkpoint file `"//trim(filename)//"` created at "&
+         //attribute_value//" using configuration specified by `"//trim(options_get_string(current_state%options_database, &
+         "config"))//"`")
+      ! All tracers are always reset in the event of a reconfiguration.
+      call upgrade_tracers(current_state)
+    else
+      call log_master_log(LOG_INFO, "Restarted configuration from checkpoint file `"//trim(filename)//"` created at "&
+           //attribute_value)
+    end if
+
     deallocate(attribute_value)
     current_state%initialised=.true.
   end subroutine read_checkpoint_file
@@ -84,6 +96,23 @@ contains
       call log_log(LOG_ERROR, "No decomposition specified")
     end if
   end subroutine decompose_grid
+
+  !> Check for agreement between checkpoint and configuration global_grid dimensions.
+  !  It is possible for them to disagree and still have a functioning model run, but
+  !  diagnostic and checkpoint files will not have the expected dimensions. 
+  !! @param current_state The current model state
+  subroutine verify_checkpoint_and_config_agree(current_state)
+    type(model_state_type), intent(inout) :: current_state
+
+    if ( options_get_integer(current_state%options_database, "x_size") .ne. current_state%global_grid%size(X_INDEX) ) &
+      call log_master_log(LOG_ERROR, "Checkpoint and config x-dimensions do not agree.")
+    if ( options_get_integer(current_state%options_database, "y_size") .ne. current_state%global_grid%size(Y_INDEX) ) &
+      call log_master_log(LOG_ERROR, "Checkpoint and config y-dimensions do not agree.")
+    if ( options_get_integer(current_state%options_database, "z_size") .ne. current_state%global_grid%size(Z_INDEX) ) &
+      call log_master_log(LOG_ERROR, "Checkpoint and config z-dimensions do not agree.") 
+    
+  end subroutine verify_checkpoint_and_config_agree
+
 
   !> Initialises the source and sav (for u,v,w) fields for allocated prognostics
   !! @param current_state The model current state
@@ -129,6 +158,12 @@ contains
       allocate(current_state%sq(i)%data(z_size, y_size, x_size))
       current_state%sq(i)%data(:,:,:) = 0.
     end do
+    if (current_state%n_tracers >0) then
+      do i=1,current_state%n_tracers
+        allocate(current_state%stracer(i)%data(z_size, y_size, x_size))
+        current_state%stracer(i)%data(:,:,:) = 0.
+      end do
+    end if
   end subroutine initalise_source_and_sav_fields
 
   !> Loads in misc data from the checkpoint file
@@ -150,6 +185,17 @@ contains
     current_state%vgal = r_data(1)
     call read_single_variable(ncid, NQFIELDS, integer_data_1d=i_data)
     current_state%number_q_fields = i_data(1)
+    ! Ignore tracer information in the case of a reconfiguration start. 
+    ! Terms will be zero here and later be set from the new configuration specification.
+    if (.not. current_state%reconfig_run) then
+      call read_single_variable(ncid, NTRACERS_KEY, integer_data_1d=i_data)
+      current_state%n_tracers = i_data(1)
+      call read_single_variable(ncid, NRADTRACERS_KEY, integer_data_1d=i_data)
+      current_state%n_radioactive_tracers = i_data(1)
+      if (current_state%n_tracers > current_state%n_radioactive_tracers) current_state%traj_tracer_index = 1
+      if (current_state%n_radioactive_tracers > 0) current_state%radioactive_tracer_index = &
+                                                   current_state%n_tracers - current_state%n_radioactive_tracers + 1
+    end if
     call read_single_variable(ncid, DTM_KEY, real_data_1d_double=r_data)
     current_state%dtm = r_data(1)
     call read_single_variable(ncid, DTM_NEW_KEY, real_data_1d_double=r_data)
@@ -157,11 +203,24 @@ contains
     current_state%update_dtm = current_state%dtm .ne. current_state%dtm_new
     call read_single_variable(ncid, ABSOLUTE_NEW_DTM_KEY, real_data_1d_double=r_data)
     current_state%absolute_new_dtm = r_data(1)
+    call read_single_variable(ncid, NORMAL_STEP_KEY, integer_data_1d=i_data)
+    if (i_data(1) .eq. 0 ) current_state%normal_step = .false. ! otherwise, keep default .true. value
     call read_single_variable(ncid, TIME_KEY, real_data_1d_double=r_data)
     ! The time is written into checkpoint as time+dtm, therefore the time as read in has been correctly advanced
     current_state%time = r_data(1)
     call read_single_variable(ncid, RAD_LAST_TIME_KEY, real_data_1d_double=r_data)
     current_state%rad_last_time = r_data(1)
+    call read_single_variable(ncid, LAST_CFL_TIMESTEP_KEY, integer_data_1d=i_data)
+    current_state%last_cfl_timestep = i_data(1)
+    if ( current_state%reconfig_run ) then
+      current_state%timestep = 1
+      if ( .not. current_state%retain_model_time ) then
+        current_state%time = 0.0_DEFAULT_PRECISION
+        current_state%rad_last_time = 0.0_DEFAULT_PRECISION
+        current_state%last_cfl_timestep = 0
+      end if
+    end if
+
   end subroutine load_misc
 
   !> Will read a global attribute from the checkpoint file - note that it allocates string memory
@@ -197,7 +256,8 @@ contains
     logical :: multi_process
     type(q_metadata_type) :: q_metadata
     character(len=STRING_LENGTH) :: q_field_name, zq_field_name
-
+    character(len=STRING_LENGTH) :: tracer_field_name, ztracer_field_name
+    
     multi_process = current_state%parallel%processes .gt. 1
 
     if (does_field_exist(ncid, U_KEY)) then
@@ -257,6 +317,38 @@ contains
         call load_single_3d_field(ncid, current_state%local_grid, current_state%zq(i), DUAL_GRID, &
              DUAL_GRID, DUAL_GRID, zq_field_name, multi_process)
       end do      
+    end if
+    if (current_state%n_tracers >0) then
+      allocate(current_state%tracer(current_state%n_tracers), current_state%ztracer(current_state%n_tracers), &
+         current_state%stracer(current_state%n_tracers))
+      if (does_field_exist(ncid, TRACER_KEY)) then
+        call log_master_log(LOG_INFO, "Reading from checkpoint (TRACER_KEY):  "//trim(TRACER_KEY)//" and "//trim(ZTRACER_KEY))
+        do i=1,current_state%n_tracers
+          call load_single_3d_field(ncid, current_state%local_grid, current_state%tracer(i), DUAL_GRID, &
+               DUAL_GRID, DUAL_GRID, TRACER_KEY, multi_process, i)
+          call load_single_3d_field(ncid, current_state%local_grid, current_state%ztracer(i), DUAL_GRID, &
+               DUAL_GRID, DUAL_GRID, ZTRACER_KEY, multi_process, i)
+        end do
+      else
+        do i=1,current_state%n_tracers
+          tracer_field_name=trim(TRACER_KEY)//"_"//trim(get_tracer_name(i, current_state%traj_tracer_index, &
+            current_state%radioactive_tracer_index, current_state%n_radioactive_tracers, current_state%n_tracers))
+          ztracer_field_name=trim(ZTRACER_KEY)//"_"//trim(get_tracer_name(i, current_state%traj_tracer_index, &
+            current_state%radioactive_tracer_index, current_state%n_radioactive_tracers, current_state%n_tracers))
+          if (.not. does_field_exist(ncid, tracer_field_name)) then
+            call log_log(LOG_ERROR, "No entry in checkpoint file for tracer field "// &
+                                       trim(conv_to_string(i))//", "//trim(tracer_field_name))
+          end if          
+          if (.not. does_field_exist(ncid, ztracer_field_name)) then
+            call log_log(LOG_ERROR, "Missmatch between tracer and ztracer field name in the checkpoint file")
+          end if
+          call log_master_log(LOG_INFO, "Reading from checkpoint: "//trim(tracer_field_name)//" and "//trim(ztracer_field_name))
+          call load_single_3d_field(ncid, current_state%local_grid, current_state%tracer(i), DUAL_GRID, &
+               DUAL_GRID, DUAL_GRID, tracer_field_name, multi_process)
+          call load_single_3d_field(ncid, current_state%local_grid, current_state%ztracer(i), DUAL_GRID, &
+               DUAL_GRID, DUAL_GRID, ztracer_field_name, multi_process)
+        end do      
+      end if
     end if
     if (does_field_exist(ncid, STH_LW_KEY)) then
        call load_single_3d_field(ncid, current_state%local_grid, current_state%sth_lw, DUAL_GRID, &
@@ -336,7 +428,6 @@ contains
     integer, optional, intent(in) :: fourth_dim_loc
 
     integer :: start(5), count(5), i, map(5)
- integer :: variable_id, nd
 
     if (allocated(field%data)) deallocate(field%data)
     allocate(field%data(local_grid%size(Z_INDEX) + local_grid%halo_size(Z_INDEX) * 2, local_grid%size(Y_INDEX) + &
@@ -415,7 +506,7 @@ contains
 
     integer :: z_size, i
     type(q_metadata_type) :: q_metadata
-    character(len=STRING_LENGTH) :: q_field_name, zq_field_name
+    character(len=STRING_LENGTH) :: q_field_name
 
     call check_status(nf90_inquire_dimension(ncid, z_dim_id, len=z_size))
     if (does_field_exist(ncid, OLUBAR)) then
@@ -489,7 +580,7 @@ contains
     type(model_state_type), intent(inout) :: current_state
     integer, intent(in) :: ncid, z_dim_id
 
-    integer :: z_size, i
+    integer :: z_size
 
     call check_status(nf90_inquire_dimension(ncid, z_dim_id, len=z_size))
     if (does_field_exist(ncid, WUP)) then
@@ -669,4 +760,56 @@ contains
     call check_status(nf90_inq_dimid(ncid, Y_DIM_KEY, y_dim), y_found)
     call check_status(nf90_inq_dimid(ncid, X_DIM_KEY, x_dim), x_found)
   end subroutine read_dimensions
+
+  !> Called in the case of reconfig_run=.true. to read tracer setup from the configuration, ignoring the checkpoint state.
+  !! @param current_state The current model state_mod
+  subroutine upgrade_tracers(current_state)
+    type(model_state_type), intent(inout) :: current_state
+
+    integer :: alloc_z, alloc_y, alloc_x, i, checkpoint_n_tracers
+
+    checkpoint_n_tracers = current_state%n_tracers
+
+    alloc_z=current_state%local_grid%size(Z_INDEX) + current_state%local_grid%halo_size(Z_INDEX) * 2
+    alloc_y=current_state%local_grid%size(Y_INDEX) + current_state%local_grid%halo_size(Y_INDEX) * 2
+    alloc_x=current_state%local_grid%size(X_INDEX) + current_state%local_grid%halo_size(X_INDEX) * 2
+ 
+    call log_master_log(LOG_INFO,"Restarting tracers.  Checking config for enabled tracers.")
+    call get_tracer_options(current_state)
+
+    ! Allocate and initialise (traj reinit and rad to zero) any tracers requested by the configuration.
+    if (current_state%n_tracers .gt. 0) then
+      allocate( current_state%tracer(current_state%n_tracers),  &
+                current_state%ztracer(current_state%n_tracers), &
+                current_state%stracer(current_state%n_tracers))
+      do i=1, current_state%n_tracers
+        call allocate_prognostic(current_state%tracer(i), alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID)
+        call allocate_prognostic(current_state%ztracer(i), alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID)
+        call allocate_prognostic(current_state%stracer(i), alloc_z, alloc_y, alloc_x, DUAL_GRID, DUAL_GRID, DUAL_GRID)
+      end do
+
+      ! Under normal continuation runs, these aren't reinitialised in the initialisation, but reconfiguration 
+      ! needs them to be reinitialised as if it were a cold start.
+      if (trajectories_enabled) then
+        call reinitialise_trajectories(current_state)
+      end if
+    endif ! allocate tracers
+  end subroutine upgrade_tracers
+
+  !> Used by upgrade_tracers to allocate the tracer fields and initialise them to zero
+  !! @param field         - prognostic field
+  !! @param alloc_[z,y,x] - size of field dimension to be allocated
+  !! @param [z,y,x]_grid  - grid type parameter
+  subroutine allocate_prognostic(field, alloc_z, alloc_y, alloc_x, z_grid, y_grid, x_grid)
+    type(prognostic_field_type), intent(inout) :: field
+    integer, intent(in) :: alloc_z, alloc_y, alloc_x, z_grid, y_grid, x_grid
+
+    field%active=.true.
+    field%grid(Z_INDEX) = z_grid
+    field%grid(Y_INDEX) = y_grid
+    field%grid(X_INDEX) = x_grid
+    allocate(field%data(alloc_z, alloc_y, alloc_x))
+    field%data=0.0_DEFAULT_PRECISION
+  end subroutine allocate_prognostic
+
 end module checkpointer_read_checkpoint_mod

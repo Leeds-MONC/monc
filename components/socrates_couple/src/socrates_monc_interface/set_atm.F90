@@ -126,11 +126,4 @@ DO i=1, spectrum%gas%n_absorb
    END DO
 END DO
 
-!print *, 'vapour, co2, o3, n2o, ch4'
-
-!DO k=1, atm%n_layer
-!   print *, k, atm%gas_mix_ratio(1, k, 1),atm%gas_mix_ratio(1, k, 2), atm%gas_mix_ratio(1, k, 3), &
-!        atm%gas_mix_ratio(1, k, 4), atm%gas_mix_ratio(1, k, 5)
-!enddo
-
 END SUBROUTINE set_atm

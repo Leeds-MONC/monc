@@ -19,7 +19,7 @@ simplecloud_enabled=.false.
 casim_enabled=.true.
 casim_profile_dgs_enabled=.true.
 coriolis_enabled=.true.
-damping_enabled=.true.
+damping_enabled=.false.
 forcing_enabled=.true. 
 galilean_transformation=.true. # Needs debugging
 randomnoise_enabled=.true.
@@ -72,8 +72,8 @@ cfl_dtmmin=0.001
 thref0=288.0
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=128
-y_size=128
+x_size=64
+y_size=64
 z_size=50
 dxx=50
 dyy=50
@@ -93,7 +93,7 @@ use_viscosity_and_diffusion=.true.
 # Initialization of fields
 l_init_pl_theta=.true.
 z_init_pl_theta=0.0, 600.0, 601.0, 1600.0
-f_init_pl_theta=287.2, 287.2, 297.2, 300.2
+f_init_pl_theta=287.75, 287.75, 299.75, 306.45
 l_init_pl_u=.true.
 z_init_pl_u=0.0, 1601.0
 f_init_pl_u=5.0, 5.0
@@ -101,7 +101,7 @@ l_init_pl_v=.false.
 l_init_pl_q=.true.
 names_init_pl_q=vapour,accum_sol_mass,accum_sol_number
 z_init_pl_q=0.0, 600.0, 601.0, 1600.0
-f_init_pl_q=9.2e-3, 9.2e-3, 6.2e-3, 6.2e-3, 1.0e-8, 1.0e-8, 1.0e-8, 1.0e-8, 100.e6, 100.e6, 100.e6, 100.e6
+f_init_pl_q=9.1e-3, 9.1e-3, 6.1e-3, 6.1e-3, 1.0e-8, 1.0e-8, 1.0e-8, 1.0e-8, 100.e6, 100.e6, 100.e6, 100.e6
 
 l_matchthref=.false.
 
@@ -167,8 +167,8 @@ mcc_temperature_profile  = components/socrates_couple/data/mcc_profiles/one_km/t
 mcc_vapour_profile       = components/socrates_couple/data/mcc_profiles/one_km/tro.q.nc
 mcc_ozone_profile        = components/socrates_couple/data/mcc_profiles/one_km/tro.o3.nc
 # Add options for rad_cntrl
-spectral_file_lw           = /projects/monc/fra23/socrates_spectra/ga7/sp_lw_ga7
-spectral_file_sw           = /projects/monc/fra23/socrates_spectra/ga7/sp_sw_ga7
+spectral_file_lw           = /data/d04/fra23/socrates_trunk/data/spectra/ga7/sp_lw_ga7
+spectral_file_sw           = /data/d04/fra23/socrates_trunk/data/spectra/ga7/sp_sw_ga7
 
 # 5 is clear sky, 2 is cloud (ice and liquid no overlap), 1 (ice and liquid full overlap)
 i_cloud_representation  = 2
@@ -184,8 +184,8 @@ latitude       = 33.0    # latitude for the location of radiation calc
 longitude      = -123.0  # longitude for the location of radiation calc
 rad_start_year = 1987.0  # simulation year for earth sun distance
 rad_start_day  = 180.0   # day number from January 1st
-rad_int_time   = 180.0   # Radiation integration timestep
 rad_start_time = 10.0    # Start time for the radiation
+rad_interval   = 75      # Radiation calculation interval [integer, unit depends on time_basis]
 
 ## Surface albedo variables for socrates
 l_variable_srf_albedo = .false. # not coded yet but will allow variable

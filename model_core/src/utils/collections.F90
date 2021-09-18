@@ -1033,6 +1033,7 @@ contains
 
     integer :: key_location
     class(*), pointer :: raw_map_node
+    type(mapnode_type), pointer :: ptr
 
     raw_map_node=>map_getnode(specificmap, key, key_location)
 
@@ -1042,7 +1043,8 @@ contains
         if (raw_map_node%memory_allocation_automatic) then
           if (associated(raw_map_node%value)) deallocate(raw_map_node%value)
         end if
-        deallocate(raw_map_node)
+        ptr => raw_map_node
+        deallocate(ptr)
       end select
       call list_remove(specificmap%map_ds, key_location)      
     end if
@@ -1411,7 +1413,7 @@ contains
   end function hashmap_contains_key
 
   !> Retrieves the key currently being held at a specific index in the hashmap or "" if the index > map elements. Note
-  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !! that this is an expensive operation as it has to potentially process all internal hashed lists so avoid if can
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved
@@ -1436,7 +1438,7 @@ contains
   end function hashmap_key_at
 
   !> Retrieves the value held at the specific hashmap index. Note
-  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !! that this is an expensive operation as it has to potentially process all internal hashed lists so avoid if can
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved
@@ -1455,7 +1457,7 @@ contains
   end function hashmap_integer_at
 
   !> Retrieves the value held at the specific hashmap index. Note
-  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !! that this is an expensive operation as it has to potentially process all internal hashed lists so avoid if can
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved
@@ -1474,7 +1476,7 @@ contains
   end function hashmap_string_at
 
   !> Retrieves the value held at the specific hashmap index. Converts between precision and from int. Note
-  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !! that this is an expensive operation as it has to potentially process all internal hashed lists so avoid if can
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved
@@ -1500,7 +1502,7 @@ contains
   end function hashmap_real_at
 
   !> Retrieves the value held at the specific hashmap index. Note
-  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !! that this is an expensive operation as it has to potentially process all internal hashed lists so avoid if can
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved
@@ -1519,7 +1521,7 @@ contains
   end function hashmap_logical_at
 
   !> Retrieves the value held at the specific hashmap index or null if index > map elements. Note
-  !! that this is an expensive operation has it has to potentially process all internal hashed lists so avoid if can
+  !! that this is an expensive operation as it has to potentially process all internal hashed lists so avoid if can
   !!
   !! Do not call directly from external module, this is called via the appropriate interface
   !! @param specificmap The specific hashmap involved
@@ -1670,6 +1672,7 @@ contains
 
     integer :: key_location
     class(*), pointer :: raw_map_node
+    type(mapnode_type), pointer :: ptr
 
     raw_map_node=>hashmap_getnode(specificmap, key, key_location)
     
@@ -1679,7 +1682,8 @@ contains
         if (raw_map_node%memory_allocation_automatic) then
           if (associated(raw_map_node%value)) deallocate(raw_map_node%value)
         end if
-        deallocate(raw_map_node)
+        ptr => raw_map_node
+        deallocate(ptr)
       end select
       call list_remove(specificmap%map_ds(get_hashkey(key)), key_location)      
       specificmap%size=specificmap%size-1
@@ -3216,8 +3220,13 @@ contains
       select type(generic)
         type is (setnode_type)
           iterator_get_next_string=generic%key
+        type is (character(len=*))
+          iterator_get_next_string = generic
         class default
-          iterator_get_next_string=conv_to_string(generic, .false., STRING_LENGTH)
+          ! Intel compiler complains about the below line
+          ! iterator_get_next_string=conv_to_string(generic, .false., STRING_LENGTH)
+          ! Workaround to make Intel compiler happy
+          iterator_get_next_string = ""
       end select      
     else
       call log_log(LOG_ERROR, "Can not get next string in iterator as iterator has reached end of collection")

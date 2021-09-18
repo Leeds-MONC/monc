@@ -1,0 +1,19 @@
+<data-definition name="3d_fields_data" frequency="{3d_sampling_frequency}" namespace="3d_fieldsns"> 
+  <field name="w" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
+  <field name="v" type="array" data_type="double" size="zn,y,x" collective=true optional=true/>
+  <field name="u" type="array" data_type="double" size="zn,y,x" collective=true optional=true/> 
+  <field name="th" type="array" data_type="double" size="zn,y,x" collective=true optional=true/> 
+  <field name="p" type="array" data_type="double" size="zn,y,x" collective=true optional=true/>
+  <field name="q" type="array" data_type="double" size="zn,y,x,qfields" collective=true optional=true/> 
+  <field name="tracer" type="array" data_type="double" size="zn,y,x,tfields" collective=true optional=true/> 
+</data-definition> 
+
+<group name="3d_fields" namespace="3d_fieldsns"> 
+  <member name="w"/> 
+  <member name="v"/>
+  <member name="u"/> 
+  <member name="th"/> 
+  <member name="p"/>
+  <member name="q"/> 
+  <member name="tracer"/> 
+</group> 

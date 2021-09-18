@@ -3,6 +3,7 @@ module scalar_diagnostics_mod
        COMPONENT_ARRAY_FIELD_TYPE, COMPONENT_INTEGER_DATA_TYPE, &
        component_descriptor_type, component_field_value_type, component_field_information_type
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
+  use state_mod, only : FORWARD_STEPPING
   use optionsdatabase_mod, only : options_get_real
   use state_mod, only : model_state_type
   use datadefn_mod, only : DEFAULT_PRECISION
@@ -15,7 +16,7 @@ module scalar_diagnostics_mod
   private
 #endif
 
-  integer :: total_points, ncl_col, iqv=0, iql=0, iqr=0, iqi=0, iqs=0,    &
+  integer :: iqv=0, iql=0, iqr=0, iqi=0, iqs=0,    &
        iqg=0
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: dz_rhon_fac
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: ww_prime_res, uu_prime_res, &
@@ -24,6 +25,7 @@ module scalar_diagnostics_mod
   real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: vwp, lwp, wmax, wmin, &
        qlmax, hqlmax, cltop, clbas,  senhf, lathf, rwp, iwp, swp, gwp, tot_iwp,      &
        reske
+  real(kind=DEFAULT_PRECISION), dimension(:,:,:), allocatable :: trsfflux
 
   public scalar_diagnostics_get_descriptor
 
@@ -40,7 +42,7 @@ contains
 
     scalar_diagnostics_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     scalar_diagnostics_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
-    allocate(scalar_diagnostics_get_descriptor%published_fields(16))
+    allocate(scalar_diagnostics_get_descriptor%published_fields(17))
 
     scalar_diagnostics_get_descriptor%published_fields(1)="vwp"
     scalar_diagnostics_get_descriptor%published_fields(2)="lwp"
@@ -58,6 +60,7 @@ contains
     scalar_diagnostics_get_descriptor%published_fields(14)="gwp"
     scalar_diagnostics_get_descriptor%published_fields(15)="tot_iwp"
     scalar_diagnostics_get_descriptor%published_fields(16)="reske"
+    scalar_diagnostics_get_descriptor%published_fields(17)="trsfflux"
     
   end function scalar_diagnostics_get_descriptor
 
@@ -115,6 +118,11 @@ contains
        endif
     endif
     
+    ! Surface Flux of tracers
+    if (current_state%n_tracers .gt. 0) then
+      allocate(trsfflux(y_size_local, x_size_local, current_state%n_tracers))
+    endif
+    
     allocate(dz_rhon_fac(current_state%local_grid%size(Z_INDEX)))    
     do k=2, current_state%local_grid%size(Z_INDEX)
        ! used in the water path calculation
@@ -127,8 +135,10 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    integer :: k, i
+    integer :: k, i, n
     integer :: current_y_index, current_x_index, target_x_index, target_y_index
+
+    if (.not. current_state%diagnostic_sample_timestep) return
 
     current_y_index=current_state%column_local_y
     current_x_index=current_state%column_local_x
@@ -174,6 +184,12 @@ contains
        senhf(:,:)=0.0
        ! surface latent heat flux
        lathf(:,:)=0.0
+       
+       ! Surface Flux of radioactive tracers
+       if (current_state%n_tracers .gt. 0) then
+         trsfflux(:,:,:) = 0.0
+       endif
+       
     end if
     
     if (.not. current_state%halo_column) then
@@ -303,7 +319,7 @@ contains
                   * rlvap * current_state%global_grid%configuration%vertical%rhon(1)
           endif
 
-	  if (current_state%th%active) then	     
+          if (current_state%th%active) then
               senhf(target_y_index, target_x_index)=(current_state%diff_coefficient%data(1, current_y_index, current_x_index)  &            
                    * current_state%global_grid%configuration%vertical%rdzn(2)  &            
                    * (current_state%th%data(1, current_y_index, current_x_index) &            
@@ -311,6 +327,34 @@ contains
                    - current_state%global_grid%configuration%vertical%dthref(1))) &
                    * current_state%global_grid%configuration%vertical%rhon(1)*cp
           endif
+          
+          ! Surface Flux of tracers
+          if (current_state%n_tracers .gt. 0) then
+            if (current_state%scalar_stepping == FORWARD_STEPPING) then
+
+              do n = 1, current_state%n_tracers
+                trsfflux(target_y_index, target_x_index, n) = &
+                   (current_state%diff_coefficient%data(1, current_y_index, current_x_index) *   &                   
+                    current_state%global_grid%configuration%vertical%rhon(1) * &
+                    current_state%global_grid%configuration%vertical%rdzn(2) * & 
+                    (current_state%tracer(n)%data(1,current_y_index,current_x_index) - & 
+                     current_state%tracer(n)%data(2,current_y_index,current_x_index))) 
+              end do
+              
+            else
+
+              do n = 1, current_state%n_tracers
+                trsfflux(target_y_index, target_x_index, n) = &
+                   (current_state%diff_coefficient%data(1, current_y_index, current_x_index) *   &                   
+                    current_state%global_grid%configuration%vertical%rhon(1) * &
+                    current_state%global_grid%configuration%vertical%rdzn(2) * & 
+                    (current_state%ztracer(n)%data(1,current_y_index,current_x_index) - & 
+                     current_state%ztracer(n)%data(2,current_y_index,current_x_index))) 
+              end do
+              
+            endif
+          endif
+
        endif      
     end if
   end subroutine timestep_callback  
@@ -323,36 +367,48 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
     character(len=*), intent(in) :: name
     type(component_field_information_type), intent(out) :: field_information
+    
+    if (name .eq. "trsfflux") then
+      field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
+      field_information%number_dimensions=3
+      field_information%dimension_sizes(1)=current_state%local_grid%size(Y_INDEX)
+      field_information%dimension_sizes(2)=current_state%local_grid%size(X_INDEX)
+      field_information%dimension_sizes(3)=current_state%n_tracers
+      field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
+      field_information%enabled=current_state%use_surface_boundary_conditions .and. current_state%n_tracers .gt. 0
+    
+    else
 
-    field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
-    field_information%number_dimensions=2
-    field_information%dimension_sizes(1)=current_state%local_grid%size(Y_INDEX)
-    field_information%dimension_sizes(2)=current_state%local_grid%size(X_INDEX)
-    field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
+      field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
+      field_information%number_dimensions=2
+      field_information%dimension_sizes(1)=current_state%local_grid%size(Y_INDEX)
+      field_information%dimension_sizes(2)=current_state%local_grid%size(X_INDEX)
+      field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
 
-    if (name .eq. "senhf") then
-      field_information%enabled=current_state%use_surface_boundary_conditions .and. current_state%th%active
-    else if (name .eq. "lathf") then
-      field_information%enabled=current_state%use_surface_boundary_conditions .and. &
+      if (name .eq. "senhf") then
+        field_information%enabled=current_state%use_surface_boundary_conditions .and. current_state%th%active
+      else if (name .eq. "lathf") then
+        field_information%enabled=current_state%use_surface_boundary_conditions .and. &
            current_state%water_vapour_mixing_ratio_index .gt. 0 .and. &
            current_state%number_q_fields .ge. current_state%water_vapour_mixing_ratio_index
-   else if (name .eq. "qlmax".or. name .eq. "cltop" .or. name .eq. "clbas") then
-      field_information%enabled=.not. current_state%passive_q .and. current_state%liquid_water_mixing_ratio_index .gt. 0 &
+      else if (name .eq. "qlmax".or. name .eq. "cltop" .or. name .eq. "clbas") then
+        field_information%enabled=.not. current_state%passive_q .and. current_state%liquid_water_mixing_ratio_index .gt. 0 &
            .and. current_state%number_q_fields .ge. current_state%liquid_water_mixing_ratio_index
-    else if (name .eq. "vwp" .or. name .eq. "lwp") then
-      field_information%enabled=current_state%number_q_fields .gt. 0 .and. current_state%water_vapour_mixing_ratio_index .gt. 0 &
+      else if (name .eq. "vwp" .or. name .eq. "lwp") then
+        field_information%enabled=current_state%number_q_fields .gt. 0 .and. current_state%water_vapour_mixing_ratio_index .gt. 0 &
            .and. current_state%number_q_fields .ge. current_state%water_vapour_mixing_ratio_index
-   else if (name .eq. "rwp" ) then
-      field_information%enabled= current_state%rain_water_mixing_ratio_index .gt. 0
-   else if (name .eq. "iwp" .or. name .eq. 'tot_iwp') then
-      field_information%enabled= current_state%ice_water_mixing_ratio_index .gt. 0
-   else if (name .eq. "swp" ) then
-      field_information%enabled= current_state%snow_water_mixing_ratio_index .gt. 0
-   else if (name .eq. "gwp" ) then
-      field_information%enabled= current_state%graupel_water_mixing_ratio_index .gt. 0
-   else
-      field_information%enabled=.true.
-   end if
+      else if (name .eq. "rwp" ) then
+        field_information%enabled= current_state%rain_water_mixing_ratio_index .gt. 0
+      else if (name .eq. "iwp" .or. name .eq. 'tot_iwp') then
+        field_information%enabled= current_state%ice_water_mixing_ratio_index .gt. 0
+      else if (name .eq. "swp" ) then
+        field_information%enabled= current_state%snow_water_mixing_ratio_index .gt. 0
+      else if (name .eq. "gwp" ) then
+        field_information%enabled= current_state%graupel_water_mixing_ratio_index .gt. 0
+      else
+        field_information%enabled=.true.
+      end if
+    end if
  
   end subroutine field_information_retrieval_callback
 
@@ -431,6 +487,10 @@ contains
        allocate(field_value%real_2d_array(current_state%local_grid%size(Y_INDEX), &
            current_state%local_grid%size(X_INDEX))) 
        field_value%real_2d_array(:,:)=lathf(:,:) 
+    else if (name .eq. "trsfflux") then
+       allocate(field_value%real_3d_array(current_state%local_grid%size(Y_INDEX), &
+           current_state%local_grid%size(X_INDEX), current_state%n_tracers)) 
+       field_value%real_3d_array(:,:,:)=trsfflux(:,:,:) 
     end if
     
   end subroutine field_value_retrieval_callback

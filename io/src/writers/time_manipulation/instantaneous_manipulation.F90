@@ -10,6 +10,7 @@ module instantaneous_time_manipulation_mod
   use data_utils_mod, only : unpack_scalar_integer_from_bytedata, unpack_scalar_string_from_bytedata, &
        unpack_scalar_dp_real_from_bytedata
   use io_server_client_mod, only : pack_scalar_field
+
   implicit none
 
 #ifndef TEST_MODE
@@ -18,6 +19,7 @@ module instantaneous_time_manipulation_mod
 
   integer, volatile ::  existing_instantaneous_writes_mutex
   type(hashmap_type), volatile :: existing_instantaneous_writes
+  real(kind=DEFAULT_PRECISION) :: model_initial_time
 
   public init_instantaneous_manipulation, finalise_instantaneous_manipulation, perform_instantaneous_time_manipulation, &
        is_instantaneous_time_manipulation_ready_to_write, serialise_instantaneous_state, unserialise_instantaneous_state, &
@@ -25,7 +27,10 @@ module instantaneous_time_manipulation_mod
 contains
 
   !> Initialises the instantaneous time manipulation
-  subroutine init_instantaneous_manipulation()
+  subroutine init_instantaneous_manipulation(reconfig_initial_time)
+    real(kind=DEFAULT_PRECISION), intent(in) :: reconfig_initial_time
+
+    model_initial_time = reconfig_initial_time
     call check_thread_status(forthread_mutex_init(existing_instantaneous_writes_mutex, -1))
   end subroutine init_instantaneous_manipulation
 
@@ -39,7 +44,7 @@ contains
     real, intent(in) :: latest_time, output_frequency, write_time
     integer, intent(in) :: latest_timestep, write_timestep
 
-    is_instantaneous_time_manipulation_ready_to_write=latest_time + output_frequency .gt. write_time
+    is_instantaneous_time_manipulation_ready_to_write=latest_time + output_frequency .ge. write_time
   end function is_instantaneous_time_manipulation_ready_to_write
 
   !> Performs the instantaneous time manipulation and returns data only if this is to be written to the 
@@ -50,18 +55,24 @@ contains
   !! @param field_name The field name
   !! @param timestep The timestep
   !! @param time The model time
+  !! @param time_basis True for diagnostics interval in time coordinates, False for timestep coordinates
   !! @returns An allocated array of reals if data is to be stored, otherwise this is unallocated
   type(data_values_type) function perform_instantaneous_time_manipulation(instant_values, output_frequency, &
-       field_name, timestep, time)
+       field_name, timestep, time, time_basis)
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: instant_values
     real, intent(in) :: output_frequency
     real(kind=DEFAULT_PRECISION), intent(in) :: time
     character(len=*), intent(in) :: field_name
     integer, intent(in) :: timestep
+    logical, intent(in) :: time_basis
 
-    if (deduce_whether_to_issue_values(field_name, output_frequency, time)) then
+    integer :: i
+
+    if (deduce_whether_to_issue_values(field_name, output_frequency, time, time_basis)) then
       allocate(perform_instantaneous_time_manipulation%values(size(instant_values)))
-      perform_instantaneous_time_manipulation%values=instant_values
+      do i=1,size(instant_values)
+        perform_instantaneous_time_manipulation%values(i)=instant_values(i)
+      end do
     end if    
   end function perform_instantaneous_time_manipulation
 
@@ -69,23 +80,33 @@ contains
   !! @param field_name The field name that we are manipulating
   !! @param output_frequency Configured output time frequency
   !! @param time The current model time
+  !! @param time_basis True for diagnostics interval in time coordinates, False for timestep coordinates
   !! @returns Whether or not one should issue the instantaneous values to write
-  logical function deduce_whether_to_issue_values(field_name, output_frequency, time)
+  logical function deduce_whether_to_issue_values(field_name, output_frequency, time, time_basis)
     character(len=*), intent(in) :: field_name
     real, intent(in) :: output_frequency
     real(kind=DEFAULT_PRECISION), intent(in) :: time
+    logical, intent(in) :: time_basis
 
-    real(kind=DEFAULT_PRECISION) :: previous_time_write, time_difference
+    real :: previous_time_write, time_difference
+    logical :: select_value
 
     call check_thread_status(forthread_mutex_lock(existing_instantaneous_writes_mutex))
     if (c_contains(existing_instantaneous_writes, field_name)) then
-      previous_time_write=c_get_real(existing_instantaneous_writes, field_name)
-      time_difference=(aint(time*10000000.0)-aint(previous_time_write*10000000.0))/10000000.0
+      previous_time_write=real(c_get_real(existing_instantaneous_writes, field_name))
+      time_difference = real(time) - previous_time_write
     else
-      ! Rethink this as only works if started at time=0
-      time_difference=time
+      time_difference = real(time) - real(model_initial_time)
     end if
-    if (time_difference .ge. output_frequency) then
+    
+    ! time_basis requires regular-interval entries.  Timestep requires time .ge. time+previous_output_time
+    if (time_basis) then
+      select_value = mod(nint(time), nint(output_frequency)) == 0
+    else
+      select_value = time_difference .ge. real(output_frequency)
+    end if
+
+    if (select_value) then
       deduce_whether_to_issue_values=.true.
       call c_put_real(existing_instantaneous_writes, field_name, time)
     else

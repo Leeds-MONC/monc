@@ -53,9 +53,9 @@ contains
     case (CASE_EGG)
       call set_2D_Eggs(current_state)
     case (CASE_SC)
-      call set_2D_Sc(current_state)
+      call set_Sc_profiles(current_state)
     case (CASE_SQUALL)
-      call set_2D_squall(current_state)
+      call set_SQUALL_profiles(current_state) 
     case (CASE_HILL_FLOW)
       call set_2D_hills(current_state)
     end select
@@ -130,7 +130,7 @@ contains
         rh_cu(k) =  pqv(k)/qsaturation(temp_cu(k),press_cu(k))
       end do
       
-      temp_cu=temp_cu-20 ! reduce temperature for testing ice
+      temp_cu=temp_cu-20.0 ! reduce temperature for testing ice
       
       do k=1,nlevs
         pqv(k) =  rh_cu(k)*qsaturation(temp_cu(k),press_cu(k))
@@ -194,12 +194,161 @@ contains
 
   end subroutine set_Cu_profiles
 
+  subroutine set_Sc_profiles(current_state)
+    type(model_state_type), target, intent(inout) :: current_state
+     
+    real(DEFAULT_PRECISION) :: maxZ, maxX
+    real(DEFAULT_PRECISION) :: z0=1520. 
+
+    integer :: iq, i, j, k, k_top, x_size, y_size
+
+    k_top = current_state%local_grid%size(Z_INDEX)
+    y_size=current_state%local_grid%size(Y_INDEX) !+ current_state%local_grid%halo_size(Y_INDEX) * 2
+    x_size=current_state%local_grid%size(X_INDEX) !+ current_state%local_grid%halo_size(X_INDEX) * 2
+
+    iq=get_q_index(standard_q_names%VAPOUR, 'kidtestcase-Sc')
+    do i=1, x_size
+      do j=1, y_size
+        do k=1, k_top
+          current_state%global_grid%configuration%vertical%thref(k) = 289.0_DEFAULT_PRECISION
+          current_state%global_grid%configuration%vertical%q_init(k,iq) = 7.5e-3
+          current_state%q(iq)%data(k,j,i) = current_state%global_grid%configuration%vertical%q_init(k,iq)
+        enddo
+      enddo
+    enddo
+    current_state%th%data=0.0
+    current_state%global_grid%configuration%vertical%theta_init = current_state%global_grid%configuration%vertical%thref
+
+  end subroutine set_Sc_profiles
+
+  subroutine set_SQUALL_profiles(current_state)
+    !
+    ! Set up the 2D field for GATE 
+    !
+    type(model_state_type), target, intent(inout) :: current_state
+
+    real(DEFAULT_PRECISION), allocatable :: &
+       pHeight(:)         & ! height
+       ,pTheta(:)         & ! theta
+       ,pqv(:)              ! qv  
+
+    ! local allocatable arrays for temperature and presssure
+    real(DEFAULT_PRECISION), allocatable :: &
+         press_cu(:)  & ! pressure (mb)
+         ,temp_cu(:)    ! temperature  (C)
+
+
+    real(kind=DEFAULT_PRECISION), allocatable :: zgrid(:)  ! z grid to use in interpolation
+
+    real(DEFAULT_PRECISION) :: tempk, tempkm, delz, delt, tavi
+
+    integer :: nlevs, km1, iq, i, j, k
+
+    real(kind=DEFAULT_PRECISION) :: zztop ! top of the domain
+    
+    zztop = current_state%global_grid%top(Z_INDEX)
+
+    nlevs = 23
+
+    allocate(pHeight(nlevs))
+    allocate(pTheta(nlevs))
+    allocate(pqv(nlevs))
+   
+    allocate(press_cu(nlevs))
+    allocate(temp_cu(nlevs))
+
+    allocate(zgrid(current_state%local_grid%local_domain_end_index(Z_INDEX)))
+
+    ! pqv in g/kg
+    pqv=(/.178E+02, 0.172E+02, 0.156E+02, 0.134E+02, 0.111E+02, &
+       .888E+01, 0.631E+01, 0.487E+01, 0.396E+01, 0.200E+01,    &
+       .984E+00, 0.806E+00, 0.370E+00, 0.135E+00, 0.599E-01,    &
+       .258E-01, 0.123E-01, 0.582E-02, 0.367E-02, 0.589E-02,    &
+       .104E-02, 0.247E-02, 0.585E-02/)
+
+    press_cu=(/1008.00, 991.25, 945.50, 893.79, 836.06, 772.82, 705.22, &
+       635.05, 564.48, 495.73, 430.71, 370.78, 316.72, 268.82,          &
+       226.98, 190.82, 159.87, 133.55, 111.29,  92.56,  52.31,          &
+       22.08,   9.32/)
+
+    temp_cu=(/25.26,  24.13,  21.04,  18.66,  16.50,  13.41, 9.06, &
+       3.73,  -1.51,  -6.97, -14.09, -22.44, -30.57, -39.60,       &
+       -48.69, -57.40, -65.21, -72.58, -76.71, -74.98, -74.98,     &
+       -74.98, -74.98/)
+
+    ! set temp K
+    temp_cu=temp_cu + 273.15 
+    
+    ! set qv kg/kg
+    pqv(:) = pqv(:)*1.e-3
+    
+    ! calculate theta from temp_cu
+    do k = 1, nlevs
+       ptheta(k) = temp_cu(k)*(1.e3/press_cu(k))**r_over_cp
+    enddo
+    
+    ! calculate approximate height from pressure 
+    pheight(1) = 0.0
+    do k = 2, nlevs
+       km1 = k-1
+       tempk = ptheta(k) * (1.e3/press_cu(k))**(-r_over_cp) &
+            * (1. + .6*pqv(k))
+       tempkm = ptheta(km1) * (1.e3/press_cu(km1))**(-r_over_cp) &
+            * (1. + .6*pqv(km1))
+       
+       delt=tempk-tempkm
+       if(delt.gt.1.e-4) then
+          tavi=log(tempk/tempkm)/delt
+       else
+          tavi=1./tempk
+       endif
+       
+       delz=-Ru/(tavi*g)*log(press_cu(k)/press_cu(km1))
+       pheight(k) = pheight(km1) + delz
+    enddo
+    
+    call check_top(zztop, pheight(nlevs), 'kid_case:setup squall')
+
+    print *, zztop, pheight(nlevs)
+
+    zgrid=current_state%global_grid%configuration%vertical%zn(:)
+    
+    call piecewise_linear_1d(pheight, ptheta, zgrid, &
+       current_state%global_grid%configuration%vertical%thref)
+
+    current_state%global_grid%configuration%vertical%theta_init = current_state%global_grid%configuration%vertical%thref
+    current_state%th%data=0.0
+    
+    iq=get_q_index(standard_q_names%VAPOUR, 'kidtestcase-Squall')
+
+    call piecewise_linear_1d(pheight, pqv, zgrid, &
+       current_state%global_grid%configuration%vertical%q_init(:,iq))
+
+    do i=current_state%local_grid%local_domain_start_index(X_INDEX), current_state%local_grid%local_domain_end_index(X_INDEX)
+      do j=current_state%local_grid%local_domain_start_index(Y_INDEX), current_state%local_grid%local_domain_end_index(Y_INDEX)
+        current_state%q(iq)%data(:,j,i) = current_state%global_grid%configuration%vertical%q_init(:, iq)
+      end do
+    end do
+
+    deallocate(pqv)
+    deallocate(pTheta)
+    deallocate(pHeight)
+
+    deallocate(press_cu)
+    deallocate(temp_cu)
+
+  end subroutine set_SQUALL_profiles
+
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
     select case(case_number)
     case(CASE_CU)
       call set_2D_Cu_wind_field(current_state)
+    case (CASE_SC)
+      call set_2D_Sc(current_state)
+    case (CASE_SQUALL)
+      call set_2D_squall(current_state)
     end select
 
   end subroutine timestep_callback
@@ -352,7 +501,7 @@ contains
     zscale1=1.7*1.e3
     zscale2=2.7*1.e3
 
-    maxW=1.0
+    maxW=2.0
  
     ! CALCULATE X AND Z DISTANCES (IN METERS)    
     dzp=current_state%global_grid%configuration%vertical%dz    

@@ -32,6 +32,7 @@ module checkpointer_common_mod
                                   TIME_KEY="time",&
                                   DTM_KEY="dtm",&
                                   DTM_NEW_KEY="dtm_new",&
+                                  NORMAL_STEP_KEY="normal_step",&         !< normal step indicator NetCDF key
                                   ABSOLUTE_NEW_DTM_KEY="absolute_new_dtm",&
                                   UGAL="ugal",&
                                   VGAL="vgal",&
@@ -65,10 +66,16 @@ module checkpointer_common_mod
                                   OLZQBAR="olzqbar", &
                                   OLZQBAR_ANONYMOUS_NAME="olzqbar_qfield", &
                                   RAD_LAST_TIME_KEY="rad_last_time", &
+                                  LAST_CFL_TIMESTEP_KEY="last_cfl_timestep", &
                                   STH_LW_KEY="sth_lw", &
                                   STH_SW_KEY="sth_sw", &
                                   WUP='w_up', &
-                                  WDWN='w_dwn'
+                                  WDWN='w_dwn', &
+                                  NTRACERS_KEY="ntracers", &
+                                  NRADTRACERS_KEY="nradtracers", &
+                                  TRACER_DIM_KEY="tracer", &
+                                  TRACER_KEY = "tracer", &                !< Tracer variable NetCDF key
+                                  ZTRACER_KEY = "ztracer"
 
   integer, parameter :: MAX_STRING_LENGTH = 100   !< Maximum string length (stored size)
 

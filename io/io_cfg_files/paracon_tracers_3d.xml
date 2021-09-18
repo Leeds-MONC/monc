@@ -1,0 +1,37 @@
+<!--  Please enter any necessary conditions for the use of these diagnostics here.
+
+   1.  Must use with tracers_enabled=.true. with
+
+          trajectories_enabled=.true.
+          traj_interval=mm [variable name passed to xml output_frequency for 3d_tracers group]
+
+                  ___ AND/OR ___
+
+          radioactive_tracers_enabled=.true.
+          n_radioactive_tracers=[integer > 0]
+          tracer_decay_rate=[comma-separated real array of size n_radioactive_tracers]
+          tracer_surface_bc_option=[comma-separated integer array of size n_radioactive_tracers]                                  
+          tracer_surface_bc=[comma-separated real array of size n_radioactive_tracers]
+
+   2.  The "tracer" member will decompose into any specified constituents just like qfields.
+
+   3.  Proper trajectory reinitialisation occurs immediately after sending the data to the
+       IO server at a write time ('output_frequency=', set in the '<include group="3d_tracers"'
+       of the main xml (ioserver_configuration_file).  Make sure to set traj_interval in the 
+       user configuration file to the name of the output_frequency variable.  
+       Reinitialization will also be coincident with sampling at the specified sampling 
+       interval, 'frequency=', below). 
+       To have this all work correctly, we require that this data definition be named:
+       "3d_tracer_data".
+        DO NOT CHANGE _____
+                           |
+                           |
+                           v
+-->
+<data-definition name="3d_tracer_data" frequency="{3d_sampling_frequency}" namespace="3d_tracersns"> 
+  <field name="tracer" type="array" data_type="double" size="zn,y,x,tfields" collective=true optional=true/> 
+</data-definition> 
+
+<group name="3d_tracers" namespace="3d_tracersns"> 
+  <member name="tracer"/> 
+</group> 
