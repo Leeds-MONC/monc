@@ -117,6 +117,10 @@ module state_mod
     integer :: water_vapour_mixing_ratio_index=0, liquid_water_mixing_ratio_index=0, &
          rain_water_mixing_ratio_index=0, ice_water_mixing_ratio_index=0, &
          snow_water_mixing_ratio_index=0, graupel_water_mixing_ratio_index=0, & 
+         ! integer index for number concentrations
+         liquid_water_nc_index=0, &
+         rain_water_nc_index=0, ice_water_nc_index=0, &
+         snow_water_nc_index=0, graupel_water_nc_index=0, &
          psrce_x_hs_send_request, psrce_y_hs_send_request, psrce_x_hs_recv_request, psrce_y_hs_recv_request
     integer :: n_tracers=0, n_radioactive_tracers=0
     integer :: traj_tracer_index=0, radioactive_tracer_index=0

@@ -280,7 +280,6 @@ l_init_pl_rh=.false.
 
 l_matchthref=.false.
 l_thref=.false.
-l_thref_zero_buoy=.false.
 
 # Smagorinsky configuration
 # Default values for the smagorinsky subgrid constants
@@ -570,9 +569,9 @@ l_pgacr         = .true.
 l_pgacw         = .true.
 l_pgaci         = .true.
 l_pgacs         = .true.
-l_piagg         = .true.
+l_piagg         = .false.
 l_psagg         = .true.
-l_pgagg         = .true.
+l_pgagg         = .false.
 l_psbrk         = .true.
 l_pgshd         = .true.
 l_pihal         = .true.
@@ -589,6 +588,7 @@ l_subseds_maxv  = .false.
 l_sed_eulexp  = .false.
 cfl_vt_max = 1.0
 l_kfsm = .false.
+l_adjust_D0 = .true.
 
 l_tidy_conserve_E = .true.
 l_tidy_conserve_q = .true.

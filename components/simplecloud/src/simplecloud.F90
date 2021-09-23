@@ -192,13 +192,13 @@ contains
     l_qdiag =  (.not. current_state%passive_q .and. current_state%number_q_fields .gt. 0)
 
     l_tend_pr_tot_th  = current_state%th%active
-    l_tend_pr_tot_qv  = l_qdiag .and. current_state%number_q_fields .ge. 1
-    l_tend_pr_tot_ql  = l_qdiag .and. current_state%number_q_fields .ge. 2
+    l_tend_pr_tot_qv  = l_qdiag .and. current_state%water_vapour_mixing_ratio_index > 0
+    l_tend_pr_tot_ql  = l_qdiag .and. current_state%liquid_water_mixing_ratio_index > 0
     l_tend_pr_tot_tabs  = l_tend_pr_tot_th
 
     l_tend_3d_th  = current_state%th%active .or. l_tend_pr_tot_th
-    l_tend_3d_qv  = (l_qdiag .and. current_state%number_q_fields .ge. 1) .or. l_tend_pr_tot_qv
-    l_tend_3d_ql  = (l_qdiag .and. current_state%number_q_fields .ge. 2) .or. l_tend_pr_tot_ql
+    l_tend_3d_qv  = (l_qdiag .and. current_state%water_vapour_mixing_ratio_index > 0) .or. l_tend_pr_tot_qv
+    l_tend_3d_ql  = (l_qdiag .and. current_state%liquid_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_ql
     l_tend_3d_tabs = l_tend_3d_th
 
     ! Allocate 3d tendency fields upon availability

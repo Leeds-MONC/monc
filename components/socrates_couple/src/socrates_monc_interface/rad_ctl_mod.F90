@@ -27,7 +27,7 @@ subroutine rad_ctl(current_state, sw_spectrum, lw_spectrum, &
   use def_socrates_options, only: str_socrates_options
   use def_socrates_derived_fields, only: str_socrates_derived_fields
   use science_constants_mod, only: cp
-  use rad_pcf, only: ip_solar, ip_infra_red
+  use rad_pcf, only: ip_solar, ip_infra_red, ip_clcmp_st_water
 
   type(model_state_type), target, intent(inout) :: current_state
   TYPE (StrSpecData) :: sw_spectrum
@@ -215,6 +215,9 @@ subroutine rad_ctl(current_state, sw_spectrum, lw_spectrum, &
   
      socrates_derived_fields%flux_down_lw(k,target_y_index, target_x_index) = &
           radout%flux_down(1,mcc%irad_levs+1-k,1)
+
+     socrates_derived_fields%cloud_reff(k,target_y_index, target_x_index) = &
+          cld%condensed_dim_char(1, mcc%irad_levs+1-k, ip_clcmp_st_water)
   enddo
 
   socrates_derived_fields%totrad_hr(:,target_y_index, target_x_index) = &

@@ -47,7 +47,8 @@ module def_socrates_derived_fields
           flux_net_lw(:,:,:),                 & ! longwave flux net
           swrad_hr(:,:,:),                    & ! shortwave heating rate
           lwrad_hr(:,:,:),                    & ! longwave heating rate
-          totrad_hr(:,:,:)                      ! total radiative heating rate
+          totrad_hr(:,:,:),                   & ! total radiative heating rate
+          cloud_reff(:,:,:)
           
      
      ! declare 2-d fields for shortwave and longwave toa and surface

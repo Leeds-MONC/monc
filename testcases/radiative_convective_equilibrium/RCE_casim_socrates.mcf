@@ -106,7 +106,6 @@ z_init_pl_q=0.,     680.,   1300., 3500., 4150.,  4850.,  5200.,  6100.,  7000.,
 f_init_pl_q=13.0e-3,12.5e-3,8.5e-3,4.3e-3,2.44e-3,1.52e-3,1.31e-3,0.75e-3,0.48e-3,0.28e-3,0.080e-3,0.038e-3,0.012e-3,0.008e-3,0.003e-3,0.0005e-3,0.0,    0.0
   
 l_matchthref=.true.
-l_thref_zero_buoy=.false.
 
 # Smagorinsky configuration
 # Default values for the smagorinsky subgrid constants
