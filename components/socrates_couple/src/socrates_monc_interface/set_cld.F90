@@ -259,11 +259,16 @@ IF (socrates_opt%cloud_representation == ip_cloud_ice_water) THEN
            ! Find the total mixing ratio of water substance in the cloud.
            DO l=1, n_profile
               cld%condensed_dim_char(l, j, ip_clcmp_cnv_water) = 0.0_DEFAULT_PRECISION
+              if (merge_fields%cloudnumber_n(j) > 1.e-6) then ! add arbitrary threshold to stop 
+                 ! divide by zero
               cld%condensed_dim_char(l, j, ip_clcmp_st_water)  = MAX(0.0_DEFAULT_PRECISION,       &
-                   3.0_DEFAULT_PRECISION*cld%condensed_mix_ratio(l, j, ip_clcmp_st_water)         &
+                      (3.0_DEFAULT_PRECISION*cld%condensed_mix_ratio(l, j, ip_clcmp_st_water)         &
                    *atm%density(l, j)/(4.0_DEFAULT_PRECISION*pi*socrates_opt%rho_water*      &
-                   socrates_opt%kparam*merge_fields%cloudnumber_n(j))      &
+                      socrates_opt%kparam*merge_fields%cloudnumber_n(j)))      &
                    **(1.0_DEFAULT_PRECISION/3.0_DEFAULT_PRECISION))
+              else 
+                 cld%condensed_dim_char(l, j, ip_clcmp_st_water) = 0.0_DEFAULT_PRECISION
+              endif
             END DO
         END DO
      END IF

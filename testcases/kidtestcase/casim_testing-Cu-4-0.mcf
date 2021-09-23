@@ -101,8 +101,8 @@ l_cu_cold=.false.
 
 #CASIM options
 
-option=22222
-l_warm=.false.
+option=22000
+l_warm=.true.
 
 aerosol_option=0
 iopt_act=0
@@ -110,6 +110,6 @@ iopt_inuc=0
 process_level=0
 l_override_checks = .true.
 
-number_q_fields=11
+number_q_fields=5
 
 

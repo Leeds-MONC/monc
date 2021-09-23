@@ -355,24 +355,24 @@ contains
     l_tend_pr_tot_v   = current_state%v%active .and. advect_flow
     l_tend_pr_tot_w   = current_state%w%active .and. advect_flow
     l_tend_pr_tot_th  = current_state%th%active .and. advect_th
-    l_tend_pr_tot_qv  = l_qdiag .and. current_state%number_q_fields .ge. 1
-    l_tend_pr_tot_ql  = l_qdiag .and. current_state%number_q_fields .ge. 2
-    l_tend_pr_tot_qi  = l_qdiag .and. current_state%number_q_fields .ge. 11
-    l_tend_pr_tot_qr  = l_qdiag .and. current_state%number_q_fields .ge. 11
-    l_tend_pr_tot_qs  = l_qdiag .and. current_state%number_q_fields .ge. 11
-    l_tend_pr_tot_qg  = l_qdiag .and. current_state%number_q_fields .ge. 11
+    l_tend_pr_tot_qv  = l_qdiag .and. current_state%water_vapour_mixing_ratio_index > 0
+    l_tend_pr_tot_ql  = l_qdiag .and. current_state%liquid_water_mixing_ratio_index > 0
+    l_tend_pr_tot_qi  = l_qdiag .and. current_state%ice_water_mixing_ratio_index > 0
+    l_tend_pr_tot_qr  = l_qdiag .and. current_state%rain_water_mixing_ratio_index > 0
+    l_tend_pr_tot_qs  = l_qdiag .and. current_state%snow_water_mixing_ratio_index > 0
+    l_tend_pr_tot_qg  = l_qdiag .and. current_state%graupel_water_mixing_ratio_index > 0
     l_tend_pr_tot_tabs  = l_tend_pr_tot_th
 
     l_tend_3d_u   = (current_state%u%active .and. advect_flow) .or. l_tend_pr_tot_u
     l_tend_3d_v   = (current_state%v%active .and. advect_flow) .or. l_tend_pr_tot_v
     l_tend_3d_w   = (current_state%w%active .and. advect_flow) .or. l_tend_pr_tot_w
     l_tend_3d_th  = (current_state%th%active .and. advect_th)  .or. l_tend_pr_tot_th
-    l_tend_3d_qv  = (l_qdiag .and. current_state%number_q_fields .ge. 1) .or. l_tend_pr_tot_qv
-    l_tend_3d_ql  = (l_qdiag .and. current_state%number_q_fields .ge. 2) .or. l_tend_pr_tot_ql
-    l_tend_3d_qi  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qi
-    l_tend_3d_qr  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qr
-    l_tend_3d_qs  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qs
-    l_tend_3d_qg  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qg
+    l_tend_3d_qv  = (l_qdiag .and. current_state%water_vapour_mixing_ratio_index > 0) .or. l_tend_pr_tot_qv
+    l_tend_3d_ql  = (l_qdiag .and. current_state%liquid_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_ql
+    l_tend_3d_qi  = (l_qdiag .and. current_state%ice_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_qi
+    l_tend_3d_qr  = (l_qdiag .and. current_state%rain_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_qr
+    l_tend_3d_qs  = (l_qdiag .and. current_state%snow_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_qs
+    l_tend_3d_qg  = (l_qdiag .and. current_state%graupel_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_qg
     l_tend_3d_tabs = l_tend_3d_th
 
 

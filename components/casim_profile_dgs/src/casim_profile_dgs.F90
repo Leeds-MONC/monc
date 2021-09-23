@@ -109,7 +109,7 @@ contains
          dqv_cond_evap_tot(current_state%local_grid%size(Z_INDEX)), &
          dqc_mphys_tot(current_state%local_grid%size(Z_INDEX)),     &
          dqr_mphys_tot(current_state%local_grid%size(Z_INDEX)))
-    if (.not. l_warm) then 
+    !if (.not. l_warm) then 
        allocate(phomc_tot(current_state%local_grid%size(Z_INDEX)), &
             pinuc_tot(current_state%local_grid%size(Z_INDEX)), &
             pidep_tot(current_state%local_grid%size(Z_INDEX)), &
@@ -133,7 +133,7 @@ contains
             dqi_mphys_tot(current_state%local_grid%size(Z_INDEX)), &
             dqs_mphys_tot(current_state%local_grid%size(Z_INDEX)), &
             dqg_mphys_tot(current_state%local_grid%size(Z_INDEX))) 
-    endif
+    !endif
        
   end subroutine initialisation_callback  
 
@@ -161,7 +161,7 @@ contains
        dqv_cond_evap_tot(:)= 0.0_DEFAULT_PRECISION
        dqc_mphys_tot(:)= 0.0_DEFAULT_PRECISION
        dqr_mphys_tot(:)= 0.0_DEFAULT_PRECISION
-       if (.not. l_warm) then 
+       !if (.not. l_warm) then 
           phomc_tot(:)= 0.0_DEFAULT_PRECISION 
           pinuc_tot(:)= 0.0_DEFAULT_PRECISION 
           pidep_tot(:)= 0.0_DEFAULT_PRECISION 
@@ -185,7 +185,7 @@ contains
           dqi_mphys_tot(:)= 0.0_DEFAULT_PRECISION
           dqs_mphys_tot(:)= 0.0_DEFAULT_PRECISION
           dqg_mphys_tot(:)= 0.0_DEFAULT_PRECISION 
-       endif
+       !endif
     endif
 
     if (.not. current_state%halo_column) then

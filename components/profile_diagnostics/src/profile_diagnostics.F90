@@ -20,6 +20,8 @@ module profile_diagnostics_mod
 
   integer :: total_points, iqv=0, iql=0, iqr=0, iqi=0, iqs=0,    &
                            iqg=0
+  integer ::  inl=0, inr=0, ini=0, ins=0,    &
+              ing=0
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable ::     &
        tempfac, u_wind_tot, uprime_tot, v_wind_tot, vprime_tot,  &
        uprime, vprime, wke_tot, wwww_tot, www_tot, ww_tot,       &
@@ -28,6 +30,8 @@ module profile_diagnostics_mod
        thref, prefn, rho, rhon, thinit, uinit, vinit,            &
        ! mositure means
        q_temp, qv_tot, ql_tot, qr_tot, qi_tot, qs_tot, qg_tot,   &
+       ! number concentrations 
+       nl_tot, nr_tot, ni_tot, ns_tot, ng_tot,   &
        ! moisture flux terms
        wqv_cn_tot, wql_cn_tot, wqr_cn_tot, wqi_cn_tot,           &
        wqs_cn_tot, wqg_cn_tot,                                   &
@@ -64,7 +68,7 @@ contains
 
     profile_diagnostics_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     profile_diagnostics_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
-    allocate(profile_diagnostics_get_descriptor%published_fields(42+26+4))
+    allocate(profile_diagnostics_get_descriptor%published_fields(76))
 
     profile_diagnostics_get_descriptor%published_fields(1)="thref_local"
     profile_diagnostics_get_descriptor%published_fields(2)="prefn_local"
@@ -149,6 +153,14 @@ contains
     profile_diagnostics_get_descriptor%published_fields(42+25+2)="cloud_mask_total_local"
     profile_diagnostics_get_descriptor%published_fields(42+25+3)="cloud_liq_mask_total_local"
     profile_diagnostics_get_descriptor%published_fields(42+25+4)="cloud_ice_mask_total_local"
+
+!   =====================================================
+!   hydrometeor number concentrations (only output if casim is on)
+    profile_diagnostics_get_descriptor%published_fields(72)="liquid_nc_total_local"
+    profile_diagnostics_get_descriptor%published_fields(73)="rain_nc_total_local"
+    profile_diagnostics_get_descriptor%published_fields(74)="ice_nc_total_local"
+    profile_diagnostics_get_descriptor%published_fields(75)="snow_nc_total_local"
+    profile_diagnostics_get_descriptor%published_fields(76)="graupel_nc_total_local"
 
 
   end function profile_diagnostics_get_descriptor
@@ -248,6 +260,27 @@ contains
           allocate(wqg_cn_tot(current_state%local_grid%size(Z_INDEX)))
           allocate(wqg_ad_tot(current_state%local_grid%size(Z_INDEX)))
        endif
+       ! allocate number concentrations for the hydrometeors
+       if (current_state%liquid_water_nc_index > 0) then
+          inl = current_state%liquid_water_nc_index
+          allocate(nl_tot(current_state%local_grid%size(Z_INDEX)))
+       endif
+       if (current_state%rain_water_nc_index > 0) then
+          inr = current_state%rain_water_nc_index
+          allocate(nr_tot(current_state%local_grid%size(Z_INDEX)))
+       endif
+       if (current_state%ice_water_nc_index > 0) then
+          ini = current_state%ice_water_nc_index 
+          allocate(ni_tot(current_state%local_grid%size(Z_INDEX)))
+       endif
+       if (current_state%snow_water_nc_index > 0) then
+          ins = current_state%snow_water_nc_index
+          allocate(ns_tot(current_state%local_grid%size(Z_INDEX)))
+       endif
+       if (current_state%graupel_water_nc_index > 0) then
+          ing = current_state%graupel_water_nc_index
+          allocate(ng_tot(current_state%local_grid%size(Z_INDEX)))
+       endif
 
        ! arrange and allocate cloud fraction diagnostics...3d mask is optional
        cloud_mask_method = conv_to_uppercase(                                      &
@@ -340,6 +373,12 @@ contains
              wqg_ad_tot(:) = 0.0_DEFAULT_PRECISION
           endif
 
+          if (inl > 0) nl_tot(:) = 0.0_DEFAULT_PRECISION
+          if (inr > 0) nr_tot(:) = 0.0_DEFAULT_PRECISION
+          if (ini > 0) ni_tot(:) = 0.0_DEFAULT_PRECISION
+          if (ins > 0) ns_tot(:) = 0.0_DEFAULT_PRECISION
+          if (ing > 0) ng_tot(:) = 0.0_DEFAULT_PRECISION
+    
           if (allocated(cloud_mask)) cloud_mask(:,:,:) = 0.0_DEFAULT_PRECISION
           cloud_mask_tot(:) = 0.0_DEFAULT_PRECISION
           cloud_liq_mask_tot(:) = 0.0_DEFAULT_PRECISION
@@ -558,6 +597,17 @@ contains
             qs_tot(:) = qs_tot(:) + (current_state%q(iqs)%data(:,jcol,icol))
        if (iqg > 0) &
             qg_tot(:) = qg_tot(:) + (current_state%q(iqg)%data(:,jcol,icol))
+       ! hydrometeor number concentration
+       if (inl > 0) &
+            nl_tot(:) = nl_tot(:) + (current_state%q(inl)%data(:,jcol,icol))
+       if (inr > 0) &
+            nr_tot(:) = nr_tot(:) + (current_state%q(inr)%data(:,jcol,icol))
+       if (ini > 0) &
+            ni_tot(:) = ni_tot(:) + (current_state%q(ini)%data(:,jcol,icol))
+       if (ins > 0) &
+            ns_tot(:) = ns_tot(:) + (current_state%q(ins)%data(:,jcol,icol))
+       if (ing > 0) &
+            ng_tot(:) = ng_tot(:) + (current_state%q(ing)%data(:,jcol,icol))
        !
        ! moisture field fluxes
        ! vapour
@@ -673,6 +723,17 @@ contains
     else if (name .eq. "cloud_ice_mask_total_local") then
       field_information%enabled=allocated(cloud_ice_mask_tot)
 !   ========================================================================
+    else if (name .eq. "liquid_nc_total_local") then
+       field_information%enabled=current_state%liquid_water_nc_index .gt. 0
+    else if (name .eq. "rain_nc_total_local" ) then
+       field_information%enabled= current_state%rain_water_nc_index .gt. 0
+    else if (name .eq. "ice_nc_total_local") then
+       field_information%enabled= current_state%ice_water_nc_index .gt. 0
+    else if (name .eq. "snow_nc_total_local") then
+       field_information%enabled= current_state%snow_water_nc_index .gt. 0
+    else if (name .eq. "graupel_nc_total_local" ) then
+       field_information%enabled= current_state%graupel_water_nc_index .gt. 0 
+!   ======================================================================== 
     else 
       field_information%enabled=.true.
     end if
@@ -783,6 +844,31 @@ contains
        allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
        do k = 1, current_state%local_grid%size(Z_INDEX)
           field_value%real_1d_array(k)=qg_tot(k)
+       enddo
+    else if (name .eq. "liquid_nc_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=nl_tot(k)
+       enddo
+    else if (name .eq. "rain_nc_total_local" ) then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=nr_tot(k)
+       enddo
+    else if (name .eq. "ice_nc_total_local" ) then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=ni_tot(k)
+       enddo
+    else if (name .eq. "snow_nc_total_local" ) then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=ns_tot(k)
+       enddo
+    else if (name .eq. "graupel_nc_total_local" ) then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=ng_tot(k)
        enddo
     else if (name .eq. "w_wind_total_local") then
        allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))

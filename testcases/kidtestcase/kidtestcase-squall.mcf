@@ -39,7 +39,7 @@ start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral
 # Control configuration
 display_synopsis_frequency=10
 termination_time=3700.
-dtm=1.
+dtm=2.
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
@@ -62,13 +62,13 @@ rhobous=1.0
 thref0=300.0
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=240
+x_size=120
 y_size=2
-z_size=121
-dxx=1000
-dyy=1000
+z_size=61
+dxx=2000
+dyy=2000
 zztop=12000.0
-kgd=1,121
+kgd=1,61
 hgd=0.0, 12000.0
 rmlmax=15.0
 enable_theta=.true.
@@ -95,7 +95,7 @@ case_number=4
 
 #CASIM options
 
-option=23233
+option=22222
 l_warm=.false.
 
 aerosol_option=0
@@ -104,6 +104,6 @@ iopt_inuc=0
 process_level=0
 l_override_checks = .true.
 
-number_q_fields=14
+number_q_fields=11
 
 

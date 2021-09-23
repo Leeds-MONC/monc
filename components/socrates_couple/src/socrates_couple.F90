@@ -58,6 +58,10 @@ module socrates_couple_mod
                                                                  tend_pr_tot_th_sw,    tend_pr_tot_tabs_sw,   &
                                                                  tend_pr_tot_th_total, tend_pr_tot_tabs_total
 
+  ! local total arrays for profile diags
+  real(kind=DEFAULT_PRECISION), dimension(:), allocatable ::   &
+       cloud_reff_tot, longwave_hr_tot, shortwave_hr_tot
+
   public socrates_couple_get_descriptor
 contains
 
@@ -73,7 +77,7 @@ contains
     socrates_couple_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     socrates_couple_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
     
-    allocate(socrates_couple_get_descriptor%published_fields(14+3+6))
+    allocate(socrates_couple_get_descriptor%published_fields(27))
     
     socrates_couple_get_descriptor%published_fields(1)="flux_up_shortwave"
     socrates_couple_get_descriptor%published_fields(2)="flux_down_shortwave"
@@ -89,17 +93,20 @@ contains
     socrates_couple_get_descriptor%published_fields(12)="shortwave_heating_rate"
     socrates_couple_get_descriptor%published_fields(13)="longwave_heating_rate"
     socrates_couple_get_descriptor%published_fields(14)="total_radiative_heating_rate"    
+    socrates_couple_get_descriptor%published_fields(15)="cloud_effective_radius"
+    socrates_couple_get_descriptor%published_fields(16)="cloud_reff_local"
+    socrates_couple_get_descriptor%published_fields(17)="shortwave_hr_local"
+    socrates_couple_get_descriptor%published_fields(18)="longwave_hr_local"
+    socrates_couple_get_descriptor%published_fields(19)="tend_tabs_socrates_3d_longwave_local"
+    socrates_couple_get_descriptor%published_fields(20)="tend_tabs_socrates_3d_shortwave_local"
+    socrates_couple_get_descriptor%published_fields(21)="tend_tabs_socrates_3d_total_radiative_heating_local"
 
-    socrates_couple_get_descriptor%published_fields(15)="tend_tabs_socrates_3d_longwave_local"
-    socrates_couple_get_descriptor%published_fields(16)="tend_tabs_socrates_3d_shortwave_local"
-    socrates_couple_get_descriptor%published_fields(17)="tend_tabs_socrates_3d_total_radiative_heating_local"
-
-    socrates_couple_get_descriptor%published_fields(18)="tend_th_socrates_profile_longwave_total_local"
-    socrates_couple_get_descriptor%published_fields(19)="tend_th_socrates_profile_shortwave_total_local"
-    socrates_couple_get_descriptor%published_fields(20)="tend_th_socrates_profile_total_radiative_heating_total_local"
-    socrates_couple_get_descriptor%published_fields(21)="tend_tabs_socrates_profile_longwave_total_local"
-    socrates_couple_get_descriptor%published_fields(22)="tend_tabs_socrates_profile_shortwave_total_local"
-    socrates_couple_get_descriptor%published_fields(23)="tend_tabs_socrates_profile_total_radiative_heating_total_local"
+    socrates_couple_get_descriptor%published_fields(22)="tend_th_socrates_profile_longwave_total_local"
+    socrates_couple_get_descriptor%published_fields(23)="tend_th_socrates_profile_shortwave_total_local"
+    socrates_couple_get_descriptor%published_fields(24)="tend_th_socrates_profile_total_radiative_heating_total_local"
+    socrates_couple_get_descriptor%published_fields(25)="tend_tabs_socrates_profile_longwave_total_local"
+    socrates_couple_get_descriptor%published_fields(26)="tend_tabs_socrates_profile_shortwave_total_local"
+    socrates_couple_get_descriptor%published_fields(27)="tend_tabs_socrates_profile_total_radiative_heating_total_local"
        
   end function socrates_couple_get_descriptor
 
@@ -164,24 +171,31 @@ contains
     allocate(socrates_derived_fields%swrad_hr(k_top, y_nohalos,x_nohalos))
     allocate(socrates_derived_fields%lwrad_hr(k_top, y_nohalos,x_nohalos))
     allocate(socrates_derived_fields%totrad_hr(k_top, y_nohalos,x_nohalos))
+    ! 
+    ! allocate cloud effective radius
+    allocate(socrates_derived_fields%cloud_reff(k_top, y_nohalos,x_nohalos))
+    !
+    ! allocate local total fields for 1-D profile 
+    allocate(cloud_reff_tot(k_top), longwave_hr_tot(k_top), shortwave_hr_tot(k_top))
 
     ! initialise allocated variables to 0 for safety
-    socrates_derived_fields%flux_up_sw(:,:,:) = 0.0
-    socrates_derived_fields%flux_down_sw(:,:,:) = 0.0
-    socrates_derived_fields%flux_up_lw(:,:,:) = 0.0
-    socrates_derived_fields%flux_down_lw(:,:,:) = 0.0
-    socrates_derived_fields%flux_net_sw(:,:,:) = 0.0
-    socrates_derived_fields%flux_net_lw(:,:,:) = 0.0
-    socrates_derived_fields%toa_up_longwave(:,:) = 0.0
-    socrates_derived_fields%toa_down_shortwave(:,:) = 0.0
-    socrates_derived_fields%toa_up_shortwave(:,:) = 0.0
-    socrates_derived_fields%surface_up_longwave(:,:) = 0.0
-    socrates_derived_fields%surface_down_longwave(:,:) = 0.0
-    socrates_derived_fields%surface_down_shortwave(:,:) = 0.0
-    socrates_derived_fields%surface_up_shortwave(:,:) = 0.0
-    socrates_derived_fields%swrad_hr(:,:,:) = 0.0
-    socrates_derived_fields%lwrad_hr(:,:,:) = 0.0
-    socrates_derived_fields%totrad_hr(:,:,:) = 0.0
+    socrates_derived_fields%flux_up_sw(:,:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%flux_down_sw(:,:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%flux_up_lw(:,:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%flux_down_lw(:,:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%flux_net_sw(:,:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%flux_net_lw(:,:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%toa_up_longwave(:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%toa_down_shortwave(:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%toa_up_shortwave(:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%surface_up_longwave(:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%surface_down_longwave(:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%surface_down_shortwave(:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%surface_up_shortwave(:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%swrad_hr(:,:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%lwrad_hr(:,:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%totrad_hr(:,:,:) = 0.0_DEFAULT_PRECISION
+    socrates_derived_fields%cloud_reff(:,:,:) = 0.0_DEFAULT_PRECISION
 
     ! Allocate 3d tendency fields upon availability
     !  using 'k_top' for these diagnostics would be problematic if the Z_INDEX halos were ever nonzero.
@@ -207,7 +221,7 @@ contains
     tend_pr_tot_tabs_total(:) = 0.0_DEFAULT_PRECISION
 
     ! derive density and radiation factor for heating rate calculation
-    socrates_derived_fields%density_factor(1) =  0.0 
+    socrates_derived_fields%density_factor(1) =  0.0_DEFAULT_PRECISION 
     do k = 2, k_top
        socrates_derived_fields%density_factor(k) =  & 
             current_state%global_grid%configuration%vertical%rhon(k)* &
@@ -276,6 +290,12 @@ contains
     ! work out a target index for radiation arrays (no halo)
     target_y_index=jcol-current_state%local_grid%halo_size(Y_INDEX)
     target_x_index=icol-current_state%local_grid%halo_size(X_INDEX)
+    
+     if (current_state%first_nonhalo_timestep_column) then
+        cloud_reff_tot(:) = 0.0_DEFAULT_PRECISION
+        longwave_hr_tot(:) = 0.0_DEFAULT_PRECISION
+        shortwave_hr_tot(:) = 0.0_DEFAULT_PRECISION
+     endif
 
     ! Test whether it is a radiation calc timestep on the first non-halo column
     ! If it is, then calc all year, day, time in hours and timestep.
@@ -436,6 +456,13 @@ contains
          current_state%sth_lw%data(:, jcol, icol) + &
          current_state%sth_sw%data(:, jcol, icol)
 
+    cloud_reff_tot(:) = cloud_reff_tot(:) + &
+         (socrates_derived_fields%cloud_reff(:,target_y_index, target_x_index))
+    longwave_hr_tot(:) =  longwave_hr_tot(:) + &
+         (socrates_derived_fields%lwrad_hr(:,target_y_index, target_x_index))
+    shortwave_hr_tot(:) = shortwave_hr_tot(:) + &
+         (socrates_derived_fields%swrad_hr(:,target_y_index, target_x_index))
+
     ! Zero profile tendency totals on first instance in the sum
     if (current_state%first_nonhalo_timestep_column) then
       tend_pr_tot_th_lw(:) = 0.0_DEFAULT_PRECISION
@@ -513,13 +540,19 @@ contains
    if ( name .eq. "flux_up_shortwave" .or. name .eq. "flux_down_shortwave"  .or.  &
         name .eq. "flux_up_longwave" .or. name .eq. "flux_down_longwave" .or.     &
         name .eq. "shortwave_heating_rate" .or. name .eq. "longwave_heating_rate" &
-        .or. name .eq. "total_radiative_heating_rate"                             &
+        .or. name .eq. "total_radiative_heating_rate" .or. name .eq. "cloud_effective_radius" &
         .or. strcomp .ne. 0) then
       field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
       field_information%number_dimensions=3
       field_information%dimension_sizes(1)=current_state%local_grid%size(Z_INDEX)
       field_information%dimension_sizes(2)=current_state%local_grid%size(Y_INDEX)
       field_information%dimension_sizes(3)=current_state%local_grid%size(X_INDEX)
+      field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
+   else if (name .eq. "cloud_reff_local" .or. name .eq. "shortwave_hr_local" .or. &
+        name .eq. "longwave_hr_local") then 
+      field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
+      field_information%number_dimensions=1
+      field_information%dimension_sizes(1)=current_state%local_grid%size(Z_INDEX)
       field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
    end if
 
@@ -557,58 +590,70 @@ contains
 
    ! 3D radiative flux and heating rates
    if      (name .eq. "flux_up_shortwave") then
-     call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%flux_up_sw)
+      call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%flux_up_sw)
    else if (name .eq. "flux_down_shortwave") then
-     call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%flux_down_sw)
+      call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%flux_down_sw)
    else if (name .eq. "flux_up_longwave") then
-     call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%flux_up_lw)
+      call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%flux_up_lw)
    else if (name .eq. "flux_down_longwave") then
-     call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%flux_down_lw)
+      call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%flux_down_lw)
    else if (name .eq. "shortwave_heating_rate") then
-     call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%swrad_hr)
+      call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%swrad_hr)
    else if (name .eq. "longwave_heating_rate") then
-     call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%lwrad_hr)
+      call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%lwrad_hr)
    else if (name .eq. "total_radiative_heating_rate") then
-     call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%totrad_hr)
-   !
-   ! 2D radiative fluxes   
+      call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%totrad_hr)
+   else if (name .eq. "cloud_effective_radius") then
+      call set_published_field_value(field_value, real_3d_field = socrates_derived_fields%cloud_reff)
+      
+      !
+      ! 2D radiative fluxes   
    else if (name .eq. "toa_up_longwave") then
-     call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%toa_up_longwave)
+      call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%toa_up_longwave)
    else if (name .eq. "surface_down_longwave") then
-     call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%surface_down_longwave)
+      call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%surface_down_longwave)
    else if (name .eq. "surface_up_longwave") then
-     call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%surface_up_longwave)
+      call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%surface_up_longwave)
    else if (name .eq. "toa_up_shortwave") then
-     call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%toa_up_shortwave)
+      call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%toa_up_shortwave)
    else if (name .eq. "toa_down_shortwave") then
-     call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%toa_down_shortwave)
+      call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%toa_down_shortwave)
    else if (name .eq. "surface_down_shortwave") then
-     call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%surface_down_shortwave)
+      call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%surface_down_shortwave)
    else if (name .eq. "surface_up_shortwave") then
-     call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%surface_up_shortwave)
+      call set_published_field_value(field_value, real_2d_field = socrates_derived_fields%surface_up_shortwave)
    !
    ! Additional 3d tendencies
    else if (name .eq. "tend_tabs_socrates_3d_longwave_local") then
-     call set_published_field_value(field_value, real_3d_field = tend_3d_tabs_lw)
+      call set_published_field_value(field_value, real_3d_field = tend_3d_tabs_lw)
    else if (name .eq. "tend_tabs_socrates_3d_shortwave_local") then
-     call set_published_field_value(field_value, real_3d_field = tend_3d_tabs_sw)
+      call set_published_field_value(field_value, real_3d_field = tend_3d_tabs_sw)
    else if (name .eq. "tend_tabs_socrates_3d_total_radiative_heating_local") then
-     call set_published_field_value(field_value, real_3d_field = tend_3d_tabs_total)
-   !
+      call set_published_field_value(field_value, real_3d_field = tend_3d_tabs_total)
+      !
    ! Profile tendencies
    else if (name .eq. "tend_th_socrates_profile_longwave_total_local") then
-     call set_published_field_value(field_value, real_1d_field = tend_pr_tot_th_lw)
+      call set_published_field_value(field_value, real_1d_field = tend_pr_tot_th_lw)
    else if (name .eq. "tend_th_socrates_profile_shortwave_total_local") then
-     call set_published_field_value(field_value, real_1d_field = tend_pr_tot_th_sw)
+      call set_published_field_value(field_value, real_1d_field = tend_pr_tot_th_sw)
    else if (name .eq. "tend_th_socrates_profile_total_radiative_heating_total_local") then
-     call set_published_field_value(field_value, real_1d_field = tend_pr_tot_th_total)
+      call set_published_field_value(field_value, real_1d_field = tend_pr_tot_th_total)
    else if (name .eq. "tend_tabs_socrates_profile_longwave_total_local") then
-     call set_published_field_value(field_value, real_1d_field = tend_pr_tot_tabs_lw)
+      call set_published_field_value(field_value, real_1d_field = tend_pr_tot_tabs_lw)
    else if (name .eq. "tend_tabs_socrates_profile_shortwave_total_local") then
-     call set_published_field_value(field_value, real_1d_field = tend_pr_tot_tabs_sw)
+      call set_published_field_value(field_value, real_1d_field = tend_pr_tot_tabs_sw)
    else if (name .eq. "tend_tabs_socrates_profile_total_radiative_heating_total_local") then
-     call set_published_field_value(field_value, real_1d_field = tend_pr_tot_tabs_total)
-
+      call set_published_field_value(field_value, real_1d_field = tend_pr_tot_tabs_total)
+      
+     ! 
+     ! Additional profiles of reff and heating rates
+   else if (name .eq. "cloud_reff_local") then
+      call set_published_field_value(field_value, real_1d_field = cloud_reff_tot)
+   else if (name .eq. "shortwave_hr_local") then
+      call set_published_field_value(field_value, real_1d_field = shortwave_hr_tot) 
+   else if (name .eq. "longwave_hr_local") then
+      call set_published_field_value(field_value, real_1d_field = longwave_hr_tot)    
+      
    end if
 
  end subroutine field_value_retrieval_callback
