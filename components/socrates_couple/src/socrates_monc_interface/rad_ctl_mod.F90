@@ -201,14 +201,15 @@ subroutine rad_ctl(current_state, sw_spectrum, lw_spectrum, &
      !     NB: the +2 is becasue n=1 is below the surface (comment from LEM)
   current_state%sth_lw%data(2:k_top,jcol, icol) = &
           merge_fields%lw_heat_rate_radlevs(mcc%irad_levs:mcc%irad_levs+2-k_top:-1)
+
+  socrates_derived_fields%lwrad_hr(:,target_y_index, target_x_index) = &
+       current_state%sth_lw%data(:,jcol, icol)   ! heating rate [abs temp/sec]
+
   ! convert dT/dt to dTH/dt
   current_state%sth_lw%data(:, jcol, icol) = & 
          current_state%sth_lw%data(:, jcol, icol)* &
          current_state%global_grid%configuration%vertical%prefrcp(:)
 
-  socrates_derived_fields%lwrad_hr(:,target_y_index, target_x_index) = &
-       current_state%sth_lw%data(:,jcol, icol)
-  
   do k = 1, k_top
      socrates_derived_fields%flux_up_lw(k,target_y_index, target_x_index) = &
           radout%flux_up(1,mcc%irad_levs+1-k,1)

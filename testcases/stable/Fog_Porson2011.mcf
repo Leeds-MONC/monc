@@ -55,6 +55,8 @@ mm=300.0
 mm1=60.0
 diag_write_freq=1800.0
 
+diagnostic_file="diagnostic_files/diagnostics_FOG_ts.nc"
+
 # Checkpoint configuration
 checkpoint_frequency=0
 checkpoint_file="checkpoint_files/fog_dump.nc"
@@ -78,8 +80,8 @@ cfl_dtmmin=0.001
 thref0=279.75
 surface_pressure=103190.0
 surface_reference_pressure=100000.
-x_size=4
-y_size=4
+x_size=64
+y_size=64
 z_size=270
 dxx=2.0
 dyy=2.0
@@ -166,10 +168,14 @@ mcc_ozone_profile        = components/socrates_couple/data/mcc_profiles/one_km/t
 # Add options for rad_cntrl
 #spectral_file_lw           = /home/vagrant/models/socrates_trunk/data/spectra/ga7/sp_lw_ga7
 #spectral_file_sw           = /home/vagrant/models/socrates_trunk/data/spectra/ga7/sp_sw_ga7
-spectral_file_lw           = /data/local/fra23/socrates/trunk/data/spectra/ga7/sp_lw_ga7
-spectral_file_sw           = /data/local/fra23/socrates/trunk/data/spectra/ga7/sp_sw_ga7
+#spectral_file_lw           = /data/local/fra23/socrates/trunk/data/spectra/ga7/sp_lw_ga7
+#spectral_file_sw           = /data/local/fra23/socrates/trunk/data/spectra/ga7/sp_sw_ga7
 #spectral_file_lw           = /data/d04/fra23/socrates_trunk/data/spectra/ga7/sp_lw_ga7
 #spectral_file_sw           = /data/d04/fra23/socrates_trunk/data/spectra/ga7/sp_sw_ga7
+
+# Monsoon location:
+spectral_file_lw           = /projects/monc/fra23/socrates_spectra/ga7/sp_lw_ga7
+spectral_file_sw           = /projects/monc/fra23/socrates_spectra/ga7/sp_sw_ga7
 
 # 5 is clear sky, 2 is cloud (ice and liquid no overlap), 1 (ice and liquid full overlap)
 i_cloud_representation  = 5

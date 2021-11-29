@@ -646,6 +646,7 @@ contains
       type is (pointer_wrapper_type)
       call data%ptr(current_state)
 
+      ! Debugging prognostic print block to track prognostic modifications from component to component
       if (current_state%print_debug_data) then
         if (log_is_master()) then
           k=current_state%local_grid%size(Z_INDEX)/2

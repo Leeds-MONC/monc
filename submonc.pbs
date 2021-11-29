@@ -1,7 +1,7 @@
 #!/bin/bash --login
 #PBS -N MONC
-#PBS -l select=33
-#PBS -l walltime=01:00:00
+#PBS -l select=1
+#PBS -l walltime=00:20:00
 #PBS -j oe
 #PBS -q normal
 

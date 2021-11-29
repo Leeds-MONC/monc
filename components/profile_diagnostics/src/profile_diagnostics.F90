@@ -11,6 +11,7 @@ module profile_diagnostics_mod
   use logging_mod, only : LOG_ERROR, log_master_log  
   use def_tvd_diagnostic_terms, only: tvd_dgs_terms, allocate_tvd_diagnostic_terms
   use conversions_mod, only : conv_to_uppercase
+  use def_merge_atm, only: str_merge_atm
 
   implicit none
 
@@ -46,7 +47,7 @@ module profile_diagnostics_mod
   real(kind=DEFAULT_PRECISION), dimension(:)    , allocatable :: cloud_ice_mask_tot
   logical :: l_partial_liq_ice
 
-  real(kind=DEFAULT_PRECISION) :: qlcrit, qicrit
+  real(kind=DEFAULT_PRECISION) :: qlcrit, qicrit, max_height_cloud
   ! character string to determine the advection scheme
   character(len=5) :: advect_theta, advect_q, advect_flow
 
@@ -223,7 +224,8 @@ contains
        iql=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'profile_diags')  
        qlcrit=options_get_real(current_state%options_database, "qlcrit")  
        qicrit=options_get_real(current_state%options_database, "qicrit")
- 
+       max_height_cloud=options_get_real(current_state%options_database, "max_height_cloud") 
+
        allocate(qv_tot(current_state%local_grid%size(Z_INDEX))  &
             , ql_tot(current_state%local_grid%size(Z_INDEX)),   &
             q_temp(current_state%local_grid%size(Z_INDEX)),   & 
@@ -285,8 +287,9 @@ contains
        ! arrange and allocate cloud fraction diagnostics...3d mask is optional
        cloud_mask_method = conv_to_uppercase(                                      &
            options_get_string(current_state%options_database, "cloud_mask_method"))
-       if (.not. (cloud_mask_method == "DEFAULT"   .or.                      &
-                  cloud_mask_method == "SOCRATES"      ) )  then
+       if (.not. (cloud_mask_method == "DEFAULT"  .or. &
+                  cloud_mask_method == "SOCRATES" .or. &
+                  cloud_mask_method == "RCEMIP")) then
          call log_master_log(LOG_ERROR,                                            &
           "Requested cloud_mask_method is invalid.  Check profile_diagnostics.F90") 
        end if ! cloud_mask_method validity check
@@ -581,7 +584,6 @@ contains
              exner = current_state%global_grid%configuration%vertical%rprefrcp(k)
              Pmb   = (current_state%global_grid%configuration%vertical%prefn(k)/100.)
              qv    = current_state%q(iqv)%data(k, jcol,icol) 
-             qc    = current_state%q(iql)%data(k, jcol,icol)
              TdegK = (current_state%th%data(k,jcol,icol) &
                   + current_state%global_grid%configuration%vertical%thref(k))*exner
              qs = qsaturation(TdegK, Pmb)
@@ -1189,28 +1191,30 @@ contains
   !
   !
   !> DEFAULT method
-  !  Cloud fraction is based on exceeding qlcrit and qicrit.
-  !  This definition is consistent with that used in the conditional
-  !  diagnostics routine (condition "AC").  It does not include
-  !  consideration of rain, snow, and graupel fields.  Liquid and
-  !  ice cloud are treated separately, with their individual fractions
-  !  within a cell summing to 1 based their mixing ratios relative to
-  !  the cell total.
+  !  Cloud fraction is based on species exceeding qlcrit and qicrit.
+  !  This definition is NOT consistent with that used in the conditional
+  !  diagnostics routine (condition "AC") because: 
+  !         Ice cloud considers the combination of ice and snow species.
+  !  It does not include consideration of rain and graupel fields.  
+  !  Liquid and ice cloud are treated separately, with their individual
+  !  fractions within a cell summing to 1 based their mixing ratios 
+  !  relative to the cell total.
+  !  Ice cloud considered as the combination of ice and snow species.
   subroutine calculate_cloud_mask(current_state, jcol, icol)
     type(model_state_type), target, intent(inout) :: current_state
     integer, intent(in) :: jcol, icol
     integer :: k, target_y_index, target_x_index
     logical :: l_prepare_3d_mask, cloud_present
 
+    ! Create a local copy of the precipitation multiplication factors
+    ! for the SOCRATES cloud fraction calculation from the str_merge_atm
+    ! type structure.
     ! The factors below were derived as part of J. Petch PhD
     ! These are used in the SOCRATES method.
-    real(kind=DEFAULT_PRECISION) ::                  &
-         rainfac  = 0.02,                            &
-         snowfac  = 0.40,                            &
-         graupfac = 0.05
+    type (str_merge_atm) :: merge_fields
 
     ! Local temporary terms
-    real(kind=DEFAULT_PRECISION) :: templ, tempi, tempt
+    real(kind=DEFAULT_PRECISION) :: templ, tempi, tempt, qsat_thresh
 
     target_y_index = jcol - current_state%local_grid%halo_size(Y_INDEX)
     target_x_index = icol - current_state%local_grid%halo_size(X_INDEX)
@@ -1221,7 +1225,9 @@ contains
 
     l_prepare_3d_mask = allocated(cloud_mask)
 
-    do k=1, current_state%local_grid%size(Z_INDEX)
+    do k=2, current_state%local_grid%size(Z_INDEX)
+
+      if (current_state%global_grid%configuration%vertical%zn(k) > max_height_cloud) exit
 
       !> Collect available condensate amounts
       if (iql > 0) &
@@ -1233,17 +1239,36 @@ contains
       !> The SOCRATES method considers rain, snow, and graupel.
       if (cloud_mask_method == "SOCRATES") then
         if (iqr > 0) &
-          templ = templ + rainfac  * current_state%q(iqr)%data(k, jcol, icol)
+          templ = templ + merge_fields%rainfac  * current_state%q(iqr)%data(k, jcol, icol)
         if (iqs > 0) &
-          tempi = tempi + snowfac  * current_state%q(iqs)%data(k, jcol, icol)
+          tempi = tempi + merge_fields%snowfac  * current_state%q(iqs)%data(k, jcol, icol)
         if (iqg > 0) &
-          tempi = tempi + graupfac * current_state%q(iqg)%data(k, jcol, icol)      
-      endif ! check cloud_mask_method
+          tempi = tempi + merge_fields%graupfac * current_state%q(iqg)%data(k, jcol, icol)      
+      end if ! check cloud_mask_method
+
+      !> Consider the snow species as cloud for DEFAULT and RCEMIP
+      if ((cloud_mask_method == "DEFAULT" .or. &
+           cloud_mask_method == "RCEMIP") .and. iqs > 0) then
+        tempi = tempi + current_state%q(iqs)%data(k, jcol, icol)
+      end if ! check cloud_mask_method
+
+      !> The RCEMIP method
+      !> 1e-5 g/g, or 1 % of the saturation mixing ratio over water, whichever is smaller
+      if (cloud_mask_method == "RCEMIP") then
+        qsat_thresh = min(1e-5_DEFAULT_PRECISION,&
+                          qsaturation( (current_state%th%data(k,jcol,icol) &
+                            + current_state%global_grid%configuration%vertical%thref(k))*&
+                            current_state%global_grid%configuration%vertical%rprefrcp(k), &
+                          current_state%global_grid%configuration%vertical%prefn(k)/100.) &
+                          * 0.01_DEFAULT_PRECISION)
+      end if
 
       !> Work out cloud fractions
       tempt = templ + tempi
       if (cloud_mask_method == "SOCRATES") then
         cloud_present = (tempt > EPSILON(tempt))
+      else if (cloud_mask_method == "RCEMIP") then
+        cloud_present = (tempt > qsat_thresh)
       else ! DEFAULT
         cloud_present = (templ > qlcrit .or. tempi > qicrit .or. (templ+tempi) > qlcrit)
       end if 

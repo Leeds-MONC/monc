@@ -160,13 +160,15 @@ contains
       call log_master_log(LOG_INFO, "This cycle is a reconfigured start using config: '"//&
              trim(options_get_string(options_database, "reconfig"))//&
              "' from checkpoint: '"//trim(options_get_string(options_database, "checkpoint"))//"'")
-                  
-      if (options_get_logical(options_database, "retain_model_time")) then
-        call extract_time_from_checkpoint_file(options_get_string(options_database, "checkpoint"),&
-                                               reconfig_initial_time)
-        state%retain_model_time = .true.
-      end if
 
+      ! Check to see if retain_model_time was loaded in via command line options                  
+      if (options_has_key(options_database, "retain_model_time")) then
+        if (options_get_logical(options_database, "retain_model_time")) then
+          call extract_time_from_checkpoint_file(options_get_string(options_database, "checkpoint"),&
+                                                 reconfig_initial_time)
+          state%retain_model_time = .true.
+        end if
+      end if 
       call log_master_log(LOG_INFO, "Reconfiguration starting from time: "//trim(conv_to_string(reconfig_initial_time)))
       call log_master_newline()
 

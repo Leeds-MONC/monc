@@ -328,7 +328,7 @@ contains
     recv_count=data_receive(specific_monc_data_type, 1, source, dump_data=data_buffer, data_dump_id=data_set)
 
 
-    ! This call is not handled by threading...should aid in ensuring that all time points are listed appropriately
+    ! This call is not handled by threading...should aid in ensuring that all time points are listed sequentially
     matched_datadefn_index=retrieve_data_definition(io_configuration, &
          io_configuration%registered_moncs(monc_location)%definition_names(data_set))
     if (matched_datadefn_index .gt. 0) then

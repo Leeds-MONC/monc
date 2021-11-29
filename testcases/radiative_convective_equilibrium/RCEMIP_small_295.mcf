@@ -1,0 +1,346 @@
+#
+
+
+
+
+
+     ### ### ###  ##  ##  ##   #   #   #    NOTICE    #   #   #   ##  ##  ##  ### ### ###
+     ###                                                                              ###
+     ###                 For running RCEMIP small case with SST=295 K                 ###
+     ###                        Very short walltime specified.                        ###
+     ###                                                                              ###
+     ###         ---     (initialised from analytic profile formula)     ---          ###
+     ###         ---   function of SST equal to one of: 295, 300, 305    ---          ###
+     ###                                                                              ###
+     ###               Dual SST specification:                                        ###
+     ###                  surface_temperatures=295.    # real                         ###
+     ###                  rcemip_sst=295               # integer                      ###
+     ###                                                                              ###
+     ###         ---    This configuration uses non-RCEMIP diagnostics   ---          ###
+     ###                                                                              ###
+     ###      To run multiple cases at once (3 SSTs), see setup_suite.sh              ###
+     ###        in MONC branch: main/branches/dev/toddjones/vn0.9.0_RCEMIP            ###
+     ###      To most precisely follow RCEMIP specifications, multiple model          ###
+     ###        constants should be changed with respect to the MONC branch above.    ###
+     ###       - To enable these changes in MONC see the "MONC CONSTANTS" section     ###
+     ###           below.                                                             ###
+     ###       - See tickets #349 and #376 for notes on how to do this using:         ###
+     ###         - Build with fcm-make/rcemip_cs.cfg of the above branch              ###
+     ###           - This points to a CASIM branch showing constant values.           ###
+     ###           - Other CASIM versions might be used.                              ###
+     ###         - Use a SOCRATES branch for consistent constants (ticket notes).     ###
+     ###           - Essential for correct radiative forcing                          ###
+     ###      To enable frozen moist static energy diagnostics, see notes in ticket   ###
+     ###        #376 and enable options under "FMSE AS TRACER" below.                 ###
+     ###      To enable CF-compliant diagnostic names, see notes in ticket #376 for   ###
+     ###        specific code/XML changes, and set diagnostics_3d_enabled=.true.      ###
+     ###        - Similarly, implementation of the specified regularity is also       ###
+     ###          showed in that ticket/branch.                                       ###
+     ###                                                                              ###
+     ### ### ###  ##  ##  ##   #   #   #    NOTICE    #   #   #   ##  ##  ##  ### ### ###
+
+
+# Global configuration
+global_configuration=global_config
+
+# Override global component defaults
+fftsolver_enabled=.true.
+pw_advection_enabled=.true.
+simplesetup_enabled=.true.
+smagorinsky_enabled=.true.
+lower_bc_enabled=.true.
+setfluxlook_enabled=.true.     # This must be set to true if running with lower_bc
+viscosity_enabled=.true.
+diffusion_enabled=.true.
+coriolis_enabled=.false.       # Same as fcoriol=0.0
+damping_enabled=.true.
+forcing_enabled=.false.        # No idealised external forcing 
+socrates_couple_enabled=.true.
+randomnoise_enabled=.true.
+mean_profiles_enabled=.true.   # This must be set to true if running with damping
+casim_enabled=.true.
+casim_profile_dgs_enabled=.true.
+th_advection_enabled=.true.
+iobridge_enabled=.true.
+profile_diagnostics_enabled=.true.
+scalar_diagnostics_enabled=.true.
+l_lem_dissipation_rate=.false.
+
+
+diagnostics_3d_enabled=.false.
+
+# Diagnostic printing
+registered=.false.                # Print registered components and their version numbers to stdout
+showcallbacks=.false.             # Print registered callbacks in calling order to stdout
+cfl_monitor=.false.               # Print dtm changes and cfl info to stdout
+logging=3                         # Logging level (>=4 - DEBUG)
+display_synopsis_frequency=20     # Status output write frequency [ts]
+print_debug_data=.false.
+
+# Control configuration
+termination_time=8661700.          # Model run end time [s], 100.25 days
+dtm=1.0                            # Initial model time step [s]
+
+# IO server configuration
+ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
+moncs_per_io_server=8          # Set to 8 for MetOffice machines
+
+time_basis=.true.              # logical for sampling and output intervals
+                               #    [ .false. (timestep, DEFAULT) | .true. (time) ]
+                               #  - both treated as integers (no fractional-s time intervals)
+sampling_frequency=300         # Sampling interval for time averaging,        integer [ ts | s ]
+3d_sampling_frequency=900      # 3d Sampling interval for time averaging,     integer [ ts | s ]
+mm=900.                        # An output interval,                             real [ s ]
+mm1=300.                       # An output interval,                             real [ s ]
+diag_write_freq=1800.          # Reinitialization interval for diagnostic files, real [ s ]
+
+diagnostic_file="diagnostic_files/RCEMIP_small_295_diagnostic.nc"
+
+# Checkpoint configuration 
+checkpoint_frequency=0                                # Checkpoint file creation frequency [ts]
+checkpoint_file="checkpoint_files/RCEMIP_small_295_dump.nc"     # Checkpoint file location and prefix
+
+# Internal walltime configuration
+check_walltime_frequency=20        # Frequency to check wall clock against walltime_limit [ts]
+walltime_limit=00:05:00            # Internal wall clock time limit on simulation [hh:mm:ss]
+
+# Advection choices (choose pw or tvd component schemes for flow, theta, and q advection)
+advection_flow_fields=pw
+advection_theta_field=tvd
+advection_q_fields=tvd
+
+# CFL configuration
+cfl_frequency=17              # Frequency for checking CFL conditions [ts]
+cfl_cvismax=0.4               # 'worst case' viscous stability parameter (eq 153 of lemdoc2.pdf)
+cfl_cvelmax=0.4               # Largest advective Courant number (eq 152 of lemdoc2.pdf)
+cfl_dtmmax=2.0               # Maximum time step [s]
+cfl_dtmmin=0.001              # Minimum time step [s]
+
+# not convinced this works as fixing the gal 
+# adds the gal to the wind, this is not correct.
+# Set as false for now
+fix_ugal=.false.
+ugal=0.0
+fix_vgal=.false.
+vgal=0.0
+
+# Simple setup configuration
+surface_pressure=101480.
+surface_reference_pressure=100000.
+x_size=100
+y_size=100
+z_size=99
+dxx=1000
+dyy=1000
+zztop=40000.0
+
+origional_vertical_grid_setup=.true.
+  # z-level indices (kgd) and height values (hgd)
+## THIS IS exactly the UM RCE level set
+kgd=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72,73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99
+hgd=0.00,63.22,126.99,192.03,259.35,330.24,406.21,488.72,578.95,677.66,785.19,901.81,1028.05,1165.00,1314.33,1477.87,1657.01,1852.15,2062.34,2285.47,2518.70,2759.08,3004.04,3251.63,3500.60,3750.20,4000.06,4250.01,4500.00,4750.00,5000.00,5250.00,5500.00,5750.00,6000.00,6250.00,6500.00,6750.00,7000.00,7250.00,7500.00,7750.00,8000.00,8250.00,8500.00,8750.00,9000.00,9250.00,9500.00,9750.00,10000.00,10250.00,10500.00,10750.00,11000.00,11250.00,11500.00,11750.00,12000.00,12250.00,12500.00,12750.00,13000.02,13250.09,13500.34,13751.18,14003.59,14259.81,14524.24,14804.49,15112.19,15462.76,15873.86,16362.29,16940.28,17612.29,18373.86,19212.76,20112.19,21054.49,22024.24,23009.81,24003.59,25001.18,26000.34,27000.09,28000.02,29000.00,30000.00,31000.00,32000.00,33000.00,34000.00,35000.00,36000.00,37000.00,38000.00,39000.00,40000.00
+nsmth=0
+galilean_transformation=.false.
+
+enable_theta=.true.
+use_anelastic_equations=.true.
+passive_th=.false.
+passive_q=.false.
+backscatter=.false.
+use_viscosity_and_diffusion=.true.
+
+# Initialization of fields
+l_init_pl_theta=.false.
+l_init_pl_u=.false.
+l_init_pl_v=.false.
+l_init_pl_q=.false.
+l_init_pl_rh=.false.  # Don't use with RCEMIP
+names_init_pl_q=vapour
+l_matchthref=.true.  # Reference theta profile matches initial profile.
+
+# Special RCEMIP settings
+# These have also been updated in CASIM and SOCRATES branches, as needed.
+#   - extract/casim/src/mphys_constants.F90 
+#   - extract/socrates/src/modules_core/rad_ccf.F90
+l_rcemip_initial=.true.   # Compute analytical theta and vapour profiles, f(SST)
+l_rcemip_ozone=.true.     # Use analytical ozone profile based on pressure profile
+l_rcemip_gases=.true.     # Use RCEMIP-specified trace gas concentrations
+l_rcemip_lowerbc=.true.   # Use RCEMIP-specified "effective" surface wind minimum in flux calculations
+rcemip_sst=295 # set single integer value to match single real value given to surface_temperatures
+
+# RCEMIP CONSTANTS (change in CASIM and SOCRATES for consistency)
+#G=9.79764 # mean surface gravity [m/s**2]
+#r=287.04 # Rd; gas constant for dry air [J/kg/K]
+#cp=1004.64 # specific heat capacity for dry air [J/kg/K]
+#rlvap=2.501e6 # latent heat of vaporization at 0C
+#pi=3.141592653589793 ! pi
+#ratio_mol_wts=1.607789855 # Molecular weight of dry air/ molecular weight of water, 28.964/18.015
+                          # Alternatively, Rv/Rd
+
+# FMSE AS TRACER (REQUIRES CODE CHANGES AS OUTLINED IN TICKET #376 STATED IN ABOVE NOTICE)
+#L_rcemip_tracers=.true.
+#tracers_enabled=.true.
+#radioactive_tracers_enabled=.true.
+#n_radioactive_tracers=1
+#tracer_decay_rate = 0.0      # (no decay)
+#tracer_surface_bc_option = 1 # (specified flux)
+#tracer_surface_bc = 0.0      # (no surface flux)
+#rlsub=2.834e6 # latent heat of sublimation at 0C
+## Note: rlfus = rlsub - rlvap # latent heat of fusion at 0C, computed internally (3.337e5)
+
+
+# Smagorinsky configuration
+# Default values for the smagorinsky subgrid constants (UM "standard")
+# smag-subb=40.0
+# smag-subc=16.0
+# The subgrid constant values for the 'conventional' subgrid model of Brown (1999)
+#   - Per UM help, conventional has significantly less mixing.
+smag-subb=1.43
+smag-subc=1.43
+
+# Random noise (only in theta for RCEMIP)
+l_rand_pl_theta=.true.
+z_rand_pl_theta=0.0, 400.0, 401.0, 40000.
+f_rand_pl_theta=0.1, 0.02, 0.0000, 0.0000
+
+# Simple cloud
+max_height_cloud=30000.
+
+# physical constants
+z0=0.0002
+z0th=0.0002
+
+# Coriolis
+fcoriol=0.0
+geostrophic_wind_rate_of_change_in_x=0.0
+geostrophic_wind_rate_of_change_in_y=0.0
+surface_geostrophic_wind_x=0.0
+surface_geostrophic_wind_y=0.0
+
+# Damping configuration
+dmptim=0.0002
+zdmp=16000.0
+hdmp=5000.0
+
+# surface flux config
+# type_of_surface_boundary_conditions=PRESCRIBED_FLUX=0
+# type_of_surface_boundary_conditions=PRESCRIBED_SURFACE_VALUE=1
+use_surface_boundary_conditions=.true.
+use_time_varying_surface_values= .false.
+type_of_surface_boundary_conditions = 1
+surface_boundary_input_times = 0
+#sst SST
+surface_temperatures = 295.
+surface_latent_heat_flux   = 0.
+surface_sensible_heat_flux = 0.
+
+#CASIM options
+option=22222
+l_warm=.false.
+aerosol_option=0
+iopt_act=0  # 0 means fixed cloud option for aerosol activation
+iopt_inuc=0
+process_level=0
+l_override_checks = .true.
+number_q_fields=11
+
+# Cloud diagnostic options
+l_cloud_mask=.true.                # Enables 3d binary SOCRATES-based total cloud mask diagnostic
+cloud_mask_method=RCEMIP           # Cloud mask/fraction calculation method [ DEFAULT, SOCRATES ]
+                                   #   DEFAULT is based on exceeding qlcrit and qicrit
+                                   #   SOCRATES method considers condensate, threshold: >0
+                                   #   RCEMIP 1e-5 g/g, or 1 % of the saturation mixing ratio over 
+                                   #       water, whichever is smaller
+l_partial_liq_ice=.true.           # Calculate partial cloud fracions of liquid and ice, 
+                                   #   otherwise homogeneous binary
+# Cloud liquid water mixing ratio critical minimum to define cloud [kg/kg] 
+#  (DEFAULT case and used as only option in other diagnostics: cltop, clbas, conditional fields)
+qlcrit= 1.e-6
+qicrit= 1.e-6
+
+
+
+
+### SOCRATES inputs (These are consistent with u-ay022, the UM idealised RCEMIP case)
+###                   It's likely you'll want to change some of these.
+# Add paths for the mcclatchey profiles
+mcc_temperature_profile  = components/socrates_couple/data/mcc_profiles/one_km/tro.t.nc
+mcc_vapour_profile       = components/socrates_couple/data/mcc_profiles/one_km/tro.q.nc
+mcc_ozone_profile        = components/socrates_couple/data/mcc_profiles/one_km/tro.o3.nc
+# Add options for rad_cntrl
+spectral_file_lw           = /projects/monc/fra23/socrates_spectra/ga7/sp_lw_ga7
+i_gas_overlap_lw           = 4
+i_water_lw              = 5
+# 11 = baran, 8 = aggregate for the above spectral file, dependent on iwc and temperature
+i_ice_lw                = 11
+i_scatter_method_lw        = 1
+
+spectral_file_sw           = /projects/monc/fra23/socrates_spectra/ga7/sp_sw_ga7
+i_gas_overlap_sw           = 4
+i_water_sw              = 5
+i_ice_sw                = 11
+
+# 5 is clear sky, 2 is cloud (ice and liquid no overlap), 1 (ice and liquid full overlap)
+i_cloud_representation  = 2 
+
+
+## Time and location variables for socrates
+l_360 = .true.           #  360 days in year as opposed to 365 (a UM thing 
+                         #  in the LEM, is this still required??)     
+l_solar_fixed  = .true.  # true equals fixed insolation using value in
+                         # sol_fixed
+l_no_solar     = .false. # Only use longwave rad by setting lit_fraction = 0.0
+default_solar_constant = 1361. # Default solar constant
+solar_fixed    = 409.6   # prescribed insolation value
+sec_fixed      = 1.0     # prescribed 1/cos(solar_zenith_angle)
+  # ^^ could also use solar_fixed=551.58, and sec_fixed=1.3466914060479671  # RCEMIP
+  # ^^ which is based on solar zenith angle of 42.05 degrees.
+latitude       = 0.0     # latitude for the location of radiation calc
+longitude      = 0.0     # longitude for the location of radiation calc
+rad_start_year = 2000.0  # simulation year for earth sun distance
+rad_start_day  = 0.0     # starting day of the year (0 is jan 1st, Dec 31st is 365, except leap obviously)
+rad_start_time = 0.0     # Start time for the radiation calc, hours after 0Z
+rad_interval   = 300     # Radiation calculation interval [integer]
+                         #  - If time_basis=.true., this is the time [ s ] between each radiation
+                         #    call.
+                         #  - If time_basis=.false., this is the number of timesteps [ ts ] 
+                         #    between each radiation call.
+                         #  - If .le. zero, radiation called every timestep, otherwise (gt than 0)
+                         #    radiation will be called less frequently
+
+#surface albedo variables for socrates
+l_variable_srf_albedo = .false. # not coded yet but will allow variable
+                                  # surface albedo with solar zenith angle
+surface_albedo = 0.07 # surface albedo (fixed in time)
+
+# set the hydrometeors used in socrates
+# 0 is not used, 1 is used.
+# If a hydrometeor is selected, it must be available in the
+# chosen microphysics scheme otherwise the model will stop
+mphys_nq_l=1 # cloud liquid mass
+mphys_nd_l=0 # cloud drop number
+mphys_nq_r=1 # rain mass        
+mphys_nq_i=1 # ice mass
+mphys_nq_s=1 # snow mass
+mphys_nq_g=1 # graupel mass
+
+### configuration for effective radius calculation
+## Fixed cloud effective radius settings for socrates
+## NOTE: default is to set effective radius to fixed values (as in LEM)
+l_fix_re       = .true.
+fixed_cloud_re = 10.0 # effective radius for cloud droplets 10 microns
+fixed_ice_re   = 30.0 # effective radius for ice 30 microns
+# Use number of drops to derive re. Will not work is l_fix_re = .true
+l_use_ndrop    = .false.
+## Liu scheme, used in ESM
+l_use_liu_spec = .false.
+# Cloud number used in the radiation, should be consistent with microphys assumption
+#   - extract/casim/src/mphys_constants.F90 
+fixed_cloud_number = 50.0 # cloud number /cm3
+# Density of water, consistent with CASIM in mphys_parameters
+rho_water = 997.0
+# KPARAM_* is the ratio of the cubes of the volume-mean radius and the effective radius
+# used to calc effective radius, kparam = 0.67 for land (polluted) and 0.80 sea (clean) (martin 94)
+kparam = 0.80
+
+

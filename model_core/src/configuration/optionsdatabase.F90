@@ -32,7 +32,7 @@ module optionsdatabase_mod
   public load_command_line_into_options_database, options_has_key, options_get_logical, options_get_integer, &
     options_get_string, options_get_real, options_add, options_size, options_key_at, options_value_at, &
     options_get_array_size, options_get_integer_array, options_get_real_array, &
-    options_get_string_array, options_get_logical_array, options_remove_key
+    options_get_string_array, options_get_logical_array, options_remove_key, options_compare_profile_arrays
 
   contains
 
@@ -714,4 +714,29 @@ module optionsdatabase_mod
     write_value = str_value
     call c_put_string(optionhashmap_type, key, write_value)
   end subroutine set_options_string_value
+
+
+  !> Checks that the length of two option_database arrays are equal and raise error if they are not.
+  !! @param options_database The options database
+  !! @param key1 The height key to look up in the options database
+  !! @param key2 The value  key to look up in the options database
+  !! @param label A description of the kind of array pair being compared.
+  subroutine options_compare_profile_arrays(options_database, key1, key2, label)
+    type(hashmap_type), intent(inout) :: options_database
+    character(len=*), intent(in) :: key1, key2, label
+
+    integer :: len1=0, len2=0
+
+    len1 = options_get_array_size(options_database, trim(key1))
+    len2 = options_get_array_size(options_database, trim(key2))
+
+    if (len1 .ne. len2) then 
+       call log_master_log(LOG_ERROR, "There is a mismatch between the number of "//trim(label)//" heights, "// &
+                                     "size("//trim(key1)//")="//trim(conv_to_string(len1))//                    &
+                                     ", and "//trim(label)//" values, "//                                       &
+                                     "size("//trim(key2)//")="//trim(conv_to_string(len2))//                    &
+                                     ". These should be equal.")
+    end if
+  end subroutine options_compare_profile_arrays
+
 end module optionsdatabase_mod

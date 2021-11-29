@@ -646,3 +646,9 @@ l_partial_liq_ice=.false.
 # Diagnostic sampling basis (unit selection)
 time_basis=.false.      # logical for sampling and output intervals [ .false. (timestep, DEFAULT) | .true. (time) ]
 
+#RCEMIP
+l_rcemip_initial=.false.
+l_rcemip_ozone=.false.
+l_rcemip_gases=.false.
+l_rcemip_lowerbc=.false.
+#l_rcemip_tracers=.false. # To implement, see ticket #376/349 for branch monc/main/branches/dev/toddjones/vn0.9.0_RCEMIP

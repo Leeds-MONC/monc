@@ -7,13 +7,15 @@ module forcing_mod
   use state_mod, only : model_state_type
   use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH
   use optionsdatabase_mod, only : options_get_integer, options_get_logical, options_get_real, options_get_array_size, &
-     options_get_logical_array, options_get_real_array, options_get_string_array, options_get_string, options_has_key
+     options_get_logical_array, options_get_real_array, options_get_string_array, options_get_string, options_has_key,&
+     options_compare_profile_arrays
   use interpolation_mod, only: piecewise_linear_1d, piecewise_linear_2d, interpolate_point_linear_2d
   use q_indices_mod, only: get_q_index, standard_q_names
   use science_constants_mod, only: seconds_in_a_day
   use naming_conventions_mod
   use registry_mod, only : is_component_enabled
   use logging_mod, only : LOG_ERROR, log_master_log, LOG_DEBUG, log_get_logging_level, log_log, LOG_WARN
+  use conversions_mod, only : conv_to_string
 
   ! In order to set forcing from a netcdf file, need the following netcdf modules
   use netcdf, only : nf90_noerr, nf90_global, nf90_nowrite,    &
@@ -73,7 +75,7 @@ module forcing_mod
   integer :: constant_forcing_type_u=RELAXATION   ! Method for large-scale forcing of u
   integer :: constant_forcing_type_v=RELAXATION   ! Method for large-scale forcing of v
 
-  logical :: l_constant_forcing_theta_height  ! profile is a function of pressure not height
+  logical :: l_constant_forcing_theta_height  ! If .true., theta forcing profile is a function of height
 
   logical :: relax_to_initial_u_profile ! For relaxation, use initial profile as the target 
   logical :: relax_to_initial_v_profile ! For relaxation, use initial profile as the target 
@@ -564,6 +566,8 @@ contains
     if ((l_subs_pl_theta .or. l_subs_pl_q) .and. .not. use_time_varying_subsidence) then
       allocate(z_subs_pl(options_get_array_size(current_state%options_database, "z_subs_pl")), &
            f_subs_pl(options_get_array_size(current_state%options_database, "f_subs_pl")))
+      call options_compare_profile_arrays(current_state%options_database, &
+                                "z_subs_pl", "f_subs_pl", "subsidence forcing")
       call options_get_real_array(current_state%options_database, "z_subs_pl", z_subs_pl)
       call options_get_real_array(current_state%options_database, "f_subs_pl", f_subs_pl)      
       ! Get profiles
@@ -600,12 +604,15 @@ contains
       forcing_timescale_theta=options_get_real(current_state%options_database, "forcing_timescale_theta")
       l_constant_forcing_theta_height=options_get_logical(current_state%options_database, "l_constant_forcing_theta_height")
       if (options_has_key(current_state%options_database, "l_constant_forcing_theta_z2pressure")) then
-        call log_master_log(LOG_ERROR, "The option l_constant_forcing_theta_z2pressure is deprecated. ")
-        call log_master_log(LOG_ERROR, "It has been replaced by l_constant_forcing_theta_height. ")
+        call log_master_log(LOG_ERROR, "The option l_constant_forcing_theta_z2pressure is deprecated. "// &
+                                       "It has been replaced by l_constant_forcing_theta_height. "//      &
+                                       "Check the global_config for usage." )
       end if
 
       allocate(z_force_pl_theta(options_get_array_size(current_state%options_database, "z_force_pl_theta")), &
            f_force_pl_theta(options_get_array_size(current_state%options_database, "f_force_pl_theta")))
+      call options_compare_profile_arrays(current_state%options_database, &
+               "z_force_pl_theta", "f_force_pl_theta", "theta forcing")
       call options_get_real_array(current_state%options_database, "z_force_pl_theta", z_force_pl_theta)
       call options_get_real_array(current_state%options_database, "f_force_pl_theta", f_force_pl_theta)
       ! Get profiles
@@ -664,6 +671,8 @@ contains
       else
         allocate(z_force_pl_u(options_get_array_size(current_state%options_database, "z_force_pl_u")), &
            f_force_pl_u(options_get_array_size(current_state%options_database, "f_force_pl_u")))
+        call options_compare_profile_arrays(current_state%options_database, &
+                                  "z_force_pl_u", "f_force_pl_u", "u-wind forcing")
         call options_get_real_array(current_state%options_database, "z_force_pl_u", z_force_pl_u)
         call options_get_real_array(current_state%options_database, "f_force_pl_u", f_force_pl_u)
         ! Get profiles
@@ -703,6 +712,8 @@ contains
       else
         allocate(z_force_pl_v(options_get_array_size(current_state%options_database, "z_force_pl_v")), &
            f_force_pl_v(options_get_array_size(current_state%options_database, "f_force_pl_v")))
+        call options_compare_profile_arrays(current_state%options_database, &
+                                 "z_force_pl_v", "f_force_pl_v", "v-wind forcing")
         call options_get_real_array(current_state%options_database, "z_force_pl_v", z_force_pl_v)
         call options_get_real_array(current_state%options_database, "f_force_pl_v", f_force_pl_v)
         ! Get profiles
@@ -743,7 +754,15 @@ contains
           minval(z_force_pl_q) .gt. 0.0) then
         call warn_forcing_bounds("z_force_pl_q")
       end if
-      allocate(f_force_pl_q_tmp(nq_force*nzq))
+      allocate(f_force_pl_q_tmp(options_get_array_size(current_state%options_database, "f_force_pl_q")))
+      if (nq_force*nzq .ne. size(f_force_pl_q_tmp)) then
+        call log_master_log(LOG_ERROR, "There is a mismatch between the number of moisture forcing heights, "//&
+                                       "size(z_force_pl_q)="//trim(conv_to_string(nzq))//                            &
+                                       ", and the forcing values, "//                                               &
+                                       "size(f_force_pl_q)="//trim(conv_to_string(size(f_force_pl_q_tmp)))//          &
+                                       ".  The length of f_force_pl_q should equal the length of z_force_pl_q "//     &
+                                       "multiplied by the number of names_force_pl_q.")
+      end if
       call options_get_real_array(current_state%options_database, "f_force_pl_q", f_force_pl_q_tmp)
       allocate(f_force_pl_q(nzq, nq_force))
       f_force_pl_q(1:nzq, 1:nq_force)=reshape(f_force_pl_q_tmp, (/nzq, nq_force/))

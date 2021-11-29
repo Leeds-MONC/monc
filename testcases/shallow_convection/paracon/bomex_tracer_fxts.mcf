@@ -49,7 +49,7 @@ time_basis=.false.
 retain_model_time=.false.
 only_compute_on_sample_timestep=.true.
 force_output_on_interval=.true. 
-l_constant_dtm=.false.
+l_constant_dtm=.true.
 
 
 # Control configuration
@@ -72,7 +72,6 @@ tracer_surface_bc_option=0, 1, 2   # tracer surface BC option
 tracer_surface_bc=0.0, 1.0, 10.0   # tracer surface bc value.
 
 # IO server configuration
-ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 ioserver_configuration_file="io/io_cfg_files/testing.xml"
 diagnostic_file="diagnostic_files/diagnostics_ts.nc"
 diagnostic_file2="diagnostic_files/diagnosticx_ts.nc"
