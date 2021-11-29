@@ -13,6 +13,7 @@ module lowerbc_mod
   use registry_mod, only : is_component_enabled
   use logging_mod, only : LOG_ERROR, log_master_log
   use q_indices_mod, only: get_q_index, standard_q_names
+  use optionsdatabase_mod, only : options_get_logical
   use mpi, only: MPI_REQUEST_NULL, MPI_STATUSES_IGNORE
   implicit none
 
@@ -230,6 +231,11 @@ contains
               2,current_y_index,current_x_index)+zv%data(2,current_y_index-1,current_x_index))+current_state%vgal)**2
 #endif
          horizontal_velocity_at_k2=sqrt(horizontal_velocity_at_k2)+smallp      
+
+         ! Set minimum effective windspeed for RCEMIP
+         if (options_get_logical(current_state%options_database, "l_rcemip_lowerbc")) then
+           horizontal_velocity_at_k2=max(horizontal_velocity_at_k2, 1.0_DEFAULT_PRECISION)
+         end if
 
          if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_FLUXES) then
             call compute_using_fixed_surface_fluxes(current_state, current_y_index, current_x_index, &

@@ -143,7 +143,9 @@ contains
     integer :: nnodes                                  ! number of input values
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: zvals, z
     real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: vals
-    
+    logical :: pressure
+
+    pressure = .false.
 
     nz_force = size(zvals_in)
     nt_force = size(time_vals)
@@ -154,10 +156,11 @@ contains
 
     zvals=zvals_in
 
-    if ( zvals(1) .GT. zvals(nz_force) ) then   ! pressure
+    if ( zvals(1) .GT. zvals(nz_force) ) then   ! detect pressure coordinates: flip and scale
       zvals=log10(zvals_in(nz_force:1:-1))
       z=log10(z_out(nz_monc:1:-1))
       vals=vals_in(nz_force:1:-1,:)
+      pressure = .true.
     else
       zvals=zvals_in
       z=z_out
@@ -200,7 +203,7 @@ contains
           endif
        enddo
        !                                                                    
-    if ( zvals(nz_force) .GT. zvals(1) ) then   ! pressure (flipped coordinates)
+    if ( pressure ) then   ! pressure (revert flipped coordinates)
       field=field(nz_monc:1:-1,:)
     endif
 

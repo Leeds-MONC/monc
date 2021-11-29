@@ -7,6 +7,8 @@ module merge_atm_data
   use def_merge_atm, only: str_merge_atm
   use def_mcc_profiles, only: str_mcc_profiles
   use def_socrates_derived_fields, only: str_socrates_derived_fields
+  use optionsdatabase_mod, only : options_get_logical
+  use rcemip_mod, only : rcemip_ozone
 
   implicit none
 
@@ -181,7 +183,6 @@ contains
     ! Now sort the Ozone profile which only exists on
     ! McClatchey levels, so needs to be merged on to MONC
     ! levels. Check this code!!
-
     do k=k_top+mcc%cut,mcc%cut,-1  
        if (merge_fields%pres_level(k).gt.mcc%p_level(mcc%levs)) then
           merge_fields%o3_n(k) = mcc%o3_n(mcc%levs)
@@ -194,6 +195,11 @@ contains
           enddo
        endif
     enddo
+
+    ! If running the RCEMIP case, overwrite the ozone profile with a prescribed 
+    ! function of pressure.
+    if (options_get_logical(current_state%options_database, "l_rcemip_ozone")) &
+       call rcemip_ozone(merge_fields)
 
     ! mass of the atmosphere on irad_levs for set_atm
     do k=1, mcc%irad_levs

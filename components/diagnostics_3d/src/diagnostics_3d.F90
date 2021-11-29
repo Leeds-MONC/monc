@@ -86,7 +86,8 @@ contains
     integer :: current_y_index, current_x_index, target_x_index, target_y_index
 
     if (current_state%halo_column) return
-       
+    if (.not. current_state%diagnostic_sample_timestep) return
+   
     current_y_index=current_state%column_local_y
     current_x_index=current_state%column_local_x
     target_y_index=current_y_index-current_state%local_grid%halo_size(Y_INDEX)
@@ -102,7 +103,7 @@ contains
             ! test for the qfields
        if (.not. current_state%passive_q .and. &
             current_state%number_q_fields .gt. 0) then
-          total_condensate(:) =                                             &
+          total_condensate(:) =                                               &
                current_state%q(iql)%data(:,current_y_index,current_x_index) + &
                current_state%q(iqr)%data(:,current_y_index,current_x_index)
           liquid_ice_theta(:,target_y_index, target_x_index) =              &

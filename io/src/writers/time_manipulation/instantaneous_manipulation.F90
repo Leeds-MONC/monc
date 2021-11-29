@@ -94,12 +94,13 @@ contains
     call check_thread_status(forthread_mutex_lock(existing_instantaneous_writes_mutex))
     if (c_contains(existing_instantaneous_writes, field_name)) then
       previous_time_write=real(c_get_real(existing_instantaneous_writes, field_name))
-      time_difference = real(time) - previous_time_write
-    else
-      time_difference = real(time) - real(model_initial_time)
+    else ! Typically at first use of function
+      previous_time_write = real(model_initial_time) - mod(real(model_initial_time), output_frequency)
     end if
+
+    time_difference = real(time) - previous_time_write
     
-    ! time_basis requires regular-interval entries.  Timestep requires time .ge. time+previous_output_time
+    ! time_basis requires regular-interval entries.  Timestep requires time .ge. previous_output_time+output_frequency
     if (time_basis) then
       select_value = mod(nint(time), nint(output_frequency)) == 0
     else

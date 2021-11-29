@@ -97,7 +97,7 @@ run_monc() {
                     echo "  $TESTCASE and its linked xml file,"
                     echo "  starting from checkpoint file:"
                     echo "     $checkpoint_filename"
-                    eval 'aprun -B $MONC_EXEC --reconfig=$TESTCASE --checkpoint=$checkpoint_filename --retain_model_time=.true. >> $outputfn 2>&1'
+                    eval 'aprun -B $MONC_EXEC --reconfig=$TESTCASE --checkpoint=$checkpoint_filename --retain_model_time=.false. >> $outputfn 2>&1'
 
                 # Restart
 		else

@@ -395,7 +395,8 @@ contains
         field_information%enabled=.not. current_state%passive_q .and. current_state%liquid_water_mixing_ratio_index .gt. 0 &
            .and. current_state%number_q_fields .ge. current_state%liquid_water_mixing_ratio_index
       else if (name .eq. "vwp" .or. name .eq. "lwp") then
-        field_information%enabled=current_state%number_q_fields .gt. 0 .and. current_state%water_vapour_mixing_ratio_index .gt. 0 &
+        field_information%enabled= &
+            current_state%number_q_fields .gt. 0 .and. current_state%water_vapour_mixing_ratio_index .gt. 0 &
            .and. current_state%number_q_fields .ge. current_state%water_vapour_mixing_ratio_index
       else if (name .eq. "rwp" ) then
         field_information%enabled= current_state%rain_water_mixing_ratio_index .gt. 0

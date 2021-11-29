@@ -53,6 +53,7 @@ module writer_federator_mod
   logical, volatile :: currently_writing
 
   logical :: time_basis, force_output_on_interval
+  real(kind=DEFAULT_PRECISION) :: model_initial_time
 
   public initialise_writer_federator, finalise_writer_federator, provide_ordered_field_to_writer_federator, &
        check_writer_for_trigger, is_field_used_by_writer_federator, inform_writer_federator_fields_present, &
@@ -75,8 +76,10 @@ contains
     logical :: match
     type(hashset_type) :: writer_field_names, duplicate_field_names
     
+    model_initial_time = reconfig_initial_time
     time_basis = options_get_logical(io_configuration%options_database,"time_basis")
     force_output_on_interval = options_get_logical(io_configuration%options_database,"force_output_on_interval")
+
     call check_thread_status(forthread_rwlock_init(time_points_rwlock, -1))
     call check_thread_status(forthread_mutex_init(collective_contiguous_initialisation_mutex, -1))
     call check_thread_status(forthread_mutex_init(currently_writing_mutex, -1))    
@@ -101,6 +104,7 @@ contains
       call check_thread_status(forthread_mutex_init(writer_entries(i)%trigger_and_write_mutex, -1))
       call check_thread_status(forthread_mutex_init(writer_entries(i)%num_fields_to_write_mutex, -1))
       call check_thread_status(forthread_mutex_init(writer_entries(i)%pending_writes_mutex, -1))
+      writer_entries(i)%time_basis_override=io_configuration%file_writers(i)%time_basis_override
       writer_entries(i)%write_on_model_time=io_configuration%file_writers(i)%write_on_model_time
       if (writer_entries(i)%write_on_model_time) then
         writer_entries(i)%write_timestep_frequency=0
@@ -239,28 +243,32 @@ contains
 
     do i=1,size(writer_entries)
 
+      issue_write = .false.
+      issue_terminated_write = .false.
       call check_thread_status(forthread_mutex_lock(writer_entries(i)%trigger_and_write_mutex))
-      issue_terminated_write=writer_entries(i)%write_on_terminate .and. terminated
 
-      if (writer_entries(i)%write_on_model_time) then !
-        time_difference=time-writer_entries(i)%latest_pending_write_time
-        issue_write=time_difference .ge. writer_entries(i)%write_time_frequency
-      else
-        if (writer_entries(i)%write_timestep_frequency .gt. 0) then 
-          issue_write=writer_entries(i)%latest_pending_write_timestep .ne. timestep .and. &
-               mod(timestep, writer_entries(i)%write_timestep_frequency) == 0
+      ! Prevent issuing a write twice for the same instance
+      if (writer_entries(i)%latest_pending_write_timestep .ne. timestep) then
+        issue_terminated_write=writer_entries(i)%write_on_terminate .and. terminated
+        if (writer_entries(i)%write_on_model_time) then !
+          if (writer_entries(i)%write_time_frequency .gt. 0) then
+            time_difference=time-writer_entries(i)%latest_pending_write_time
+            issue_write=time_difference .ge. writer_entries(i)%write_time_frequency
+          end if
         else
-          issue_write=.false.
+          ! Case for all checkpoint requests
+          if (writer_entries(i)%write_timestep_frequency .gt. 0) then 
+            issue_write = mod(timestep, writer_entries(i)%write_timestep_frequency) == 0
+          end if 
         end if
-        issue_terminated_write=issue_terminated_write .and. &
-           writer_entries(i)%latest_pending_write_timestep .ne. timestep ! .and. &
       end if
 
       if (issue_write .or. issue_terminated_write) then
         writer_entries(i)%latest_pending_write_time=time
         writer_entries(i)%latest_pending_write_timestep=timestep
         call check_thread_status(forthread_mutex_unlock(writer_entries(i)%trigger_and_write_mutex))
-        call log_log(LOG_DEBUG, "INITIAL PENDING! core: "//trim(conv_to_string(io_configuration%my_io_rank))//&
+        call log_master_log(LOG_DEBUG, "INITIAL PENDING! core: "//&
+                                trim(conv_to_string(io_configuration%my_io_rank))//&
                                 " (IO): Register pending write for "//&
                                 trim(writer_entries(i)%filename)//&
                                 " at time="//trim(conv_to_string(time))//"/"//&
@@ -567,14 +575,14 @@ contains
           continue_search=get_next_applicable_writer_entry(field_name, field_namespace, writer_index, contents_index)
           if (continue_search) then
             if (.not. writer_entries(writer_index)%contents(contents_index)%enabled) then
-              call log_log(LOG_WARN, "Received data for previously un-enabled field '"//&
+              call log_log(LOG_WARN, "Received data for previously un-enabled field (ordered_field)'"//&
                    writer_entries(writer_index)%contents(contents_index)%field_name//"'")
             end if
             writer_entries(writer_index)%contents(contents_index)%enabled=.true.          
             writer_entries(writer_index)%contents(contents_index)%latest_timestep_values=timestep
             if (log_get_logging_level() .ge. LOG_DEBUG) then
-              call log_log(LOG_DEBUG, "[WRITE FED VALUE STORE] Storing value for field "//trim(field_name)//" ts="//&
-                   trim(conv_to_string(timestep))// " t="//trim(conv_to_string(time)))
+              call log_log(LOG_DEBUG, "[WRITE FED VALUE STORE] Storing value for field (ordered_field)"//&
+                   trim(field_name)//" ts="//trim(conv_to_string(timestep))// " t="//trim(conv_to_string(time)))
             end if
             call check_thread_status(forthread_mutex_lock(writer_entries(writer_index)%contents(contents_index)%values_mutex))
             call c_put_generic(writer_entries(writer_index)%contents(contents_index)%values_to_write, conv_to_string(time), &
@@ -732,7 +740,7 @@ contains
         continue_search=get_next_applicable_writer_entry(field_name, field_namespace, writer_index, contents_index)
         if (continue_search) then
           if (.not. writer_entries(writer_index)%contents(contents_index)%enabled) then
-            call log_log(LOG_WARN, "Received data for previously un-enabled field '"//&
+            call log_log(LOG_WARN, "Received data for previously un-enabled field (single_field)'"//&
                  writer_entries(writer_index)%contents(contents_index)%field_name//"'")
           end if          
           writer_entries(writer_index)%contents(contents_index)%enabled=.true.
@@ -759,8 +767,8 @@ contains
           if (allocated(result_values%values)) then
             writer_entries(writer_index)%contents(contents_index)%latest_timestep_values=timestep
             if (log_get_logging_level() .ge. LOG_DEBUG) then
-              call log_log(LOG_DEBUG, "[WRITE FED VALUE STORE] Storing value for field "//trim(field_name)//" ts="//&
-                   trim(conv_to_string(timestep))// " t="//trim(conv_to_string(time)))
+              call log_log(LOG_DEBUG, "[WRITE FED VALUE STORE] Storing value for field (single_field) "//&
+                   trim(field_name)//" ts="//trim(conv_to_string(timestep))// " t="//trim(conv_to_string(time)))
             end if
             call check_thread_status(forthread_mutex_lock(writer_entries(writer_index)%contents(contents_index)%values_mutex))
             if (writer_entries(writer_index)%contents(contents_index)%collective_write .and.  source .gt. -1) then
@@ -826,10 +834,11 @@ contains
            writer_entry%previous_write_timestep, writer_entry%write_time, writer_entry%previous_write_time, field_write_success)
       if (field_write_success) then
         if (log_get_logging_level() .ge. LOG_DEBUG) then
-          call log_log(LOG_DEBUG, "Flushed outstanding field ts="//conv_to_string(writer_entry%write_timestep)//&
+          call log_log(LOG_DEBUG, "Flushed outstanding field '"//trim(specific_field%field_name)//&
+               "' ts="//conv_to_string(writer_entry%write_timestep)//&
                " write time="//conv_to_string(writer_entry%write_time)//&
-               ", "//trim(conv_to_string(io_configuration%my_io_rank))//&
-               ", "//trim(conv_to_string(writer_entry%num_fields_to_write)) )
+               ", my_io_rank="//trim(conv_to_string(io_configuration%my_io_rank))//&
+               ", num_fields_to_write"//trim(conv_to_string(writer_entry%num_fields_to_write-1)) )
         end if
         call check_thread_status(forthread_mutex_lock(writer_entry%num_fields_to_write_mutex))
         writer_entry%num_fields_to_write=writer_entry%num_fields_to_write-1
@@ -859,7 +868,6 @@ contains
 
     real :: value_to_test, largest_value_found
     integer :: num_matching
-    logical :: entry_beyond_this_write
     type(iterator_type) :: iterator
     type(mapentry_type) :: map_entry
     type(write_field_collective_values_type), pointer :: multi_monc_entries
@@ -870,7 +878,6 @@ contains
         
     num_matching=0
     largest_value_found=0.0
-    entry_beyond_this_write=.false.
     call check_thread_status(forthread_mutex_lock(specific_field%values_mutex))
     if (.not. c_is_empty(specific_field%values_to_write)) then
       iterator=c_get_iterator(specific_field%values_to_write)
@@ -885,21 +892,24 @@ contains
           end select
           if (c_size(multi_monc_entries%monc_values) .ne. io_configuration%number_of_moncs) cycle
         end if
-        if (value_to_test .gt. write_time) entry_beyond_this_write=.true.
-        if (value_to_test .le. write_time .and. value_to_test .gt. previous_write_time) then        
+        if (value_to_test .le. write_time .and. value_to_test .gt. previous_write_time) then
           num_matching=num_matching+1
           if (largest_value_found .lt. value_to_test) largest_value_found=value_to_test
         end if
       end do
     end if
 
-    ! Obtain the correct expected number of time entires for this writer file.
+    ! Obtain the correct expected number of time entries for this writer file.
     file_state=>get_file_state(writer_entry%filename, timestep, .true.)
     timeseries_diag=>get_specific_timeseries_dimension(&
               file_state, specific_field%output_frequency, specific_field%timestep_frequency)
+    ! Only write the variable when the found count matches the expected count
     if ((num_matching .eq. timeseries_diag%num_entries)) then
       if (.not. specific_field%collective_write .or. .not. specific_field%collective_contiguous_optimisation) then
-        if (specific_field%issue_write) then
+        ! When counts are both zero (as can happen in some edge cases, particularly when reconfiguring with
+        !   --retain_model_time=.true.), skip the writing call, but still allow updates to previous_write_time, 
+        !   pending_to_write, and field_written for the writer_entry.
+        if (specific_field%issue_write .and. num_matching .ne. 0) then
           call write_variable(io_configuration, specific_field, writer_entry%filename, timestep, write_time)
         end if
         specific_field%previous_write_time=writer_entry%write_time
@@ -908,9 +918,11 @@ contains
       if (present(field_written)) field_written=.true.
     else
       if (log_get_logging_level() .ge. LOG_DEBUG) then
-        call log_log(LOG_DEBUG, "Setting outstanding field ts="//conv_to_string(writer_entry%write_timestep)//&
+        call log_log(LOG_DEBUG, "Setting outstanding field '"//trim(specific_field%field_name)//&
+               "'ts="//conv_to_string(writer_entry%write_timestep)//&
                " write time="//conv_to_string(writer_entry%write_time)//" prev="//conv_to_string(previous_write_time)//&
-               " largest entry="//conv_to_string(largest_value_found)//" num matching="//conv_to_string(num_matching))
+               " largest entry="//conv_to_string(largest_value_found)//" num matching="//conv_to_string(num_matching)//&
+               " num_entries in writer="//conv_to_string(timeseries_diag%num_entries) )
       end if
       specific_field%pending_to_write=.true.
       if (present(field_written)) field_written=.false.
@@ -965,7 +977,7 @@ contains
   
     integer :: timestep, index_to_issue
     logical :: terminated, regular_pending_exists, non_io_dump_pending_exists, &
-               non_io_regular_exists, time_points_complete, override, first_instance
+               non_io_regular_exists, override, first_instance
     type(iterator_type) :: iterator
     type(mapentry_type) :: map_entry
     integer :: i, next_pending_timestep
@@ -1017,9 +1029,6 @@ contains
         ! Evaluate each writer entry by looping over them
         do i=1,size(writer_entries)
   
-          ! Reinitialise
-          time_points_complete = .true.
-  
           ! Only look for files to write where there are pending writes
           if (.not. c_is_empty(writer_entries(i)%pending_writes)) then
   
@@ -1066,7 +1075,9 @@ contains
               ! Here, this is the first match of this kind of write. Prevent further evaluation.
               first_instance = .false.
               index_to_issue = i   ! This is the index of the writer we shall issue now.
+
               exit  ! found next writer index, exit writer loop to write
+
             end if ! timestep matches next_pending_timestep, check next writer 
 
           end if ! pending writes exist, check next writer 
@@ -1749,7 +1760,9 @@ contains
     writer_entries(writer_entry_index)%contents(my_facet_index)%output_frequency=&
          io_configuration%file_writers(writer_entry_index)%contents(io_config_facet_index)%output_time_frequency
     writer_entries(writer_entry_index)%contents(my_facet_index)%previous_write_time=0.0
-    writer_entries(writer_entry_index)%contents(my_facet_index)%previous_tracked_write_point=0.0   
+    writer_entries(writer_entry_index)%contents(my_facet_index)%previous_tracked_write_point = &
+         real(model_initial_time) &
+             - mod(real(model_initial_time), writer_entries(writer_entry_index)%contents(my_facet_index)%output_frequency)
     writer_entries(writer_entry_index)%contents(my_facet_index)%duplicate_field_name=.false.
     writer_entries(writer_entry_index)%contents(my_facet_index)%pending_to_write=.false.
     writer_entries(writer_entry_index)%contents(my_facet_index)%enabled=.false.

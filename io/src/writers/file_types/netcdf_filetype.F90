@@ -9,7 +9,7 @@ module netcdf_filetype_writer_mod
        c_get_generic, c_get_integer, c_get_string, c_contains, c_generic_at, c_real_at, c_integer_at, c_put_generic, &
        c_put_integer, c_remove, c_free, c_has_next, c_get_iterator, c_next_mapentry, c_next_generic, c_get_real, c_size, &
        c_next_string, c_is_empty, c_add_string
-  use conversions_mod, only : conv_to_integer, conv_to_string, conv_to_real
+  use conversions_mod, only : conv_to_integer, conv_to_string, conv_to_real, conv_to_lowercase
   use logging_mod, only : LOG_ERROR, LOG_WARN, LOG_DEBUG, log_log, log_master_log, log_get_logging_level, log_is_master
   use writer_types_mod, only : writer_type, writer_field_type, write_field_collective_values_type, &
        netcdf_diagnostics_timeseries_type, netcdf_diagnostics_type, write_field_collective_descriptor_type, &
@@ -96,8 +96,14 @@ contains
              generic, .false.)
         call check_thread_status(forthread_rwlock_unlock(file_states_rwlock))
         if (file_writer_information%write_on_model_time) then
-          call generate_unique_filename(file_writer_information%filename, unique_filename, &
-               file_writer_information%defined_write_time)
+          if (file_writer_information%time_basis_override) then
+            ! If timestep file writing was requested during time_basis, label with timestep
+            call generate_unique_filename(file_writer_information%filename, unique_filename, &
+                                          timestep=timestep)
+          else
+            call generate_unique_filename(file_writer_information%filename, unique_filename, &
+                                          file_writer_information%defined_write_time)
+          end if
         else
           call generate_unique_filename(file_writer_information%filename, unique_filename, timestep=timestep)
         end if
@@ -401,7 +407,15 @@ contains
         call c_add_string(items_to_remove, value_to_write_map_entry%key)
       end if
     end do
-    
+
+    ! Clean up and exit early if zero entries are found (number_time_entries)
+    !    and expected (timeseries_diag%num_entries).
+    if (number_time_entries .eq. 0 .and. timeseries_diag%num_entries .eq. 0) then
+      timeseries_diag%variable_written=.true.
+      if (allocated(timeseries_time_to_write)) deallocate(timeseries_time_to_write)
+      return
+    end if
+
     if (number_time_entries .ne. timeseries_diag%num_entries) then
       call log_log(LOG_WARN, "Expected "//trim(conv_to_string(timeseries_diag%num_entries))//&
            " but have "//trim(conv_to_string(number_time_entries)))
@@ -626,6 +640,16 @@ contains
         end if
       end if
     end do
+
+    ! Clean up and exit early if zero entries are found (included_num-1)
+    !   and expected (timeseries_diag%num_entries).
+    if (included_num-1 .eq. 0 .and. timeseries_diag%num_entries .eq. 0) then
+      timeseries_diag%variable_written=.true.
+      deallocate(items_to_remove)
+      if (allocated(timeseries_time_to_write)) deallocate(timeseries_time_to_write)
+      return
+    end if
+
     if (included_num-1 .ne. timeseries_diag%num_entries) then
       call log_log(LOG_WARN, "Miss match of time entries for collective field '"//&
            trim(field_to_write_information%field_name)//&
@@ -635,6 +659,7 @@ contains
          call log_log(LOG_ERROR, "Miss match throws error for LOG_DEBUG...can indicate  "//&
                       "underlying problems...See write_collective_variable_to_diagnostics.")
     end if
+
     if (allocated(timeseries_time_to_write)) then
       call check_thread_status(forthread_mutex_lock(netcdf_mutex))
       call lock_mpi()
@@ -685,7 +710,7 @@ contains
 
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: values_to_write, timeseries_time_to_write
     real :: value_to_test
-    integer :: i, field_id, next_entry_index, array_size, included_num
+    integer :: i, field_id, next_entry_index, array_size, included_num, erri
     integer, dimension(:), allocatable :: count_to_write
     type(iterator_type) :: iterator
     type(mapentry_type) :: map_entry
@@ -746,7 +771,14 @@ contains
     call check_thread_status(forthread_mutex_lock(file_state%mutex))
     call check_thread_status(forthread_mutex_lock(netcdf_mutex))
     call lock_mpi()
-    call check_netcdf_status(nf90_put_var(file_state%ncid, field_id, values_to_write, count=count_to_write))
+
+    erri=nf90_put_var(file_state%ncid, field_id, values_to_write, count=count_to_write)
+    if (erri .ne. nf90_noerr) then
+      ! Note: Just print is used here because of values_to_write.
+      print *, 'NCDF put error:  ', trim(field_to_write_information%field_name), ' ', &
+               values_to_write
+      call check_netcdf_status(erri)
+    end if
 
     if (allocated(timeseries_time_to_write)) then
       call check_netcdf_status(nf90_put_var(file_state%ncid, timeseries_diag%netcdf_var_id, &
@@ -880,15 +912,19 @@ contains
              trim(conv_to_string(nint(file_writer_information%contents(i)%output_frequency)))
       end if
       if (.not. c_contains(file_state%timeseries_dimension, dim_key)) then
-        if (time_basis .and. file_writer_information%contents(i)%previous_tracked_write_point .lt. 0.001) then
-          file_writer_information%contents(i)%previous_tracked_write_point = file_writer_information%previous_write_time
+        if (time_basis &
+            .and. file_writer_information%contents(i)%previous_tracked_write_point .lt. 0.001) then
+          file_writer_information%contents(i)%previous_tracked_write_point = &
+                                                        file_writer_information%previous_write_time
         end if
         allocate(timeseries_diag)
         timeseries_diag%variable_written=.false.
         timeseries_diag%num_entries=get_number_timeseries_entries(time_points, &
              file_writer_information%contents(i)%previous_tracked_write_point, &
-             file_writer_information%contents(i)%output_frequency, file_writer_information%contents(i)%timestep_frequency, &
-             termination_write, time_basis, timeseries_diag%last_write_point)
+             file_writer_information%contents(i)%output_frequency,             &
+             file_writer_information%contents(i)%timestep_frequency,           &
+             termination_write, time_basis, file_writer_information%title,     &
+             timeseries_diag%last_write_point)
         call lock_mpi()
         call check_netcdf_status(nf90_def_dim(file_state%ncid, dim_key, timeseries_diag%num_entries, &
              timeseries_diag%netcdf_dim_id))
@@ -896,7 +932,10 @@ contains
         generic=>timeseries_diag
         call c_put_generic(file_state%timeseries_dimension, dim_key, generic, .false.)
       end if
-      file_writer_information%contents(i)%previous_tracked_write_point=timeseries_diag%last_write_point
+
+      ! Only update previous_tracked_write_point when entries are found.  Retain value if zero entries found.
+      if (timeseries_diag%num_entries .gt. 0) &
+         file_writer_information%contents(i)%previous_tracked_write_point=timeseries_diag%last_write_point
     end do
   end subroutine define_time_series_dimensions
 
@@ -906,20 +945,22 @@ contains
   !! @param previous_write_time When the field was previously written
   !! @param frequency The frequency of outputs of the field
   integer function get_number_timeseries_entries(time_points, previous_write_time, output_frequency, timestep_frequency, &
-       termination_write, time_basis, last_write_entry)
+       termination_write, time_basis, title, last_write_entry)
     type(map_type), intent(inout) :: time_points
     real, intent(in) :: output_frequency, previous_write_time
     integer, intent(in) :: timestep_frequency
     logical, intent(in) :: termination_write
     logical, intent(in) :: time_basis
+    character(len=STRING_LENGTH), intent(in) :: title
     real, intent(out) :: last_write_entry
 
     integer :: ts,tm
     real :: tp_entry, write_point
     type(iterator_type) :: iterator
     type(mapentry_type) :: map_entry
-    logical :: include_item, select_item
+    logical :: include_item, select_item, is_checkpoint
 
+    is_checkpoint = (conv_to_lowercase(trim(title)) == 'checkpoint')
     get_number_timeseries_entries=0
     write_point=previous_write_time
     iterator=c_get_iterator(time_points)
@@ -933,11 +974,17 @@ contains
         else                 ! compare to timestep
           include_item=mod(ts, timestep_frequency) == 0
         end if 
-      else
+      else ! Screen out zero-frequency requests (commonly checkpoints)
         include_item=.false.
       end if
-      ! if the time entry is a factor of the requested sample interval or 
-      ! this is the last time point entry during a termination write...
+
+      ! Ensure that checkpoint files only consider the most recent interval-matching time entry
+      ! even when working with a non-zero sample interval.
+      ! This negates any others that were found to match the interval.
+      if (is_checkpoint .and. c_has_next(iterator)) include_item=.false.
+
+      ! if the time entry is a factor of the requested sample interval (include_item) or 
+      ! this is the last time point entry during any termination write or checkpoint file...
       ! then it may be considered for a time record entry in the netcdf file
       if (include_item .or. (.not. c_has_next(iterator) .and. termination_write)) then
         tp_entry=c_get_real(map_entry)

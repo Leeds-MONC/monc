@@ -273,9 +273,6 @@ contains
     integer :: target_x_index, target_y_index
    
     integer :: k ! look counter
-    logical :: calculate_diagnostics
-
-    calculate_diagnostics = current_state%diagnostic_sample_timestep
 
     ! No need to do radiation calculations in the halos or on the first timestep
     !

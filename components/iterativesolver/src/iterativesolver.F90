@@ -233,9 +233,11 @@ contains
     end if
     
     if (err > tolerance) then
-      call log_log(LOG_WARN, "Convergence failed, RNorm="//conv_to_string(err, exponent=.true.))
+      call log_log(LOG_WARN, "Iterative solver bicgstab: "// &
+                             "Convergence failed, RNorm="//conv_to_string(err, exponent=.true.))
     else if (current_state%parallel%my_rank==0 .and. log_get_logging_level() .eq. LOG_DEBUG) then
-      call log_log(LOG_DEBUG, "Converged in "//trim(conv_to_string(it))//" iterations with RNorm="//&
+      call log_log(LOG_DEBUG,"Iterative solver bicgstab: "// &
+                             "Converged in "//trim(conv_to_string(it))//" iterations with RNorm="//&
            trim(conv_to_string(err, 5, .true.))//" initial norm="//trim(conv_to_string(init_err, 5, .true.)))
     end if
   end subroutine bicgstab
@@ -304,9 +306,11 @@ contains
     if( current_state%parallel%my_rank == 0 ) print*,it, err, init_err
 
     if (err > tolerance) then
-      call log_log(LOG_WARN, "Convergence failed, RNorm="//conv_to_string(err, exponent=.true.))
+      call log_log(LOG_WARN, "Iterative solver cg_solver: "// &
+                             "Convergence failed, RNorm="//conv_to_string(err, exponent=.true.))
     else if (current_state%parallel%my_rank==0 .and. log_get_logging_level() .eq. LOG_DEBUG) then
-      call log_log(LOG_DEBUG, "Converged in "//trim(conv_to_string(it))//" iterations with RNorm="//&
+      call log_log(LOG_DEBUG,"Iterative solver cg_solver: "// &
+                             "Converged in "//trim(conv_to_string(it))//" iterations with RNorm="//&
            trim(conv_to_string(err, 5, .true.))//" initial norm="//trim(conv_to_string(init_err, 5, .true.)))
     end if
    end subroutine cg_solver

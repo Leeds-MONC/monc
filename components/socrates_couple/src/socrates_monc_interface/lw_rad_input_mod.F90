@@ -23,6 +23,8 @@ USE missing_data_mod, ONLY: imdi
 USE yomhook,  ONLY: lhook, dr_hook
 USE parkind1, ONLY: jprb, jpim
 USE errormessagelength_mod, ONLY: errormessagelength
+use optionsdatabase_mod, only : options_get_logical
+
 
 IMPLICIT NONE
 
@@ -75,7 +77,18 @@ IF (lhook) CALL dr_hook('LW_INPUT',zhook_in,zhook_handle)
 
 ! Set default values of control variables.
 
-CALL lw_control_default(lw_control)
+  CALL lw_control_default(lw_control)
+  
+  ! Disable some longwave gases for RCEMIP
+  if (options_get_logical(current_state%options_database, "l_rcemip_gases")) then
+    lw_control%l_cfc11                = .FALSE.
+    lw_control%l_cfc12                = .FALSE.
+    lw_control%l_cfc113               = .FALSE.
+    lw_control%l_cfc114               = .FALSE.
+    lw_control%l_hcfc22               = .FALSE.
+    lw_control%l_hfc125               = .FALSE.
+    lw_control%l_hfc134a              = .FALSE.
+  end if
 
   lw_control%spectral_file          =  &
        ADJUSTL(options_get_string(current_state%options_database, "spectral_file_lw"))

@@ -13,6 +13,7 @@ module gridmanager_mod
   use saturation_mod, only : qsaturation, dqwsatdt
   use q_indices_mod, only: get_q_index, standard_q_names
   use interpolation_mod, only: piecewise_linear_1d
+  use rcemip_mod, only: rcemip_init
   use tracers_mod, only: reinitialise_trajectories
 
   implicit none
@@ -161,7 +162,6 @@ contains
   !> Calculates the initial profiles for U, V, TH & Q if required
   !! @param current_state The current model state_mod
   !! @param vertical_grid The vertical grid that we are working on
-  !! @param kkp Number of grid points in a vertical column
   subroutine calculate_initial_profiles(current_state, vertical_grid)
     type(model_state_type), intent(inout) :: current_state
     type(vertical_grid_configuration_type), intent(inout) :: vertical_grid
@@ -215,6 +215,10 @@ contains
     if (l_init_pl_q) then
       allocate(names_init_pl_q(options_get_array_size(current_state%options_database, "names_init_pl_q")))
       call options_get_string_array(current_state%options_database, "names_init_pl_q", names_init_pl_q)
+      if (size(names_init_pl_q) .eq. 0) then
+        call log_master_log(LOG_ERROR, "Model configured with l_init_pl_q=.true., but "//&
+                                       "no names_init_pl_q have been specified")
+      end if
       do n = 1,size(names_init_pl_q)
          if (trim(names_init_pl_q(n)) .eq. 'vapour' .and. l_init_pl_rh) then 
             call log_master_log(LOG_ERROR, "Initialisation of vapour and RH - STOP")
@@ -235,6 +239,7 @@ contains
           call options_get_real_array(current_state%options_database, "z_thref", z_thref)
           call options_get_real_array(current_state%options_database, "f_thref", f_thref)
           call check_top(zztop, z_thref(size(z_thref)), 'z_thref')
+          call check_input_levels(size(z_thref), size(f_thref), "f_thref")
           zgrid=current_state%global_grid%configuration%vertical%zn(:)
           call piecewise_linear_1d(z_thref(1:size(z_thref)), f_thref(1:size(f_thref)), zgrid, &
              current_state%global_grid%configuration%vertical%thref)
@@ -257,7 +262,7 @@ contains
          current_state%global_grid%configuration%vertical%theta_init)
       if (l_matchthref .and. .not. current_state%continuation_run) then ! For continuations, ensure thref is that from checkpoint
          if(.not. current_state%use_anelastic_equations) then
-           call log_master_log(LOG_ERROR, "Non-anelastic equation set and l_maththref are incompatible")
+           call log_master_log(LOG_ERROR, "Non-anelastic equation set and l_matchthref are incompatible")
          end if
          current_state%global_grid%configuration%vertical%thref = current_state%global_grid%configuration%vertical%theta_init
       end if
@@ -319,9 +324,16 @@ contains
       nzq=size(z_init_pl_q)
       call check_top(zztop, z_init_pl_q(nzq), 'z_init_pl_q')
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
-      allocate(f_init_pl_q_tmp(nq_init*nzq))
+      allocate(f_init_pl_q_tmp(options_get_array_size(current_state%options_database, "f_init_pl_q")))
+      if (nq_init*nzq .ne. size(f_init_pl_q_tmp)) then
+        call log_master_log(LOG_ERROR, "There is a mismatch between the number of initial moisture heights, "// &
+                                       "size(z_init_pl_q)="//trim(conv_to_string(nzq))//                        &
+                                       ", and the initial moisture values, "//                                  &
+                                       "size(f_init_pl_q)="//trim(conv_to_string(size(f_init_pl_q_tmp)))//      &
+                                       ".  The length of f_init_pl_q should equal the length of z_init_pl_q "// &
+                                       "multiplied by the number of names_init_pl_q.")
+      end if
       call options_get_real_array(current_state%options_database, "f_init_pl_q", f_init_pl_q_tmp)
-      !call check_input_levels(size(z_init_pl_q), size(f_init_pl_q_tmp), "f_init_pl_q_tmp")
       allocate(f_init_pl_q(nzq, nq_init))
       f_init_pl_q(1:nzq, 1:nq_init)=reshape(f_init_pl_q_tmp, (/nzq, nq_init/))
       do n=1, nq_init
@@ -341,6 +353,10 @@ contains
       end do
       deallocate(f_init_pl_q_tmp, z_init_pl_q, f_init_pl_q, names_init_pl_q)
     end if
+
+    ! Override with RCEMIP initial conditions, if logical is set.
+    if (options_get_logical(current_state%options_database, "l_rcemip_initial")) &
+        call rcemip_init(current_state)
    
     if (current_state%n_tracers .gt. 0) then
       if (.not. current_state%continuation_run) then
@@ -865,7 +881,7 @@ contains
     character(*), intent(in) :: info
 
     if (z<zztop)then
-      call log_master_log(LOG_ERROR, "Top of input profile is below the top of the domain:"//trim(info))
+      call log_master_log(LOG_ERROR, "Top of input profile is below the top of the domain: "//trim(info))
     end if
 
   end subroutine check_top
@@ -877,7 +893,7 @@ contains
 
     if (z_levels /= field_levels)then
        call log_master_log(LOG_ERROR, "Input levels not equal for "//trim(field)//", z_levels = "// &
-            trim(conv_to_string(z_levels))//" field_levels = "//conv_to_string(field_levels))
+            trim(conv_to_string(z_levels))//" field_levels = "//trim(conv_to_string(field_levels)))
     end if
 
   end subroutine check_input_levels
@@ -914,8 +930,8 @@ contains
        call check_top(zztop, z_init_pl_rh(size(z_init_pl_rh)), 'z_init_pl_rh')
        call check_input_levels(size(z_init_pl_rh), size(f_init_pl_rh), "f_init_pl_rh")
        zgrid=current_state%global_grid%configuration%vertical%zn(:)
-      call piecewise_linear_1d(z_init_pl_rh(1:size(z_init_pl_rh)), f_init_pl_rh(1:size(f_init_pl_rh)), zgrid, &
-           current_state%global_grid%configuration%vertical%rh_init)
+       call piecewise_linear_1d(z_init_pl_rh(1:size(z_init_pl_rh)), f_init_pl_rh(1:size(f_init_pl_rh)), zgrid, &
+            current_state%global_grid%configuration%vertical%rh_init)
       
       if (.not. current_state%passive_q .and. current_state%th%active) then
          iq=get_q_index('vapour', 'piecewise_initialization')

@@ -2,10 +2,10 @@
 module checkpointer_read_checkpoint_mod
 #ifndef TEST_MODE
   use netcdf, only : nf90_global, nf90_nowrite, nf90_inquire_attribute, nf90_open, nf90_inq_dimid, nf90_inquire_dimension, &
-       nf90_inq_varid, nf90_get_var, nf90_get_att, nf90_close
+       nf90_inq_varid, nf90_get_var, nf90_get_att, nf90_close, nf90_noerr
 #else
   use dummy_netcdf_mod, only : nf90_global, nf90_nowrite, nf90_inquire_attribute, nf90_open, nf90_inq_dimid, &
-       nf90_inquire_dimension, nf90_inq_varid, nf90_get_var, nf90_get_att, nf90_close
+       nf90_inquire_dimension, nf90_inq_varid, nf90_get_var, nf90_get_att, nf90_close, nf90_noerr
 #endif
   use datadefn_mod, only : STRING_LENGTH
   use state_mod, only : model_state_type
@@ -175,6 +175,8 @@ contains
 
     integer :: i_data(1)  ! Procedure requires a vector rather than scalar
     real(kind=DEFAULT_PRECISION) :: r_data(1)
+    integer :: erri, dumid
+    logical :: read_normal=.true., read_last_cfl=.true.
 
     call read_single_variable(ncid, TIMESTEP, integer_data_1d=i_data)
     current_state%timestep = i_data(1)+1 ! plus one to increment for next timestep
@@ -203,16 +205,39 @@ contains
     current_state%update_dtm = current_state%dtm .ne. current_state%dtm_new
     call read_single_variable(ncid, ABSOLUTE_NEW_DTM_KEY, real_data_1d_double=r_data)
     current_state%absolute_new_dtm = r_data(1)
-    call read_single_variable(ncid, NORMAL_STEP_KEY, integer_data_1d=i_data)
-    if (i_data(1) .eq. 0 ) current_state%normal_step = .false. ! otherwise, keep default .true. value
+
+    ! During reconfig_run, check for fields that might be missing from old checkpoints
+    !   Only read if they are present.
+    !   Otherwise, skip reading, and leave default state values.
+    if ( current_state%reconfig_run ) then
+      ! normal_step defaults to .true.: no need to set again
+      erri = nf90_inq_varid(ncid, NORMAL_STEP_KEY, dumid)
+      read_normal = erri .eq. nf90_noerr
+
+      ! last_cfl_timestep defaults to 0: no need to set again
+      erri = nf90_inq_varid(ncid, LAST_CFL_TIMESTEP_KEY, dumid)
+      read_last_cfl = erri .eq. nf90_noerr
+    end if
+
+    if ( read_normal ) then
+      call read_single_variable(ncid, NORMAL_STEP_KEY, integer_data_1d=i_data)
+      if (i_data(1) .eq. 0 ) current_state%normal_step = .false. ! otherwise, keep default .true. value
+    end if
+
     call read_single_variable(ncid, TIME_KEY, real_data_1d_double=r_data)
     ! The time is written into checkpoint as time+dtm, therefore the time as read in has been correctly advanced
     current_state%time = r_data(1)
+
     call read_single_variable(ncid, RAD_LAST_TIME_KEY, real_data_1d_double=r_data)
     current_state%rad_last_time = r_data(1)
-    call read_single_variable(ncid, LAST_CFL_TIMESTEP_KEY, integer_data_1d=i_data)
-    current_state%last_cfl_timestep = i_data(1)
+
+    if ( read_last_cfl ) then
+      call read_single_variable(ncid, LAST_CFL_TIMESTEP_KEY, integer_data_1d=i_data)
+      current_state%last_cfl_timestep = i_data(1)
+    end if 
+
     if ( current_state%reconfig_run ) then
+      ! This is required because of the formulation of later initialization of some fields.
       current_state%timestep = 1
       if ( .not. current_state%retain_model_time ) then
         current_state%time = 0.0_DEFAULT_PRECISION

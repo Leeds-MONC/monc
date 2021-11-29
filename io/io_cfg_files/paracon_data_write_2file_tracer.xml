@@ -7,7 +7,7 @@
 #include "io/io_cfg_files/paracon_level0_tendency_profile_fields.xml"
 #include "io/io_cfg_files/paracon_level0_profile_resolved.xml"
 #include "io/io_cfg_files/paracon_3d_fields.xml"
-#include "io/io_cfg_files/paracon_tracers.xml"
+#include "io/io_cfg_files/paracon_tracers_3d.xml"
 
 
 #include "io/io_cfg_files/checkpoint.xml"

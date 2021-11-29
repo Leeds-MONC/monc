@@ -809,6 +809,18 @@ contains
       current_state%sampling(psize)%output(1) = -9999  ! this is a dummy item in this case
     end if
 
+    ! Enforce time_basis sampling regularity (prevents bugs)
+    if (current_state%time_basis) then
+      if (any(mod(current_state%sampling(:)%interval,minval(current_state%sampling(:)%interval)) &
+           .ne. 0)) then
+        call log_master_log(LOG_ERROR, "Under time_basis, all sampling intervals must be "//&
+                 "divisible by the smallest sampling interval ("//&
+                 trim(conv_to_string(minval(current_state%sampling(:)%interval)))//&
+                 " s).  This rule applies system-wide (diagnostics, radiation, checkpoints, etc.")
+                      
+      end if
+    end if
+
   end subroutine register_with_io_server
 
   !> Retrieve the total number of fields, which is all the fields in all the data definitions
@@ -926,11 +938,11 @@ contains
       end if
     end do
 
-    if (current_state%traj_tracer_index .gt. 0 .and. data_definition%name == "3d_tracer_data") then 
-       if (mod(nint(current_state%time+current_state%dtm),traj_interval) .eq. 0) then
-      call reinitialise_trajectories(current_state)
-       current_state%reinit_tracer=.true.
-       endif
+    if (current_state%traj_tracer_index .gt. 0 .and. data_definition%name == "3d_tracer_data") then
+      if (mod(nint(current_state%time+current_state%dtm),traj_interval) .eq. 0) then
+        call reinitialise_trajectories(current_state)
+        current_state%reinit_tracer=.true.
+      end if
     end if
       
   end subroutine pack_send_buffer
@@ -1377,15 +1389,32 @@ contains
         current_state%sampling(i)%next_time = minval(((int(current_state%time + dtmmin)    &
                                                  / current_state%sampling(i)%output(:)) + 1)  &
                                               * current_state%sampling(i)%output(:))
+        if (size(current_state%sampling(i)%output(:)) .eq. 0) then
+          ! There are no specified output intervals for this sampling interval, so we set the 
+          ! next "output time" (which could change dtm) to be the largest possible integer.
+          ! This ensures that in these cases (possibly for a non-zero checkpoint_frequency or
+          ! a radiation interval) the samples simply occur on the timestep interval, and the
+          ! request has no impact on dtm changes.  In the case of a specified non-zero
+          ! checkpoint_frequency, though, checkpoints will be written at that sampling frequency
+          ! without any consideration for the model time.
+          ! Further, note that this only needs to happen here.  Updates to %next_time in this
+          ! module's timestep_callback only occur when writing at an existing %next_time, which 
+          ! won't reasonably be reached in this case.
+          current_state%sampling(i)%next_time = huge(current_state%sampling(i)%next_time)
+        else 
+          current_state%sampling(i)%next_time = minval(((int(current_state%time + dtmmin)         &
+                                                     / current_state%sampling(i)%output(:)) + 1)  &
+                                                           * current_state%sampling(i)%output(:) )
+        end if
         current_state%sampling(i)%next_step = (current_state%timestep &
                                                / current_state%sampling(i)%interval + 1) &
                                               * current_state%sampling(i)%interval
         if (mod(current_state%sampling(i)%interval,minval(current_state%sampling(:)%interval)) &
             .ne. 0) then
           call log_master_log(LOG_ERROR, "Use of force_output_on_interval requires that all"//&
-             " sampling intervals be evenly divisible by the smallest sampling interval.  "//&
-             "Smallest: "//trim(conv_to_string(minval(current_state%sampling(:)%interval)))//&
-             "Conflicting: "//trim(conv_to_string(current_state%sampling(i)%interval)))
+             " sampling intervals be evenly divisible by the smallest sampling interval. "//&
+             " Smallest: "//trim(conv_to_string(minval(current_state%sampling(:)%interval)))//&
+             " Conflicting: "//trim(conv_to_string(current_state%sampling(i)%interval)))
         end if
       end do
     end if ! time_basis=.true. or force_output_on_interval=.true.

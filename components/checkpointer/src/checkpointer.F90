@@ -8,7 +8,7 @@ module checkpointer_mod
   use state_mod, only : model_state_type
   use conversions_mod, only : conv_to_string
   use optionsdatabase_mod, only : options_get_string, options_has_key, options_get_integer, options_get_logical
-  use logging_mod, only : LOG_INFO, log_master_log, log_master_newline
+  use logging_mod, only : LOG_INFO, LOG_WARN, log_master_log, log_master_newline
   use checkpointer_write_checkpoint_mod, only : write_checkpoint_file
   use checkpointer_read_checkpoint_mod, only : read_checkpoint_file
   implicit none
@@ -55,6 +55,17 @@ contains
     else
       ! Auto mode
       enable_write=.not. current_state%io_server_enabled
+    end if
+
+    if (enable_write .and. current_state%time_basis) then
+      call log_master_newline()
+      call log_master_log(LOG_WARN, "-----")
+      call log_master_log(LOG_WARN, "The io_server is disabled with time_basis=.true.")
+      call log_master_log(LOG_WARN, "  The checkpointer component will write the checkpoints.")
+      call log_master_log(LOG_WARN, "  In this case, checkpoint_frequency has units of timesteps.")
+      call log_master_log(LOG_WARN, "  This differs from the case where the io_server is enabled.")
+      call log_master_log(LOG_WARN, "-----")
+      call log_master_newline()
     end if
 
     if (options_has_key(current_state%options_database, "checkpoint")) then

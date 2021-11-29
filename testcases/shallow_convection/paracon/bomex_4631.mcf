@@ -23,27 +23,29 @@ profile_diagnostics_enabled=.true.
 subgrid_profile_diagnostics_enabled=.true.
 flux_budget_enabled=.false.
 showcallbacks=.true.
+checkpointer_enabled=.true.
 
 # Control configuration
-display_synopsis_frequency=100
+display_synopsis_frequency=150
 termination_time=86400.
 dtm=0.4
 
 # IO server configuration
-ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
-diagnostic_file="diagnostic_files/diagnostics_ts.nc"
-moncs_per_io_server=11
-sampling_frequency=50
-3d_sampling_frequency=50
-mm=100.0
-mm1=100.0
-diag_write_freq=600.0
+#ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
+ioserver_configuration_file="io/io_cfg_files/paracon_level0_control.xml"
+diagnostic_file="diagnostic_files/BOMEX_m0025_g0600_all.nc"
+moncs_per_io_server=8
+sampling_frequency=25
+3d_sampling_frequency=150
+mm=600.0
+mm1=600.0
+diag_write_freq=1800.0
 
 # Checkpoint configuration
 checkpoint_frequency=0
-checkpoint_file="checkpoint_files/bomex_dump.nc"
+checkpoint_file="checkpoint_files/BOMEX_dump.nc"
 check_walltime_frequency=100
-walltime_limit=02:45:00
+walltime_limit=01:00:00
 
 # Advection choices
 advection_flow_fields=pw
@@ -56,19 +58,37 @@ cfl_cvismax=0.4
 cfl_cvelmax=0.4
 cfl_dtmmax=0.4
 cfl_dtmmin=0.001
+cfl_monitor=.false.
+
+
+#diag switches
+l_cloud_mask=.true.
+cloud_mask_method= DEFAULT #CA
+l_partial_liq_ice=.false.
+
+#up/down thresholds
+thvprcrit=0.0
+wSupcrit=1.0
+
+#cloud water mixing ratio
+qlcrit=1.e-5
+qicrit=1.e-5
+
+#show_critical_w=.false. #diagnostic printing
+
 
 # Simple setup configuration
 # We'll want to change this reference profile later
 thref0=298.7
 surface_pressure=100000.
 surface_reference_pressure=100000.
-x_size=256
-y_size=256
-z_size=76
-dxx=100
-dyy=100
+x_size=600
+y_size=600
+z_size=121
+dxx=25
+dyy=25
 zztop=3000.0
-kgd=1,76
+kgd=1,121
 hgd=0.0,3000.0
 nsmth=80
 galilean_transformation=.false.

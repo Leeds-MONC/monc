@@ -233,6 +233,23 @@ contains
      socrates_opt%hcfc22_mmr = 0.0
      socrates_opt%hfc125_mmr = 0.0 
      socrates_opt%hfc134a_mmr = 0.0  
+
+     ! Change the well-mixed gas concentrations in the RCEMIP case
+     ! As above, see #306
+     if (options_get_logical(current_state%options_database, "l_rcemip_gases")) then
+       socrates_opt%co2_mmr = 5.288e-4
+       socrates_opt%n2o_mmr = 4.651e-7
+       socrates_opt%ch4_mmr = 9.139e-7
+       socrates_opt%o2_mmr = 0.2314
+       socrates_opt%cfc12_mmr = 0.0
+       socrates_opt%cfc11_mmr = 0.0
+       socrates_opt%cfc113_mmr = 0.0
+       socrates_opt%cfc114_mmr = 0.0
+       socrates_opt%hcfc22_mmr = 0.0
+       socrates_opt%hfc125_mmr = 0.0
+       socrates_opt%hfc134a_mmr = 0.0
+     end if
+
     
   end subroutine set_and_test_socrates_monc_options
 

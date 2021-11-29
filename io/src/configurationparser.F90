@@ -96,7 +96,7 @@ module configuration_parser_mod
      character(len=STRING_LENGTH) :: file_name, title
      integer :: number_of_contents, write_timestep_frequency, write_precision
      real :: write_time_frequency
-     logical :: write_on_model_time, write_on_terminate, include_in_io_state_write
+     logical :: write_on_model_time, write_on_terminate, include_in_io_state_write, time_basis_override
      type(io_configuration_file_writer_facet_type), dimension(:), allocatable :: contents     
   end type io_configuration_file_writer_type
 
@@ -147,6 +147,7 @@ module configuration_parser_mod
   integer :: ncond, ndiag
   
   logical :: l_thoff=.false.
+  logical :: time_basis=.false.
 
   public EQ_OPERATOR_TYPE, LT_OPERATOR_TYPE, GT_OPERATOR_TYPE, LTE_OPERATOR_TYPE, GTE_OPERATOR_TYPE, ADD_OPERATOR_TYPE, &
        SUBTRACT_OPERATOR_TYPE, MULTIPLY_OPERATOR_TYPE, DIV_OPERATOR_TYPE, MOD_OPERATOR_TYPE, DATA_SIZE_STRIDE, &
@@ -232,6 +233,7 @@ contains
     options_database=provided_options_database
 
     l_thoff = options_get_logical(provided_options_database, "l_thoff")
+    time_basis = options_get_logical(provided_options_database, "time_basis")
 
     inside_data_definition=.false.
     inside_handling_definition=.false.
@@ -657,13 +659,25 @@ contains
     if (field_index .gt. 0) then    
       building_config%file_writers(current_building_file_writer)%write_time_frequency=&
            conv_to_real(retrieve_string_value(attribute_values(field_index), DOUBLE_DATA_TYPE))
-      building_config%file_writers(current_building_file_writer)%write_on_model_time=.true.      
+      building_config%file_writers(current_building_file_writer)%write_on_model_time=.true.     
+      building_config%file_writers(current_building_file_writer)%time_basis_override=.false. 
     else
       field_index=get_field_index_from_name(attribute_names, "write_timestep_frequency")
       if (field_index .gt. 0) then
-        building_config%file_writers(current_building_file_writer)%write_timestep_frequency=&
-             conv_to_real(retrieve_string_value(attribute_values(field_index), INTEGER_DATA_TYPE))
-        building_config%file_writers(current_building_file_writer)%write_on_model_time=.false. 
+        if (time_basis) then ! system-wide transform to time units over timestep tracking 
+                        ! overriding write_timestep_frequency with write_time_frequency instead
+                        ! and turns on write_on_model_time.
+                        ! The override affects checkpointing in particular.
+          building_config%file_writers(current_building_file_writer)%write_time_frequency=&
+            conv_to_real(conv_to_integer(retrieve_string_value(attribute_values(field_index), INTEGER_DATA_TYPE)))
+          building_config%file_writers(current_building_file_writer)%write_on_model_time=.true.
+          building_config%file_writers(current_building_file_writer)%time_basis_override=.true.
+        else
+          building_config%file_writers(current_building_file_writer)%write_timestep_frequency=&
+            conv_to_integer(retrieve_string_value(attribute_values(field_index), INTEGER_DATA_TYPE))
+          building_config%file_writers(current_building_file_writer)%write_on_model_time=.false. 
+          building_config%file_writers(current_building_file_writer)%time_basis_override=.false.
+        end if ! check for time_basis
       else
         call log_log(LOG_ERROR, "File writer requires either a write time frequency or write timestep frequency")
       end if
@@ -681,8 +695,6 @@ contains
     if (field_index .gt. 0) then 
       building_config%file_writers(current_building_file_writer)%write_on_terminate=&
            retrieve_string_value(attribute_values(field_index), STRING_DATA_TYPE) == "true"
-      if (building_config%file_writers(current_building_file_writer)%write_on_model_time) &
-        call log_log(LOG_ERROR, "Inconsitent settings.  write_on_terminate cannot be used with write_on_model_time")
     else
       building_config%file_writers(current_building_file_writer)%write_on_terminate=.false.
     end if
