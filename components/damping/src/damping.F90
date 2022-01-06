@@ -41,8 +41,6 @@ module damping_mod
              l_tend_pr_tot_tabs
   ! q indices
   integer :: iqv=0, iql=0, iqr=0, iqi=0, iqs=0, iqg=0
-  integer :: diagnostic_generation_frequency
-
 
   ! tke tendency diagnostic
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: tend_pr_tot_tke
@@ -136,24 +134,24 @@ contains
     l_tend_pr_tot_v   = current_state%v%active
     l_tend_pr_tot_w   = current_state%w%active
     l_tend_pr_tot_th  = current_state%th%active
-    l_tend_pr_tot_qv  = l_qdiag .and. current_state%number_q_fields .ge. 1
-    l_tend_pr_tot_ql  = l_qdiag .and. current_state%number_q_fields .ge. 2
-    l_tend_pr_tot_qi  = l_qdiag .and. current_state%number_q_fields .ge. 11
-    l_tend_pr_tot_qr  = l_qdiag .and. current_state%number_q_fields .ge. 11
-    l_tend_pr_tot_qs  = l_qdiag .and. current_state%number_q_fields .ge. 11
-    l_tend_pr_tot_qg  = l_qdiag .and. current_state%number_q_fields .ge. 11
+    l_tend_pr_tot_qv  = l_qdiag .and. current_state%water_vapour_mixing_ratio_index > 0
+    l_tend_pr_tot_ql  = l_qdiag .and. current_state%liquid_water_mixing_ratio_index > 0
+    l_tend_pr_tot_qi  = l_qdiag .and. current_state%ice_water_mixing_ratio_index > 0
+    l_tend_pr_tot_qr  = l_qdiag .and. current_state%rain_water_mixing_ratio_index > 0
+    l_tend_pr_tot_qs  = l_qdiag .and. current_state%snow_water_mixing_ratio_index > 0
+    l_tend_pr_tot_qg  = l_qdiag .and. current_state%graupel_water_mixing_ratio_index > 0
     l_tend_pr_tot_tabs  = l_tend_pr_tot_th
 
     l_tend_3d_u   = current_state%u%active .or. l_tend_pr_tot_u
     l_tend_3d_v   = current_state%v%active .or. l_tend_pr_tot_v
     l_tend_3d_w   = current_state%w%active .or. l_tend_pr_tot_w
     l_tend_3d_th  = current_state%th%active .or. l_tend_pr_tot_th
-    l_tend_3d_qv  = (l_qdiag .and. current_state%number_q_fields .ge. 1) .or. l_tend_pr_tot_qv
-    l_tend_3d_ql  = (l_qdiag .and. current_state%number_q_fields .ge. 2) .or. l_tend_pr_tot_ql
-    l_tend_3d_qi  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qi
-    l_tend_3d_qr  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qr
-    l_tend_3d_qs  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qs
-    l_tend_3d_qg  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qg
+    l_tend_3d_qv  = (l_qdiag .and. current_state%water_vapour_mixing_ratio_index > 0) .or. l_tend_pr_tot_qv
+    l_tend_3d_ql  = (l_qdiag .and. current_state%liquid_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_ql
+    l_tend_3d_qi  = (l_qdiag .and. current_state%ice_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_qi
+    l_tend_3d_qr  = (l_qdiag .and. current_state%rain_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_qr
+    l_tend_3d_qs  = (l_qdiag .and. current_state%snow_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_qs
+    l_tend_3d_qg  = (l_qdiag .and. current_state%graupel_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_qg
     l_tend_3d_tabs = l_tend_3d_th
 
     l_tend_pr_tot_tke = current_state%u%active .and. current_state%v%active .and. current_state%w%active
@@ -261,10 +259,6 @@ contains
       allocate( tend_pr_tot_tke(current_state%local_grid%size(Z_INDEX)) )
     endif
 
-
-    ! Save the sampling_frequency to force diagnostic calculation on select time steps
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
-
   end subroutine init_callback
 
 
@@ -309,6 +303,10 @@ contains
 
     integer :: k, i
     integer :: current_x_index, current_y_index, target_x_index, target_y_index
+    logical :: calculate_diagnostics
+
+    calculate_diagnostics = current_state%diagnostic_sample_timestep &
+                            .and. .not. current_state%halo_column
 
     current_x_index=current_state%column_local_x
     current_y_index=current_state%column_local_y
@@ -360,9 +358,8 @@ contains
 
     if (current_state%halo_column .and. current_state%timestep <3) return
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0 .and. .not. current_state%halo_column) then
-      call save_precomponent_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) &
+        call save_precomponent_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
     
     do k=current_state%global_grid%configuration%vertical%kdmpmin,current_state%local_grid%size(Z_INDEX)
 #ifdef U_ACTIVE
@@ -403,9 +400,8 @@ contains
     end do
 #endif
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0 .and. .not. current_state%halo_column) then
-      call compute_component_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) &
+        call compute_component_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
 
   end subroutine timestep_callback
 

@@ -21,6 +21,11 @@
   <field name="ice_mmr_total_local" type="array" data_type="double" optional=true/>
   <field name="snow_mmr_total_local" type="array" data_type="double" optional=true/>
   <field name="graupel_mmr_total_local" type="array" data_type="double" optional=true/>
+  <field name="liquid_nc_total_local" type="array" data_type="double" optional=true/>
+  <field name="rain_nc_total_local" type="array" data_type="double" optional=true/>
+  <field name="ice_nc_total_local" type="array" data_type="double" optional=true/>
+  <field name="snow_nc_total_local" type="array" data_type="double" optional=true/>
+  <field name="graupel_nc_total_local" type="array" data_type="double" optional=true/> 
   <field name="uw_total_local" type="array" data_type="double" optional=true/>
   <field name="vw_total_local" type="array" data_type="double" optional=true/>
   <field name="uv_total_local" type="array" data_type="double" optional=true/>
@@ -117,6 +122,10 @@
   <field name="dqi_mphys_total" type="array" data_type="double" optional=true/>
   <field name="dqs_mphys_total" type="array" data_type="double" optional=true/>
   <field name="dqg_mphys_total" type="array" data_type="double" optional=true/>
+  <!-- Heating rates and effective radius profiles (assumed from SOCRATES) -->
+  <field name="cloud_reff_local" type="array" data_type="double" optional=true/>
+  <field name="shortwave_hr_local" type="array" data_type="double" optional=true/>
+  <field name="longwave_hr_local" type="array" data_type="double" optional=true/>
    <!-- Subgrid tke diagnostics -->
   <field name="dissipation_total_local" type="array" data_type="double" optional=true/>
   <field name="sed_total_local" type="array" data_type="double" optional=true/>
@@ -224,6 +233,26 @@
     <operator name="arithmetic" result="graupel_mmr_mean" equation="graupel_mmr_mean_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="graupel_mmr_mean_g" field="graupel_mmr_total_local" root="auto"/>
   </diagnostic>
+  <diagnostic field="liquid_nc_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    	<operator name="arithmetic" result="liquid_nc_mean" equation="liquid_nc_mean_g/({x_size}*{y_size})"/>
+	<communication name="reduction" operator="sum" result="liquid_nc_mean_g" field="liquid_nc_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="rain_nc_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <operator name="arithmetic" result="rain_nc_mean" equation="rain_nc_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="rain_nc_mean_g" field="rain_nc_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="ice_nc_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <operator name="arithmetic" result="ice_nc_mean" equation="ice_nc_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="ice_nc_mean_g" field="ice_nc_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="snow_nc_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <operator name="arithmetic" result="snow_nc_mean" equation="snow_nc_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="snow_nc_mean_g" field="snow_nc_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="graupel_nc_mean"  type="array" data_type="double" size="zn" units="kg/kg">
+    <operator name="arithmetic" result="graupel_nc_mean" equation="graupel_nc_mean_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="graupel_nc_mean_g" field="graupel_nc_total_local" root="auto"/>
+  </diagnostic>  
   <diagnostic field="uw_mean"  type="array" data_type="double" size="zn" units="m^2/s^2">
 	<operator name="arithmetic" result="uw_mean" equation="uw_mean_g/({x_size}*{y_size})"/>
 	<communication name="reduction" operator="sum" result="uw_mean_g" field="uw_total_local" root="auto"/>
@@ -629,6 +658,20 @@
     <operator name="arithmetic" result="dqg_mphys_mean" equation="dqg_mphys_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="dqg_mphys_total_g" field="dqg_mphys_total" root="auto"/>
   </diagnostic>
+
+  <!-- profiles from socrates -->
+    <diagnostic field="cloud_reff_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="cloud_reff_mean" equation="cloud_reff_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="cloud_reff_g" field="cloud_reff_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="shortwave_hr_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="shortwave_hr_mean" equation="shortwave_hr_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="shortwave_hr_g" field="shortwave_hr_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="longwave_hr_mean"  type="array" data_type="double" size="zn" units="kg/kg/s">
+    <operator name="arithmetic" result="longwave_hr_mean" equation="longwave_hr_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="longwave_hr_g" field="longwave_hr_local" root="auto"/>
+  </diagnostic>
   
    <!-- Cloud fraction diagnostics -->
   <diagnostic field="total_cloud_fraction"  type="array" data_type="double" size="zn" units="fraction">
@@ -667,6 +710,11 @@
   <member name="ice_mmr_mean"/>
   <member name="snow_mmr_mean"/>
   <member name="graupel_mmr_mean"/>
+  <member name="liquid_nc_mean"/>
+  <member name="rain_nc_mean"/>
+  <member name="ice_nc_mean"/>
+  <member name="snow_nc_mean"/>
+  <member name="graupel_nc_mean"/>
   <member name="wqv_ad_mean"/>
   <member name="wql_ad_mean"/>
   <member name="wqr_ad_mean"/>
@@ -757,6 +805,9 @@
   <member name="dqi_mphys_mean"/>
   <member name="dqs_mphys_mean"/>
   <member name="dqg_mphys_mean"/>
+  <member name="cloud_reff_mean"/>
+  <member name="shortwave_hr_mean"/>
+  <member name="longwave_hr_mean"/>
   <!-- Subgrid tke diagnostics -->
   <member name="subgrid_turbulent_transport"/>
   <member name="subgrid_buoyant_production"/>

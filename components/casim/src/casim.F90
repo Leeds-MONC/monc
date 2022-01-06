@@ -15,6 +15,7 @@ module casim_mod
   ! casim modules...
   use variable_precision, ONLY: wp
   use initialize, only: mphys_init
+  use mphys_parameters, only: cloud_params
   use mphys_switches, only: set_mphys_switches,  &
      l_warm,                                     &
      nq_l, nq_r, nq_i, nq_s, nq_g,               &
@@ -74,7 +75,19 @@ module casim_mod
      , l_pssub & ! sublimation of snow
      , l_pgsub & ! sublimation of graupel
      , l_pisub & ! sublimation of ice
-     , l_pimlt   ! ice melting
+     , l_pimlt & ! ice melting
+     ! New switches for sedimentation (these are sort-of temporary)
+     , l_gamma_online & ! when true use standard vn0.3.3 sed, when false use precalced gamma
+     , l_subseds_maxv & ! Use a CFL criteria based on max terminal velocity
+                    ! and sed_1M_2M 
+     , l_sed_eulexp & ! switch for eulexp sed based on UM. Default is false
+                      ! so standard casim sed used
+     , cfl_vt_max & ! cfl limit for sedimentation (default = 1.0)
+     , l_kfsm & ! single moment based on wilson-ballard
+     , l_adjust_D0 
+
+  use mphys_constants, only: fixed_cloud_number
+
 
   use micro_main, only: shipway_microphysics
   use generic_diagnostic_variables, ONLY: casdiags, allocate_diagnostic_space, &
@@ -93,7 +106,12 @@ module casim_mod
      , nc(:,:,:), qr(:,:,:), nr(:,:,:), m3r(:,:,:),rho(:,:,:) &
      , exner(:,:,:), w(:,:,:), tke(:,:,:)                               &
      , qi(:,:,:), ni(:,:,:), qs(:,:,:), ns(:,:,:), m3s(:,:,:) &
-     , qg(:,:,:), ng(:,:,:), m3g(:,:,:) 
+     , qg(:,:,:), ng(:,:,:), m3g(:,:,:)
+  ! declare a fraction for each hydrometeor category. All fractions are 
+  ! initialised set to 1 if cloud is present, since MONC does not include 
+  ! subgrid cloud fraction scheme (yet!)
+  REAL(wp), allocatable ::  cfliq(:,:,:), cfice(:,:,:) &
+       , cfsnow(:,:,:), cfrain(:,:,:), cfgr(:,:,:)  
 
   REAL(wp), allocatable :: AccumSolMass(:,:,:), AccumSolNumber(:,:,:) ! Accumulation mode aerosol
   REAL(wp), allocatable :: ActiveSolLiquid(:,:,:)                      ! Activated aerosol
@@ -138,6 +156,8 @@ module casim_mod
   REAL(wp), allocatable :: dActiveInsolNumber(:,:,:)                      ! Activated insoluble number (if we need a tracer)
 
   REAL(wp), allocatable :: surface_precip(:,:)
+  REAL(wp), allocatable :: surface_cloudsed(:,:)
+  REAL(wp), allocatable :: surface_rainsed(:,:)
 
   INTEGER ::   ils,ile, jls,jle, kls,kle, &
      its,ite, jts,jte, kts,kte
@@ -187,7 +207,7 @@ contains
     casim_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     casim_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
     
-    allocate(casim_get_descriptor%published_fields(27))
+    allocate(casim_get_descriptor%published_fields(29))
     
     casim_get_descriptor%published_fields(1)="surface_precip"    
     casim_get_descriptor%published_fields(2)="homogeneous_freezing_rate"
@@ -216,6 +236,8 @@ contains
     casim_get_descriptor%published_fields(25)="graup_sed_rate"
     casim_get_descriptor%published_fields(26)="cloud_sed_rate"
     casim_get_descriptor%published_fields(27)="condensation_rate"
+    casim_get_descriptor%published_fields(28)="surface_cloudsed"
+    casim_get_descriptor%published_fields(29)="surface_rainsed"
     
   end function casim_get_descriptor
 
@@ -277,6 +299,11 @@ contains
     allocate(qg(kte,1,1))
     allocate(ng(kte,1,1))
     allocate(m3g(kte,1,1))
+    allocate(cfliq(kte,1,1))
+    allocate(cfice(kte,1,1))
+    allocate(cfsnow(kte,1,1))
+    allocate(cfrain(kte,1,1))
+    allocate(cfgr(kte,1,1))
 
     allocate(AccumSolMass(kte,1,1))
     allocate(AccumSolNumber(kte,1,1))
@@ -380,12 +407,27 @@ contains
     end if
 
     ! Number
-    if (l_2mc)inl = get_q_index(standard_q_names%CLOUD_LIQUID_NUMBER, 'casim')
-    if (l_2mr)inr = get_q_index(standard_q_names%RAIN_NUMBER, 'casim')
+    if (l_2mc) then
+       inl = get_q_index(standard_q_names%CLOUD_LIQUID_NUMBER, 'casim')
+       current_state%liquid_water_nc_index=inl
+    endif
+    if (l_2mr) then
+       inr = get_q_index(standard_q_names%RAIN_NUMBER, 'casim')
+       current_state%rain_water_nc_index = inr
+    endif
     if (.not. l_warm)then
-      if (l_2mi)ini = get_q_index(standard_q_names%ICE_NUMBER, 'casim')
-      if (l_2ms)ins = get_q_index(standard_q_names%SNOW_NUMBER, 'casim')
-      if (l_2mg)ing = get_q_index(standard_q_names%GRAUPEL_NUMBER, 'casim')
+      if (l_2mi) then 
+         ini = get_q_index(standard_q_names%ICE_NUMBER, 'casim')
+         current_state%ice_water_nc_index=ini
+      endif
+      if (l_2ms) then 
+         ins = get_q_index(standard_q_names%SNOW_NUMBER, 'casim')
+         current_state%snow_water_nc_index=ins
+      endif
+      if (l_2mg) then 
+         ing = get_q_index(standard_q_names%GRAUPEL_NUMBER, 'casim')
+         current_state%graupel_water_nc_index = ing
+      endif
     end if
 
     ! Third moments
@@ -440,6 +482,7 @@ contains
     if ( l_psedl ) then
        casdiags % l_psedl = .TRUE.
        casdiags % l_surface_rain = .TRUE.
+       casdiags % l_surface_cloud = .TRUE.
        casdiags % l_precip = .TRUE.
     endif
     if ( l_praut ) casdiags % l_praut = .TRUE.
@@ -492,6 +535,8 @@ contains
     CALL allocate_diagnostic_space(its, ite, jts, jte, kts, kte)
     ! this is no longer needed since can use cas_monc_dgs structure but keep for now
     allocate(surface_precip(y_size_local, x_size_local))
+    allocate(surface_cloudsed(y_size_local, x_size_local))
+    allocate(surface_rainsed(y_size_local, x_size_local))
     ! allocate diagnostic space for MONC fields to export to IO server
     call allocate_casim_monc_dgs_space(current_state, casdiags)
 
@@ -576,16 +621,24 @@ contains
     qv(:,1,1) = current_state%zq(iqx)%data(:,jcol,icol)
     dqv(:,1,1) = current_state%sq(iqx)%data(:,jcol,icol)
 
+    cfliq(:,1,1) = 1.0_wp
+    cfice(:,1,1) = 1.0_wp
+    cfsnow(:,1,1) = 1.0_wp
+    cfrain(:,1,1) = 1.0_wp
+    cfgr(:,1,1) = 1.0_wp
+
     ! Warm microphysical fields
     IF (nq_l > 0)then
       iqx = iql
       qc(:,1,1) = current_state%zq(iqx)%data(:,jcol,icol)
       dqc(:,1,1) = current_state%sq(iqx)%data(:,jcol,icol)
+      cfliq(:,1,1) = 1.0
     end IF
     IF (nq_r > 0)then
       iqx = iqr
       qr(:,1,1) = current_state%zq(iqx)%data(:,jcol,icol)
       dqr(:,1,1) = current_state%sq(iqx)%data(:,jcol,icol)
+      cfrain(:,1,1) = 1.0
     end IF
     IF (nq_l > 1)then
       iqx = inl
@@ -608,16 +661,19 @@ contains
       iqx = iqi
       qi(:,1,1) = current_state%zq(iqx)%data(:,jcol,icol)
       dqi(:,1,1) = current_state%sq(iqx)%data(:,jcol,icol)
+      cfice(:,1,1) = 1.0
     end IF
     IF (nq_s > 0)then
       iqx = iqs
       qs(:,1,1) = current_state%zq(iqx)%data(:,jcol,icol)
       dqs(:,1,1) = current_state%sq(iqx)%data(:,jcol,icol)
+      cfsnow(:,1,1) = 1.0
     end IF
     IF (nq_g > 0)then
       iqx = iqg
       qg(:,1,1) = current_state%zq(iqx)%data(:,jcol,icol)
       dqg(:,1,1) = current_state%sq(iqx)%data(:,jcol,icol)
+      cfgr(:,1,1) = 1.0
     end IF
     IF (nq_i > 1)then
       iqx = ini
@@ -712,7 +768,7 @@ contains
        pressure, rho,                              &
        w, tke,                                     &
        z_half, z_centre,                           &
-       dz,                                         &
+       dz, cfliq, cfice, cfsnow, cfrain, cfgr,     &
                                 ! in/out
        dqv, dqc, dqr, dnc, dnr, dm3r,              &
        dqi, dqs, dqg, dni, dns, dng, dm3s, dm3g,   &
@@ -838,9 +894,14 @@ contains
     ! and surface
     ! snow rate (precip_s), which is the sum of ice, snow and graupel (See micromain.F90 in casim for
     ! calculation).
-    if (l_warm) then
+    if (l_warm .or. .not. casdiags % l_surface_snow ) then
        surface_precip(target_y_index,target_x_index) = &
             casdiags % SurfaceRainR(1,1)
+       surface_cloudsed(target_y_index,target_x_index) = &
+            casdiags % SurfaceCloudR(1,1)
+       surface_rainsed(target_y_index,target_x_index) = &
+            casdiags % SurfaceRainR(1,1) - casdiags % SurfaceCloudR(1,1)
+       
     else
        surface_precip(target_y_index,target_x_index) = &
             casdiags % SurfaceRainR(1,1) + casdiags % SurfaceSnowR(1,1)
@@ -877,7 +938,7 @@ contains
     sp2             = options_get_real(current_state%options_database, 'sp2')
     sp3             = options_get_real(current_state%options_database, 'sp3')
     max_mu          = options_get_real(current_state%options_database, 'max_mu')
-    fix_mu          = options_get_real(current_state%options_database, 'fix_mu')
+    cloud_params%fix_mu = options_get_real(current_state%options_database, 'fix_mu')
 
     l_aaut          = options_get_logical(current_state%options_database, 'l_aaut')
     l_aacc          = options_get_logical(current_state%options_database, 'l_aacc')
@@ -947,6 +1008,13 @@ contains
     l_pgsub         = options_get_logical(current_state%options_database, 'l_pgsub')
     l_pisub         = options_get_logical(current_state%options_database, 'l_pisub')
     l_pimlt         = options_get_logical(current_state%options_database, 'l_pimlt')
+    l_gamma_online  = options_get_logical(current_state%options_database, 'l_gamma_online')
+    l_subseds_maxv  = options_get_logical(current_state%options_database, 'l_subseds_maxv')
+    l_sed_eulexp  = options_get_logical(current_state%options_database, 'l_sed_eulexp')
+    cfl_vt_max      = options_get_real(current_state%options_database, 'cfl_vt_max')
+    l_kfsm          = options_get_logical(current_state%options_database, 'l_kfsm')
+    l_adjust_D0     = options_get_logical(current_state%options_database, 'l_adjust_D0') 
+    fixed_cloud_number = options_get_real(current_state%options_database, 'fixed_cloud_number')
 
   end subroutine read_configuration
 
@@ -957,7 +1025,8 @@ contains
 
     field_information%field_type=COMPONENT_ARRAY_FIELD_TYPE
     field_information%data_type=COMPONENT_DOUBLE_DATA_TYPE
-    if (name .eq. "surface_precip") then
+    if (name .eq. "surface_precip" .or. name .eq. "surface_cloudsed" .or. &
+       name .eq. "surface_rainsed") then
        field_information%number_dimensions=2
        field_information%dimension_sizes(1)=current_state%local_grid%size(Y_INDEX)
        field_information%dimension_sizes(2)=current_state%local_grid%size(X_INDEX)
@@ -990,6 +1059,14 @@ contains
        allocate(field_value%real_2d_array(current_state%local_grid%size(Y_INDEX), &
             current_state%local_grid%size(X_INDEX)))
        field_value%real_2d_array(:,:)= surface_precip(:,:)
+    else if (name .eq. "surface_cloudsed") then
+       allocate(field_value%real_2d_array(current_state%local_grid%size(Y_INDEX), &
+            current_state%local_grid%size(X_INDEX)))
+       field_value%real_2d_array(:,:)= surface_cloudsed(:,:)
+    else if (name .eq. "surface_rainsed") then
+       allocate(field_value%real_2d_array(current_state%local_grid%size(Y_INDEX), &
+            current_state%local_grid%size(X_INDEX)))
+       field_value%real_2d_array(:,:)= surface_rainsed(:,:)   
     else if (name .eq. "condensation_rate") then
        allocate(field_value%real_3d_array(current_state%local_grid%size(Z_INDEX),  &
             current_state%local_grid%size(Y_INDEX),                                &

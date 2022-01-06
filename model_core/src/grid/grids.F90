@@ -3,7 +3,7 @@
 !!
 !! Currently MONC supports the Arakawa C grid
 module grids_mod
-  use datadefn_mod, only : DEFAULT_PRECISION
+  use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION
   implicit none
 
 #ifndef TEST_MODE
@@ -88,8 +88,6 @@ module grids_mod
      real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: q_force !< Profiles of forcing terms for q variables
 
      real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: olqbar,olzqbar
-    ! time varying forcing terms
-     real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: wsubs_time_vary 
      
      real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: hgd
      real(kind=DEFAULT_PRECISION) :: czn, zlogm, zlogth, vk_on_zlogm
@@ -126,4 +124,5 @@ module grids_mod
      integer, dimension(:,:), allocatable :: neighbours , corner_neighbours !< Neighbouring process Id per dimension
      integer :: dimensions = 0 !< Number of active dimensions
   end type local_grid_type
+
 end module grids_mod

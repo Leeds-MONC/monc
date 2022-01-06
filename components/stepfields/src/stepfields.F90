@@ -44,8 +44,6 @@ module stepfields_mod
              l_tend_pr_tot_tabs
   ! q indices
   integer :: iqv=0, iql=0, iqr=0, iqi=0, iqs=0, iqg=0
-  integer :: diagnostic_generation_frequency
-
 
   public stepfields_get_descriptor
 
@@ -107,21 +105,21 @@ contains
     l_qdiag =  (.not. current_state%passive_q .and. current_state%number_q_fields .gt. 0) 
 
     l_tend_pr_tot_th  = current_state%th%active
-    l_tend_pr_tot_qv  = l_qdiag .and. current_state%number_q_fields .ge. 1
-    l_tend_pr_tot_ql  = l_qdiag .and. current_state%number_q_fields .ge. 2
-    l_tend_pr_tot_qi  = l_qdiag .and. current_state%number_q_fields .ge. 11
-    l_tend_pr_tot_qr  = l_qdiag .and. current_state%number_q_fields .ge. 11
-    l_tend_pr_tot_qs  = l_qdiag .and. current_state%number_q_fields .ge. 11
-    l_tend_pr_tot_qg  = l_qdiag .and. current_state%number_q_fields .ge. 11
+    l_tend_pr_tot_qv  = l_qdiag .and. current_state%water_vapour_mixing_ratio_index > 0
+    l_tend_pr_tot_ql  = l_qdiag .and. current_state%liquid_water_mixing_ratio_index > 0
+    l_tend_pr_tot_qi  = l_qdiag .and. current_state%ice_water_mixing_ratio_index > 0
+    l_tend_pr_tot_qr  = l_qdiag .and. current_state%rain_water_mixing_ratio_index > 0
+    l_tend_pr_tot_qs  = l_qdiag .and. current_state%snow_water_mixing_ratio_index > 0
+    l_tend_pr_tot_qg  = l_qdiag .and. current_state%graupel_water_mixing_ratio_index > 0
     l_tend_pr_tot_tabs  = l_tend_pr_tot_th
 
     l_tend_3d_th  = current_state%th%active .or. l_tend_pr_tot_th
-    l_tend_3d_qv  = (l_qdiag .and. current_state%number_q_fields .ge. 1) .or. l_tend_pr_tot_qv
-    l_tend_3d_ql  = (l_qdiag .and. current_state%number_q_fields .ge. 2) .or. l_tend_pr_tot_ql
-    l_tend_3d_qi  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qi
-    l_tend_3d_qr  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qr
-    l_tend_3d_qs  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qs
-    l_tend_3d_qg  = (l_qdiag .and. current_state%number_q_fields .ge. 11) .or. l_tend_pr_tot_qg
+    l_tend_3d_qv  = (l_qdiag .and. current_state%water_vapour_mixing_ratio_index > 0) .or. l_tend_pr_tot_qv
+    l_tend_3d_ql  = (l_qdiag .and. current_state%liquid_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_ql
+    l_tend_3d_qi  = (l_qdiag .and. current_state%ice_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_qi
+    l_tend_3d_qr  = (l_qdiag .and. current_state%rain_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_qr
+    l_tend_3d_qs  = (l_qdiag .and. current_state%snow_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_qs
+    l_tend_3d_qg  = (l_qdiag .and. current_state%graupel_water_mixing_ratio_index > 0) .or. l_tend_pr_tot_qg
     l_tend_3d_tabs = l_tend_3d_th
 
     ! Allocate 3d tendency fields upon availability
@@ -198,9 +196,6 @@ contains
       allocate( tend_pr_tot_tabs(current_state%local_grid%size(Z_INDEX)) )
     endif
 
-    ! Save the sampling_frequency to force diagnostic calculation on select time steps
-    diagnostic_generation_frequency=options_get_integer(current_state%options_database, "sampling_frequency")
-
   end subroutine initialisation_callback
 
 
@@ -238,6 +233,10 @@ contains
 
     integer :: iq
     integer :: current_x_index, current_y_index, target_x_index, target_y_index
+    logical :: calculate_diagnostics
+
+    calculate_diagnostics = current_state%diagnostic_sample_timestep &
+                            .and. .not. current_state%halo_column
 
     current_x_index=current_state%column_local_x
     current_y_index=current_state%column_local_y
@@ -246,8 +245,9 @@ contains
 
 
     if (cfl_is_enabled .and. current_state%first_timestep_column) then
-      if (mod(current_state%timestep, current_state%cfl_frequency) == 1 .or. &
-         current_state%timestep-current_state%start_timestep .le. current_state%cfl_frequency) then
+      if ((mod(current_state%timestep, current_state%cfl_frequency) == 1 .or. &
+           current_state%timestep-current_state%start_timestep .le. current_state%cfl_frequency) &
+          .or. current_state%timestep .ge. (current_state%last_cfl_timestep + current_state%cfl_frequency)) then
         determine_flow_minmax=.true.
         call reset_local_minmax_values(current_state)
       else
@@ -304,9 +304,8 @@ contains
       endif
     endif  ! zero totals
 
-    if (mod(current_state%timestep, diagnostic_generation_frequency) == 0 .and. .not. current_state%halo_column) then
-      call compute_component_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
-    end if
+    if (calculate_diagnostics) &
+        call compute_component_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
 
   end subroutine timestep_callback
 
@@ -354,6 +353,12 @@ contains
              current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION), c1, c2, &
              current_state%field_stepping == CENTRED_STEPPING)
       end if
+    end do
+    do i=1,current_state%n_tracers
+      call step_single_field(current_state%column_local_x,  current_state%column_local_y, x_prev, y_prev, &
+           current_state%tracer(i), current_state%ztracer(i), current_state%stracer(i), current_state%local_grid, .false., &
+           current_state%field_stepping, current_state%dtm, real(0., kind=DEFAULT_PRECISION), c1, c2, &
+           current_state%field_stepping == CENTRED_STEPPING)
     end do
   end subroutine step_all_fields 
 

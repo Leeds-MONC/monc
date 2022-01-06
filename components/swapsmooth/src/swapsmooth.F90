@@ -121,6 +121,11 @@ contains
           current_state%zq(n)%data(k,y_index,x_index)=existing_value - current_state%q(n)%data(k,y_index,x_index)
         end if
       end do
+      do n=1,current_state%n_tracers
+        existing_value = current_state%tracer(n)%data(k,y_index,x_index) + current_state%ztracer(n)%data(k,y_index,x_index)
+        current_state%tracer(n)%data(k,y_index,x_index)=existing_value * c1 + current_state%tracer(n)%data(k,y_index,x_index) * c2
+        current_state%ztracer(n)%data(k,y_index,x_index)=existing_value - current_state%tracer(n)%data(k,y_index,x_index)
+      end do
     end do
   end subroutine swap_and_smooth_classic
 
@@ -171,6 +176,12 @@ contains
                current_state%tsmth * existing_value
           current_state%q(n)%data(k,y_index,x_index)=existing_value
         end if
+      end do
+      do n=1,current_state%n_tracers
+        existing_value = current_state%ztracer(n)%data(k,y_index,x_index)
+        current_state%ztracer(n)%data(k,y_index,x_index)=current_state%tracer(n)%data(k,y_index,x_index)+&
+             current_state%tsmth * existing_value
+        current_state%tracer(n)%data(k,y_index,x_index)=existing_value
       end do
     end do
   end subroutine swap_and_smooth_robert_filter

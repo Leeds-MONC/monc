@@ -3,6 +3,7 @@ global_configuration=global_config
 
 # Override global component defaults
 fftsolver_enabled=.true.
+iterativesolver_enabled=.false.
 pw_advection_enabled=.true.
 simplesetup_enabled=.true.
 smagorinsky_enabled=.true.
@@ -105,7 +106,6 @@ z_init_pl_q=0.,     680.,   1300., 3500., 4150.,  4850.,  5200.,  6100.,  7000.,
 f_init_pl_q=13.0e-3,12.5e-3,8.5e-3,4.3e-3,2.44e-3,1.52e-3,1.31e-3,0.75e-3,0.48e-3,0.28e-3,0.080e-3,0.038e-3,0.012e-3,0.008e-3,0.003e-3,0.0005e-3,0.0,    0.0
   
 l_matchthref=.true.
-l_thref_zero_buoy=.false.
 
 # Smagorinsky configuration
 # Default values for the smagorinsky subgrid constants
@@ -209,8 +209,8 @@ latitude       = 33.0    # latitude for the location of radiation calc
 longitude      = -123.0  # longitude for the location of radiation calc
 rad_start_year = 1987.0  # simulation year for earth sun distance
 rad_start_day  = 180.0   # day number from January 1st
-rad_int_time   = 180.0   # Radiation integration timestep
 rad_start_time = 10.0    # Start time for the radiation
+rad_interval   = 200     # Radiation calculation interval [integer, unit depends on time_basis]
 
 ## Surface albedo variables for socrates
 l_variable_srf_albedo = .false. # not coded yet but will allow variable

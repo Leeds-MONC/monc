@@ -8,7 +8,7 @@ module def_socrates_derived_fields
 
      real(kind=DEFAULT_PRECISION) :: &
           dt_secs   ! radiation timestep in seconds. It will either be
-                    ! socrates_opt%rad_int_time, or the MONC timestep
+                    ! the time since the previous call, or the MONC timestep
                     ! This is set in the socrates_couple, timestep_callback
 
      ! declare fields to use in the solar position calculation
@@ -47,7 +47,8 @@ module def_socrates_derived_fields
           flux_net_lw(:,:,:),                 & ! longwave flux net
           swrad_hr(:,:,:),                    & ! shortwave heating rate
           lwrad_hr(:,:,:),                    & ! longwave heating rate
-          totrad_hr(:,:,:)                      ! total radiative heating rate
+          totrad_hr(:,:,:),                   & ! total radiative heating rate
+          cloud_reff(:,:,:)
           
      
      ! declare 2-d fields for shortwave and longwave toa and surface

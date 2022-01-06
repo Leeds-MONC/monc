@@ -44,5 +44,14 @@ contains
     do i=1, current_state%number_q_fields
       current_state%sq(i)%data=0.0_DEFAULT_PRECISION
     end do
+    
+    if (current_state%n_tracers .gt. 0) then
+      do i=1, current_state%n_tracers
+        current_state%stracer(i)%data=0.0_DEFAULT_PRECISION
+      end do
+      if (current_state%traj_tracer_index >0 .and. current_state%reinit_tracer) then
+        current_state%reinit_tracer=.false. 
+      end if
+    end if
   end subroutine timestep_callback  
 end module clearsourceterms_mod

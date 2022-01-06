@@ -68,6 +68,16 @@
   <field name="tend_u_coriolis_profile_total_local" type="array" data_type="double" optional=true/>
   <field name="tend_v_coriolis_profile_total_local" type="array" data_type="double" optional=true/>
 
+  <field name="tend_th_socrates_profile_longwave_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_th_socrates_profile_shortwave_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_th_socrates_profile_total_radiative_heating_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_socrates_profile_longwave_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_socrates_profile_shortwave_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_socrates_profile_total_radiative_heating_total_local" type="array" data_type="double" optional=true/>
+
+  <field name="tend_th_lwrad_exponential_profile_total_local" type="array" data_type="double" optional=true/>
+  <field name="tend_tabs_lwrad_exponential_profile_total_local" type="array" data_type="double" optional=true/>
+
   <field name="tend_th_simplecloud_profile_total_local" type="array" data_type="double" optional=true/>
   <field name="tend_qv_simplecloud_profile_total_local" type="array" data_type="double" optional=true/>
   <field name="tend_ql_simplecloud_profile_total_local" type="array" data_type="double" optional=true/>
@@ -103,7 +113,7 @@
      <operator name="arithmetic" result="tend_v_pwa_mean" equation="tend_v_pwa_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_v_pwa_total_g" field="tend_v_pwadvection_profile_total_local" root="auto"/>
   </diagnostic>
-  <diagnostic field="tend_w_pwa_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+  <diagnostic field="tend_w_pwa_mean"  type="array" data_type="double" size="z" units="m/s^2">
      <operator name="arithmetic" result="tend_w_pwa_mean" equation="tend_w_pwa_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_w_pwa_total_g" field="tend_w_pwadvection_profile_total_local" root="auto"/>
   </diagnostic>
@@ -151,7 +161,7 @@
      <operator name="arithmetic" result="tend_v_tvda_mean" equation="tend_v_tvda_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_v_tvda_total_g" field="tend_v_tvdadvection_profile_total_local" root="auto"/>
   </diagnostic>
-  <diagnostic field="tend_w_tvda_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+  <diagnostic field="tend_w_tvda_mean"  type="array" data_type="double" size="z" units="m/s^2">
      <operator name="arithmetic" result="tend_w_tvda_mean" equation="tend_w_tvda_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_w_tvda_total_g" field="tend_w_tvdadvection_profile_total_local" root="auto"/>
   </diagnostic>
@@ -238,12 +248,12 @@
      <operator name="arithmetic" result="tend_v_vis_mean" equation="tend_v_vis_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_v_vis_total_g" field="tend_v_viscosity_profile_total_local" root="auto"/>
   </diagnostic>
-  <diagnostic field="tend_w_vis_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+  <diagnostic field="tend_w_vis_mean"  type="array" data_type="double" size="z" units="m/s^2">
      <operator name="arithmetic" result="tend_w_vis_mean" equation="tend_w_vis_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_w_vis_total_g" field="tend_w_viscosity_profile_total_local" root="auto"/>
   </diagnostic>
 
-  <diagnostic field="tend_w_buo_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+  <diagnostic field="tend_w_buo_mean"  type="array" data_type="double" size="z" units="m/s^2">
      <operator name="arithmetic" result="tend_w_buo_mean" equation="tend_w_buo_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_w_buo_total_g" field="tend_w_buoyancy_profile_total_local" root="auto"/>
   </diagnostic>
@@ -297,7 +307,7 @@
      <operator name="arithmetic" result="tend_v_dam_mean" equation="tend_v_dam_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_v_dam_total_g" field="tend_v_damping_profile_total_local" root="auto"/>
   </diagnostic>
-  <diagnostic field="tend_w_dam_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+  <diagnostic field="tend_w_dam_mean"  type="array" data_type="double" size="z" units="m/s^2">
      <operator name="arithmetic" result="tend_w_dam_mean" equation="tend_w_dam_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_w_dam_total_g" field="tend_w_damping_profile_total_local" root="auto"/>
   </diagnostic>
@@ -341,6 +351,40 @@
   <diagnostic field="tend_v_cor_mean"  type="array" data_type="double" size="zn" units="m/s^2">
      <operator name="arithmetic" result="tend_v_cor_mean" equation="tend_v_cor_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_v_cor_total_g" field="tend_v_coriolis_profile_total_local" root="auto"/>
+  </diagnostic>
+
+  <diagnostic field="tend_th_socrates_longwave_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_socrates_longwave_mean" equation="tend_th_socrates_lw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_socrates_lw_total_g" field="tend_th_socrates_profile_longwave_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_th_socrates_shortwave_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_socrates_shortwave_mean" equation="tend_th_socrates_sw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_socrates_sw_total_g" field="tend_th_socrates_profile_shortwave_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_th_socrates_total_radiative_heating_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_socrates_total_radiative_heating_mean" equation="tend_th_socrates_trh_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_socrates_trh_total_g" field="tend_th_socrates_profile_total_radiative_heating_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_socrates_longwave_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_socrates_longwave_mean" equation="tend_tabs_socrates_lw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_socrates_lw_total_g" field="tend_tabs_socrates_profile_longwave_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_socrates_shortwave_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_socrates_shortwave_mean" equation="tend_tabs_socrates_sw_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_socrates_sw_total_g" field="tend_tabs_socrates_profile_shortwave_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_socrates_total_radiative_heating_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_socrates_total_radiative_heating_mean" equation="tend_tabs_socrates_trh_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_socrates_trh_total_g" field="tend_tabs_socrates_profile_total_radiative_heating_total_local" root="auto"/>
+  </diagnostic>
+
+ <diagnostic field="tend_th_lwradex_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_th_lwradex_mean" equation="tend_th_lwradex_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_th_lwradex_total_g" field="tend_th_lwrad_exponential_profile_total_local" root="auto"/>
+  </diagnostic>
+  <diagnostic field="tend_tabs_lwradex_mean"  type="array" data_type="double" size="zn" units="K/s">
+     <operator name="arithmetic" result="tend_tabs_lwradex_mean" equation="tend_tabs_lwradex_total_g/({x_size}*{y_size})"/>
+    <communication name="reduction" operator="sum" result="tend_tabs_lwradex_total_g" field="tend_tabs_lwrad_exponential_profile_total_local" root="auto"/>
   </diagnostic>
 
   <diagnostic field="tend_th_scl_mean"  type="array" data_type="double" size="zn" units="K/s">
@@ -401,7 +445,7 @@
      <operator name="arithmetic" result="tend_v_pst_mean" equation="tend_v_pst_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_v_pst_total_g" field="tend_v_pstep_profile_total_local" root="auto"/>
   </diagnostic>
-  <diagnostic field="tend_w_pst_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+  <diagnostic field="tend_w_pst_mean"  type="array" data_type="double" size="z" units="m/s^2">
      <operator name="arithmetic" result="tend_w_pst_mean" equation="tend_w_pst_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_w_pst_total_g" field="tend_w_pstep_profile_total_local" root="auto"/>
   </diagnostic>
@@ -414,7 +458,7 @@
      <operator name="arithmetic" result="tend_v_total_mean" equation="tend_v_total_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_v_total_total_g" field="tend_v_total_profile_total_local" root="auto"/>
   </diagnostic>
-  <diagnostic field="tend_w_total_mean"  type="array" data_type="double" size="zn" units="m/s^2">
+  <diagnostic field="tend_w_total_mean"  type="array" data_type="double" size="z" units="m/s^2">
      <operator name="arithmetic" result="tend_w_total_mean" equation="tend_w_total_total_g/({x_size}*{y_size})"/>
     <communication name="reduction" operator="sum" result="tend_w_total_total_g" field="tend_w_total_profile_total_local" root="auto"/>
   </diagnostic>
@@ -493,6 +537,16 @@
 
   <member name="tend_u_cor_mean"/>
   <member name="tend_v_cor_mean"/>
+
+  <member name="tend_th_socrates_longwave_mean"/>
+  <member name="tend_th_socrates_shortwave_mean"/>
+  <member name="tend_th_socrates_total_radiative_heating_mean"/>
+  <member name="tend_tabs_socrates_longwave_mean"/>
+  <member name="tend_tabs_socrates_shortwave_mean"/>
+  <member name="tend_tabs_socrates_total_radiative_heating_mean"/>
+
+  <member name="tend_th_lwradex_mean"/>
+  <member name="tend_tabs_lwradex_mean"/>
 
   <member name="tend_th_scl_mean"/>
   <member name="tend_qv_scl_mean"/>

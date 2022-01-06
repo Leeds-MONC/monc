@@ -27,7 +27,7 @@ subroutine rad_ctl(current_state, sw_spectrum, lw_spectrum, &
   use def_socrates_options, only: str_socrates_options
   use def_socrates_derived_fields, only: str_socrates_derived_fields
   use science_constants_mod, only: cp
-  use rad_pcf, only: ip_solar, ip_infra_red
+  use rad_pcf, only: ip_solar, ip_infra_red, ip_clcmp_st_water
 
   type(model_state_type), target, intent(inout) :: current_state
   TYPE (StrSpecData) :: sw_spectrum
@@ -201,20 +201,24 @@ subroutine rad_ctl(current_state, sw_spectrum, lw_spectrum, &
      !     NB: the +2 is becasue n=1 is below the surface (comment from LEM)
   current_state%sth_lw%data(2:k_top,jcol, icol) = &
           merge_fields%lw_heat_rate_radlevs(mcc%irad_levs:mcc%irad_levs+2-k_top:-1)
+
+  socrates_derived_fields%lwrad_hr(:,target_y_index, target_x_index) = &
+       current_state%sth_lw%data(:,jcol, icol)   ! heating rate [abs temp/sec]
+
   ! convert dT/dt to dTH/dt
   current_state%sth_lw%data(:, jcol, icol) = & 
          current_state%sth_lw%data(:, jcol, icol)* &
          current_state%global_grid%configuration%vertical%prefrcp(:)
 
-  socrates_derived_fields%lwrad_hr(:,target_y_index, target_x_index) = &
-       current_state%sth_lw%data(:,jcol, icol)
-  
   do k = 1, k_top
      socrates_derived_fields%flux_up_lw(k,target_y_index, target_x_index) = &
           radout%flux_up(1,mcc%irad_levs+1-k,1)
   
      socrates_derived_fields%flux_down_lw(k,target_y_index, target_x_index) = &
           radout%flux_down(1,mcc%irad_levs+1-k,1)
+
+     socrates_derived_fields%cloud_reff(k,target_y_index, target_x_index) = &
+          cld%condensed_dim_char(1, mcc%irad_levs+1-k, ip_clcmp_st_water)
   enddo
 
   socrates_derived_fields%totrad_hr(:,target_y_index, target_x_index) = &

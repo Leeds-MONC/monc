@@ -8,7 +8,7 @@ module threadpool_mod
        forthread_cond_broadcast, forthread_cond_signal, forthread_cond_destroy, forthread_join
   use conversions_mod, only : conv_to_string
   use logging_mod, only : LOG_ERROR, LOG_WARN, log_log
-  use configuration_parser_mod, only : io_configuration_type
+  use configuration_parser_mod, only : io_configuration_type, l_thoff
   use mpi, only : MPI_THREAD_MULTIPLE, MPI_THREAD_SERIALIZED
   implicit none
 
@@ -52,6 +52,8 @@ contains
 
     integer :: n
 
+    if (l_thoff) return
+
     call check_thread_status(forthread_init())
     call check_thread_status(forthread_mutex_init(netcdfmutex, -1))
     if (io_configuration%number_of_threads .ge. 1) then
@@ -82,6 +84,9 @@ contains
 
   !> Aquires the NetCDF thread lock, NetCDF is not thread safe so we need to manage thread calls to it
   subroutine threadpool_lock_netcdf_access()
+
+    if (l_thoff) return
+
 #ifdef ENFORCE_THREAD_SAFETY
     call check_thread_status(forthread_mutex_lock(netcdfmutex))
 #endif
@@ -89,6 +94,9 @@ contains
 
   !> Releases the NetCDF thread lock, NetCDF is not thread safe so we need to manage thread calls to it
   subroutine threadpool_unlock_netcdf_access()
+
+    if (l_thoff) return
+
 #ifdef ENFORCE_THREAD_SAFETY
     call check_thread_status(forthread_mutex_unlock(netcdfmutex))
 #endif
@@ -104,6 +112,8 @@ contains
     character, dimension(:), allocatable, intent(in), optional :: data_buffer
 
     integer :: idle_thread_id
+
+    if (l_thoff) return
 
     if (.not. threadpool_active) call log_log(LOG_ERROR, "Attemping to start IO thread on deactivated thread pool")
 
@@ -162,6 +172,11 @@ contains
   !! @returns Whether the thread pool is idle
   logical function threadpool_is_idle()
 
+    if (l_thoff) then
+      threadpool_is_idle=.true.
+      return
+    endif
+
     call check_thread_status(forthread_mutex_lock(active_scalar_mutex))
     threadpool_is_idle = active_threads==total_number_of_threads
     call check_thread_status(forthread_mutex_unlock(active_scalar_mutex))
@@ -173,6 +188,8 @@ contains
   subroutine threadpool_deactivate()
     integer :: i
     integer, pointer :: retval
+
+    if (l_thoff) return
 
     allocate(retval)
 
@@ -189,10 +206,13 @@ contains
 
   !> Finalises the thread pool
   subroutine threadpool_finalise()
-      call check_thread_status(forthread_mutex_destroy(netcdfmutex))
-      call check_thread_status(forthread_mutex_destroy(active_scalar_mutex))
-      deallocate(thread_busy, thread_start, thread_ids, thread_pass_data, activate_thread_condition_variables, &
-           activate_thread_mutex, thread_entry_containers)
+
+    if (l_thoff) return
+
+    call check_thread_status(forthread_mutex_destroy(netcdfmutex))
+    call check_thread_status(forthread_mutex_destroy(active_scalar_mutex))
+    deallocate(thread_busy, thread_start, thread_ids, thread_pass_data, activate_thread_condition_variables, &
+               activate_thread_mutex, thread_entry_containers)
     call check_thread_status(forthread_destroy())
   end subroutine threadpool_finalise
 
@@ -227,6 +247,8 @@ contains
   !! @param ierr The error/success flag returned from the ForThreads library, which itself is returned from pthreads
   subroutine check_thread_status(ierr)
     integer, intent(in) :: ierr
+
+    if (l_thoff) return
 
     if (ierr .ne. 0) then
       call log_log(LOG_ERROR, "Pthreads error in IO server, error code="//conv_to_string(ierr))

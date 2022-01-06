@@ -10,6 +10,8 @@ module profile_diagnostics_mod
   use saturation_mod, only: qsaturation
   use logging_mod, only : LOG_ERROR, log_master_log  
   use def_tvd_diagnostic_terms, only: tvd_dgs_terms, allocate_tvd_diagnostic_terms
+  use conversions_mod, only : conv_to_uppercase
+  use def_merge_atm, only: str_merge_atm
 
   implicit none
 
@@ -19,6 +21,8 @@ module profile_diagnostics_mod
 
   integer :: total_points, iqv=0, iql=0, iqr=0, iqi=0, iqs=0,    &
                            iqg=0
+  integer ::  inl=0, inr=0, ini=0, ins=0,    &
+              ing=0
   real(kind=DEFAULT_PRECISION), dimension(:), allocatable ::     &
        tempfac, u_wind_tot, uprime_tot, v_wind_tot, vprime_tot,  &
        uprime, vprime, wke_tot, wwww_tot, www_tot, ww_tot,       &
@@ -27,6 +31,8 @@ module profile_diagnostics_mod
        thref, prefn, rho, rhon, thinit, uinit, vinit,            &
        ! mositure means
        q_temp, qv_tot, ql_tot, qr_tot, qi_tot, qs_tot, qg_tot,   &
+       ! number concentrations 
+       nl_tot, nr_tot, ni_tot, ns_tot, ng_tot,   &
        ! moisture flux terms
        wqv_cn_tot, wql_cn_tot, wqr_cn_tot, wqi_cn_tot,           &
        wqs_cn_tot, wqg_cn_tot,                                   &
@@ -41,7 +47,7 @@ module profile_diagnostics_mod
   real(kind=DEFAULT_PRECISION), dimension(:)    , allocatable :: cloud_ice_mask_tot
   logical :: l_partial_liq_ice
 
-  real(kind=DEFAULT_PRECISION) :: qlcrit, qicrit
+  real(kind=DEFAULT_PRECISION) :: qlcrit, qicrit, max_height_cloud
   ! character string to determine the advection scheme
   character(len=5) :: advect_theta, advect_q, advect_flow
 
@@ -63,7 +69,7 @@ contains
 
     profile_diagnostics_get_descriptor%field_value_retrieval=>field_value_retrieval_callback
     profile_diagnostics_get_descriptor%field_information_retrieval=>field_information_retrieval_callback
-    allocate(profile_diagnostics_get_descriptor%published_fields(42+26+4))
+    allocate(profile_diagnostics_get_descriptor%published_fields(76))
 
     profile_diagnostics_get_descriptor%published_fields(1)="thref_local"
     profile_diagnostics_get_descriptor%published_fields(2)="prefn_local"
@@ -149,6 +155,14 @@ contains
     profile_diagnostics_get_descriptor%published_fields(42+25+3)="cloud_liq_mask_total_local"
     profile_diagnostics_get_descriptor%published_fields(42+25+4)="cloud_ice_mask_total_local"
 
+!   =====================================================
+!   hydrometeor number concentrations (only output if casim is on)
+    profile_diagnostics_get_descriptor%published_fields(72)="liquid_nc_total_local"
+    profile_diagnostics_get_descriptor%published_fields(73)="rain_nc_total_local"
+    profile_diagnostics_get_descriptor%published_fields(74)="ice_nc_total_local"
+    profile_diagnostics_get_descriptor%published_fields(75)="snow_nc_total_local"
+    profile_diagnostics_get_descriptor%published_fields(76)="graupel_nc_total_local"
+
 
   end function profile_diagnostics_get_descriptor
 
@@ -210,7 +224,8 @@ contains
        iql=get_q_index(standard_q_names%CLOUD_LIQUID_MASS, 'profile_diags')  
        qlcrit=options_get_real(current_state%options_database, "qlcrit")  
        qicrit=options_get_real(current_state%options_database, "qicrit")
- 
+       max_height_cloud=options_get_real(current_state%options_database, "max_height_cloud") 
+
        allocate(qv_tot(current_state%local_grid%size(Z_INDEX))  &
             , ql_tot(current_state%local_grid%size(Z_INDEX)),   &
             q_temp(current_state%local_grid%size(Z_INDEX)),   & 
@@ -247,12 +262,34 @@ contains
           allocate(wqg_cn_tot(current_state%local_grid%size(Z_INDEX)))
           allocate(wqg_ad_tot(current_state%local_grid%size(Z_INDEX)))
        endif
+       ! allocate number concentrations for the hydrometeors
+       if (current_state%liquid_water_nc_index > 0) then
+          inl = current_state%liquid_water_nc_index
+          allocate(nl_tot(current_state%local_grid%size(Z_INDEX)))
+       endif
+       if (current_state%rain_water_nc_index > 0) then
+          inr = current_state%rain_water_nc_index
+          allocate(nr_tot(current_state%local_grid%size(Z_INDEX)))
+       endif
+       if (current_state%ice_water_nc_index > 0) then
+          ini = current_state%ice_water_nc_index 
+          allocate(ni_tot(current_state%local_grid%size(Z_INDEX)))
+       endif
+       if (current_state%snow_water_nc_index > 0) then
+          ins = current_state%snow_water_nc_index
+          allocate(ns_tot(current_state%local_grid%size(Z_INDEX)))
+       endif
+       if (current_state%graupel_water_nc_index > 0) then
+          ing = current_state%graupel_water_nc_index
+          allocate(ng_tot(current_state%local_grid%size(Z_INDEX)))
+       endif
 
        ! arrange and allocate cloud fraction diagnostics...3d mask is optional
-       cloud_mask_method =                                                         &
-           options_get_string(current_state%options_database, "cloud_mask_method")
-       if (.not. (trim(cloud_mask_method) == "DEFAULT"   .or.                      &
-                  trim(cloud_mask_method) == "SOCRATES"      ) )  then
+       cloud_mask_method = conv_to_uppercase(                                      &
+           options_get_string(current_state%options_database, "cloud_mask_method"))
+       if (.not. (cloud_mask_method == "DEFAULT"  .or. &
+                  cloud_mask_method == "SOCRATES" .or. &
+                  cloud_mask_method == "RCEMIP")) then
          call log_master_log(LOG_ERROR,                                            &
           "Requested cloud_mask_method is invalid.  Check profile_diagnostics.F90") 
        end if ! cloud_mask_method validity check
@@ -274,7 +311,7 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    integer :: k, i, iq_tmp, km1, kp1, icol, jcol
+    integer :: k, i, iq_tmp, icol, jcol
     real(kind=DEFAULT_PRECISION) :: cltop_col, clbas_col, qv, qc, TdegK, Pmb &
          , qs, exner
     real(kind=DEFAULT_PRECISION) :: uprime_w_local, vprime_w_local &
@@ -339,6 +376,12 @@ contains
              wqg_ad_tot(:) = 0.0_DEFAULT_PRECISION
           endif
 
+          if (inl > 0) nl_tot(:) = 0.0_DEFAULT_PRECISION
+          if (inr > 0) nr_tot(:) = 0.0_DEFAULT_PRECISION
+          if (ini > 0) ni_tot(:) = 0.0_DEFAULT_PRECISION
+          if (ins > 0) ns_tot(:) = 0.0_DEFAULT_PRECISION
+          if (ing > 0) ng_tot(:) = 0.0_DEFAULT_PRECISION
+    
           if (allocated(cloud_mask)) cloud_mask(:,:,:) = 0.0_DEFAULT_PRECISION
           cloud_mask_tot(:) = 0.0_DEFAULT_PRECISION
           cloud_liq_mask_tot(:) = 0.0_DEFAULT_PRECISION
@@ -462,29 +505,34 @@ contains
     endif
        
     if (allocated(wke_tot)) then
-       do k=1, current_state%local_grid%size(Z_INDEX)
-          kp1=MIN(k+1,current_state%local_grid%size(Z_INDEX))  
-          km1=MAX(k-1,1)
-          wke_tot(k) = wke_tot(k) + 0.25_DEFAULT_PRECISION * (                   &
-               current_state%global_grid%configuration%vertical%rho(k) *       &
-               ( (current_state%v%data(k,jcol,icol)    &
-               + current_state%v%data(k,jcol,icol+1))   &
-               * uprime(k)*uprime(kp1)                  &
-               + (current_state%v%data(k,jcol,icol)     &
-               + current_state%v%data(k,jcol+1,icol))   &
-               * vprime(k) * vprime(kp1) )              &
-               + 0.5_DEFAULT_PRECISION * (              &
-               (current_state%w%data(k,jcol,icol)       &
-               + current_state%w%data(kp1,jcol,icol))   &
-               * current_state%w%data(k,jcol,icol)      &
-               * current_state%w%data(kp1,jcol,icol)    &
-               * current_state%global_grid%configuration%vertical%rhon(kp1)                &
-               +(current_state%w%data(k,jcol,icol)      &
-               + current_state%w%data(km1,jcol,icol))   &
-               * current_state%w%data(k,jcol,icol)      &
-               * current_state%w%data(km1,jcol,icol)    &
-               * current_state%global_grid%configuration%vertical%rhon(k) )                &
-               )
+       do k=1, current_state%local_grid%size(Z_INDEX)-1
+          uprime_w_local =  &
+               0.25_DEFAULT_PRECISION * ( current_state%u%data(k,jcol,icol)   + &
+               current_state%u%data(k,jcol,icol-1) + &
+               current_state%u%data(k+1,jcol,icol) + &
+               current_state%u%data(k+1,jcol,icol-1) ) + &
+               current_state%ugal
+          if (allocated(current_state%global_grid%configuration%vertical%olubar)) &
+               uprime_w_local = uprime_w_local - &
+               0.5_DEFAULT_PRECISION * ( current_state%global_grid%configuration%vertical%olubar(k) + &
+                  current_state%global_grid%configuration%vertical%olubar(k+1) )
+          vprime_w_local = &
+               0.25_DEFAULT_PRECISION * ( current_state%v%data(k,jcol,icol)   + &
+               current_state%v%data(k,jcol-1,icol) + &
+               current_state%v%data(k+1,jcol,icol) + &
+               current_state%v%data(k+1,jcol-1,icol) ) + &
+               current_state%vgal
+          if (allocated(current_state%global_grid%configuration%vertical%olvbar)) &
+               vprime_w_local = vprime_w_local - &
+               0.5_DEFAULT_PRECISION * ( current_state%global_grid%configuration%vertical%olvbar(k) + &
+               current_state%global_grid%configuration%vertical%olvbar(k+1) )
+
+          wke_tot(k) = wke_tot(k) + 0.5_DEFAULT_PRECISION *                     &
+               current_state%global_grid%configuration%vertical%rhon(k) *       &
+               current_state%w%data(k,jcol,icol) *                              &
+               ( uprime_w_local * uprime_w_local +                              &
+                 vprime_w_local * vprime_w_local +                              &
+                 current_state%w%data(k,jcol,icol) * current_state%w%data(k,jcol,icol) )
        enddo
     endif
        
@@ -536,7 +584,6 @@ contains
              exner = current_state%global_grid%configuration%vertical%rprefrcp(k)
              Pmb   = (current_state%global_grid%configuration%vertical%prefn(k)/100.)
              qv    = current_state%q(iqv)%data(k, jcol,icol) 
-             qc    = current_state%q(iql)%data(k, jcol,icol)
              TdegK = (current_state%th%data(k,jcol,icol) &
                   + current_state%global_grid%configuration%vertical%thref(k))*exner
              qs = qsaturation(TdegK, Pmb)
@@ -552,6 +599,17 @@ contains
             qs_tot(:) = qs_tot(:) + (current_state%q(iqs)%data(:,jcol,icol))
        if (iqg > 0) &
             qg_tot(:) = qg_tot(:) + (current_state%q(iqg)%data(:,jcol,icol))
+       ! hydrometeor number concentration
+       if (inl > 0) &
+            nl_tot(:) = nl_tot(:) + (current_state%q(inl)%data(:,jcol,icol))
+       if (inr > 0) &
+            nr_tot(:) = nr_tot(:) + (current_state%q(inr)%data(:,jcol,icol))
+       if (ini > 0) &
+            ni_tot(:) = ni_tot(:) + (current_state%q(ini)%data(:,jcol,icol))
+       if (ins > 0) &
+            ns_tot(:) = ns_tot(:) + (current_state%q(ins)%data(:,jcol,icol))
+       if (ing > 0) &
+            ng_tot(:) = ng_tot(:) + (current_state%q(ing)%data(:,jcol,icol))
        !
        ! moisture field fluxes
        ! vapour
@@ -667,6 +725,17 @@ contains
     else if (name .eq. "cloud_ice_mask_total_local") then
       field_information%enabled=allocated(cloud_ice_mask_tot)
 !   ========================================================================
+    else if (name .eq. "liquid_nc_total_local") then
+       field_information%enabled=current_state%liquid_water_nc_index .gt. 0
+    else if (name .eq. "rain_nc_total_local" ) then
+       field_information%enabled= current_state%rain_water_nc_index .gt. 0
+    else if (name .eq. "ice_nc_total_local") then
+       field_information%enabled= current_state%ice_water_nc_index .gt. 0
+    else if (name .eq. "snow_nc_total_local") then
+       field_information%enabled= current_state%snow_water_nc_index .gt. 0
+    else if (name .eq. "graupel_nc_total_local" ) then
+       field_information%enabled= current_state%graupel_water_nc_index .gt. 0 
+!   ======================================================================== 
     else 
       field_information%enabled=.true.
     end if
@@ -777,6 +846,31 @@ contains
        allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
        do k = 1, current_state%local_grid%size(Z_INDEX)
           field_value%real_1d_array(k)=qg_tot(k)
+       enddo
+    else if (name .eq. "liquid_nc_total_local") then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=nl_tot(k)
+       enddo
+    else if (name .eq. "rain_nc_total_local" ) then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=nr_tot(k)
+       enddo
+    else if (name .eq. "ice_nc_total_local" ) then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=ni_tot(k)
+       enddo
+    else if (name .eq. "snow_nc_total_local" ) then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=ns_tot(k)
+       enddo
+    else if (name .eq. "graupel_nc_total_local" ) then
+       allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
+       do k = 1, current_state%local_grid%size(Z_INDEX)
+          field_value%real_1d_array(k)=ng_tot(k)
        enddo
     else if (name .eq. "w_wind_total_local") then
        allocate(field_value%real_1d_array(current_state%local_grid%size(Z_INDEX)))
@@ -1097,28 +1191,30 @@ contains
   !
   !
   !> DEFAULT method
-  !  Cloud fraction is based on exceeding qlcrit and qicrit.
-  !  This definition is consistent with that used in the conditional
-  !  diagnostics routine (condition "AC").  It does not include
-  !  consideration of rain, snow, and graupel fields.  Liquid and
-  !  ice cloud are treated separately, with their individual fractions
-  !  within a cell summing to 1 based their mixing ratios relative to
-  !  the cell total.
+  !  Cloud fraction is based on species exceeding qlcrit and qicrit.
+  !  This definition is NOT consistent with that used in the conditional
+  !  diagnostics routine (condition "AC") because: 
+  !         Ice cloud considers the combination of ice and snow species.
+  !  It does not include consideration of rain and graupel fields.  
+  !  Liquid and ice cloud are treated separately, with their individual
+  !  fractions within a cell summing to 1 based their mixing ratios 
+  !  relative to the cell total.
+  !  Ice cloud considered as the combination of ice and snow species.
   subroutine calculate_cloud_mask(current_state, jcol, icol)
     type(model_state_type), target, intent(inout) :: current_state
     integer, intent(in) :: jcol, icol
     integer :: k, target_y_index, target_x_index
     logical :: l_prepare_3d_mask, cloud_present
 
+    ! Create a local copy of the precipitation multiplication factors
+    ! for the SOCRATES cloud fraction calculation from the str_merge_atm
+    ! type structure.
     ! The factors below were derived as part of J. Petch PhD
     ! These are used in the SOCRATES method.
-    real(kind=DEFAULT_PRECISION) ::                  &
-         rainfac  = 0.02,                            &
-         snowfac  = 0.40,                            &
-         graupfac = 0.05
+    type (str_merge_atm) :: merge_fields
 
     ! Local temporary terms
-    real(kind=DEFAULT_PRECISION) :: templ, tempi, tempt
+    real(kind=DEFAULT_PRECISION) :: templ, tempi, tempt, qsat_thresh
 
     target_y_index = jcol - current_state%local_grid%halo_size(Y_INDEX)
     target_x_index = icol - current_state%local_grid%halo_size(X_INDEX)
@@ -1129,7 +1225,9 @@ contains
 
     l_prepare_3d_mask = allocated(cloud_mask)
 
-    do k=1, current_state%local_grid%size(Z_INDEX)
+    do k=2, current_state%local_grid%size(Z_INDEX)
+
+      if (current_state%global_grid%configuration%vertical%zn(k) > max_height_cloud) exit
 
       !> Collect available condensate amounts
       if (iql > 0) &
@@ -1138,21 +1236,39 @@ contains
         tempi = current_state%q(iqi)%data(k, jcol, icol)
 
       !> Check cloud_mask_method and modify as needed
-
       !> The SOCRATES method considers rain, snow, and graupel.
-      if (trim(cloud_mask_method) == "SOCRATES") then
+      if (cloud_mask_method == "SOCRATES") then
         if (iqr > 0) &
-          templ = templ + rainfac  * current_state%q(iqr)%data(k, jcol, icol)
+          templ = templ + merge_fields%rainfac  * current_state%q(iqr)%data(k, jcol, icol)
         if (iqs > 0) &
-          tempi = tempi + snowfac  * current_state%q(iqs)%data(k, jcol, icol)
+          tempi = tempi + merge_fields%snowfac  * current_state%q(iqs)%data(k, jcol, icol)
         if (iqg > 0) &
-          tempi = tempi + graupfac * current_state%q(iqg)%data(k, jcol, icol)      
-      endif ! check cloud_mask_method
+          tempi = tempi + merge_fields%graupfac * current_state%q(iqg)%data(k, jcol, icol)      
+      end if ! check cloud_mask_method
+
+      !> Consider the snow species as cloud for DEFAULT and RCEMIP
+      if ((cloud_mask_method == "DEFAULT" .or. &
+           cloud_mask_method == "RCEMIP") .and. iqs > 0) then
+        tempi = tempi + current_state%q(iqs)%data(k, jcol, icol)
+      end if ! check cloud_mask_method
+
+      !> The RCEMIP method
+      !> 1e-5 g/g, or 1 % of the saturation mixing ratio over water, whichever is smaller
+      if (cloud_mask_method == "RCEMIP") then
+        qsat_thresh = min(1e-5_DEFAULT_PRECISION,&
+                          qsaturation( (current_state%th%data(k,jcol,icol) &
+                            + current_state%global_grid%configuration%vertical%thref(k))*&
+                            current_state%global_grid%configuration%vertical%rprefrcp(k), &
+                          current_state%global_grid%configuration%vertical%prefn(k)/100.) &
+                          * 0.01_DEFAULT_PRECISION)
+      end if
 
       !> Work out cloud fractions
       tempt = templ + tempi
-      if (trim(cloud_mask_method) == "SOCRATES") then
+      if (cloud_mask_method == "SOCRATES") then
         cloud_present = (tempt > EPSILON(tempt))
+      else if (cloud_mask_method == "RCEMIP") then
+        cloud_present = (tempt > qsat_thresh)
       else ! DEFAULT
         cloud_present = (templ > qlcrit .or. tempi > qicrit .or. (templ+tempi) > qlcrit)
       end if 

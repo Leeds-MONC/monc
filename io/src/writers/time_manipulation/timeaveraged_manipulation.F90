@@ -12,7 +12,10 @@ module timeaveraged_time_manipulation_mod
   use io_server_client_mod, only : pack_scalar_field, pack_array_field
   use data_utils_mod, only : unpack_scalar_integer_from_bytedata, unpack_scalar_dp_real_from_bytedata, &
        unpack_scalar_logical_from_bytedata
+
   implicit none
+
+  real(kind=DEFAULT_PRECISION) :: model_initial_time
 
 #ifndef TEST_MODE
   private
@@ -36,7 +39,10 @@ module timeaveraged_time_manipulation_mod
 contains  
 
    !> Initialises the reduction action
-  subroutine init_time_averaged_manipulation()
+  subroutine init_time_averaged_manipulation(reconfig_initial_time)
+    real(kind=DEFAULT_PRECISION), intent(in) :: reconfig_initial_time
+    
+    model_initial_time = reconfig_initial_time
     call check_thread_status(forthread_rwlock_init(timeaveraged_value_rw_lock, -1))
   end subroutine init_time_averaged_manipulation  
 
@@ -51,7 +57,7 @@ contains
     real, intent(in) :: latest_time, output_frequency, write_time
     integer, intent(in) :: latest_timestep, write_timestep
 
-    is_time_averaged_time_manipulation_ready_to_write=latest_time + output_frequency .gt. write_time
+    is_time_averaged_time_manipulation_ready_to_write=latest_time + output_frequency .ge. write_time
   end function is_time_averaged_time_manipulation_ready_to_write
 
   !> Performs the time averaged manipulation and only returns values if these are to be stored (i.e. past an output frequency)
@@ -60,23 +66,34 @@ contains
   !! @param field_name The field name
   !! @param timestep The timestep
   !! @param time The model time
+  !! @param time_basis True for diagnostics interval in time coordinates, False for timestep coordinates
   !! @returns An allocated array of reals if data is to be stored, otherwise this is unallocated
   type(data_values_type) function perform_timeaveraged_time_manipulation(instant_values, output_frequency, &
-       field_name, timestep, time)
+       field_name, timestep, time, time_basis)
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: instant_values
     real, intent(in) :: output_frequency
     real(kind=DEFAULT_PRECISION), intent(in) :: time
     character(len=*), intent(in) :: field_name
     integer, intent(in) :: timestep
+    logical, intent(in) :: time_basis
 
     type(time_averaged_completed_type), pointer :: timeaveraged_value
+    logical :: select_value
 
-    timeaveraged_value=>find_or_add_timeaveraged_value(timestep, field_name)
+    timeaveraged_value=>find_or_add_timeaveraged_value(timestep, field_name, output_frequency)
 
     call check_thread_status(forthread_mutex_lock(timeaveraged_value%mutex))
     call time_average(timeaveraged_value, instant_values, time)
 
-    if ((aint(time*10000000.0)-aint(timeaveraged_value%previous_output_time*10000000.0))/10000000.0 .ge. output_frequency) then
+    ! time_basis requires regular-interval entries.  Timestep requires time .ge. previous_output_time+output_frequency
+    if (time_basis) then
+      select_value = mod(nint(time), nint(output_frequency)) == 0
+    else
+      ! these are 'reals' to be consistent with other such calculations elsewhere
+      select_value = real(time)-real(timeaveraged_value%previous_output_time) .ge. real(output_frequency)
+    end if
+
+    if (select_value) then
       timeaveraged_value%previous_output_time=time
       allocate(perform_timeaveraged_time_manipulation%values(size(timeaveraged_value%time_averaged_values)))
       perform_timeaveraged_time_manipulation%values=timeaveraged_value%time_averaged_values
@@ -92,6 +109,13 @@ contains
   !! @param timeaveraged_value The time averaged value to update
   !! @param instant_values The instant values to integrate in
   !! @param time The model time
+  !! Map: 
+  !  start_time                        previous_time    time
+  !           |                                    |       |
+  !           |------------------------------------|-------|
+  !                             |                      |
+  !                          timeav                 timedg
+  !
   subroutine time_average(timeaveraged_value, instant_values, time)
     type(time_averaged_completed_type), intent(inout) :: timeaveraged_value
     real(kind=DEFAULT_PRECISION), dimension(:), intent(in) :: instant_values
@@ -100,9 +124,9 @@ contains
     integer :: i
     real(kind=DEFAULT_PRECISION) :: timeav, timedg, combined_add    
 
-    timeav=time-timeaveraged_value%start_time
-    timedg=time-timeaveraged_value%previous_time
-    combined_add=timeav+timedg
+    timedg = time - timeaveraged_value%previous_time
+    timeav = timeaveraged_value%previous_time - timeaveraged_value%start_time
+    combined_add = timeav + timedg
 
     if (.not. allocated(timeaveraged_value%time_averaged_values)) then
       allocate(timeaveraged_value%time_averaged_values(size(instant_values)))
@@ -277,9 +301,10 @@ contains
   !! @param timestep The corresponding timestep
   !! @param field_name The corresponding field name
   !! @returns A matching or new time averaged value
-  function find_or_add_timeaveraged_value(timestep, field_name)
+  function find_or_add_timeaveraged_value(timestep, field_name, output_frequency)
     integer, intent(in) :: timestep
     character(len=*), intent(in) :: field_name
+    real, intent(in) :: output_frequency
     type(time_averaged_completed_type), pointer :: find_or_add_timeaveraged_value
     
     class(*), pointer :: generic
@@ -292,10 +317,11 @@ contains
       if (.not. associated(find_or_add_timeaveraged_value)) then
         allocate(new_entry)
         new_entry%field_name=field_name
-        new_entry%start_time=0.0_DEFAULT_PRECISION
-        new_entry%previous_time=0.0_DEFAULT_PRECISION
+        new_entry%start_time=model_initial_time
+        new_entry%previous_time=model_initial_time
         new_entry%empty_values=.true.
-        new_entry%previous_output_time=0.0_DEFAULT_PRECISION
+        new_entry%previous_output_time = real(model_initial_time) &
+                                           - mod(real(model_initial_time), output_frequency)
         call check_thread_status(forthread_mutex_init(new_entry%mutex, -1))
         generic=>new_entry
         call c_put_generic(timeaveraged_values, field_name, generic, .false.)

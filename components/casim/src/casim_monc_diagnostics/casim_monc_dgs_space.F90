@@ -22,6 +22,7 @@ module casim_monc_dgs_space
      !--------------------------------
      ! Surface Precipitation rates
      REAL, ALLOCATABLE :: precip(:,:)
+     REAL, ALLOCATABLE :: SurfaceCloudR(:,:)
      REAL, ALLOCATABLE :: SurfaceRainR(:,:)
      REAL, ALLOCATABLE :: SurfaceSnowR(:,:)
      REAL, ALLOCATABLE :: SurfaceGraupR(:,:)
@@ -96,6 +97,11 @@ contains
     if ( casdiags % l_precip ) then
        allocate ( casim_monc_dgs % precip(y_size_local, x_size_local) )
        casim_monc_dgs % precip(:,:) = 0.0_DEFAULT_PRECISION
+    endif
+
+    if ( casdiags % l_surface_cloud ) then
+       allocate ( casim_monc_dgs % SurfaceCloudR(y_size_local, x_size_local) )
+       casim_monc_dgs % SurfaceCloudR(:, :) = 0.0_DEFAULT_PRECISION
     endif
 
     if ( casdiags % l_surface_rain ) then
@@ -314,6 +320,10 @@ contains
          casim_monc_dgs % SurfaceRainR(target_y_index,target_x_index) = &
          casdiags % SurfaceRainR(1,1)
 
+    if ( casdiags % l_surface_cloud ) & 
+         casim_monc_dgs % SurfaceCloudR(target_y_index,target_x_index) = &
+         casdiags % SurfaceCloudR(1,1)
+
     if ( casdiags % l_pcond ) & 
          casim_monc_dgs % pcond(:,target_y_index,target_x_index) = &
          casdiags % pcond(1,1,:)
@@ -354,9 +364,12 @@ contains
          casdiags % dqr(1,1,:)
     
     if (.not. l_warm) then
-       if ( casdiags % l_precip ) & 
-            casim_monc_dgs % precip(target_y_index,target_x_index) = &
+       if ( casdiags % l_precip .and. casdiags % l_surface_snow ) & 
+         casim_monc_dgs % precip(target_y_index,target_x_index) = &
             casdiags % SurfaceRainR(1,1) + casdiags % SurfaceSnowR(1,1)
+      if ( casdiags % l_precip .and. .not. casdiags % l_surface_snow ) & 
+         casim_monc_dgs % precip(target_y_index,target_x_index) = &
+            casdiags % SurfaceRainR(1,1)
        if ( casdiags % l_surface_snow ) & 
             casim_monc_dgs % SurfaceSnowR(target_y_index,target_x_index) = &
             casdiags % SurfaceSnowR(1,1)
@@ -365,7 +378,7 @@ contains
             casdiags % SurfaceGraupR(1,1)
        if ( casdiags % l_phomc ) & 
             casim_monc_dgs % phomc(:,target_y_index,target_x_index) = &
-            casdiags % psedr(1,1,:)
+            casdiags % phomc(1,1,:)
        if ( casdiags % l_pinuc ) & 
             casim_monc_dgs % pinuc(:,target_y_index,target_x_index) = &
             casdiags % pinuc(1,1,:)

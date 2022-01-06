@@ -3,6 +3,7 @@ global_configuration=global_config
 
 # Override global component defaults
 fftsolver_enabled=.true.
+iterativesolver_enabled=.false.
 pw_advection_enabled=.true.
 simplesetup_enabled=.true.
 smagorinsky_enabled=.true.
@@ -26,15 +27,15 @@ socrates_couple_enabled=.false.
 
 # Control configuration
 display_synopsis_frequency=2000
-termination_time=432000
-dtm=1.00
+termination_time=96100.
+dtm=0.75
 
 # IO server configuration
 ioserver_configuration_file="io/io_cfg_files/data_write_1file.xml"
 diagnostic_file="diagnostic_files/RCE_casim_noice_dg.nc"
 moncs_per_io_server=8
-sampling_frequency=100
-3d_sampling_frequency=100
+sampling_frequency=200
+3d_sampling_frequency=2400
 mm=3600.
 mm1=300.
 diag_write_freq=10800.
@@ -57,7 +58,7 @@ advection_q_fields=tvd
 cfl_frequency=100
 cfl_cvismax=0.4
 cfl_cvelmax=0.4
-cfl_dtmmax=2.0
+cfl_dtmmax=0.75
 cfl_dtmmin=.001
 
 # not convinced this works as fixing the gal 
@@ -105,7 +106,6 @@ z_init_pl_q=0.,     680.,   1300., 3500., 4150.,  4850.,  5200.,  6100.,  7000.,
 f_init_pl_q=13.0e-3,12.5e-3,8.5e-3,4.3e-3,2.44e-3,1.52e-3,1.31e-3,0.75e-3,0.48e-3,0.28e-3,0.080e-3,0.038e-3,0.012e-3,0.008e-3,0.003e-3,0.0005e-3,0.0,    0.0
   
 l_matchthref=.true.
-l_thref_zero_buoy=.false.
 
 # Smagorinsky configuration
 # Default values for the smagorinsky subgrid constants
@@ -167,9 +167,9 @@ forcing_timescale_u=21600.
 forcing_timescale_v=21600.
 
 # Forcing profiles
-l_constant_forcing_theta_z2pressure=.true.
+l_constant_forcing_theta_height=.true.
 units_theta_force=K/day
-z_force_pl_theta=0., 12000., 16000, 40000.0
+z_force_pl_theta=0., 12000., 16000, 20000.0
 f_force_pl_theta=-1.5, -2.33, 0.0, 0.0
 
 # surface flux config

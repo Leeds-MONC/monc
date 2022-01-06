@@ -14,6 +14,7 @@ module setfluxlook_mod
   use q_indices_mod, only: get_q_index, standard_q_names
   use interpolation_mod, only: interpolate_point_linear_1d
   use naming_conventions_mod
+  use conversions_mod, only: conv_to_lowercase
 
   implicit none
 
@@ -312,14 +313,15 @@ contains
 
   end subroutine set_flux  
 
+
   subroutine read_configuration(current_state)
     type(model_state_type), intent(inout), target :: current_state
 
 
-
     integer :: ncid, time_dim
-    integer :: number_input_humidities
+    integer :: number_input_humidities, number_times, number_check
 
+    number_times = 0
 
     current_state%use_surface_boundary_conditions= & 
        options_get_logical(current_state%options_database, "use_surface_boundary_conditions")
@@ -334,11 +336,16 @@ contains
 
     input_file=options_get_string(current_state%options_database, "surface_conditions_file")
     ! Read in the input_file
-    if (trim(input_file)=='' .or. trim(input_file)=='None')then
+    if (trim(input_file)=='' .or. conv_to_lowercase(trim(input_file))=='none')then
       if (current_state%use_time_varying_surface_values)then 
         allocate(surface_boundary_input_times(MAX_SURFACE_INPUTS))
         surface_boundary_input_times=0.0
         call options_get_real_array(current_state%options_database, "surface_boundary_input_times", surface_boundary_input_times)
+        number_times = options_get_array_size(current_state%options_database, "surface_boundary_input_times")
+        if (number_times .eq. 0) then
+          call log_master_log(LOG_WARN, "Model configured to use_time_varying_surface_values, "// &
+                                        "but no times have been provided.  Only setting time 0.")
+        end if 
       end if
       if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_FLUXES)then
         allocate(surface_sensible_heat_flux(MAX_SURFACE_INPUTS),   & 
@@ -349,6 +356,8 @@ contains
         call options_get_real_array(current_state%options_database, "surface_sensible_heat_flux", surface_sensible_heat_flux)
         call options_get_real_array(current_state%options_database, "surface_latent_heat_flux", surface_latent_heat_flux)
         number_input_humidities=0
+        call check_time_arrays(current_state, number_times, "surface_sensible_heat_flux")
+        call check_time_arrays(current_state, number_times, "surface_latent_heat_flux")
       else if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_VALUES) then 
         allocate(surface_temperatures(MAX_SURFACE_INPUTS),         &
            surface_humidities(MAX_SURFACE_INPUTS)                  &
@@ -360,6 +369,8 @@ contains
         
         call options_get_real_array(current_state%options_database, "surface_humidities", surface_humidities)
         number_input_humidities=options_get_array_size(current_state%options_database, "surface_humidities")
+        call check_time_arrays(current_state, number_times, "surface_temperatures")
+        call check_time_arrays(current_state, number_times, "surface_humidities")
       end if
     else
       call check_status(nf90_open(path = trim(input_file), mode = nf90_nowrite, ncid = ncid))
@@ -498,5 +509,26 @@ contains
       call log_log(LOG_ERROR, "NetCDF returned error code of "//trim(nf90_strerror(status)))
     end if
   end subroutine check_status
+
+
+  !> Checks the length of input data arrays when use_time_varying_surface_values is enabled
+  !> to warn about unintended mismatches.  Model can function well with mismatches, though.
+  !! @param current_state
+  !! @param number_times Number of use_time_varying_surface_values
+  !! @param key The key to look up in the options_database
+  subroutine check_time_arrays(current_state, number_times, key)
+    type(model_state_type), intent(inout), target :: current_state
+    integer, intent(in) :: number_times
+    character(len=*), intent(in) :: key
+
+    if (.not. current_state%use_time_varying_surface_values) return
+
+    if (options_get_array_size(current_state%options_database, trim(key)) .ne. number_times) then
+       call log_master_log(LOG_WARN, "Model configured to use_time_varying_surface_values, "//         &
+                                     "but the number of entries for '"//trim(key)//                    &
+                                     "' differs from the number of 'surface_boundary_input_times'.  "//&
+                                     "Unmatched entries of either will be set to zero.")
+    end if
+  end subroutine check_time_arrays
 
 end module setfluxlook_mod

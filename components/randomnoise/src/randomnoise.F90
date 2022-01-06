@@ -5,9 +5,12 @@ module randomnoise_mod
   use state_mod, only : FORWARD_STEPPING, model_state_type
   use grids_mod, only : Z_INDEX, Y_INDEX, X_INDEX
   use optionsdatabase_mod, only : options_get_integer, options_get_logical, options_get_real, &
-       options_get_logical_array, options_get_real_array, options_get_string_array, options_get_array_size
+       options_get_logical_array, options_get_real_array, options_get_string_array, options_get_array_size, &
+       options_compare_profile_arrays
   use interpolation_mod, only: piecewise_linear_1d
   use q_indices_mod, only: get_q_index, standard_q_names
+  use logging_mod, only: LOG_ERROR, log_master_log
+  use conversions_mod, only : conv_to_string
 
   implicit none
 
@@ -77,7 +80,13 @@ contains
     end if
 
     if (l_rand_pl_q) then
+      
       allocate(names_rand_pl_q(options_get_array_size(current_state%options_database, "names_rand_pl_q")))
+      if (size(names_rand_pl_q) .eq. 0) then
+        call log_master_log(LOG_ERROR, "Model configured with l_rand_pl_q=.true., but no names_rand_pl_q "//&
+                                       "have been provided to specify the species names to perturb.")
+      end if
+
       call options_get_string_array(current_state%options_database, "names_rand_pl_q", names_rand_pl_q)
     end if
 
@@ -91,6 +100,8 @@ contains
       ! Get amplitude profiles
       allocate(z_rand_pl_theta(options_get_array_size(current_state%options_database, "z_rand_pl_theta")), &
            f_rand_pl_theta(options_get_array_size(current_state%options_database, "f_rand_pl_theta")))
+      call options_compare_profile_arrays(current_state%options_database, &
+                               "z_rand_pl_theta", "f_rand_pl_theta", "theta perturbation")
       call options_get_real_array(current_state%options_database, "z_rand_pl_theta", z_rand_pl_theta)
       call options_get_real_array(current_state%options_database, "f_rand_pl_theta", f_rand_pl_theta)
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
@@ -122,7 +133,15 @@ contains
       call options_get_real_array(current_state%options_database, "z_rand_pl_q", z_rand_pl_q)
       nzq=size(z_rand_pl_q)
       zgrid=current_state%global_grid%configuration%vertical%zn(:)
-      allocate(f_rand_pl_q_tmp(nq_rand*nzq))
+      allocate(f_rand_pl_q_tmp(options_get_array_size(current_state%options_database, "f_rand_pl_q")))
+      if (nq_rand*nzq .ne. size(f_rand_pl_q_tmp)) then
+        call log_master_log(LOG_ERROR, "There is a mismatch between the number of moisture perturbation heights, "//&
+                                       "size(z_rand_pl_q)="//trim(conv_to_string(nzq))//                            &
+                                       ", and the perturbation values, "//                                               &
+                                       "size(f_rand_pl_q)="//trim(conv_to_string(size(f_rand_pl_q_tmp)))//          &
+                                       ".  The length of f_rand_pl_q should equal the length of z_rand_pl_q "//     &
+                                       "multiplied by the number of names_rand_pl_q.")
+      end if
       call options_get_real_array(current_state%options_database, "f_rand_pl_q", f_rand_pl_q_tmp)
       allocate(f_rand_pl_q(nzq, nq_rand))
       f_rand_pl_q(1:nzq, 1:nq_rand)=reshape(f_rand_pl_q_tmp, (/nzq, nq_rand/))
@@ -164,6 +183,8 @@ contains
       ! Get amplitude profiles
       allocate(z_rand_pl_w(options_get_array_size(current_state%options_database, "z_rand_pl_w")), &
            f_rand_pl_w(options_get_array_size(current_state%options_database, "f_rand_pl_w"))) 
+      call options_compare_profile_arrays(current_state%options_database, &
+                                "z_rand_pl_w", "f_rand_pl_w", "w perturbation")
       call options_get_real_array(current_state%options_database, "z_rand_pl_w", z_rand_pl_w)
       call options_get_real_array(current_state%options_database, "f_rand_pl_w", f_rand_pl_w)
 
