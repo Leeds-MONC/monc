@@ -1,0 +1,13 @@
+name: monc
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - gfortran_osx-64 [platform startswith darwin]
+  - gfortran_linux-64 [platform startswith linux]
+  - netcdf-fortran
+  - xarray
+  - pip
+  - pip:
+    - netCDF4
+    - scipy
