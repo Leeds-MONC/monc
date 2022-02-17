@@ -42,6 +42,9 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
     
     current_state%field_stepping = CENTRED_STEPPING
-    if (current_state%timestep .eq. current_state%start_timestep) current_state%field_stepping = FORWARD_STEPPING
+    if (current_state%timestep .eq. current_state%start_timestep) then
+      current_state%field_stepping = FORWARD_STEPPING
+      if (current_state%reconfig_run) current_state%field_stepping = CENTRED_STEPPING
+    end if
   end subroutine timestep_callback  
 end module steppingdirection_mod

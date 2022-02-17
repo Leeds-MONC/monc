@@ -275,8 +275,9 @@ contains
     integer :: k ! look counter
 
     ! No need to do radiation calculations in the halos or on the first timestep
-    !
-    if (current_state%halo_column .or. current_state%timestep < 2) return
+    ! unless this is a reconfiguration run
+    if (current_state%halo_column .or. &
+            (current_state%timestep < 2 .and. (.not. current_state%reconfig_run)) ) return
 
     local_dtm = current_state%dtm*2.0
     if (current_state%field_stepping == FORWARD_STEPPING) local_dtm=current_state%dtm
@@ -302,7 +303,8 @@ contains
     if (current_state%first_nonhalo_timestep_column) then
        !i) 1 call radiation on timestep 2 to initialise the heating rates
        !ii) if rad_interval less than or equal to 0, SOCRATES called on every timestep
-       if (socrates_opt%rad_interval .le. 0 .or. current_state%timestep .eq. 2 ) then
+       if (socrates_opt%rad_interval .le. 0 .or. &
+               (current_state%timestep .eq. 2 .and. (.not. current_state%reconfig_run)) ) then
           socrates_opt%l_rad_calc = .true.
        else  ! compute on specified interval (determined by 
              ! model_core/src/components/timestepper.F90, depends on time_basis)

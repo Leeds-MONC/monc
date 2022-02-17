@@ -10,7 +10,7 @@
 
 -->
 
-<data-definition name="2d_fields_data" frequency="{3d_sampling_frequency}">
+<data-definition name="2d_fields_data" frequency="{3d_sampling_frequency}" namespace="2d_fieldsns">
   <field name="surface_precip" type="array" data_type="double" size="y,x" collective=true optional=true/>
   <field name="vwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
   <field name="lwp" type="array" data_type="double" size="y,x" collective=true optional=true/>
@@ -27,7 +27,7 @@
   <field name="clbas" type="array" data_type="double" size="y,x" collective=true optional=true/>
 </data-definition>
 
-<group name="2d_fields">
+<group name="2d_fields" namespace="2d_fieldsns">
   <member name="surface_precip"/>
   <member name="vwp"/>
   <member name="lwp"/>

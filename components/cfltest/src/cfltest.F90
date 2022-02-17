@@ -23,6 +23,7 @@ module cfltest_mod
   !! Configuration options - all are optional and have default values
   real(kind=DEFAULT_PRECISION) :: tollerance, cvismax, cvelmax, dtmmax, dtmmin, rincmax
   logical l_monitor_cfl, l_constant_dtm
+  integer :: compare_timestep  ! timestep adusted in the case of reconfiguration to keep same cfl interval
 
   public cfltest_get_descriptor
 contains
@@ -63,15 +64,17 @@ contains
 
     real(kind=DEFAULT_PRECISION) :: cfl_number
 
+    compare_timestep = current_state%timestep + current_state%reconfig_timestep_offset
+
     ! Default position: no dtm change
     current_state%update_dtm=.false.
 
-    ! Perform CFL check at certain points in time (intervals and if interval passed).
-    if ((mod(current_state%timestep, current_state%cfl_frequency) == 1 .or. &
-         current_state%timestep-current_state%start_timestep .le. current_state%cfl_frequency) &
-        .or. current_state%timestep .ge. (current_state%last_cfl_timestep + current_state%cfl_frequency)) then
-  
-      current_state%last_cfl_timestep = current_state%timestep
+    ! Perform CFL check at certain points in time (intervals, early steps, and if interval passed).
+    if ((mod(compare_timestep, current_state%cfl_frequency) == 1 &
+        .or. compare_timestep - current_state%start_timestep .le. current_state%cfl_frequency) &
+        .or. compare_timestep .ge. (current_state%last_cfl_timestep + current_state%cfl_frequency)) then
+
+      current_state%last_cfl_timestep = compare_timestep
       current_state%cvel=0.0_DEFAULT_PRECISION
       current_state%cvel_x=0.0_DEFAULT_PRECISION
       current_state%cvel_y=0.0_DEFAULT_PRECISION
@@ -271,7 +274,7 @@ contains
     ! Reduces timestep when approaching the next sample time.
     if (current_state%time_basis) then
       ts_to_next_cfl = current_state%cfl_frequency &
-                       - mod(current_state%timestep, current_state%cfl_frequency)
+                       - mod(compare_timestep, current_state%cfl_frequency)
       projected_time = current_state%time + current_state%dtm &
                        + (current_state%dtm_new * ts_to_next_cfl) + dtmmin
       if ( next_sample_time .gt. 0 .and. projected_time .ge. next_sample_time ) then

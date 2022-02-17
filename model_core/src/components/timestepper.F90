@@ -91,9 +91,11 @@ contains
     type(model_state_type), intent(inout) :: current_state
     type(group_descriptor_type), intent(in) :: group_descriptor
 
+    ! For print_debug_data, the column_global fields must match the requested coordinate.
+    ! This is already handled for the timestep_column, but needs to be specially set for timestep_whole.
     if (current_state%print_debug_data) then
-      current_state%column_local_x =current_state%local_grid%local_domain_start_index(X_INDEX) 
-      current_state%column_local_y =current_state%local_grid%local_domain_start_index(Y_INDEX)
+      current_state%column_global_x = current_state%pdd_x
+      current_state%column_global_y = current_state%pdd_y
     end if
     call execute_timestep_callbacks(current_state, group_descriptor%id)
   end subroutine timestep_whole

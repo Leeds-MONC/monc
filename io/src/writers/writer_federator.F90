@@ -576,7 +576,7 @@ contains
           if (continue_search) then
             if (.not. writer_entries(writer_index)%contents(contents_index)%enabled) then
               call log_log(LOG_WARN, "Received data for previously un-enabled field (ordered_field)'"//&
-                   writer_entries(writer_index)%contents(contents_index)%field_name//"'")
+                   trim(writer_entries(writer_index)%contents(contents_index)%field_name)//"'")
             end if
             writer_entries(writer_index)%contents(contents_index)%enabled=.true.          
             writer_entries(writer_index)%contents(contents_index)%latest_timestep_values=timestep
@@ -741,7 +741,7 @@ contains
         if (continue_search) then
           if (.not. writer_entries(writer_index)%contents(contents_index)%enabled) then
             call log_log(LOG_WARN, "Received data for previously un-enabled field (single_field)'"//&
-                 writer_entries(writer_index)%contents(contents_index)%field_name//"'")
+                 trim(writer_entries(writer_index)%contents(contents_index)%field_name)//"'")
           end if          
           writer_entries(writer_index)%contents(contents_index)%enabled=.true.
           if (.not. c_contains(typed_result_values, conv_to_string(&

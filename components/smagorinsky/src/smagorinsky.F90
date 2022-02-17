@@ -144,10 +144,13 @@ contains
     type(model_state_type), target, intent(inout) :: current_state
 
     integer :: k
+    integer :: compare_timestep  ! timestep adusted in the case of reconfiguration to keep same cfl interval
 
-      if ((mod(current_state%timestep, current_state%cfl_frequency) == 1 .or. &
-           current_state%timestep-current_state%start_timestep .le. current_state%cfl_frequency) &
-          .or. current_state%timestep .ge. (current_state%last_cfl_timestep + current_state%cfl_frequency)) then
+    compare_timestep = current_state%timestep + current_state%reconfig_timestep_offset
+
+    if ((mod(compare_timestep, current_state%cfl_frequency) == 1 &
+        .or. compare_timestep - current_state%start_timestep .le. current_state%cfl_frequency) &
+        .or. compare_timestep .ge. (current_state%last_cfl_timestep + current_state%cfl_frequency)) then
       do k=2, current_state%local_grid%size(Z_INDEX)-1
         current_state%cvis=max(current_state%cvis, max(current_state%vis_coefficient%data(k, current_state%column_local_y, &
              current_state%column_local_x),current_state%diff_coefficient%data(k, current_state%column_local_y, &

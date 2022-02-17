@@ -1034,6 +1034,9 @@ contains
     else if (field%name .eq. "last_cfl_timestep") then
        pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
             int_value=current_state%last_cfl_timestep)
+    else if (field%name .eq. "reconfig_timestep_offset") then
+       pack_scalar_into_send_buffer=pack_scalar_field(data_definition%send_buffer, current_buffer_point, &
+            int_value=current_state%reconfig_timestep_offset)
     else
       ! Handle component field here
       pack_scalar_into_send_buffer=handle_component_field_scalar_packing_into_send_buffer(current_state, &
@@ -1431,6 +1434,23 @@ contains
       where(next_sample_time .eq. current_state%sampling(:)%next_time)        &
         current_state%sampling(:)%next_step = current_state%timestep + sample_nts
     end if
+
+
+    ! If this is a reconfig_run, it's possible that the previous run did not use time_basis, and it could
+    !   be the case that taking 1 timestep would put us beyond an expected sample time.
+    ! Check for and correct for this case, if needed.
+    !   Correction is to set the dtm to align with the next sample time and set the next_step to the current step.
+    if (current_state%reconfig_run .and. current_state%time_basis .and. current_state%normal_step) then
+      next_sample_time = minval(current_state%sampling(:)%next_time)
+      if (next_sample_time .lt. current_state%time + current_state%dtm) then
+        current_state%dtm = next_sample_time - current_state%time
+        current_state%normal_step = .false.
+        where(next_sample_time .eq. current_state%sampling(:)%next_time)        &
+          current_state%sampling(:)%next_step = current_state%timestep
+      end if ! check for passing next_sample_time in one step
+    end if ! check for reconfig_run with time_basis
+        
+
   end subroutine setup_timing_parameters
 
 end module iobridge_mod

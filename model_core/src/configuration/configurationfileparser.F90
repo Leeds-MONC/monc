@@ -7,7 +7,7 @@ module configuration_file_parser_mod
        conv_is_logical, conv_is_integer, conv_is_real, conv_single_real_to_double, &
        string_to_double
   use optionsdatabase_mod, only : options_add, options_get_string, options_has_key, &
-       options_get_array_size, options_remove_key
+       options_get_array_size, options_remove_key, options_check_precision
   use logging_mod, only : LOG_ERROR, log_master_log
   implicit none
 
@@ -329,6 +329,7 @@ contains
              conv_to_integer(trim(parsed_value)))
       end if
     else if (conv_is_real(parsed_value)) then
+      call options_check_precision(config_key, config_value)
       if (present(array_index)) then
         if (.not. l_config_double) then
           call options_add(options_database, trim(config_key), &

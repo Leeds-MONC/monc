@@ -1,0 +1,72 @@
+#!/bin/bash
+#SBATCH --job-name=slurm_gnu_test_ScFull
+#SBATCH --output=%x.o%j
+  # %x gives job-name (SLURM_JOB_NAME)
+  # %j gives jobid (individual SLURM_JOB_ID)
+  # %A gives jobid (master     SLURM_ARRAY_JOB_ID)
+  # %a gives array task id number
+  #  https://slurm.schedmd.com/sbatch.html
+#SBATCH --open-mode=append
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=128
+#SBATCH --ntasks=128
+#SBATCH --cpus-per-task=1
+#SBATCH --time=00:20:00
+#SBATCH --account=n02-REVCON
+#SBATCH --partition=standard
+### #SBATCH --qos=standard
+
+### Push to development queue
+#SBATCH --qos=short
+
+# Make sure any symbolic links are resolved to absolute path 
+export SLURM_SUBMIT_DIR=$(readlink -f $SLURM_SUBMIT_DIR)
+
+# Change to the direcotry that the job was submitted from 
+cd $SLURM_SUBMIT_DIR
+
+# Allow multi-threading on cray
+export MPICH_MAX_THREAD_SAFETY=multiple
+
+# Request multi-threading in MONC
+export MONC_THREAD_MULTIPLE=.false.
+
+# MODULES
+module load atp
+export ATP_ENABLED=1
+. env/archer_gnu_mod
+module list
+
+# Recommended ARCHER2 I/O settings
+export FI_OFI_RXM_SAR_LIMIT=64K
+
+# Allow core dumps
+ulimit -c unlimited
+
+# set variables for submission command----------------------
+# NOTE: use of ${SLURM_JOB_NAME} keeps things consistent but is not an original MONC example
+export SUBMISSION_SCRIPT_NAME=testcases/ARCHER2_example/submonc.sb
+export MONC_EXEC=./build/bin/monc_driver.exe
+
+export TESTCASE=testcases/ARCHER2_example/ScFull_128.mcf
+export STDOUT_DIR=monc_stdout
+export CP_DIR=checkpoint_files
+export RUN_NAME=${SLURM_JOB_NAME}_dump_
+sed -i "/diagnostic_file=/c\diagnostic_file=\"diagnostic_files/${SLURM_JOB_NAME}_diagnostics.nc\"" ${TESTCASE}
+sed -i "/checkpoint_file=/c\checkpoint_file=\"checkpoint_files/${SLURM_JOB_NAME}_dump.nc\"" ${TESTCASE}
+export MAX_CONTINUATION_RUNS=200
+# ----------------------------------------------------------
+
+# Make record of submission information
+echo -e "\nSubmission time: $(date)\n"
+echo -e "Submitting from: $(pwd)\n"
+
+# Continuation-type execution
+. misc/continuation.sh
+run_monc
+
+# output job statisitcs to .o (%x.o%j)
+echo -e "\nCompletion time: $(date)\n"
+scontrol show job $SLURM_JOB_ID
+sstat $SLURM_JOB_ID --format="AveRSS,MaxRSS"
+#  For more information, run after batch job concludes: seff $SLURM_JOB_ID

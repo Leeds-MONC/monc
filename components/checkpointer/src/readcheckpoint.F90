@@ -22,7 +22,7 @@ module checkpointer_read_checkpoint_mod
        MAX_STRING_LENGTH, THREF, OLUBAR, OLZUBAR, OLVBAR, OLZVBAR, OLTHBAR, OLZTHBAR, OLQBAR, OLZQBAR, OLQBAR_ANONYMOUS_NAME, &
        OLZQBAR_ANONYMOUS_NAME, RAD_LAST_TIME_KEY, LAST_CFL_TIMESTEP_KEY, STH_LW_KEY, STH_SW_KEY, check_status, &
        remove_null_terminator_from_string, WUP, WDWN, TRACER_DIM_KEY, TRACER_KEY, ZTRACER_KEY, NTRACERS_KEY, NRADTRACERS_KEY, &
-       NORMAL_STEP_KEY
+       NORMAL_STEP_KEY, RECONFIG_TIMESTEP_OFFSET_KEY
   use datadefn_mod, only : DEFAULT_PRECISION
   use q_indices_mod, only : q_metadata_type, set_q_index, get_q_index, get_indices_descriptor, standard_q_names
   use tracers_mod, only : get_tracer_name, reinitialise_trajectories, get_tracer_options, trajectories_enabled
@@ -180,7 +180,6 @@ contains
 
     call read_single_variable(ncid, TIMESTEP, integer_data_1d=i_data)
     current_state%timestep = i_data(1)+1 ! plus one to increment for next timestep
-    !current_state%start_timestep = current_state%timestep 
     call read_single_variable(ncid, UGAL, real_data_1d_double=r_data)
     current_state%ugal = r_data(1)
     call read_single_variable(ncid, VGAL, real_data_1d_double=r_data)
@@ -236,7 +235,20 @@ contains
       current_state%last_cfl_timestep = i_data(1)
     end if 
 
+    ! Handle reconfiguration effects
+    !   reconfig_timestep_offset tracks the offset in timestep from the source run(s).
+    !     This keeps the cfl_test/stepfields/smagorinsky tests on the same track as the source run.
+    !     The offset is the value of the timestep in the checkpoint, plus any offset accumulated by 
+    !     multiple reconfiguration runs.
+    !     This offset is also applied to last_cfl_timestep when it is updated.
+    !   timestep is reset to 1.
+    !     This ensures proper functioning of diagnostics on the IOserver when time_basis=.false.
+    if (does_field_exist(ncid, RECONFIG_TIMESTEP_OFFSET_KEY)) then
+      call read_single_variable(ncid, RECONFIG_TIMESTEP_OFFSET_KEY, integer_data_1d=i_data)
+      current_state%reconfig_timestep_offset = i_data(1)
+    end if ! else offset defaults to zero
     if ( current_state%reconfig_run ) then
+      current_state%reconfig_timestep_offset = current_state%timestep-1 + current_state%reconfig_timestep_offset
       ! This is required because of the formulation of later initialization of some fields.
       current_state%timestep = 1
       if ( .not. current_state%retain_model_time ) then

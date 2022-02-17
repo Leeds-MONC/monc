@@ -20,7 +20,7 @@ module checkpointer_write_checkpoint_mod
        Q_INDICES_DIM_KEY, X_RESOLUTION, Y_RESOLUTION,X_TOP, Y_TOP, X_BOTTOM, Y_BOTTOM, THREF, OLUBAR, OLZUBAR, OLVBAR, &
        OLZVBAR, OLTHBAR, OLZTHBAR, OLQBAR, OLZQBAR, check_status, WUP, WDWN, &
        NTRACERS_KEY, NRADTRACERS_KEY, TRACER_DIM_KEY, TRACER_KEY, ZTRACER_KEY, NORMAL_STEP_KEY, &
-       RAD_LAST_TIME_KEY, LAST_CFL_TIMESTEP_KEY
+       RAD_LAST_TIME_KEY, LAST_CFL_TIMESTEP_KEY, RECONFIG_TIMESTEP_OFFSET_KEY
   use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION, DOUBLE_PRECISION, STRING_LENGTH
   use q_indices_mod, only : q_metadata_type, get_max_number_q_indices, get_indices_descriptor, get_number_active_q_indices
   use mpi, only : MPI_INFO_NULL
@@ -47,7 +47,7 @@ contains
          u_id, v_id, w_id, q_id, zu_id, zv_id, zw_id, zth_id, zq_id, timestep_id, ugal_id, &
          vgal_id, number_q_fields_id, string_dim_id, key_value_dim_id, options_id, q_indices_id, &
          dtm_id, dtm_new_id, absolute_new_dtm_id, tr_dim_id, tr_id, ztr_id, n_tracers_id, n_rad_tracers_id, &
-         normal_step_id, rad_last_time_id, last_cfl_timestep_id
+         normal_step_id, rad_last_time_id, last_cfl_timestep_id, reconfig_timestep_offset_id
     logical :: q_indices_declared
 
 #ifdef SINGLE_MONC_DO_SEQUENTIAL_NETCDF
@@ -78,7 +78,7 @@ contains
          x_dim_id, u_id, v_id, w_id, th_id, p_id, zu_id, zv_id, zw_id, zth_id)
     call define_misc_variables(ncid, timestep_id, time_id, ugal_id, vgal_id, number_q_fields_id, &
          dtm_id, dtm_new_id, absolute_new_dtm_id, n_tracers_id, n_rad_tracers_id, normal_step_id, &
-         rad_last_time_id, last_cfl_timestep_id)
+         rad_last_time_id, last_cfl_timestep_id, reconfig_timestep_offset_id)
 
     call check_status(nf90_enddef(ncid))
 
@@ -91,7 +91,7 @@ contains
       if (q_indices_declared) call write_out_q_indices(ncid, q_indices_id)
       call write_out_misc_variables(current_state, ncid, timestep_id, time_id, &
            ugal_id, vgal_id, number_q_fields_id, dtm_id, dtm_new_id, absolute_new_dtm_id, n_tracers_id, n_rad_tracers_id, &
-           normal_step_id, rad_last_time_id, last_cfl_timestep_id)
+           normal_step_id, rad_last_time_id, last_cfl_timestep_id, reconfig_timestep_offset_id)
     end if
 
     !> writeout pdf fields in checkpoint file
@@ -645,10 +645,10 @@ contains
   !! @param timestep_id The NetCDF timestep variable
   subroutine define_misc_variables(ncid, timestep_id, time_id, ugal_id, vgal_id, number_q_fields_id, &
        dtm_id, dtm_new_id, absolute_new_dtm_id, n_tracers_id, n_rad_tracers_id, normal_step_id, &
-       rad_last_time_id, last_cfl_timestep_id)
+       rad_last_time_id, last_cfl_timestep_id, reconfig_timestep_offset_id)
     integer, intent(in) :: ncid
     integer, intent(out) :: timestep_id, time_id, ugal_id, vgal_id, number_q_fields_id, dtm_id, dtm_new_id, absolute_new_dtm_id, &
-      n_tracers_id, n_rad_tracers_id, normal_step_id, rad_last_time_id, last_cfl_timestep_id
+      n_tracers_id, n_rad_tracers_id, normal_step_id, rad_last_time_id, last_cfl_timestep_id, reconfig_timestep_offset_id
 
     call check_status(nf90_def_var(ncid, TIMESTEP, NF90_INT, timestep_id))
     call check_status(nf90_def_var(ncid, TIME_KEY, NF90_DOUBLE, time_id))
@@ -663,6 +663,7 @@ contains
     call check_status(nf90_def_var(ncid, NORMAL_STEP_KEY, NF90_INT, normal_step_id))
     call check_status(nf90_def_var(ncid, RAD_LAST_TIME_KEY, NF90_DOUBLE, rad_last_time_id))
     call check_status(nf90_def_var(ncid, LAST_CFL_TIMESTEP_KEY, NF90_INT, last_cfl_timestep_id))
+    call check_status(nf90_def_var(ncid, RECONFIG_TIMESTEP_OFFSET_KEY, NF90_INT, reconfig_timestep_offset_id))
   end subroutine define_misc_variables
 
   !> Will dump out (write) misc model data to the checkpoint
@@ -671,11 +672,11 @@ contains
   !! @param timestep_id The NetCDF timestep variable id
   subroutine write_out_misc_variables(current_state, ncid, timestep_id, time_id, ugal_id, &
        vgal_id, number_q_fields_id, dtm_id, dtm_new_id, absolute_new_dtm_id, n_tracers_id, n_rad_tracers_id, &
-       normal_step_id, rad_last_time_id, last_cfl_timestep_id)
+       normal_step_id, rad_last_time_id, last_cfl_timestep_id, reconfig_timestep_offset_id)
     type(model_state_type), intent(inout) :: current_state
     integer, intent(in) :: ncid, timestep_id, time_id, ugal_id, vgal_id, number_q_fields_id, &
          dtm_id, dtm_new_id, absolute_new_dtm_id, n_tracers_id, n_rad_tracers_id, normal_step_id, &
-         rad_last_time_id, last_cfl_timestep_id
+         rad_last_time_id, last_cfl_timestep_id, reconfig_timestep_offset_id
 
     call check_status(nf90_put_var(ncid, timestep_id, current_state%timestep))
     ! The time is incremented with dtm as the model was about to increment for the next step and this is needed for diagnostics
@@ -695,6 +696,7 @@ contains
     end if
     call check_status(nf90_put_var(ncid, rad_last_time_id, current_state%rad_last_time))
     call check_status(nf90_put_var(ncid, last_cfl_timestep_id, current_state%last_cfl_timestep))
+    call check_status(nf90_put_var(ncid, reconfig_timestep_offset_id, current_state%reconfig_timestep_offset))
   end subroutine write_out_misc_variables
 
   !> Will define a single velocity variable in the NetCDF file

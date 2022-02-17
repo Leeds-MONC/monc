@@ -5,12 +5,13 @@
 !! Note that the options database should be entirely agnostic of where or now the database is stored (in our
 !! case in the state.)
 module optionsdatabase_mod
-  use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH, LONG_STRING_LENGTH, l_config_double
+  use datadefn_mod, only : DEFAULT_PRECISION, STRING_LENGTH, LONG_STRING_LENGTH, l_config_double, &
+                           config_precision, config_range
   use collections_mod, only : list_type, hashmap_type, c_size, c_get_integer, c_get_string, c_get_real, c_get_logical, c_contains, &
        c_generic_at, c_key_at, c_put_integer, c_put_real, c_put_string, c_put_logical, c_remove
   use conversions_mod, only : conv_to_logical, conv_to_integer, conv_to_real, conv_is_logical, conv_is_integer, &
-       conv_is_real, conv_to_string, conv_single_real_to_double, string_to_double
-  use logging_mod, only: LOG_ERROR, log_log, log_master_log, LOG_INFO, log_master_newline
+       conv_is_real, conv_to_string, conv_single_real_to_double, string_to_double, count_significant_digits
+  use logging_mod, only: LOG_ERROR, LOG_WARN, log_log, log_master_log, LOG_INFO, log_master_newline, log_is_master
   implicit none
 
 #ifndef TEST_MODE
@@ -32,7 +33,8 @@ module optionsdatabase_mod
   public load_command_line_into_options_database, options_has_key, options_get_logical, options_get_integer, &
     options_get_string, options_get_real, options_add, options_size, options_key_at, options_value_at, &
     options_get_array_size, options_get_integer_array, options_get_real_array, &
-    options_get_string_array, options_get_logical_array, options_remove_key, options_compare_profile_arrays
+    options_get_string_array, options_get_logical_array, options_remove_key, &
+    options_compare_profile_arrays, options_check_precision
 
   contains
 
@@ -420,7 +422,7 @@ module optionsdatabase_mod
     character(len=*), intent(in) :: key
 
     if (.not. options_has_key(options_database, key)) then
-      call log_log(LOG_ERROR, "No configuration option with key "//trim(key)//" present")
+      call log_master_log(LOG_ERROR, "No configuration option with key "//trim(key)//" present")
     end if    
   end subroutine check_options_key_exists  
 
@@ -663,6 +665,8 @@ module optionsdatabase_mod
       call set_options_integer_value(parse_options, specific_arg(3:equals_posn-1), &
         conv_to_integer(specific_arg(equals_posn+1:len(specific_arg))))
     else if (type_of_config == REAL_TYPE) then
+      call options_check_precision(specific_arg(3:equals_posn-1), &
+                                   specific_arg(equals_posn+1:len(specific_arg)))
       if (l_config_double) then
         call set_options_real_value(parse_options, specific_arg(3:equals_posn-1), &
           string_to_double(specific_arg(equals_posn+1:len(specific_arg))))
@@ -738,5 +742,46 @@ module optionsdatabase_mod
                                      ". These should be equal.")
     end if
   end subroutine options_compare_profile_arrays
+
+
+  !> Routine confirms that real value strings parsed from configuration do not exceed expected precision
+  !  This is used when the configuration is read from a config file or from the command line
+  !  but not when read from the checkpoint (at which point it should have already been reviewed).
+  subroutine options_check_precision(key, string)
+    character(len=*), intent(in) :: key, string
+    character(len=16) :: exp_prec
+    integer :: in_precision, in_range, e_posn
+
+    ! Obtain the default precision parameters (determined in datadefn.F90 via l_config_double)
+    if (l_config_double) then
+      exp_prec = "DOUBLE_PRECISION"
+    else
+      exp_prec = "SINGLE_PRECISION"
+    end if
+
+    ! Set initial lower value
+    in_precision = 0
+    in_range = 0
+
+    ! Obtain number of significant digits in input string
+    in_precision = count_significant_digits(string)
+
+    ! Obtain any input exponent
+    e_posn = index(string, "e")
+    if (e_posn .ne. 0) e_posn = index(string, "E")
+    if (e_posn .ne. 0) in_range = conv_to_integer(trim(string(e_posn+1:)))
+
+    ! Perform the precision check to raise error
+    if (in_precision .gt. config_precision .or. &
+        in_range     .gt. config_precision .or. &
+        in_range     .gt. config_range)             then
+      call log_master_log(LOG_WARN, "The configuration option, "//trim(key)//"="//&
+              trim(string)//", exceeds the expected precison ("//trim(exp_prec)//&
+              ", precision="//trim(conv_to_string(config_precision))//&
+              ", range="//trim(conv_to_string(config_range))//").  Reduce the number of "//&
+              "significant figures for this value, otherwise it may be truncated.")
+    end if
+
+  end subroutine options_check_precision
 
 end module optionsdatabase_mod

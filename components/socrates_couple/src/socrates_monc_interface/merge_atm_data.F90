@@ -101,7 +101,7 @@ contains
                            current_state%q(socrates_opt%inl)%data(k_top+2-k, jcol, icol)
                    else
                       merge_fields%cloudnumber_n(k+mcc%cut) =  &
-                           socrates_opt%fixed_cloud_number*1.e6 ! convert to number per m3
+                           socrates_opt%fixed_cloud_number ! input number per m3
                    endif
                 endif
              endif      

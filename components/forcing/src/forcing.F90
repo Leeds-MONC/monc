@@ -518,6 +518,11 @@ contains
     if (current_state%graupel_water_mixing_ratio_index > 0) &
          iqg = current_state%graupel_water_mixing_ratio_index
 
+    ! General Subsidence options
+    l_subs_pl_theta=options_get_logical(current_state%options_database, "l_subs_pl_theta")
+    l_subs_pl_q=options_get_logical(current_state%options_database, "l_subs_pl_q")
+    subsidence_input_type=options_get_integer(current_state%options_database, "subsidence_input_type")
+
     ! time_varying forcing initialization
     use_time_varying_subsidence= &
          options_get_logical(current_state%options_database, "use_time_varying_subsidence")
@@ -549,20 +554,17 @@ contains
     end if
 
     ! Subsidence forcing initialization
-    
-    l_subs_pl_theta=options_get_logical(current_state%options_database, "l_subs_pl_theta")
-    l_subs_pl_q=options_get_logical(current_state%options_database, "l_subs_pl_q")
-    subsidence_input_type=options_get_integer(current_state%options_database, "subsidence_input_type")
     l_subs_local_theta=options_get_logical(current_state%options_database, "subsidence_local_theta")
     l_subs_local_q=options_get_logical(current_state%options_database, "subsidence_local_q")
 
     if ((l_subs_pl_theta .and. .not. l_subs_local_theta) .or. &
        (l_subs_pl_q .and. .not. l_subs_local_q))then
       if (.not. is_component_enabled(current_state%options_database, "mean_profiles")) then
-        call log_master_log(LOG_ERROR, "subsidence requires the mean profiles component to be enabled")
+        call log_master_log(LOG_ERROR, "non-local subsidence requires the mean profiles component to be enabled")
       end if
     end if
 
+    ! Subsidence supplied by config, not nc file:
     if ((l_subs_pl_theta .or. l_subs_pl_q) .and. .not. use_time_varying_subsidence) then
       allocate(z_subs_pl(options_get_array_size(current_state%options_database, "z_subs_pl")), &
            f_subs_pl(options_get_array_size(current_state%options_database, "f_subs_pl")))
@@ -578,7 +580,7 @@ contains
         current_state%global_grid%configuration%vertical%w_subs(:) = &
             -1.0*current_state%global_grid%configuration%vertical%w_subs(:)*zgrid(:)
       end if
-      deallocate(z_subs_pl, f_subs_pl)  
+      deallocate(z_subs_pl, f_subs_pl)
     end if
 
    ! Time independent large-scale forcing (proxy for e.g. advection/radiation)
@@ -908,7 +910,7 @@ contains
       allocate( tend_pr_tot_tabs(current_state%local_grid%size(Z_INDEX)) )
     endif
 
-  end subroutine init_callBack
+  end subroutine init_callback
 
   !> Called for each data column and will determine the forcing values in x and y which are then applied to the field
   !! source terms
@@ -967,7 +969,10 @@ contains
       endif
     end if    
 
-    if (current_state%halo_column .or. current_state%timestep<3) return
+    ! No need to do forcing calculations in the halos or on the first two timesteps
+    ! unless this is a reconfiguration run
+    if (current_state%halo_column .or. &
+            (current_state%timestep < 3 .and. (.not. current_state%reconfig_run)) ) return
 
     if (calculate_diagnostics) &
         call save_precomponent_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)

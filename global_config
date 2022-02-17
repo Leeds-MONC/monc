@@ -109,7 +109,12 @@ force_output_on_interval=.false.
 l_constant_dtm=.false.
 
 # Debug assistance parameters
-print_debug_data=.false.         # Prints data for specific variables/points after each component call when .true.
+print_debug_data=.false.         # Prints data for specific variables/point after each component 
+                                 #   call when .true.. Uses below coordinates to specify point.
+                                 #   When coordinate is negative, defaults to midpoint of dimension.
+pdd_x=-999                       # global grid x coordinate of print_debug_data grid point
+pdd_y=-999                       #   "     "   y   "          "              " 
+pdd_z=-999                       #   "     "   z   "          "              " 
 l_thoff=.false.                  # When .true., disables threading in the IOserver
 
 #Tracer configuration
@@ -426,14 +431,14 @@ mcc_temperature_profile  = None
 mcc_vapour_profile       = None
 mcc_ozone_profile        = None
 # Add options for rad_cntrl
-spectral_file_lw           = /data/local/fra23/MONC/tmp/trunk/data/spectra/ga7/sp_lw_ga7
+spectral_file_lw           = components/socrates_couple/data/spectra/ga7/sp_lw_ga7
 i_gas_overlap_lw           = 4
 i_water_lw              = 5
 # 11 = baran, 8 = aggregate for the above spectral file, dependent on iwc and temperature
 i_ice_lw                = 11
 i_scatter_method_lw        = 1
 
-spectral_file_sw           = /data/local/fra23/MONC/tmp/trunk/data/spectra/ga7/sp_sw_ga7
+spectral_file_sw           = components/socrates_couple/data/spectra/ga7/sp_sw_ga7
 i_gas_overlap_sw           = 4
 i_water_sw              = 5
 i_ice_sw                = 11
@@ -482,6 +487,9 @@ mphys_nq_g=0 # graupel mass
 ### configuration for effective radius calculation
 ## Fixed cloud effective radius settings for socrates
 ## NOTE: default is to set effective radius to fixed values (as in LEM)
+## NOTE: The cloud number parameter, fixed_cloud_number, is specified 
+##       in the 'CASIM switches' section below, ensuring consistency 
+##       with the microphysics.
 l_fix_re       = .true.
 fixed_cloud_re = 10.0 # effective radius for cloud droplets 10 microns
 fixed_ice_re   = 30.0 # effective radius for ice 30 microns
@@ -489,15 +497,14 @@ fixed_ice_re   = 30.0 # effective radius for ice 30 microns
 l_use_ndrop    = .false.
 ## Liu scheme, used in ESM
 l_use_liu_spec = .false.
-# Cloud number used in the radiation, should be consistent with microphys assumption
-fixed_cloud_number = 50.0 # cloud number /cm3
 # Density of water, consistent with CASIM in mphys_parameters
 rho_water = 997.0
 # KPARAM_* is the ratio of the cubes of the volume-mean radius and the effective radius
 # used to calc effective radius, kparam = 0.67 for land (polluted) and 0.80 sea (clean) (martin 94)
 kparam = 0.80
 
-#CASIM switches
+
+# CASIM switches =======================================================
 
 option          = 22222
 diag_mu_option  = -999
@@ -507,7 +514,9 @@ process_level   = 0
 aerosol_option  = 2
 max_step_length = 120.0
 max_sed_length  = 2.0
-fixed_cloud_number = 50.0e6
+# Cloud number parameter is also used in the SOCRATES radiation and
+#   should be consistent with microphysics assumption.
+fixed_cloud_number = 50.0e6 # cloud number / m**3
 
 p1              = 3.0
 p2              = 0.0

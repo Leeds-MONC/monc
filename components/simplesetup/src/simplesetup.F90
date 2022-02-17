@@ -45,6 +45,15 @@ contains
 
     end if
 
+    ! Isolate MONC process that has the requested print_debug_data location by changing the value of the flag to be true
+    !   only on that process.
+    if (current_state%print_debug_data) then
+      current_state%print_debug_data =                                        &
+        current_state%pdd_x .ge. current_state%local_grid%start(X_INDEX).and. &
+        current_state%pdd_x .le. current_state%local_grid%end(X_INDEX)  .and. &
+        current_state%pdd_y .ge. current_state%local_grid%start(Y_INDEX).and. &
+        current_state%pdd_y .le. current_state%local_grid%end(Y_INDEX) 
+    end if
   end subroutine initialisation_callback
 
   
@@ -235,7 +244,20 @@ contains
       if (current_state%fix_vgal)current_state%vgal=options_get_real(current_state%options_database, "vgal")
     end if
 
+    ! Parameters for print_debug_data
     current_state%print_debug_data = options_get_logical(current_state%options_database, "print_debug_data")
+    if (current_state%print_debug_data) then
+      current_state%pdd_z = options_get_integer(current_state%options_database, "pdd_z")
+      if (current_state%pdd_z .lt. 0) current_state%pdd_z = z_size/2
+      current_state%pdd_y = options_get_integer(current_state%options_database, "pdd_y")
+      if (current_state%pdd_y .lt. 0) current_state%pdd_y = y_size/2
+      current_state%pdd_x = options_get_integer(current_state%options_database, "pdd_x")
+      if (current_state%pdd_x .lt. 0) current_state%pdd_x = x_size/2
+      
+      current_state%column_global_x = current_state%pdd_x
+      current_state%column_global_y = current_state%pdd_y
+      current_state%halo_column = .false.
+    end if
 
     if (.not. current_state%reconfig_run) then        
       call get_tracer_options(current_state)

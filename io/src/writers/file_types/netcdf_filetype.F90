@@ -870,9 +870,11 @@ contains
       type is(integer)
         call check_netcdf_status(nf90_put_var(file_state%ncid, nopt_var_id, trim(conv_to_string(raw_data)), (/ 1, 2, i /)))
       type is(real(kind=SINGLE_PRECISION))
-        call check_netcdf_status(nf90_put_var(file_state%ncid, nopt_var_id, trim(conv_to_string(raw_data)), (/ 1, 2, i /)))
+        call check_netcdf_status(nf90_put_var(file_state%ncid, nopt_var_id, &
+                trim(conv_to_string(raw_data, exponent=.true.)), (/ 1, 2, i /)))
       type is(real(kind=DOUBLE_PRECISION))
-        call check_netcdf_status(nf90_put_var(file_state%ncid, nopt_var_id, trim(conv_to_string(raw_data)), (/ 1, 2, i /)))
+        call check_netcdf_status(nf90_put_var(file_state%ncid, nopt_var_id, &
+                trim(conv_to_string(raw_data, exponent=.true.)), (/ 1, 2, i /)))
       type is(logical)
         call check_netcdf_status(nf90_put_var(file_state%ncid, nopt_var_id, trim(conv_to_string(raw_data)), (/ 1, 2, i /)))
       type is(character(len=*))

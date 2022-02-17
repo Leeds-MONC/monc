@@ -55,6 +55,7 @@
     <field name="sth_sw" type="array" data_type="double" size="z,y,x" collective=true optional=true/>
     <field name="rad_last_time" type="scalar" data_type="double"/>
     <field name="last_cfl_timestep" type="scalar" data_type="integer"/>
+    <field name="reconfig_timestep_offset" type="scalar" data_type="integer"/>
 
 </data-definition>
 
@@ -103,6 +104,7 @@
     <member name="sth_sw"/>
     <member name="rad_last_time"/>
     <member name="last_cfl_timestep"/>
+    <member name="reconfig_timestep_offset"/>
     <member name="w_up"/>
     <member name="w_dwn"/>
 </group>

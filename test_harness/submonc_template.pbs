@@ -19,7 +19,7 @@ export TESTCASE=add_testcase_mcf
 export STDOUT_DIR=add_stdout_dirname
 export CP_DIR=add_checkpoint_dirname
 export RUN_NAME=add_testsuite_jobname
-export NPES=np
+export NPES=add_np
 export MAX_CONTINUATION_RUNS=200
 
 ulimit -c unlimited

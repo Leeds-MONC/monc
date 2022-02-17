@@ -35,7 +35,7 @@ module iterativesolver_mod
   real(kind=DEFAULT_PRECISION), parameter :: TINY = 1.0e-16 !< Minimum residual - if we go below this then something has gone wrong
 
   type(halo_communication_type), save :: halo_swap_state      !< The halo swap state as initialised by that module
-  real(kind=DEFAULT_PRECISION), dimension(:,:,:), allocatable :: psource, prev_p      !< Passed to BiCGStab as the RHS
+  real(kind=DEFAULT_PRECISION), dimension(:,:,:), allocatable, target :: psource, prev_p      !< Passed to BiCGStab as the RHS
   logical :: first_run=.true.
   type(matrix_type) :: A
 
@@ -75,6 +75,9 @@ contains
          current_state%local_grid%size(Y_INDEX) + current_state%local_grid%halo_size(Y_INDEX) * 2, &
          current_state%local_grid%size(X_INDEX) + current_state%local_grid%halo_size(X_INDEX) * 2))
 
+    ! Record previous values for p: either zeros (cold start, see diverr) or those from checkpoint
+    prev_p = current_state%p%data
+
     A=create_problem_matrix(current_state%local_grid%size(Z_INDEX))
     call set_matrix_for_poisson(current_state%global_grid%configuration, A, current_state%local_grid%size(Z_INDEX))
   end subroutine initialisation_callback
@@ -84,7 +87,7 @@ contains
   subroutine timestep_callback(current_state)
     type(model_state_type), target, intent(inout) :: current_state
 
-    integer :: i_strt, i_end, j_strt, j_end, k_end
+    integer :: i_strt, i_end, j_strt, j_end, k_end, inc, knc
 
     i_strt = current_state%local_grid%local_domain_start_index(X_INDEX)
     i_end  = current_state%local_grid%local_domain_end_index(X_INDEX)
@@ -100,22 +103,24 @@ contains
     call complete_nonblocking_halo_swap(current_state, halo_swap_state, perform_local_data_copy_for_p, copy_halo_buffer_to_p)
 
     psource=current_state%p%data
+
+    ! Initial guess is set to previous timestep's p
     if (first_run) then
-      ! If first timestep then initial guess is zero
-      current_state%p%data=0.0_DEFAULT_PRECISION
-      first_run=.false.
-    else
-      ! Initial guess is set to previous timesteps p
-      current_state%p%data=prev_p
+      ! Halo swap of depth-1.
+      call swap_halo_prev_p(current_state)
+      first_run = .false.
     end if
-    
+    current_state%p%data = prev_p
+
     if (symm_prob) then
       call cg_solver(current_state, A, current_state%p%data, psource, i_strt, i_end, j_strt, j_end, k_end)
     else
       call bicgstab(current_state, A, current_state%p%data, psource, i_strt, i_end, j_strt, j_end, k_end)
     end if
 
-    prev_p=current_state%p%data
+    ! Save values for next step
+    prev_p = current_state%p%data
+
   end subroutine timestep_callback
 
   !> Called as MONC is shutting down and frees the halo swap state and deallocates local data
@@ -373,6 +378,19 @@ contains
       end do
     end do
   end subroutine precond
+
+  subroutine swap_halo_prev_p(current_state)
+    type(model_state_type), target, intent(inout) :: current_state
+    type(field_data_wrapper_type) :: source_data
+
+    source_data%data => prev_p
+
+    call initiate_nonblocking_halo_swap(current_state, halo_swap_state, &
+         copy_calc_Ax_to_halo_buffer, source_data=(/source_data/))
+    call complete_nonblocking_halo_swap(current_state, halo_swap_state, perform_local_data_copy_for_calc_Ax, &
+         copy_halo_buffer_to_calc_Ax, source_data=(/source_data/))
+
+  end subroutine swap_halo_prev_p
 
   !> Calculates A * x
   !! @param current_state The current model state
@@ -729,6 +747,12 @@ contains
 
     allocate(create_problem_matrix%u(z_size), create_problem_matrix%d(z_size), create_problem_matrix%p(z_size), &
          create_problem_matrix%lu_u(z_size), create_problem_matrix%lu_d(z_size), create_problem_matrix%vol(z_size))
+    create_problem_matrix%u    = 0.0_DEFAULT_PRECISION
+    create_problem_matrix%d    = 0.0_DEFAULT_PRECISION
+    create_problem_matrix%p    = 0.0_DEFAULT_PRECISION
+    create_problem_matrix%lu_u = 0.0_DEFAULT_PRECISION
+    create_problem_matrix%lu_d = 0.0_DEFAULT_PRECISION
+    create_problem_matrix%vol  = 0.0_DEFAULT_PRECISION
   end function create_problem_matrix
 
   !> Completes the psrce calculation by waiting on all outstanding psrce communications to complete and then combine the

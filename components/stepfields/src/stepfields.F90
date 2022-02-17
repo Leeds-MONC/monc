@@ -234,6 +234,9 @@ contains
     integer :: iq
     integer :: current_x_index, current_y_index, target_x_index, target_y_index
     logical :: calculate_diagnostics
+    integer :: compare_timestep  ! timestep adusted in the case of reconfiguration to keep same cfl interval
+
+    compare_timestep = current_state%timestep + current_state%reconfig_timestep_offset
 
     calculate_diagnostics = current_state%diagnostic_sample_timestep &
                             .and. .not. current_state%halo_column
@@ -243,11 +246,10 @@ contains
     target_y_index=current_y_index-current_state%local_grid%halo_size(Y_INDEX)
     target_x_index=current_x_index-current_state%local_grid%halo_size(X_INDEX)
 
-
     if (cfl_is_enabled .and. current_state%first_timestep_column) then
-      if ((mod(current_state%timestep, current_state%cfl_frequency) == 1 .or. &
-           current_state%timestep-current_state%start_timestep .le. current_state%cfl_frequency) &
-          .or. current_state%timestep .ge. (current_state%last_cfl_timestep + current_state%cfl_frequency)) then
+      if ((mod(compare_timestep, current_state%cfl_frequency) == 1 &
+          .or. compare_timestep - current_state%start_timestep .le. current_state%cfl_frequency) &
+          .or. compare_timestep .ge. (current_state%last_cfl_timestep + current_state%cfl_frequency)) then
         determine_flow_minmax=.true.
         call reset_local_minmax_values(current_state)
       else

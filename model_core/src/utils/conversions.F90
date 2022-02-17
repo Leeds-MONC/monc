@@ -4,6 +4,7 @@
 !! easier when handling common inbuilt type conversions.
 module conversions_mod
   use datadefn_mod, only : DEFAULT_PRECISION, SINGLE_PRECISION, DOUBLE_PRECISION
+
   implicit none
 
 #ifndef TEST_MODE
@@ -103,7 +104,7 @@ module conversions_mod
 
   public conv_to_generic, conv_to_string, conv_to_integer, conv_to_real, conv_to_logical, &
          conv_is_integer, conv_is_real, conv_is_logical, conv_single_real_to_double, generic_to_double_real, &
-         conv_to_uppercase, conv_to_lowercase, string_to_double
+         conv_to_uppercase, conv_to_lowercase, string_to_double, count_significant_digits
 
 contains
 
@@ -259,19 +260,19 @@ contains
 
     if (present(exponent)) then
       if (exponent) then
-        write(real_double_to_string, '(es30.10)' ) input
+        write(real_double_to_string, '(es30.15)' ) input
         transformed=.true.
       end if
     end if
     if (present(exponent_small_numbers)) then
       if (exponent_small_numbers) then
-        write(real_double_to_string, '(g30.10)' ) input
+        write(real_double_to_string, '(g30.15)' ) input
         transformed=.true.
       end if
     end if
     if (.not. transformed) then
-      write(real_double_to_string, '(f30.10)' ) input
-      if (scan(real_double_to_string, "*") .ne. 0) write(real_double_to_string, '(es30.10)' ) input
+      write(real_double_to_string, '(f30.15)' ) input
+      if (scan(real_double_to_string, "*") .ne. 0) write(real_double_to_string, '(es30.15)' ) input
     end if
     call trim_trailing_zeros(real_double_to_string, 2)
     if (present(decimal_places)) then
@@ -304,7 +305,7 @@ contains
     end if    
   end subroutine limit_to_decimal_places
 
-  !> A helper subroutine which trims training zeros from the string after a decimal place
+  !> A helper subroutine which trims trailing zeros from the string after a decimal place
   !! this is to make the string more readable when printed out
   !! @param stringToParse The string to parse which is modified to replace trailing zeros
   !! @param zerosToRetain The number of trailing (after decimal) zeros to retain
@@ -327,10 +328,91 @@ contains
         end if
       end do
       if (zero_count .gt. zeros_to_retain) then
-        string_to_parse(nonzero_hit+zeros_to_retain:)=""
+        string_to_parse(nonzero_hit+zeros_to_retain+1:)=""
       end if
     end if
   end subroutine trim_trailing_zeros  
+
+  !> A helper subroutine which counts the number of significant figures in a given string
+  !! this is to make sure the user is aware if they try to pass in more significant figures
+  !! than we can represent.
+  !! @param string_to_parse The string to parse
+  function count_significant_digits(in_string)
+    character(len=*), intent(in) :: in_string
+    character(len=len(in_string)) :: string_to_parse
+    integer :: count_significant_digits
+    integer :: decimal_posn, i, zero_count, nonzero_hit, e_posn, n_posn
+
+    ! Initialise
+    string_to_parse = trim(in_string)
+
+    ! Trim any trailing zeros
+    call trim_trailing_zeros(string_to_parse, 0)
+
+    ! Remove any exponential notation
+    e_posn = index(string_to_parse, "e")
+    if (e_posn .ne. 0) e_posn = index(string_to_parse, "E")
+    if (e_posn .ne. 0) string_to_parse = string_to_parse(:e_posn-1)
+
+    ! Remove any negative notation
+    n_posn = index(string_to_parse, "-")
+    if (n_posn .ne. 0) string_to_parse = string_to_parse(2:)
+
+    ! Remove leading zeros ahead of decimal point
+    zero_count=0
+    decimal_posn=index(string_to_parse, ".")
+    if (decimal_posn .ne. 0 .and. decimal_posn .lt. len(string_to_parse)) then
+      do i=1, decimal_posn
+        if (string_to_parse(i:i) .ne. "0") then
+          nonzero_hit=i
+          exit
+        else
+          zero_count=zero_count+1
+        end if
+      end do
+      if (zero_count .gt. 0) then
+        string_to_parse = string_to_parse(nonzero_hit:)
+      end if
+    end if
+
+
+    ! If we encountered a non-zero before the decimal, complete calculation
+    if (nonzero_hit .lt. decimal_posn) then
+      count_significant_digits = len(trim(string_to_parse)) - 1
+      return
+    end if
+
+    ! Trim remaining decimal from string, if present
+    if (index(string_to_parse, ".") .eq. 1) then
+      string_to_parse = string_to_parse(2:)
+    end if
+
+    ! Remove any remaining leading zeros
+    zero_count = 0
+    do i=1, len(trim(string_to_parse))
+      if (string_to_parse(i:i) .ne. "0") then
+        nonzero_hit=i
+        exit
+      else
+        zero_count=zero_count+1
+      end if
+    end do
+    if (zero_count .gt. 0) then
+        string_to_parse = string_to_parse(nonzero_hit:)
+    end if
+    
+    count_significant_digits = len(trim(string_to_parse))
+
+  end function count_significant_digits
+
+  subroutine check_precision(string)
+    character(len=*), intent(in) :: string
+    integer :: options_precision
+
+    options_precision = precision(0.0_DEFAULT_PRECISION)
+
+
+  end subroutine check_precision
 
   !> Converts a logical to a string
   !! @param input The logical to convert into a string
@@ -472,9 +554,9 @@ contains
     character(len=*), intent(in) :: string
 
     if (scan(string, "E") .ne. 0 .or. scan(string, "e") .ne. 0) then
-      read(string, '(es30.10)' ) string_to_double
+      read(string, '(es30.15)' ) string_to_double
     else
-      read(string, '(f11.2)' ) string_to_double
+      read(string, '(f30.15)' ) string_to_double
     end if
   end function string_to_double
 

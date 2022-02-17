@@ -18,7 +18,7 @@ module randomnoise_mod
   private
 #endif
 
-  integer, parameter :: MAX_SIZE_SEED_ARRAY=256, I_SEED=7, ISD=1
+  integer, parameter :: MAX_SIZE_SEED_ARRAY=256, I_SEED=7
 
   public randomnoise_get_descriptor
 contains
@@ -90,11 +90,11 @@ contains
       call options_get_string_array(current_state%options_database, "names_rand_pl_q", names_rand_pl_q)
     end if
 
-    if (l_rand_bit_reproducible) iranseed(1:ISD)=I_SEED
+    if (l_rand_bit_reproducible) iranseed(1:MAX_SIZE_SEED_ARRAY)=I_SEED
 
     if (l_rand_pl_theta)then
       ! Get random numbers
-      if (l_rand_bit_reproducible) call random_seed(get=iranseed)
+      if (l_rand_bit_reproducible) call random_seed(put=iranseed)
       if (l_rand_bit_reproducible) call random_number(randarr)
 
       ! Get amplitude profiles

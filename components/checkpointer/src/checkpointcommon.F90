@@ -29,6 +29,7 @@ module checkpointer_common_mod
                                   ZTH_KEY = "zth", &
                                   P_KEY = "p", &                          !< Pressure variable NetCDF key
                                   TIMESTEP="timestep", &                  !< Timestep NetCDF key
+                                  RECONFIG_TIMESTEP_OFFSET_KEY="reconfig_timestep_offset", &
                                   TIME_KEY="time",&
                                   DTM_KEY="dtm",&
                                   DTM_NEW_KEY="dtm_new",&

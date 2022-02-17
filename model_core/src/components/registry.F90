@@ -280,7 +280,7 @@ contains
   subroutine execute_initialisation_callbacks(current_state)
     type(model_state_type), intent(inout) :: current_state
 
-    call execute_callbacks(init_callbacks, current_state)
+    call execute_callbacks(init_callbacks, current_state, "initialisation_callback")
   end subroutine execute_initialisation_callbacks
 
   !> Calls all timestep callbacks with the specified state
@@ -290,7 +290,7 @@ contains
     integer :: group_id
 
     if (.not. c_is_empty(timestep_callbacks(group_id))) then
-      call execute_callbacks(timestep_callbacks(group_id), current_state)
+      call execute_callbacks(timestep_callbacks(group_id), current_state, "timestep_callback")
     end if
   end subroutine execute_timestep_callbacks
 
@@ -299,7 +299,7 @@ contains
   subroutine execute_finalisation_callbacks(current_state)
     type(model_state_type), intent(inout) :: current_state
 
-    call execute_callbacks(finalisation_callbacks, current_state)
+    call execute_callbacks(finalisation_callbacks, current_state, "finalisation_callback")
   end subroutine execute_finalisation_callbacks
 
   !> Orders all callbacks in the prospective stages based upon the priorities of each descriptor.
@@ -629,8 +629,9 @@ contains
   !> Will execute the appropriate callbacks in a specific map_type given the current state
   !! @param callbackmap_type The map_type of callback hooks to execute
   !! @param currentState The model state which may be (and likely is) modified in callbacks
-  subroutine execute_callbacks(callback_map, current_state)
+  subroutine execute_callbacks(callback_map, current_state, debug_label)
     type(map_type), intent(inout) :: callback_map
+    character(len=*), intent(in) :: debug_label
     type(model_state_type), intent(inout) :: current_state
 
     class(*), pointer :: data
@@ -647,20 +648,84 @@ contains
       call data%ptr(current_state)
 
       ! Debugging prognostic print block to track prognostic modifications from component to component
+      ! Only active on one MONC (determined in simplesetup)
       if (current_state%print_debug_data) then
-        if (log_is_master()) then
-          k=current_state%local_grid%size(Z_INDEX)/2
-          j=current_state%local_grid%local_domain_start_index(Y_INDEX)
-          i=current_state%local_grid%local_domain_start_index(X_INDEX)
-          if (allocated(current_state%u%data) .and. allocated(current_state%sth%data) &
-              .and. allocated(current_state%zu%data) .and. allocated(current_state%sw%data) &
-              .and. current_state%column_local_x == i .and. current_state%column_local_y == j) then
-            print *, trim(map_entry%key),' ', k,j,i, &
-              current_state%zu%data(k,j,i), current_state%u%data(k,j,i), &
-              current_state%sth%data(k,j,i), current_state%sw%data(k,j,i)
-          end if
-        end if
-      end if
+          
+        ! Continue for all initialisation and finalisation callbacks or if column_global matches the
+        ! requested coordinate
+        if ((trim(debug_label) .eq. "initialisation_callback") .or. &
+            (trim(debug_label) .eq. "finalisation_callback") .or. &
+            (current_state%column_global_x == current_state%pdd_x .and. &
+             current_state%column_global_y == current_state%pdd_y)) then
+          
+          ! Convert to local MONC array indices
+          k = current_state%pdd_z
+          i = current_state%pdd_x - current_state%local_grid%start(X_INDEX) + 1
+          j = current_state%pdd_y - current_state%local_grid%start(Y_INDEX) + 1
+
+          ! Actual printing
+          print *, trim(debug_label),':',trim(map_entry%key),', (k,j,i):',k,j,i, &
+                   ', (g_y,g_x)', current_state%column_global_y, current_state%column_global_x, &
+                   ', timestep: ', current_state%timestep, ', global_rank: ', current_state%parallel%my_global_rank, &
+                   ', MONC rank: ', current_state%parallel%my_rank
+          print "(a15,3i10)", &
+                   '    stepping ',  current_state%scalar_stepping, current_state%momentum_stepping, &
+                                     current_state%field_stepping
+          if (allocated(current_state%zu%data) .and. allocated(current_state%u%data) .and. &
+              allocated(current_state%su%data) .and. allocated(current_state%savu%data)) then
+            print "(a15,4es25.15)", &
+                   '           u ',  current_state%zu%data(k,j,i), current_state%u%data(k,j,i), &
+                                     current_state%su%data(k,j,i), current_state%savu%data(k,j,i)
+          endif
+          if (allocated(current_state%zv%data) .and. allocated(current_state%v%data) .and. &
+              allocated(current_state%sv%data) .and. allocated(current_state%savv%data)) then
+            print "(a15,4es25.15)", &
+                   '           v ',  current_state%zv%data(k,j,i), current_state%v%data(k,j,i), &
+                                     current_state%sv%data(k,j,i), current_state%savv%data(k,j,i)
+          endif
+          if (allocated(current_state%zw%data) .and. allocated(current_state%w%data) .and. &
+              allocated(current_state%sw%data) .and. allocated(current_state%savw%data)) then
+            print "(a15,4es25.15)", &
+                   '           w ',  current_state%zw%data(k,j,i), current_state%w%data(k,j,i), &
+                                     current_state%sw%data(k,j,i), current_state%savw%data(k,j,i)
+          endif
+          if (allocated(current_state%zth%data) .and. allocated(current_state%th%data) .and. &
+              allocated(current_state%sth%data)) then
+            print "(a15,3es25.15)", &
+                   '          th ',  current_state%zth%data(k,j,i), current_state%th%data(k,j,i), &
+                                     current_state%sth%data(k,j,i)
+          endif
+          if (allocated(current_state%zq(1)%data) .and. allocated(current_state%q(1)%data) .and. &
+              allocated(current_state%sq(1)%data)) then
+            print "(a15,3es25.15)", &
+                   '          qv ',  current_state%zq(1)%data(k,j,i), current_state%q(1)%data(k,j,i), &
+                                     current_state%sq(1)%data(k,j,i)
+          endif
+          if (allocated(current_state%p%data)) then
+            print "(a15,es25.15)", &
+                   '           p ',  current_state%p%data(k,j,i)
+          endif
+          if (allocated(current_state%vis_coefficient%data) .and. &
+              allocated(current_state%diff_coefficient%data)) then
+            print "(a15,2es25.15)", &
+                   '       coeff ',  current_state%vis_coefficient%data(k,j,i), &
+                                     current_state%diff_coefficient%data(k,j,i)
+          endif
+          if (allocated(current_state%global_grid%configuration%vertical%olzthbar) .and.&
+              allocated(current_state%global_grid%configuration%vertical%olthbar) ) then
+            print "(a15,2es25.15)", &
+                   '  olth(z)bar ', current_state%global_grid%configuration%vertical%olzthbar(k), &
+                                    current_state%global_grid%configuration%vertical%olthbar(k)
+          endif
+          if (allocated(current_state%global_grid%configuration%vertical%olzqbar) .and.&
+              allocated(current_state%global_grid%configuration%vertical%olqbar) ) then
+            print "(a15,2es25.15)", & 
+                   '   olq(z)bar ', current_state%global_grid%configuration%vertical%olzqbar(k,1), &
+                                    current_state%global_grid%configuration%vertical%olqbar(k,1)
+          endif
+        end if ! test i and j or init/final callback
+      end if ! test print_debug_data
+
 
 !        type is (pointer_wrapper_init_type)
 !          call data%ptr(current_state)

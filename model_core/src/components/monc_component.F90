@@ -30,7 +30,7 @@ module monc_component_mod
 
     type, public :: component_field_information_type
        integer :: field_type, data_type, number_dimensions, dimension_sizes(4)
-       logical :: enabled
+       logical :: enabled=.false.
     end type component_field_information_type
 
   type, public :: pointer_wrapper_value_type

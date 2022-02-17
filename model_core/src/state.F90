@@ -113,7 +113,7 @@ module state_mod
     real(kind=DEFAULT_PRECISION), dimension(:), allocatable :: tracer_decay_rate, tracer_surf_bc
     integer :: timestep=1, column_global_x, column_global_y, column_local_x, column_local_y, field_stepping, scalar_stepping, &
          momentum_stepping, number_q_fields=0, start_timestep=1, type_of_surface_boundary_conditions, lookup_table_entries, &
-         cfl_frequency, termination_reason, last_cfl_timestep=0
+         cfl_frequency, termination_reason, last_cfl_timestep=0, reconfig_timestep_offset=0
     integer :: water_vapour_mixing_ratio_index=0, liquid_water_mixing_ratio_index=0, &
          rain_water_mixing_ratio_index=0, ice_water_mixing_ratio_index=0, &
          snow_water_mixing_ratio_index=0, graupel_water_mixing_ratio_index=0, & 
@@ -137,6 +137,8 @@ module state_mod
     real(kind=DEFAULT_PRECISION) :: ugal=0.,vgal=0.
     ! SOCRATES time variables are included in state since they need to be dumped
     real(kind=DEFAULT_PRECISION) :: rad_last_time=0.0
+    ! Global grid location for print_debug_data
+    integer :: pdd_z=-999, pdd_y=-999, pdd_x=-999
 
   end type model_state_type
 end module state_mod

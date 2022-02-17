@@ -356,7 +356,10 @@ contains
     endif  ! zero totals
 
 
-    if (current_state%halo_column .and. current_state%timestep <3) return
+    ! No need to do damping calculations in the halos or on the first two timesteps
+    ! unless this is a reconfiguration run
+    if (current_state%halo_column .or. &
+            (current_state%timestep < 3 .and. (.not. current_state%reconfig_run)) ) return
 
     if (calculate_diagnostics) &
         call save_precomponent_tendencies(current_state, current_x_index, current_y_index, target_x_index, target_y_index)
@@ -366,7 +369,7 @@ contains
       current_state%su%data(k, current_state%column_local_y, current_state%column_local_x)=current_state%su%data(k, &
            current_state%column_local_y, current_state%column_local_x)-&
            current_state%global_grid%configuration%vertical%dmpco(k)*(current_state%zu%data(k, current_state%column_local_y, &
-           current_state%column_local_x)- (current_state%global_grid%configuration%vertical%olzubar(k)-current_state%ugal))
+           current_state%column_local_x)-(current_state%global_grid%configuration%vertical%olzubar(k)-current_state%ugal))
 #endif
 #ifdef V_ACTIVE
       current_state%sv%data(k, current_state%column_local_y, current_state%column_local_x)=current_state%sv%data(k, &

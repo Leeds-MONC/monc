@@ -1,0 +1,11 @@
+This example is taken from a MONC test_harness configuration.
+
+See https://code.metoffice.gov.uk/trac/monc/wiki/ticket/369/TicketSummary#:~:text=dev/toddjones/r6206_test_harness_consolidation-,Setting%20up%20%C2%B6,-FCM%2C%20MOSRS%2C%20and for details about execution on ARCHER2, including FCM, MOSRS, and xxdiff setup.
+
+Build MONC on ARCHER2 as:
+  fcm make -j4 -f fcm-make/monc-cray-gnu.cfg -f fcm-make/casim_socrates.cfg --new
+
+This job can be run on ARCHER2 as:
+  sbatch testcases/ARCHER2_example/submonc.sb
+
+

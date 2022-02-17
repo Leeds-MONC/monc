@@ -123,8 +123,8 @@ contains
              socrates_opt%fixed_cloud_number = options_get_real(current_state%options_database, "fixed_cloud_number")
              socrates_opt%fixed_ice_re = options_get_real(current_state%options_database, "fixed_ice_re")
              call log_master_log &
-                  (LOG_INFO, "Socrates using prescribed fix_cloud_number="&
-                  //trim(conv_to_string(socrates_opt%fixed_cloud_number))//" /cm3")
+                  (LOG_INFO, "Socrates using prescribed fixed_cloud_number="&
+                  //trim(conv_to_string(socrates_opt%fixed_cloud_number))//" /m**3")
           endif
        endif
     else

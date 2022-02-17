@@ -26,7 +26,6 @@ export TESTCASE=testcases/stable/Fog_Porson2011.mcf
 export STDOUT_DIR=monc_stdout
 export CP_DIR=checkpoint_files
 export RUN_NAME=fog_dump_
-export NPES=np
 export MAX_CONTINUATION_RUNS=200
 
 ulimit -c unlimited

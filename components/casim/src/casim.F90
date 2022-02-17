@@ -86,7 +86,7 @@ module casim_mod
      , l_kfsm & ! single moment based on wilson-ballard
      , l_adjust_D0 
 
-  use mphys_constants, only: fixed_cloud_number
+  use mphys_constants, only: fixed_cloud_number  ! number/m**3, overrides mphys_constants value
 
 
   use micro_main, only: shipway_microphysics
@@ -560,7 +560,11 @@ contains
     !   pcond_tot(:)= 0.0_DEFAULT_PRECISION
     !endif
     
-    if (current_state%halo_column .or. current_state%timestep < 2) return
+
+    ! No need to do casim calculations in the halos or on the first timestep
+    ! unless this is a reconfiguration run
+    if (current_state%halo_column .or. &
+            (current_state%timestep < 2 .and. (.not. current_state%reconfig_run)) ) return
 
     if (current_state%field_stepping == FORWARD_STEPPING)then
       call log_master_log(LOG_ERROR, 'Currently, CASIM assumes CENTERED_STEPPING')
