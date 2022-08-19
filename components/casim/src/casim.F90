@@ -791,9 +791,7 @@ contains
        dActiveSolNumber,                           &
        dActiveInsolNumber,                         &
        ils, ile,                                   &
-       jls, jle,                                   &
-       kls, kle,                                   &
-       l_tendency=.TRUE.                           &
+       jls, jle                                    &
        )
 
     ! write back the tendencies
