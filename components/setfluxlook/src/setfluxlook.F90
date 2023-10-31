@@ -28,12 +28,12 @@ module setfluxlook_mod
      SURFACE_HUMIDITIES_KEY   =  "surface_humidity",          & !<  NetCDF data surface_humidities
      SURFACE_SHF_KEY          =  "surface_sensible_heat_flux",& !<  NetCDF data surface_sensible_heat_flux
      SURFACE_LHF_KEY          =  "surface_latent_heat_flux"     !<  NetCDF data surface_latent_heat_flux
-     
+
   integer, parameter :: LOOKUP_ENTRIES = 80    !< Number of entries for MO lookup tables
   integer, parameter :: MAX_FILE_LEN=200       !< Maximum length of surface condition input filename
   integer, parameter :: MAX_SURFACE_INPUTS=750  !< Specifies the maximum number of surface inputs through configuration file
                                                !! Inputs through netcdf files are not limitted by this.
-  
+
   character(MAX_FILE_LEN) :: input_file
 
   character(len=STRING_LENGTH) :: units_surface_temp='unset'  ! units of theta variable forcing
@@ -47,7 +47,7 @@ module setfluxlook_mod
 
   integer :: iqv  ! index for vapour
 
-  public setfluxlook_get_descriptor
+  public setfluxlook_get_descriptor, set_look, change_look
 
 contains
 
@@ -62,7 +62,7 @@ contains
 
   subroutine initialisation_callback(current_state)
     type(model_state_type), intent(inout), target :: current_state
-    
+
     current_state%lookup_table_entries=LOOKUP_ENTRIES
     call read_configuration(current_state)
 
@@ -85,11 +85,11 @@ contains
           current_state%surface_vapour_flux = surface_latent_heat_flux(1) &
                /(current_state%global_grid%configuration%vertical%rho(1)*rlvap)
        end if
-       
-       current_state%fbuoy=0.                                                                 
+
+       current_state%fbuoy=0.
        if(.not. current_state%passive_th) current_state%fbuoy=&
             current_state%global_grid%configuration%vertical%buoy_co(1)*current_state%surface_temperature_flux
-       if(.not. current_state%passive_q .and. current_state%number_q_fields > 0)then                                                      
+       if(.not. current_state%passive_q .and. current_state%number_q_fields > 0)then
           current_state%fbuoy=current_state%fbuoy+current_state%cq(iqv)*current_state%surface_vapour_flux*G
        end if
        call set_look(current_state)  ! _set M-O lookup table
@@ -102,17 +102,17 @@ contains
        if (current_state%use_time_varying_surface_values) then
           call set_flux(current_state)
        else
-       ! If surface_values are constant then surface_temperatures prescribed in 
+       ! If surface_values are constant then surface_temperatures prescribed in
        ! config and read in read_configuration but if humidity not set then
        ! surface vapour (surface_vapour_mixing_ratio) set to saturated value (see read_config)
           if (current_state%saturated_surface)then
              current_state%surface_vapour_mixing_ratio = qsaturation(surface_temperatures(1),current_state%surface_pressure*0.01)
-          else 
+          else
              current_state%surface_vapour_mixing_ratio =  &
                   options_get_real(current_state%options_database, "surface_vapour_mixing_ratio")
           endif
-          
-       ! The code below copied from set_flux as these values need to be 
+
+       ! The code below copied from set_flux as these values need to be
        ! set for both time varying and constant surface values
        ! Set theta_v
           current_state%theta_surf = surface_temperatures(1)*&
@@ -122,7 +122,7 @@ contains
              current_state%theta_virtual_surf = current_state%theta_surf +  &
                   current_state%global_grid%configuration%vertical%thref(2)*  &
                   current_state%cq(iqv)*current_state%surface_vapour_mixing_ratio
-          end if          
+          end if
 
           ! Finally set up new values of THVSURF dependent constants
           current_state%cmbc=betam*current_state%global_grid%configuration%vertical%zn(2)*G*&
@@ -161,10 +161,10 @@ contains
     smth=0.1_DEFAULT_PRECISION  ! _relaxation parameter for unstable case
     do ik=1, current_state%lookup_table_entries
       current_state%lookup_table_velocity(ik)=current_state%velmin*(current_state%velmax/current_state%velmin)**&
-           (real(ik-1)/real(current_state%lookup_table_entries-1))            
+           (real(ik-1)/real(current_state%lookup_table_entries-1))
       current_state%lookup_table_ustr(ik)=current_state%lookup_table_velocity(ik)*&
            current_state%global_grid%configuration%vertical%vk_on_zlogm
-      if (current_state%fbuoy .gt. 0.0_DEFAULT_PRECISION) then         ! _unstable                                  
+      if (current_state%fbuoy .gt. 0.0_DEFAULT_PRECISION) then         ! _unstable
         iters(ik)=0
         do i=1, 30      ! @check how many iterations needed!!
           iters(ik)=iters(ik)+1
@@ -194,6 +194,7 @@ contains
          dvelustr(current_state%lookup_table_entries), ob, x1, x0
     integer n, ik, &   ! Loop counters
          nit     ! Number of iterations
+
     if (current_state%fbuoynew .le. 0.0_DEFAULT_PRECISION) then
       current_state%fbuoy=current_state%fbuoynew
       return
@@ -203,17 +204,20 @@ contains
       nit = 1+int(rnit)
     else
       nit=1
-    end if              
+    end if
+
     if (nit .gt. 10 .or. (current_state%fbuoynew .gt. 0.0_DEFAULT_PRECISION .and. &
          current_state%fbuoy .le. 0.0_DEFAULT_PRECISION)) then
       current_state%fbuoy=current_state%fbuoynew
       call set_look(current_state)
-      return                                                                   
+      return
     end if
+
     crelax=1./sqrt(real(nit))    ! maybe better with crelax=1.
     dfb=(current_state%fbuoynew-current_state%fbuoy)/real(nit)
+
     do n=1, nit
-      current_state%fbuoy=current_state%fbuoy+dfb                                                          
+      current_state%fbuoy=current_state%fbuoy+dfb
       do ik=2, current_state%lookup_table_entries-1
         dvelustr(ik)=log(current_state%lookup_table_velocity(ik+1)/current_state%lookup_table_velocity(ik-1))&
              /log(current_state%lookup_table_ustr(ik+1)/current_state%lookup_table_ustr(ik-1))
@@ -224,40 +228,42 @@ contains
            current_state%lookup_table_velocity(current_state%lookup_table_entries-1))/&
            log(current_state%lookup_table_ustr(current_state%lookup_table_entries)/&
            current_state%lookup_table_ustr(current_state%lookup_table_entries-1))
-      do ik=1, current_state%lookup_table_entries        
-        ! compute new mean vel. based on old ustar and new fbuoy        
+      do ik=1, current_state%lookup_table_entries
+        ! compute new mean vel. based on old ustar and new fbuoy
         ob=-current_state%lookup_table_ustr(ik)**3/(von_karman_constant*current_state%fbuoy)
         x1=sqrt(sqrt(1.-gammam*(current_state%global_grid%configuration%vertical%zn(2)+z0)/ob))
         x0=sqrt(sqrt(1.-gammam*z0/ob))
         velnew=(current_state%lookup_table_ustr(ik)/von_karman_constant)*(current_state%global_grid%configuration%vertical%zlogm-&
              (2.0_DEFAULT_PRECISION*log((x1+1.0_DEFAULT_PRECISION)/(x0+1.0_DEFAULT_PRECISION)) + &
              log((x1*x1+1.0_DEFAULT_PRECISION)/(x0*x0+1.0_DEFAULT_PRECISION)) + 2.0_DEFAULT_PRECISION*atan(x0) &
-             -2.0_DEFAULT_PRECISION*atan(x1)))        
-        ! relax to new ustar        
+             -2.0_DEFAULT_PRECISION*atan(x1)))
+        ! relax to new ustar
         current_state%lookup_table_ustr(ik)=current_state%lookup_table_ustr(ik)/&
              (velnew/current_state%lookup_table_velocity(ik))**(crelax/dvelustr(ik))
       end do
     end do
+
     current_state%cneut=current_state%lookup_table_ustr(current_state%lookup_table_entries)/&
          current_state%lookup_table_velocity(current_state%lookup_table_entries)
     current_state%cfc=current_state%lookup_table_ustr(1)*current_state%lookup_table_velocity(1)**convective_limit  ! _Businger-Dyer
     current_state%fbuoy=current_state%fbuoynew
+
   end subroutine change_look
 
   subroutine set_flux(current_state)
     type(model_state_type), intent(inout), target :: current_state
 
     real(kind=DEFAULT_PRECISION) :: surface_temp   ! Surface temperature
-  
+
     if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_FLUXES) then  ! Prescribed surface fluxes
-      
+
       ! Linear interpolation of input data...
-      call interpolate_point_linear_1d(surface_boundary_input_times, & 
+      call interpolate_point_linear_1d(surface_boundary_input_times, &
          surface_sensible_heat_flux/(current_state%global_grid%configuration%vertical%rho(1)*cp), &
          current_state%time, current_state%surface_temperature_flux, &
-         extrapolate='constant') 
-      
-      call interpolate_point_linear_1d(surface_boundary_input_times, & 
+         extrapolate='constant')
+
+      call interpolate_point_linear_1d(surface_boundary_input_times, &
          surface_latent_heat_flux/(current_state%global_grid%configuration%vertical%rho(1)*rlvap), &
          current_state%time, current_state%surface_vapour_flux, &
          extrapolate='constant')
@@ -266,18 +272,18 @@ contains
       current_state%fbuoynew=0.0_DEFAULT_PRECISION
       if (.not. current_state%passive_th) current_state%fbuoynew=&
          current_state%global_grid%configuration%vertical%buoy_co(1)*current_state%surface_temperature_flux
-      if (.not. current_state%passive_q) then                                                      
+      if (.not. current_state%passive_q) then
         current_state%fbuoynew=current_state%fbuoynew+current_state%cq(iqv)*current_state%surface_vapour_flux*G
       end if
 
     else if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_VALUES) then   ! Prescribed surface temperatures
 
       ! Linear interpolation of input data...
-      call interpolate_point_linear_1d(surface_boundary_input_times, & 
+      call interpolate_point_linear_1d(surface_boundary_input_times, &
          surface_temperatures, &
          current_state%time, surface_temp, &
-         extrapolate='constant') 
-      
+         extrapolate='constant')
+
       select case(trim(units_surface_temp))
       case(degC) ! degrees C
          surface_temp = surface_temp + 273.15_DEFAULT_PRECISION
@@ -287,10 +293,10 @@ contains
       if (current_state%saturated_surface)then
         current_state%surface_vapour_mixing_ratio = qsaturation(surface_temp,current_state%surface_pressure*0.01)
       else
-        call interpolate_point_linear_1d(surface_boundary_input_times, & 
+        call interpolate_point_linear_1d(surface_boundary_input_times, &
            surface_humidities, &
            current_state%time, current_state%surface_vapour_mixing_ratio, &
-           extrapolate='constant') 
+           extrapolate='constant')
       end if
 
       ! Set theta_v
@@ -311,7 +317,7 @@ contains
 
     end if
 
-  end subroutine set_flux  
+  end subroutine set_flux
 
 
   subroutine read_configuration(current_state)
@@ -323,7 +329,7 @@ contains
 
     number_times = 0
 
-    current_state%use_surface_boundary_conditions= & 
+    current_state%use_surface_boundary_conditions= &
        options_get_logical(current_state%options_database, "use_surface_boundary_conditions")
 
     if (current_state%use_surface_boundary_conditions)then
@@ -331,13 +337,13 @@ contains
        "type_of_surface_boundary_conditions")
     current_state%use_time_varying_surface_values=options_get_logical(current_state%options_database, &
        "use_time_varying_surface_values")
-  
+
     current_state%saturated_surface = .true. ! We will change this if we find some humidity data
 
     input_file=options_get_string(current_state%options_database, "surface_conditions_file")
     ! Read in the input_file
     if (trim(input_file)=='' .or. conv_to_lowercase(trim(input_file))=='none')then
-      if (current_state%use_time_varying_surface_values)then 
+      if (current_state%use_time_varying_surface_values)then
         allocate(surface_boundary_input_times(MAX_SURFACE_INPUTS))
         surface_boundary_input_times=0.0
         call options_get_real_array(current_state%options_database, "surface_boundary_input_times", surface_boundary_input_times)
@@ -348,7 +354,7 @@ contains
         end if 
       end if
       if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_FLUXES)then
-        allocate(surface_sensible_heat_flux(MAX_SURFACE_INPUTS),   & 
+        allocate(surface_sensible_heat_flux(MAX_SURFACE_INPUTS),   &
            surface_latent_heat_flux(MAX_SURFACE_INPUTS)            &
            )
         surface_sensible_heat_flux=0.0
@@ -358,7 +364,7 @@ contains
         number_input_humidities=0
         call check_time_arrays(current_state, number_times, "surface_sensible_heat_flux")
         call check_time_arrays(current_state, number_times, "surface_latent_heat_flux")
-      else if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_VALUES) then 
+      else if (current_state%type_of_surface_boundary_conditions == PRESCRIBED_SURFACE_VALUES) then
         allocate(surface_temperatures(MAX_SURFACE_INPUTS),         &
            surface_humidities(MAX_SURFACE_INPUTS)                  &
            )
@@ -366,7 +372,7 @@ contains
         surface_humidities=0.0
         call options_get_real_array(current_state%options_database, "surface_temperatures", surface_temperatures)
         units_surface_temp=options_get_string(current_state%options_database, "units_surface_temp")
-        
+
         call options_get_real_array(current_state%options_database, "surface_humidities", surface_humidities)
         number_input_humidities=options_get_array_size(current_state%options_database, "surface_humidities")
         call check_time_arrays(current_state, number_times, "surface_temperatures")
@@ -432,9 +438,9 @@ contains
 
     integer :: status, variable_id
 
-    ! Do some checking on the variable contents so that we can deal with different 
+    ! Do some checking on the variable contents so that we can deal with different
     ! variable names or missing variables
-    
+
     ! time...
     status=nf90_inq_varid(ncid, TIME_KEY, variable_id)
     if (status==nf90_noerr)then
@@ -443,25 +449,25 @@ contains
     else
       call log_log(LOG_ERROR, "No recognized time variable found in"//trim(filename))
     end if
-    
+
     status=nf90_inq_varid(ncid, SURFACE_TEMPERATURES_KEY, variable_id)
     if (status==nf90_noerr)then
       allocate(surface_temperatures(time_dim))
       call read_single_variable(ncid, SURFACE_TEMPERATURES_KEY, data1d=surface_temperatures)
     end if
-    
+
     status=nf90_inq_varid(ncid, SURFACE_HUMIDITIES_KEY, variable_id)
     if (status==nf90_noerr)then
       allocate(surface_humidities(time_dim))
       call read_single_variable(ncid, SURFACE_HUMIDITIES_KEY, data1d=surface_humidities)
     end if
-    
+
     status=nf90_inq_varid(ncid, SURFACE_LHF_KEY, variable_id)
     if (status==nf90_noerr)then
       allocate(surface_latent_heat_flux(time_dim))
       call read_single_variable(ncid, SURFACE_LHF_KEY, data1d=surface_latent_heat_flux)
     end if
-    
+
     status=nf90_inq_varid(ncid, SURFACE_SHF_KEY, variable_id)
     if (status==nf90_noerr)then
       allocate(surface_sensible_heat_flux(time_dim))

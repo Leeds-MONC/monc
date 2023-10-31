@@ -36,6 +36,9 @@ module lowerbc_mod
   integer :: wrapping_comm_requests(4), y_wrapping_target_id, x_wrapping_target_id
 
   public lowerbc_get_descriptor
+  public tstrcona, rhmbc, ddbc, ddbc_x4, eecon, r2ddbc, rcmbc, tstrconb, &
+       x4con, xx0con, y2con, yy0con, viscous_courant_coefficient
+
 contains
 
   !> Descriptor of this component for registration

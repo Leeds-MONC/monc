@@ -30,7 +30,9 @@ module gridmanager_mod
   real, parameter :: DEFAULT_SPACING = 1.E9  !< The default spacing used if no grid is active in a specific dimension
   real(kind=DEFAULT_PRECISION), dimension(:,:), allocatable :: qinit
 
-  public gridmanager_get_descriptor
+  public gridmanager_get_descriptor,set_up_vertical_reference_properties,set_anelastic_pressure, &
+    setup_reference_state_liquid_water_temperature_and_saturation, &
+    calculate_mixing_length_for_neutral_case, set_buoyancy_coefficient
 
 contains
 
