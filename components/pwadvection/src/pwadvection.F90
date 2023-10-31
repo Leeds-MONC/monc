@@ -404,7 +404,7 @@ contains
 
       do k=2,current_state%local_grid%size(Z_INDEX)-1
 #ifdef U_ACTIVE
-        current_state%sth%data(k, current_y_index, current_x_index)= &   !current_state%sth%data(k, current_y_index, current_x_index)+&
+        current_state%sth%data(k, current_y_index, current_x_index)= current_state%sth%data(k, current_y_index, current_x_index)+&
              current_state%global_grid%configuration%horizontal%cx*&
              0.5_DEFAULT_PRECISION*(current_state%u%data(k, current_y_index, current_x_index-1)*&
              current_state%th%data(k, current_y_index, current_x_index-1)-&
@@ -434,7 +434,7 @@ contains
 
         k=current_state%local_grid%size(Z_INDEX)
 #ifdef U_ACTIVE
-        current_state%sth%data(k, current_y_index, current_x_index)= &  !current_state%sth%data(k, current_y_index, current_x_index)+&
+        current_state%sth%data(k, current_y_index, current_x_index)= current_state%sth%data(k, current_y_index, current_x_index)+&
              current_state%global_grid%configuration%horizontal%cx*&
              0.5_DEFAULT_PRECISION*(current_state%u%data(k, current_y_index, current_x_index-1)*&
              current_state%th%data(k, current_y_index, current_x_index-1)-&
@@ -471,7 +471,7 @@ contains
 
     do k=2,current_state%local_grid%size(Z_INDEX)-1
 #ifdef U_ACTIVE
-      current_state%su%data(k, current_y_index, current_x_index)=&
+      current_state%su%data(k, current_y_index, current_x_index)=current_state%su%data(k, current_y_index, current_x_index)+&
            current_state%global_grid%configuration%horizontal%tcx*(current_state%u%data(k, current_y_index, current_x_index-1)*&
            (current_state%u%data(k, current_y_index, current_x_index)+&
            current_state%u%data(k, current_y_index, current_x_index-1))-&
@@ -499,7 +499,8 @@ contains
 #endif
 
 #ifdef V_ACTIVE
-      current_state%sv%data(k, current_y_index, current_x_index)=current_state%global_grid%configuration%horizontal%tcy*(&
+      current_state%sv%data(k, current_y_index, current_x_index)=current_state%sv%data(k, current_y_index, current_x_index)+&
+           current_state%global_grid%configuration%horizontal%tcy*(&
            current_state%v%data(k, current_y_index-1, current_x_index)*&
            (current_state%v%data(k, current_y_index, current_x_index)+&
            current_state%v%data(k, current_y_index-1, current_x_index))-&
@@ -527,7 +528,8 @@ contains
 #endif
 
 #ifdef W_ACTIVE
-      current_state%sw%data(k, current_y_index, current_x_index)=(current_state%global_grid%configuration%vertical%tzd1(k)*&
+      current_state%sw%data(k, current_y_index, current_x_index)=current_state%sw%data(k, current_y_index, current_x_index)+&
+           (current_state%global_grid%configuration%vertical%tzd1(k)*&
            current_state%w%data(k-1, current_y_index, current_x_index)*&
            (current_state%w%data(k, current_y_index, current_x_index)+&
            current_state%w%data(k-1, current_y_index, current_x_index))-&
@@ -558,7 +560,8 @@ contains
     if (l_toplevel)then
     k=current_state%local_grid%size(Z_INDEX)
 #ifdef U_ACTIVE
-    current_state%su%data(k, current_y_index, current_x_index)=current_state%global_grid%configuration%horizontal%tcx*&
+    current_state%su%data(k, current_y_index, current_x_index)=current_state%su%data(k, current_y_index, current_x_index)+&
+         current_state%global_grid%configuration%horizontal%tcx*&
          (current_state%u%data(k, current_y_index, current_x_index-1)*&
          (current_state%u%data(k, current_y_index, current_x_index)+&
          current_state%u%data(k, current_y_index, current_x_index-1))-&
@@ -583,7 +586,8 @@ contains
 #endif
 
 #ifdef V_ACTIVE
-    current_state%sv%data(k, current_y_index, current_x_index)=current_state%global_grid%configuration%horizontal%tcy*&
+    current_state%sv%data(k, current_y_index, current_x_index)=current_state%sv%data(k, current_y_index, current_x_index)+&
+         current_state%global_grid%configuration%horizontal%tcy*&
          (current_state%v%data(k, current_y_index-1, current_x_index)*&
          (current_state%v%data(k, current_y_index, current_x_index)+&
          current_state%v%data(k, current_y_index-1, current_x_index))-&
