@@ -21,6 +21,7 @@ checkpointer_enabled=.true.
 coriolis_enabled=.false.
 damping_enabled=.false.
 debugger_enabled=.false.
+dephy_forcing_enabled=.false.
 diagnostics_3d_enabled=.false.
 diffusion_enabled=.true.
 diverr_enabled=.true.
@@ -79,7 +80,7 @@ solver_group_type=entire
 pressure-terms_group_type=column
 last_group_type=entire
 
-start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral_bcs, setfluxlook
+start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral_bcs, dephy_forcing_enabled, setfluxlook
 subgrid_group_contents=lower_bc, smagorinsky
 dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, socrates_couple, lwrad_exponential, simplecloud, casim, tracers, flux_budget, subgrid_profile_diagnostics, diverr, psrce, diagnostics_3d, profile_diagnostics, casim_profile_dgs, scalar_diagnostics, stepfields
 
@@ -89,7 +90,7 @@ last_group_contents=conditional_diagnostics_whole, checkpointer, model_synopsis,
 
 # Component ordering for other stages
 
-initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, grid_manager, mean_profiles, swap_smooth, termination_check, simplecloud, casim, tracers, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iterativesolver, iterativesolver_single_prec, setfluxlook, lower_bc, physicsa, psrce, pw_advection, diffusion, set_consistent_lowbc, viscosity, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, socrates_couple, lwrad_exponential, th_advection, randomnoise, forcing, flux_budget, diagnostics_3d, profile_diagnostics, casim_profile_dgs, conditional_diagnostics_column, conditional_diagnostics_whole, pdf_analysis, subgrid_profile_diagnostics, scalar_diagnostics, lateral_bcs, petsc_solver, pstep, iobridge
+initialisation_stage_ordering=decomposition, kidreader, kidtestcase, checkpointer, simplesetup, dephy_forcings, grid_manager, mean_profiles, swap_smooth, termination_check, simplecloud, casim, tracers, coriolis, buoyancy, cfltest, damping, diverr, fftsolver, halo_swapper, iterativesolver, iterativesolver_single_prec, setfluxlook, lower_bc, physicsa, psrce, pw_advection, diffusion, set_consistent_lowbc, viscosity, smagorinsky, stepfields, stepping_direction, tvd_advection, model_synopsis, socrates_couple, lwrad_exponential, th_advection, randomnoise, forcing, flux_budget, diagnostics_3d, profile_diagnostics, casim_profile_dgs, conditional_diagnostics_column, conditional_diagnostics_whole, pdf_analysis, subgrid_profile_diagnostics, scalar_diagnostics, lateral_bcs, petsc_solver, pstep, iobridge
 finalisation_stage_ordering=iobridge, checkpointer, diverr, fftsolver, grid_manager, halo_swapper, iterativesolver, iterativesolver_single_prec, physicsa, psrce, smagorinsky, tvd_advection, socrates_couple, lwrad_exponential, model_synopsis, mean_profiles, pdf_analysis, forcing, stepfields, flux_budget, coriolis, buoyancy, diffusion, lower_bc, viscosity, profile_diagnostics, pw_advection, th_advection, damping, simplecloud, tracers, pstep, conditional_diagnostics_whole, conditional_diagnostics_column
 
 # Control configuration
@@ -115,7 +116,7 @@ print_debug_data=.false.         # Prints data for specific variables/point afte
 pdd_x=-999                       # global grid x coordinate of print_debug_data grid point
 pdd_y=-999                       #   "     "   y   "          "              " 
 pdd_z=-999                       #   "     "   z   "          "              " 
-l_thoff=.false.                  # When .true., disables threading in the IOserver
+l_thoff=.true.                  # When .true., disables threading in the IOserver
 
 #Tracer configuration
 traj_interval=                   # name of config variable used to set 3d_tracers output_frequency
