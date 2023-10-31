@@ -1,5 +1,5 @@
 # List of components to compile is the directories in this top level with makefiles in them
-COMPONENTS=$(subst /,,$(sort $(dir $(wildcard */makefile))))
+COMPONENTS=buoyancy casim casim_profile_dgs cfltest checkpointer clearsourceterms conditional_diagnostics_column conditional_diagnostics_whole coriolis damping debugger decomposition diagnostics_3d diffusion diverr fftsolver flux_budget forcing gridmanager haloswapper iobridge iterativesolver iterativesolver_single_prec kidreader lateral_bcs lowerbc lwrad_exponential meanprofiles modelsynopsis pdf_analysis petsc_solver pressuresource tvdadvection profile_diagnostics pstep pwadvection randomnoise scalar_diagnostics set_consistent_lowbc setfluxlook simplecloud simplesetup smagorinsky socrates_couple stepfields steppingdirection subgrid_profile_diagnostics swapsmooth terminationcheck thadvection tracers viscosity xiosbridge dephy_forcings
 
 COMPONENT_HEADER_FILE=componentheaders.autogen
 COMPONENT_REGISTRATIONS_FILE=componentregistrations.autogen
