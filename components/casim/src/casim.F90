@@ -102,7 +102,7 @@ module casim_mod
 #endif
 
   REAL(wp), allocatable :: theta(:,:,:), pressure(:,:,:),  &
-     dz(:,:,:), qv(:,:,:),qc(:,:,:) &
+     z_half(:,:,:), z_centre(:,:,:), dz(:,:,:), qv(:,:,:),qc(:,:,:) &
      , nc(:,:,:), qr(:,:,:), nr(:,:,:), m3r(:,:,:),rho(:,:,:) &
      , exner(:,:,:), w(:,:,:), tke(:,:,:)                               &
      , qi(:,:,:), ni(:,:,:), qs(:,:,:), ns(:,:,:), m3s(:,:,:) &
@@ -276,6 +276,8 @@ contains
     !> Set up and allocate the local arrays
 
     allocate(pressure(kte,1,1))
+    allocate(z_half(0:kte,1,1))
+    allocate(z_centre(kte,1,1))
     allocate(dz(kte,1,1))
     allocate(rho(kte,1,1))
     allocate(exner(kte,1,1))
@@ -612,7 +614,9 @@ contains
     dth(:,1,1) = current_state%sth%data(:, jcol, icol)
     exner(:,1,1) = current_state%global_grid%configuration%vertical%rprefrcp(:)
     pressure(:,1,1) = current_state%global_grid%configuration%vertical%prefn(:)
+    z_centre(:,1,1) = current_state%global_grid%configuration%vertical%zn(:)
     dz(:,1,1) = current_state%global_grid%configuration%vertical%dz(:)
+    z_half(:kte-1,1,1) = current_state%global_grid%configuration%vertical%z(:)
     rho(:,1,1) = current_state%global_grid%configuration%vertical%rhon(:)
     w(:,1,1) = current_state%zw%data(:, jcol, icol)
     tke(:,1,1) = 0.1 ! Test value
@@ -767,6 +771,7 @@ contains
        exner,                                      &
        pressure, rho,                              &
        w, tke,                                     &
+       z_half, z_centre,                           &
        dz, cfliq, cfice, cfsnow, cfrain, cfgr,     &
                                 ! in/out
        dqv, dqc, dqr, dnc, dnr, dm3r,              &
