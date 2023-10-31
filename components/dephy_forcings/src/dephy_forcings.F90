@@ -56,7 +56,6 @@ module dephy_forcings_mod
        nf90_inq_dimid, nf90_inquire_dimension, nf90_inq_varid, &
        nf90_get_var, nf90_inquire, nf90_close, nf90_get_att, &
        nf90_ebaddim, nf90_enotatt, nf90_enotvar, nf90_inquire_attribute
-  use configuration_checkpoint_netcdf_parser_mod, only : remove_null_terminator_from_string
   ! use existing fluxlook functionality
   use setfluxlook_mod, only : set_look, change_look
   ! re-initialise lowerbc module as z0 and z0th change over time
@@ -1583,5 +1582,19 @@ subroutine dephy_dirty_diagnostics()
     write(*,*) nudging_inv_rv_traj
 
 end subroutine dephy_dirty_diagnostics
+
+  !> Removes NetCDF C style null termination of string. This is placed right at the end, after any
+  !! spaces so trim will not actually trim any spaces due to null terminator
+  !! @param netCDFString The NetCDF string to remove the null terminator from which is modified
+  subroutine remove_null_terminator_from_string(net_cdf_string)
+    character(len=*), intent(inout) :: net_cdf_string
+    integer :: i
+    do i=1,len(net_cdf_string)
+      if (iachar(net_cdf_string(i:i)) == 0) then
+        net_cdf_string(i:len(net_cdf_string)) = ' '
+        exit
+      end if
+    end do
+  end subroutine remove_null_terminator_from_string
 
 end module dephy_forcings_mod
