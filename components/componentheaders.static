@@ -50,3 +50,4 @@ use conditional_diagnostics_column_mod, only : conditional_diagnostics_column_ge
 use conditional_diagnostics_whole_mod, only : conditional_diagnostics_whole_get_descriptor
 use pdf_analysis_mod, only : pdf_analysis_get_descriptor
 use tracers_mod, only: tracers_get_descriptor
+use dephy_forcings_mod, only : dephy_forcings_get_descriptor
