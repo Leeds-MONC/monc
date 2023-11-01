@@ -1,12 +1,9 @@
 
 #include "ft_attr.h"
 
-
 /*****************************************/
 /*      attribute object routines        */
 /*****************************************/
-
-
 
 void thread_attr_destroy(int *attr, int *info) {
   *info = FT_OK;

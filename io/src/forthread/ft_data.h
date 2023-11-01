@@ -4,7 +4,7 @@
 #include <pthread.h>
 #include <stdlib.h>
 
-
+#include "ft_consts.h"
 
 #if defined(__DARWIN) && !defined(CLOCKID_ALREADY_DECLARED) 
 typedef int clockid_t;
@@ -30,37 +30,35 @@ typedef struct varray_tag {
   pthread_mutex_t mutex;
 } varray_t;
 
-
-
 /**
  * global data structures
  **/
 
-int is_initialized;
+extern int is_initialized;
 
 /**
  * holds the thread IDs
  **/
-array_t *threads;
+extern array_t *threads;
 
 /** 
  * holds thread attributes, the index does not
- * necesseraly conincide with the one of threads.
+ * necesseraly coincide with the one of threads.
  *
  * This array is just to allow different threads spawn new
  * threads at the same time.
  **/
-array_t *thread_attrs;
+extern array_t *thread_attrs;
 
 /**
  * holds thread keys for storing thread specific data
  **/
-array_t *thread_keys;
+extern array_t *thread_keys;
 
 /*
  * holds the mutex IDs
  **/
-array_t *mutexes;
+extern array_t *mutexes;
 
 /**
  * holds thread mutex attributes, the index does not
@@ -69,18 +67,18 @@ array_t *mutexes;
  * This array is just to allow different threads handle
  * their mutexes
  **/
-array_t *mutex_attrs;
+extern array_t *mutex_attrs;
 
 /**
  * an array to hold pthread_once_t structures
  **/
-array_t *once_ctrls;
+extern array_t *once_ctrls;
 
 /**
  * an array to hold thread condition variable (pthread_cond_t) 
  * structures
  **/
-array_t *conds;
+extern array_t *conds;
 
 /**
  * holds thread condition variable attributes, the index does not
@@ -89,13 +87,13 @@ array_t *conds;
  * This array is just to allow different threads handle
  * their condition variables
  **/
-array_t *cond_attrs ;
+extern array_t *cond_attrs ;
 
 /**
  * an array to hold thread barrier variable (pthread_barrier_t) 
  * structures
  **/
-array_t *barriers;
+extern array_t *barriers;
 
 /**
  * holds thread barrier variable attributes, the index does not
@@ -104,19 +102,19 @@ array_t *barriers;
  * This array is just to allow different threads handle
  * their condition variables
  **/
-array_t *barrier_attrs;
+extern array_t *barrier_attrs;
 
 /**
  * an array to hold spinlock variable (pthread_spinlock_t) 
  * structures
  **/
-varray_t *spinlocks;
+extern varray_t *spinlocks;
 
 /**
  * an array to hold thread read-write lock variable (pthread_rwlock_t) 
  * structures
  **/
-array_t *rwlocks;
+extern array_t *rwlocks;
 
 /**
  * holds thread rwlock variable attributes, the index does not
@@ -125,7 +123,12 @@ array_t *rwlocks;
  * This array is just to allow different threads handle
  * their condition variables
  **/
-array_t *rwlock_attrs;
+extern array_t *rwlock_attrs;
+
+void thread_init_internal(int *);
+void thread_destroy_internal(int *);
+
+///////////////////////////////////////////////////////////////
 
 void array_init(array_t **array,int size);
 

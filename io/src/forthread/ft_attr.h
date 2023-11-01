@@ -28,7 +28,6 @@
 
 void thread_attr_destroy(int *attr, int *info);
 
-
 void thread_attr_init(int *attr, int *info);
 
 void thread_attr_getdetachstate(int *attr, int *detachstate, int *info);
@@ -85,7 +84,7 @@ void thread_mutexattr_settype(int *attr, int *type, int *info);
 
 
 /*****************************************************/
-/*    condition attriubute variable routines         */
+/*    condition attribute variable routines         */
 /*****************************************************/
 
 

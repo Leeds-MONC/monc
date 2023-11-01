@@ -7,8 +7,9 @@
 #include <signal.h>
 #include <pthread.h>
 
-
-
+#include "ft_consts.h"
+#include "ft_data.h"
+#include "ft_attr.h"
 
 void thread_init(int *info);
 
