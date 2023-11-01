@@ -21,7 +21,7 @@ checkpointer_enabled=.true.
 coriolis_enabled=.false.
 damping_enabled=.false.
 debugger_enabled=.false.
-dephy_forcing_enabled=.false.
+dephy_forcings_enabled=.false.
 diagnostics_3d_enabled=.false.
 diffusion_enabled=.true.
 diverr_enabled=.true.
@@ -80,7 +80,7 @@ solver_group_type=entire
 pressure-terms_group_type=column
 last_group_type=entire
 
-start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral_bcs, dephy_forcing_enabled, setfluxlook
+start_group_contents=clearsourceterms, stepping_direction, halo_swapper, lateral_bcs, dephy_forcings, setfluxlook
 subgrid_group_contents=lower_bc, smagorinsky
 dynamics_group_contents=kidtestcase, pw_advection, tvd_advection, th_advection, diffusion, viscosity, coriolis, buoyancy, damping, forcing, set_consistent_lowbc, socrates_couple, lwrad_exponential, simplecloud, casim, tracers, flux_budget, subgrid_profile_diagnostics, diverr, psrce, diagnostics_3d, profile_diagnostics, casim_profile_dgs, scalar_diagnostics, stepfields
 
